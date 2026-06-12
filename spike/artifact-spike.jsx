@@ -5,6 +5,11 @@
  * Paste the full content of this file into Claude's Artifact creator (React).
  * Run once from ran's account, once from natali's account (shared link).
  *
+ * Stage 0 results (2026-06-13):
+ *   PASS — model calls, JSON, RTL, latency all green (ran's account).
+ *   DEFERRED — cross-account sharing test moved to Stage 7 (Natali handoff).
+ *   Decision: sharing is not a blocker for Stages 1–6; verified at delivery.
+ *
  * Go/No-Go criteria:
  *   ✅ PASS  → all 4 checks green   → proceed to Stage 1
  *   ⚠️  PARTIAL → sharing fails only → Stage 1 via prompt route; Artifact in joint sessions
