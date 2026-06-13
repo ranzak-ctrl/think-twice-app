@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(gh *)",
+      "PowerShell(New-Item *)",
+      "Bash(git -c core.autocrlf=false commit -m ' *)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'stage-0: document results and deferred sharing test *)",
+      "Bash(git tag *)",
+      "Bash(git push *)",
+      "PowerShell(npm *)"
+    ]
+  }
+}
