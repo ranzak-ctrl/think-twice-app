@@ -95,6 +95,14 @@ export default function App() {
           if (added.length) nextState = { ...nextState, basket: [...current, ...added] };
         }
 
+        // Stage 7: record the sharpness classification (KPI; a vague decision never closes).
+        if (ev.decisionType) {
+          nextState = {
+            ...nextState,
+            meta: { ...nextState.meta, kpi: { ...nextState.meta.kpi, decisionType: ev.decisionType } },
+          };
+        }
+
         // Run router — the code decides transitions, never the model.
         const decision = route(nextState);
 

@@ -16,7 +16,8 @@
     "new_info": true,
     "exhausted": false,
     "question_aperture": "open",
-    "alternatives": []
+    "alternatives": [],
+    "decision_type": null
   }
 }
 ```
@@ -35,3 +36,4 @@
 **exhausted:** true אם זהו התור השני ברציפות ללא מידע חדש (new_info=false פעמיים).
 **question_aperture:** "open" (שאלה פתוחה) או "closed" (שאלה סגורה/ממוקדת).
 **alternatives:** בשלב 6 בלבד — מערך מחרוזות של חלופות תגובה חדשות שהמשתמש העלה בתור זה (פעולות ניתנות לצילום, במילותיו).
+**decision_type:** בשלב 7 בלבד — סיווג תשובת ההכרעה: "sharp" (בחירה חדה ומנומקת), "structured_deferral" (דחייה מובנית עם מסגרת זמן ונקודת חזרה), "vague" (עמומה — "אולי"/"נראה"; אינה סוגרת את הסשן).

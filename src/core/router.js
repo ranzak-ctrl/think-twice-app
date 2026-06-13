@@ -90,7 +90,9 @@ export function route(state) {
       return { decision: Decision.SHOW_BOARD };
     }
     // Session complete when sharp decision + package test both at 2
-    if (s7.sharp_decision === 2 && s7.package_test === 2) {
+    // A vague decision never closes the session (Transition Protocol §7, מבחן החדות).
+    const vague = meta.kpi?.decisionType === 'vague';
+    if (!vague && s7.sharp_decision === 2 && s7.package_test === 2) {
       return { decision: Decision.SESSION_COMPLETE };
     }
     return { decision: Decision.STAY };

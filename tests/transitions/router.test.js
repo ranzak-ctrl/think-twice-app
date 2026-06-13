@@ -229,6 +229,20 @@ describe('Stage 7 closure', () => {
     s = { ...s, coverage: { ...s.coverage, stage7: { goal: 2, board_presented: 2, sharp_decision: 2, package_test: 2 } } };
     expect(route(s).decision).toBe(Decision.SESSION_COMPLETE);
   });
+
+  it('does not complete on a vague decision even with slots at 2', () => {
+    let s = createState();
+    s = { ...s, meta: { ...s.meta, currentStage: 7, kpi: { ...s.meta.kpi, decisionType: 'vague' } } };
+    s = { ...s, coverage: { ...s.coverage, stage7: { goal: 2, board_presented: 2, sharp_decision: 2, package_test: 2 } } };
+    expect(route(s).decision).not.toBe(Decision.SESSION_COMPLETE);
+  });
+
+  it('completes on a structured deferral with slots at 2', () => {
+    let s = createState();
+    s = { ...s, meta: { ...s.meta, currentStage: 7, kpi: { ...s.meta.kpi, decisionType: 'structured_deferral' } } };
+    s = { ...s, coverage: { ...s.coverage, stage7: { goal: 2, board_presented: 2, sharp_decision: 2, package_test: 2 } } };
+    expect(route(s).decision).toBe(Decision.SESSION_COMPLETE);
+  });
 });
 
 // ─── 11. State integrity: facts never lost ───────────────────────────────────

@@ -36,6 +36,7 @@ export function parseResponse(raw) {
       questionAperture: evaluation.question_aperture ?? null,
       alternatives: Array.isArray(evaluation.alternatives) ? evaluation.alternatives : [],
       board: Array.isArray(evaluation.board) ? evaluation.board : [],
+      decisionType: evaluation.decision_type ?? null, // 'sharp' | 'structured_deferral' | 'vague'
     },
   };
 }
