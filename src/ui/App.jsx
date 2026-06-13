@@ -4,6 +4,7 @@ import GuidePanel from './GuidePanel.jsx';
 import { createState, exportState, importState } from '../core/state.js';
 import { route, confirmAndAdvance, rejectConfirmation, Decision } from '../core/router.js';
 import { complete } from '../adapters/model.js';
+import { buildSystemPrompt, formatHistory } from '../core/promptBuilder.js';
 import { preCheck } from '../safety/index.js';
 
 const OPENING_MESSAGE = {
@@ -36,11 +37,16 @@ export default function App() {
         return;
       }
 
-      addMessage('user', text);
+      const userMsg = { role: 'user', content: text };
+      // Note: safety branch above already calls addMessage; normal flow builds currentHistory directly
+      const currentHistory = [...history, userMsg];
+      setHistory((h) => [...h, userMsg]);
       setLoading(true);
 
       try {
-        const result = await complete({ stage: state.meta.currentStage });
+        const systemPrompt = buildSystemPrompt({ stage: state.meta.currentStage, state });
+        const messages = formatHistory(currentHistory);
+        const result = await complete({ stage: state.meta.currentStage, systemPrompt, messages });
 
         // Apply slot updates from mock evaluation
         let nextState = { ...state };
@@ -60,8 +66,8 @@ export default function App() {
           };
         }
 
-        // Update saturation counter
-        const newInfo = ev.new_info !== false;
+        // Update saturation counter (ev.newInfo comes from parseResponse — always boolean)
+        const newInfo = ev.newInfo !== false;
         nextState = {
           ...nextState,
           meta: {
