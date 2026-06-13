@@ -89,18 +89,18 @@ describe('Soft threshold', () => {
 
 // ─── 4. Load guard ───────────────────────────────────────────────────────────
 describe('Load guard', () => {
-  it('triggers at 7 questions even without saturation', () => {
+  it('triggers at 20 questions even without saturation', () => {
     let s = createState();
     s = fillStage(s, 1);
-    s = withQuestionCount(s, 7);
+    s = withQuestionCount(s, 20);
     const r = route(s);
     expect(r.decision).toBe(Decision.REQUEST_CONFIRMATION);
     expect(r.reason).toBe('load_guard');
   });
 
-  it('stage 5 load guard triggers at 5 questions', () => {
+  it('stage 5 load guard triggers at 15 questions', () => {
     let s = createState();
-    s = { ...s, meta: { ...s.meta, currentStage: 5, questionCount: 5 } };
+    s = { ...s, meta: { ...s.meta, currentStage: 5, questionCount: 15 } };
     s = fillStage(s, 2); // satisfy stage-5 dependency
     s = fillStage(s, 5);
     const r = route(s);

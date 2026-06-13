@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MOCK_RESPONSES } from '../../src/adapters/model.js';
+import { MOCK_RESPONSES, MOCK_SUMMARIES } from '../../src/adapters/model.js';
 import { FORBIDDEN_PATTERNS } from '../../src/content/forbidden.js';
 
 // --- Lint utilities ---
@@ -104,5 +104,23 @@ describe('mock responses pass lint rules', () => {
         expect(sentenceCountBeforeQuestion(message)).toBeLessThanOrEqual(3);
       });
     }
+  }
+});
+
+// --- Summary mock lint sweep (Router-driven stage recaps) ---
+
+describe('mock summaries pass lint rules', () => {
+  for (const [stage, message] of Object.entries(MOCK_SUMMARIES)) {
+    it(`stage ${stage}: no forbidden jargon`, () => {
+      expect(containsForbiddenJargon(message)).toBe(false);
+    });
+
+    it(`stage ${stage}: exactly one question mark`, () => {
+      expect(questionCount(message)).toBe(1);
+    });
+
+    it(`stage ${stage}: max 3 sentences before question`, () => {
+      expect(sentenceCountBeforeQuestion(message)).toBeLessThanOrEqual(3);
+    });
   }
 });

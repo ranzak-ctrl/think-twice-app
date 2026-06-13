@@ -29,6 +29,9 @@ export function createState() {
       saturationCount: 0,      // consecutive turns with no new info
       questionAperture: 'open', // 'open' | 'closed'
       resistanceFlag: null,    // 'avoidance' | 'flight' | 'overflow' | 'cynicism'
+      // Last-turn fatigue / engagement signals reported by the model. Display-only
+      // for now — the Router does NOT read these (see docs/questions-for-natali.md §1).
+      signals: { overflow: false, avoidance: false, flight: false, contradiction: false },
       savedThreads: [],        // topics user drifted to — may contain useful info
       awaitingConfirmation: false,
       safetyFlag: false,

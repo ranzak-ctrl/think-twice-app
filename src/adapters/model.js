@@ -127,9 +127,31 @@ export const MOCK_RESPONSES = {
   },
 };
 
+// Stage recaps returned in summary mode (mode: 'summary'). The Router decides
+// when a transition is due; this is the recap the user confirms. Flavoured to
+// the "meat" golden script, consistent with MOCK_RESPONSES.
+export const MOCK_SUMMARIES = {
+  1: 'בוא נוודא שהבנתי נכון — הבשר הגיע, הוא אמר שהוא לא איכותי, ואתה עזבת את העבודה. זה מדויק?',
+  2: 'בוא נוודא שהבנתי נכון — הבנת את זה כאילו אתה לא מספיק טוב, וזה נגע במשהו מוכר. זה מדויק?',
+  3: 'בוא נוודא שהבנתי נכון — מה שעלה היה עלבון חזק, בעוצמה גבוהה, והוא הזכיר לך משהו מהעבר. זה מדויק?',
+  4: 'בוא נוודא שהבנתי נכון — באותו רגע עזבת בלי לומר מילה, ועכשיו אתה שוקל איך להגיב. זה מדויק?',
+  5: 'בוא נוודא שהבנתי נכון — ניסחת איך זה נראה מהצד שלו, והרגש ירד קצת כשהסתכלת ככה. זה מדויק?',
+  6: 'בוא נוודא שהבנתי נכון — אספנו כמה דרכים אפשריות להגיב, כולל לא לעשות כלום. זה מדויק?',
+};
+
 const turnCounters = {};
 
-function mockComplete({ stage }) {
+function mockComplete({ stage, mode }) {
+  // Summary mode — Router decided to transition; return the stage recap and
+  // do NOT advance the turn counter (no probing turn was consumed).
+  if (mode === 'summary') {
+    const message =
+      MOCK_SUMMARIES[stage] ??
+      'בוא נוודא שהבנתי נכון — עברנו על עיקרי הדברים בשלב הזה. זה מדויק?';
+    const raw = JSON.stringify({ message });
+    return { ...parseResponse(raw), raw };
+  }
+
   const key = `${stage}:${turnCounters[stage] ?? 0}`;
   const response = MOCK_RESPONSES[key] ?? {
     message: '[Mock: no scripted response for this turn]',
@@ -141,12 +163,12 @@ function mockComplete({ stage }) {
   return { ...parseResponse(raw), raw };
 }
 
-export async function complete({ stage, systemPrompt, messages }) {
+export async function complete({ stage, systemPrompt, messages, mode }) {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   const model = import.meta.env.VITE_MODEL ?? 'claude-sonnet-4-6';
 
   if (!isValidKey(apiKey) || !systemPrompt || !messages?.length) {
-    return mockComplete({ stage });
+    return mockComplete({ stage, mode });
   }
 
   try {

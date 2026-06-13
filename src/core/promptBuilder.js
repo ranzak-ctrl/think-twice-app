@@ -1,5 +1,6 @@
 import personaMd from '../content/prompts/persona.md?raw';
 import evaluatorMd from '../content/prompts/evaluator.md?raw';
+import summaryMd from '../content/prompts/summary.md?raw';
 import stage1Md from '../content/prompts/agents/stage1-intake.md?raw';
 import stage2Md from '../content/prompts/agents/stage2-interpretation.md?raw';
 import stage3Md from '../content/prompts/agents/stage3-feel.md?raw';
@@ -25,6 +26,19 @@ export function buildSystemPrompt({ stage, state }) {
     evaluatorMd,
     '## הנחיות אסורות\n' + FORBIDDEN_PATTERNS.join('\n'),
     stateSummary,
+  ]
+    .filter(Boolean)
+    .join('\n\n---\n\n');
+}
+
+// Summary mode — built when the Router decides a stage transition is due.
+// Persona + summary instruction + state only; no probing agent, no evaluator.
+export function buildSummaryPrompt({ state }) {
+  return [
+    personaMd,
+    summaryMd,
+    '## הנחיות אסורות\n' + FORBIDDEN_PATTERNS.join('\n'),
+    summarizeState(state),
   ]
     .filter(Boolean)
     .join('\n\n---\n\n');

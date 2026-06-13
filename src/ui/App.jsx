@@ -4,7 +4,7 @@ import GuidePanel from './GuidePanel.jsx';
 import { createState, exportState, importState } from '../core/state.js';
 import { route, confirmAndAdvance, rejectConfirmation, Decision } from '../core/router.js';
 import { complete } from '../adapters/model.js';
-import { buildSystemPrompt, formatHistory } from '../core/promptBuilder.js';
+import { buildSystemPrompt, buildSummaryPrompt, formatHistory } from '../core/promptBuilder.js';
 import { preCheck } from '../safety/index.js';
 
 const OPENING_MESSAGE = {
@@ -74,11 +74,21 @@ export default function App() {
             ...nextState.meta,
             questionCount: nextState.meta.questionCount + 1,
             saturationCount: newInfo ? 0 : nextState.meta.saturationCount + 1,
+            // Persist the model's fatigue/engagement signals for the guide panel.
+            // Display-only — the Router does not consume these yet.
+            signals: {
+              overflow: !!ev.flagOverflow,
+              avoidance: !!ev.flagAvoidance,
+              flight: !!ev.flagFlight,
+              contradiction: !!ev.flagContradiction,
+            },
           },
         };
 
-        // Run router
+        // Run router — the code decides transitions, never the model.
         const decision = route(nextState);
+
+        let assistantMessage = result.message ?? 'שגיאה בעיבוד התשובה. נסה שוב.';
 
         if (decision.decision === Decision.REQUEST_CONFIRMATION) {
           nextState = {
@@ -89,6 +99,18 @@ export default function App() {
               pendingNextStage: decision.nextStage,
             },
           };
+          // Router decided to transition → produce the stage summary the user
+          // confirms. This turn's probing question is dropped in its favour, so
+          // the confirmation gate never appears without a summary above it.
+          const summaryResult = await complete({
+            stage: nextState.meta.currentStage,
+            systemPrompt: buildSummaryPrompt({ state: nextState }),
+            messages,
+            mode: 'summary',
+          });
+          assistantMessage =
+            (summaryResult.ok && summaryResult.message) ||
+            'בוא נוודא שהבנתי נכון — עברנו על מה שקרה עד כאן. זה מדויק?';
         }
 
         if (decision.decision === Decision.SESSION_COMPLETE) {
@@ -99,7 +121,7 @@ export default function App() {
         }
 
         setState(nextState);
-        addMessage('assistant', result.message);
+        addMessage('assistant', assistantMessage);
       } finally {
         setLoading(false);
       }

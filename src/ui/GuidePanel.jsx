@@ -37,11 +37,19 @@ export default function GuidePanel({ state }) {
 
       {/* Stage indicator */}
       <Section title={`שלב ${meta.currentStage} — ${STAGE_NAMES[meta.currentStage]}`}>
-        <Row label="שאלות בשלב" value={meta.questionCount} />
-        <Row label="מיצוי" value={meta.saturationCount} />
         <Row label="פתח שאלה" value={meta.questionAperture} />
-        <Row label="התנגדות" value={meta.resistanceFlag ?? '—'} />
         <Row label="ממתין לאישור" value={meta.awaitingConfirmation ? 'כן' : 'לא'} />
+      </Section>
+
+      {/* Fatigue / engagement dimensions — the raw inputs for the future fatigue
+          detector. Display only; the Router does not read these yet
+          (docs/questions-for-natali.md §1). */}
+      <Section title="ממדי עייפות">
+        <Row label="שאלות בשלב" value={meta.questionCount} />
+        <Row label="מיצוי (תורות ללא מידע חדש)" value={meta.saturationCount} />
+        <SignalRow label="מוצף" on={meta.signals?.overflow} acute />
+        <SignalRow label="הימנעות" on={meta.signals?.avoidance} />
+        <SignalRow label="בריחה" on={meta.signals?.flight} />
       </Section>
 
       {/* Coverage scorecard */}
@@ -117,6 +125,16 @@ function Row({ label, value }) {
     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
       <span style={{ color: '#666' }}>{label}</span>
       <span style={{ fontWeight: 'bold' }}>{String(value)}</span>
+    </div>
+  );
+}
+
+function SignalRow({ label, on, acute }) {
+  const color = on ? (acute ? '#c0392b' : '#b88000') : '#aaa';
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
+      <span style={{ color: '#666' }}>{label}</span>
+      <span style={{ fontWeight: 'bold', color }}>{on ? 'כן' : 'לא'}</span>
     </div>
   );
 }

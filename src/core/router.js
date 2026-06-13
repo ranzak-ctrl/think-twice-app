@@ -14,8 +14,15 @@ export const Decision = {
 
 const SOFT_THRESHOLD = 0.8;
 const SATURATION_LIMIT = 2;
-const LOAD_GUARD_DEFAULT = 7;
-const LOAD_GUARD_STAGE5 = 5;
+// TEMPORARY BACKSTOP — not the real mechanism. Counting questions is the wrong
+// proxy for user load (see docs/questions-for-natali.md §1): it can't tell a long
+// rich story from an overwhelmed user. To be replaced by a fatigue detector that
+// weighs story complexity + engagement. Kept numeric (not emptied) because it is
+// currently the ONLY guarantee a stage can transition when saturation never fires;
+// removing it would strand stages. Set deliberately high so it rarely fires —
+// do not treat 20/15 as clinically validated.
+const LOAD_GUARD_DEFAULT = 20;
+const LOAD_GUARD_STAGE5 = 15;
 
 const CORE_SLOTS = {
   1: ['trigger', 'timeline', 'actors', 'status', 'auto_reaction'],
