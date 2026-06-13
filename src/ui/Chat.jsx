@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import ConfirmButtons from './ConfirmButtons.jsx';
+import DecisionBoard from './DecisionBoard.jsx';
 
 export default function Chat({
   history,
   loading,
+  board,
   awaitingConfirmation,
   sessionComplete,
   onSend,
@@ -35,6 +37,9 @@ export default function Chat({
         {loading && <Bubble role="assistant" content="…" loading />}
         <div ref={bottomRef} />
       </div>
+
+      {/* Decision board (stage 7) — rendered by code from state */}
+      <DecisionBoard board={board} />
 
       {/* Confirm buttons */}
       {awaitingConfirmation && (

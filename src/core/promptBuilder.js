@@ -1,10 +1,14 @@
 import personaMd from '../content/prompts/persona.md?raw';
 import evaluatorMd from '../content/prompts/evaluator.md?raw';
 import summaryMd from '../content/prompts/summary.md?raw';
+import boardMd from '../content/prompts/board.md?raw';
 import stage1Md from '../content/prompts/agents/stage1-intake.md?raw';
 import stage2Md from '../content/prompts/agents/stage2-interpretation.md?raw';
 import stage3Md from '../content/prompts/agents/stage3-feel.md?raw';
 import stage4Md from '../content/prompts/agents/stage4-react.md?raw';
+import stage5Md from '../content/prompts/agents/stage5-transform.md?raw';
+import stage6Md from '../content/prompts/agents/stage6-alternatives.md?raw';
+import stage7Md from '../content/prompts/agents/stage7-decision.md?raw';
 import { FORBIDDEN_PATTERNS } from '../content/forbidden.js';
 
 const STAGE_PROMPTS = {
@@ -12,6 +16,9 @@ const STAGE_PROMPTS = {
   2: stage2Md,
   3: stage3Md,
   4: stage4Md,
+  5: stage5Md,
+  6: stage6Md,
+  7: stage7Md,
 };
 
 const LAST_K_TURNS = 6;
@@ -38,6 +45,21 @@ export function buildSummaryPrompt({ state }) {
     personaMd,
     summaryMd,
     '## הנחיות אסורות\n' + FORBIDDEN_PATTERNS.join('\n'),
+    summarizeState(state),
+  ]
+    .filter(Boolean)
+    .join('\n\n---\n\n');
+}
+
+// Board mode — built when the Router returns SHOW_BOARD (stage 7). The code owns
+// the board: the model synthesises rows from the collected basket; we render them.
+export function buildBoardPrompt({ state }) {
+  const basket = `## BASKET (חלופות שנאספו)\n${JSON.stringify(state.basket ?? [])}`;
+  return [
+    personaMd,
+    boardMd,
+    '## הנחיות אסורות\n' + FORBIDDEN_PATTERNS.join('\n'),
+    basket,
     summarizeState(state),
   ]
     .filter(Boolean)

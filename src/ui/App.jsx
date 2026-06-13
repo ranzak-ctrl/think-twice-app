@@ -4,7 +4,7 @@ import GuidePanel from './GuidePanel.jsx';
 import { createState, exportState, importState } from '../core/state.js';
 import { route, confirmAndAdvance, rejectConfirmation, Decision } from '../core/router.js';
 import { complete } from '../adapters/model.js';
-import { buildSystemPrompt, buildSummaryPrompt, formatHistory } from '../core/promptBuilder.js';
+import { buildSystemPrompt, buildSummaryPrompt, buildBoardPrompt, formatHistory } from '../core/promptBuilder.js';
 import { preCheck } from '../safety/index.js';
 
 const OPENING_MESSAGE = {
@@ -85,6 +85,16 @@ export default function App() {
           },
         };
 
+        // Stage 6: accumulate generated alternatives into the basket (deduped).
+        if (ev.alternatives?.length) {
+          const current = nextState.basket ?? [];
+          const seen = new Set(current.map((b) => b.text));
+          const added = ev.alternatives
+            .filter((t) => typeof t === 'string' && t.trim() && !seen.has(t.trim()))
+            .map((t) => ({ text: t.trim() }));
+          if (added.length) nextState = { ...nextState, basket: [...current, ...added] };
+        }
+
         // Run router — the code decides transitions, never the model.
         const decision = route(nextState);
 
@@ -111,6 +121,27 @@ export default function App() {
           assistantMessage =
             (summaryResult.ok && summaryResult.message) ||
             'בוא נוודא שהבנתי נכון — עברנו על מה שקרה עד כאן. זה מדויק?';
+        }
+
+        if (decision.decision === Decision.SHOW_BOARD) {
+          // The code owns the board: synthesise rows from the collected basket,
+          // store them in state, mark it presented, and let the UI render the table.
+          const boardResult = await complete({
+            stage: 7,
+            systemPrompt: buildBoardPrompt({ state: nextState }),
+            messages,
+            mode: 'board',
+          });
+          nextState = {
+            ...nextState,
+            board: boardResult.evaluation?.board ?? [],
+            coverage: {
+              ...nextState.coverage,
+              stage7: { ...nextState.coverage.stage7, board_presented: 2 },
+            },
+          };
+          assistantMessage =
+            (boardResult.ok && boardResult.message) || 'הנה האפשרויות שאספנו. במה אתה בוחר?';
         }
 
         if (decision.decision === Decision.SESSION_COMPLETE) {
@@ -234,6 +265,7 @@ export default function App() {
         <Chat
           history={history}
           loading={loading}
+          board={state.board}
           awaitingConfirmation={state.meta.awaitingConfirmation}
           sessionComplete={state.meta.sessionComplete}
           onSend={handleUserMessage}

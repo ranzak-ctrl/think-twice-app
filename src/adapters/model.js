@@ -139,6 +139,14 @@ export const MOCK_SUMMARIES = {
   6: 'בוא נוודא שהבנתי נכון — אספנו כמה דרכים אפשריות להגיב, כולל לא לעשות כלום. זה מדויק?',
 };
 
+// Decision board rows returned in board mode (mode: 'board'). The Router decides
+// when to show the board; the code owns and renders it. Meat golden script.
+export const MOCK_BOARD = [
+  { option: 'לדבר איתו ישירות על מה שקרה', pro: 'מנקה את האוויר', con: 'עלול להסלים' },
+  { option: 'לכתוב לו הודעה מנוסחת', pro: 'שליטה בניסוח', con: 'פחות אישי' },
+  { option: 'לא לעשות כלום ולהמשיך הלאה', pro: 'חוסך עימות', con: 'משאיר את זה פתוח בפנים' },
+];
+
 const turnCounters = {};
 
 function mockComplete({ stage, mode }) {
@@ -149,6 +157,15 @@ function mockComplete({ stage, mode }) {
       MOCK_SUMMARIES[stage] ??
       'בוא נוודא שהבנתי נכון — עברנו על עיקרי הדברים בשלב הזה. זה מדויק?';
     const raw = JSON.stringify({ message });
+    return { ...parseResponse(raw), raw };
+  }
+
+  // Board mode — Router returned SHOW_BOARD; return the synthesised board.
+  if (mode === 'board') {
+    const raw = JSON.stringify({
+      message: 'הנה האפשרויות שאספנו, במילים שלך. במה אתה בוחר?',
+      evaluation: { board: MOCK_BOARD },
+    });
     return { ...parseResponse(raw), raw };
   }
 

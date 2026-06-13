@@ -3,11 +3,17 @@
 // On malformed JSON: returns a parse error result (caller decides retry logic).
 
 export function parseResponse(raw) {
+  // Strip markdown code fences the model sometimes adds
+  let text = (raw ?? '').trim().replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+  // Extract the first JSON object — handles leading prose
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) return { ok: false, error: 'no_json', raw, message: null };
+
   let obj;
   try {
-    obj = JSON.parse(raw);
+    obj = JSON.parse(match[0]);
   } catch {
-    return { ok: false, error: 'invalid_json', raw };
+    return { ok: false, error: 'invalid_json', raw, message: null };
   }
 
   if (typeof obj.message !== 'string' || !obj.message.trim()) {
@@ -28,6 +34,8 @@ export function parseResponse(raw) {
       exhausted: !!evaluation.exhausted,
       newInfo: evaluation.new_info !== false, // default true
       questionAperture: evaluation.question_aperture ?? null,
+      alternatives: Array.isArray(evaluation.alternatives) ? evaluation.alternatives : [],
+      board: Array.isArray(evaluation.board) ? evaluation.board : [],
     },
   };
 }

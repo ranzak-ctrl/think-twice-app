@@ -15,7 +15,8 @@
     "flag_contradiction": false,
     "new_info": true,
     "exhausted": false,
-    "question_aperture": "open"
+    "question_aperture": "open",
+    "alternatives": []
   }
 }
 ```
@@ -33,3 +34,4 @@
 **new_info:** false אם התור לא הוסיף מידע חדש לשום slot.
 **exhausted:** true אם זהו התור השני ברציפות ללא מידע חדש (new_info=false פעמיים).
 **question_aperture:** "open" (שאלה פתוחה) או "closed" (שאלה סגורה/ממוקדת).
+**alternatives:** בשלב 6 בלבד — מערך מחרוזות של חלופות תגובה חדשות שהמשתמש העלה בתור זה (פעולות ניתנות לצילום, במילותיו).
