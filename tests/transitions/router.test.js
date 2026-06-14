@@ -166,6 +166,16 @@ describe('Dependency: stage 5 requires stage 2', () => {
     s = withSaturation(s);
     expect(route(s).decision).toBe(Decision.REQUEST_CONFIRMATION);
   });
+
+  it('stage 6 → 7 does not require a goal (goal gates the board, not entry)', () => {
+    let s = createState();
+    s = { ...s, meta: { ...s.meta, currentStage: 6 } };
+    s = fillStage(s, 6);
+    s = withSaturation(s);
+    const r = route(s);
+    expect(r.decision).toBe(Decision.REQUEST_CONFIRMATION);
+    expect(r.nextStage).toBe(7);
+  });
 });
 
 // ─── 7. Unidirectional 6→7 (board shown, no revert to production) ───────────

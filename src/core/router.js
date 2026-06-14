@@ -57,9 +57,10 @@ function dependenciesMet(coverage, targetStage) {
     return evaluateStage(coverage, 2).softThresholdMet;
   }
   if (targetStage === 7) {
-    const stage6ok = evaluateStage(coverage, 6).softThresholdMet;
-    const hasGoal = (coverage.stage7?.goal ?? 0) >= 1;
-    return stage6ok && hasGoal;
+    // Stage 6 must be exhausted. The goal gates the BOARD (see SHOW_BOARD below),
+    // not entry into stage 7 — it is elicited as the first stage-7 question, so it
+    // cannot be a precondition for getting there.
+    return evaluateStage(coverage, 6).softThresholdMet;
   }
   return true;
 }
