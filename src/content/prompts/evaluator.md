@@ -18,7 +18,9 @@
     "question_aperture": "open",
     "alternatives": [],
     "decision_type": null,
-    "merge_attempt": null
+    "merge_attempt": null,
+    "emotion_intensity": null,
+    "decision": null
   }
 }
 ```
@@ -39,3 +41,5 @@
 **alternatives:** בשלב 6 בלבד — מערך מחרוזות של חלופות תגובה חדשות שהמשתמש העלה בתור זה (פעולות ניתנות לצילום, במילותיו).
 **decision_type:** בשלב 7 בלבד — סיווג תשובת ההכרעה: "sharp" (בחירה חדה ומנומקת), "structured_deferral" (דחייה מובנית עם מסגרת זמן ונקודת חזרה), "vague" (עמומה — "אולי"/"נראה"; אינה סוגרת את הסשן).
 **merge_attempt:** בשלב 7 בלבד — ניסיון "גם וגם": "real" אם המיזוג הוא פעולה קונקרטית חדשה עם מחיר משלה (דווח אותה גם ב-alternatives כדי שתיכנס למאגר); "avoidance" אם אין מאחוריו פעולה ברת-ביצוע (שקף בלעדיות); אחרת null.
+**emotion_intensity:** מספר 1–10 — עוצמת הרגש. בשלב 3 (בסיס) ובשלב 5 (מדידה חוזרת ל-Delta).
+**decision:** בשלב 7 — אובייקט הבחירה והחבילה במילות המשתמש: { "choice": "...", "package_gain": "...", "package_cost": "..." }.

@@ -38,6 +38,10 @@ export function parseResponse(raw) {
       board: Array.isArray(evaluation.board) ? evaluation.board : [],
       decisionType: evaluation.decision_type ?? null, // 'sharp' | 'structured_deferral' | 'vague'
       mergeAttempt: evaluation.merge_attempt ?? null, // 'real' | 'avoidance' | null (stage 7)
+      emotionIntensity:
+        typeof evaluation.emotion_intensity === 'number' ? evaluation.emotion_intensity : null,
+      decision:
+        evaluation.decision && typeof evaluation.decision === 'object' ? evaluation.decision : null,
     },
   };
 }

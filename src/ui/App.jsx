@@ -105,6 +105,25 @@ export default function App() {
           };
         }
 
+        // Emotion intensity (1-10) for the delta KPI: stage 3 baseline vs stage 5.
+        if (typeof ev.emotionIntensity === 'number') {
+          const kpiKey =
+            nextState.meta.currentStage === 3 ? 'emotionIntensityStage3'
+            : nextState.meta.currentStage === 5 ? 'emotionIntensityStage5'
+            : null;
+          if (kpiKey) {
+            nextState = {
+              ...nextState,
+              meta: { ...nextState.meta, kpi: { ...nextState.meta.kpi, [kpiKey]: ev.emotionIntensity } },
+            };
+          }
+        }
+
+        // Stage 7: capture the chosen option and its package (gain/cost) into state.
+        if (ev.decision) {
+          nextState = { ...nextState, decision: { ...nextState.decision, ...ev.decision } };
+        }
+
         // Run router — the code decides transitions, never the model.
         const decision = route(nextState);
 
