@@ -37,6 +37,7 @@ export function parseResponse(raw) {
       alternatives: Array.isArray(evaluation.alternatives) ? evaluation.alternatives : [],
       board: Array.isArray(evaluation.board) ? evaluation.board : [],
       decisionType: evaluation.decision_type ?? null, // 'sharp' | 'structured_deferral' | 'vague'
+      mergeAttempt: evaluation.merge_attempt ?? null, // 'real' | 'avoidance' | null (stage 7)
     },
   };
 }

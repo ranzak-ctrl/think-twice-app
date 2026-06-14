@@ -86,6 +86,11 @@ export function route(state) {
   // Stage 7: show board as soon as goal is known and board not yet shown
   if (currentStage === 7) {
     const s7 = coverage.stage7 ?? {};
+    // Either-or: a real (actionable) merge is the only path back from convergence
+    // to production — re-open stage 6 (Transition Protocol §7ה, §5).
+    if (meta.mergeAttempt === 'real') {
+      return { decision: Decision.REOPEN, targetStage: 6, reason: 'merge' };
+    }
     if (!s7.board_presented && (s7.goal ?? 0) >= 1) {
       return { decision: Decision.SHOW_BOARD };
     }

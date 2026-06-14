@@ -33,6 +33,7 @@ export function createState() {
       // for now — the Router does NOT read these (see docs/questions-for-natali.md §1).
       signals: { overflow: false, avoidance: false, flight: false, contradiction: false },
       savedThreads: [],        // topics user drifted to — may contain useful info
+      mergeAttempt: null,      // stage-7 either-or: 'real' | 'avoidance' | null (transient)
       awaitingConfirmation: false,
       safetyFlag: false,
       sessionComplete: false,

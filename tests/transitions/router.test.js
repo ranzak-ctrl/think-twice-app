@@ -245,6 +245,25 @@ describe('Stage 7 closure', () => {
   });
 });
 
+// ─── 12. Either-or merge: stage 7 → 6 re-open ───────────────────────────────
+describe('Either-or merge', () => {
+  it('a real merge re-opens production (stage 6)', () => {
+    let s = createState();
+    s = { ...s, meta: { ...s.meta, currentStage: 7, mergeAttempt: 'real' } };
+    s = { ...s, coverage: { ...s.coverage, stage7: { goal: 2, board_presented: 2, sharp_decision: 0, package_test: 0 } } };
+    const r = route(s);
+    expect(r.decision).toBe(Decision.REOPEN);
+    expect(r.targetStage).toBe(6);
+  });
+
+  it('an avoidance merge does not re-open — model reflects exclusivity', () => {
+    let s = createState();
+    s = { ...s, meta: { ...s.meta, currentStage: 7, mergeAttempt: 'avoidance' } };
+    s = { ...s, coverage: { ...s.coverage, stage7: { goal: 2, board_presented: 2, sharp_decision: 0, package_test: 0 } } };
+    expect(route(s).decision).toBe(Decision.STAY);
+  });
+});
+
 // ─── 11. State integrity: facts never lost ───────────────────────────────────
 describe('State integrity', () => {
   it('slot updates do not erase other slots', () => {

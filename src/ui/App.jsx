@@ -74,6 +74,8 @@ export default function App() {
             ...nextState.meta,
             questionCount: nextState.meta.questionCount + 1,
             saturationCount: newInfo ? 0 : nextState.meta.saturationCount + 1,
+            // Stage-7 either-or signal — transient, read by the Router this turn.
+            mergeAttempt: ev.mergeAttempt ?? null,
             // Persist the model's fatigue/engagement signals for the guide panel.
             // Display-only — the Router does not consume these yet.
             signals: {
@@ -150,6 +152,26 @@ export default function App() {
           };
           assistantMessage =
             (boardResult.ok && boardResult.message) || 'הנה האפשרויות שאספנו. במה אתה בוחר?';
+        }
+
+        if (decision.decision === Decision.REOPEN) {
+          // Either-or: a real merge sends us back to production (stage 6). The merged
+          // action already entered the basket via ev.alternatives above; reset the
+          // board so it rebuilds with the new option when we return to stage 7.
+          nextState = {
+            ...nextState,
+            meta: {
+              ...nextState.meta,
+              currentStage: decision.targetStage ?? nextState.meta.currentStage,
+              questionCount: 0,
+              saturationCount: 0,
+              mergeAttempt: null,
+            },
+            coverage: {
+              ...nextState.coverage,
+              stage7: { ...nextState.coverage.stage7, board_presented: 0 },
+            },
+          };
         }
 
         if (decision.decision === Decision.SESSION_COMPLETE) {
