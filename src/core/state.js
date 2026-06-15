@@ -31,7 +31,7 @@ export function createState() {
       resistanceFlag: null,    // 'avoidance' | 'flight' | 'overflow' | 'cynicism'
       // Last-turn fatigue / engagement signals reported by the model. Display-only
       // for now — the Router does NOT read these (see docs/questions-for-natali.md §1).
-      signals: { overflow: false, avoidance: false, flight: false, contradiction: false },
+      signals: { overflow: false, avoidance: false, flight: false, cynicism: false, contradiction: false },
       savedThreads: [],        // topics user drifted to — may contain useful info
       mergeAttempt: null,      // stage-7 either-or: 'real' | 'avoidance' | null (transient)
       awaitingConfirmation: false,

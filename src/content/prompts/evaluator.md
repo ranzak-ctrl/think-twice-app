@@ -12,7 +12,9 @@
     "flag_avoidance": false,
     "flag_flight": false,
     "flag_overflow": false,
+    "flag_cynicism": false,
     "flag_contradiction": false,
+    "drifted_topic": null,
     "new_info": true,
     "exhausted": false,
     "question_aperture": "open",
@@ -33,7 +35,10 @@
 - flag_avoidance: true אם המשתמש נותן תשובות מינימליות / "לא יודע" חוזר / נסגר
 - flag_flight: true אם המשתמש נודד לנושאים אחרים
 - flag_overflow: true אם המשתמש מוצף רגשית
+- flag_cynicism: true אם המשתמש ציני או תוקפני כלפי התהליך/המראיין
 - flag_contradiction: true אם המידע החדש סותר עובדה קודמת
+
+**drifted_topic:** כאשר flag_flight=true — מחרוזת קצרה שמתארת לאן המשתמש נדד (למשל: "ילדות", "עבודה"). אחרת null.
 
 **new_info:** false אם התור לא הוסיף מידע חדש לשום slot.
 **exhausted:** true אם זהו התור השני ברציפות ללא מידע חדש (new_info=false פעמיים).

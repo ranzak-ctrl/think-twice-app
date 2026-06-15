@@ -132,6 +132,26 @@ export function route(state) {
   return { decision: Decision.STAY };
 }
 
+// Resistance protocol — the Router sets the question aperture based on detected
+// resistance signals (principle-zero §4.3). Priority: overflow > flight > avoidance
+// > cynicism. Returns { resistanceFlag, questionAperture } where questionAperture
+// is null when no override is needed (model's own recommendation stands).
+export function resolveResistance(signals) {
+  if (signals.overflow) {
+    return { resistanceFlag: 'overflow', questionAperture: 'open' };
+  }
+  if (signals.flight) {
+    return { resistanceFlag: 'flight', questionAperture: 'closed' };
+  }
+  if (signals.avoidance) {
+    return { resistanceFlag: 'avoidance', questionAperture: 'open' };
+  }
+  if (signals.cynicism) {
+    return { resistanceFlag: 'cynicism', questionAperture: null };
+  }
+  return { resistanceFlag: null, questionAperture: null };
+}
+
 // Called when user clicks "מדויק" (confirm summary)
 export function confirmAndAdvance(state) {
   const { meta } = state;

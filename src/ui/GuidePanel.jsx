@@ -54,15 +54,16 @@ export default function GuidePanel({ state }) {
         <Row label="ממתין לאישור" value={meta.awaitingConfirmation ? 'כן' : 'לא'} />
       </Section>
 
-      {/* Fatigue / engagement dimensions — the raw inputs for the future fatigue
-          detector. Display only; the Router does not read these yet
-          (docs/questions-for-natali.md §1). */}
-      <Section title="ממדי עייפות">
+      {/* Resistance signals — the Router reads these to set question aperture.
+          Fatigue detector (load-guard replacement) still deferred — §1. */}
+      <Section title="התנגדויות">
+        <Row label="דפוס" value={meta.resistanceFlag ?? 'אין'} />
         <Row label="שאלות בשלב" value={meta.questionCount} />
         <Row label="מיצוי (תורות ללא מידע חדש)" value={meta.saturationCount} />
         <SignalRow label="מוצף" on={meta.signals?.overflow} acute />
         <SignalRow label="הימנעות" on={meta.signals?.avoidance} />
         <SignalRow label="בריחה" on={meta.signals?.flight} />
+        <SignalRow label="ציניות" on={meta.signals?.cynicism} />
       </Section>
 
       {/* Token / cost meter — real-API usage this session (display only) */}

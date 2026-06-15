@@ -4,7 +4,7 @@
 // wrapper around runTurn(); the same function runs headless in sims and, later,
 // on a server. THE ROUTER DECIDES TRANSITIONS — runTurn only applies them.
 
-import { route, Decision } from './router.js';
+import { route, Decision, resolveResistance } from './router.js';
 import {
   buildSystemPrompt,
   buildSummaryPrompt,
@@ -80,10 +80,38 @@ export async function runTurn(state, history, userText) {
         overflow: !!ev.flagOverflow,
         avoidance: !!ev.flagAvoidance,
         flight: !!ev.flagFlight,
+        cynicism: !!ev.flagCynicism,
         contradiction: !!ev.flagContradiction,
       },
     },
   };
+
+  // Resistance protocol: Router sets aperture based on detected signals.
+  const resistance = resolveResistance(nextState.meta.signals);
+  const modelAperture = ev.questionAperture ?? 'open';
+  nextState = {
+    ...nextState,
+    meta: {
+      ...nextState.meta,
+      resistanceFlag: resistance.resistanceFlag,
+      questionAperture: resistance.questionAperture ?? modelAperture,
+    },
+  };
+
+  // Save drifted topics when flight is detected (may contain useful info).
+  if (ev.flagFlight && ev.driftedTopic) {
+    const threads = nextState.meta.savedThreads ?? [];
+    const already = threads.some((t) => t.topic === ev.driftedTopic);
+    if (!already) {
+      nextState = {
+        ...nextState,
+        meta: {
+          ...nextState.meta,
+          savedThreads: [...threads, { topic: ev.driftedTopic, stage }],
+        },
+      };
+    }
+  }
 
   // Stage 6: accumulate generated alternatives into the basket (deduped).
   if (ev.alternatives?.length) {

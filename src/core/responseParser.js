@@ -30,7 +30,10 @@ export function parseResponse(raw) {
       flagAvoidance: !!evaluation.flag_avoidance,
       flagFlight: !!evaluation.flag_flight,
       flagOverflow: !!evaluation.flag_overflow,
+      flagCynicism: !!evaluation.flag_cynicism,
       flagContradiction: !!evaluation.flag_contradiction,
+      driftedTopic:
+        typeof evaluation.drifted_topic === 'string' ? evaluation.drifted_topic.trim() || null : null,
       exhausted: !!evaluation.exhausted,
       newInfo: evaluation.new_info !== false, // default true
       questionAperture: evaluation.question_aperture ?? null,

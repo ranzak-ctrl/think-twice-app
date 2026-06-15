@@ -1,5 +1,6 @@
 import personaMd from '../content/prompts/persona.md?raw';
 import evaluatorMd from '../content/prompts/evaluator.md?raw';
+import resistanceMd from '../content/prompts/resistance.md?raw';
 import summaryMd from '../content/prompts/summary.md?raw';
 import boardMd from '../content/prompts/board.md?raw';
 import stage1Md from '../content/prompts/agents/stage1-intake.md?raw';
@@ -29,6 +30,7 @@ export function buildSystemPrompt({ stage, state }) {
 
   return [
     personaMd,
+    resistanceMd,
     stagePrompt,
     evaluatorMd,
     '## הנחיות אסורות\n' + FORBIDDEN_PATTERNS.join('\n'),
@@ -78,10 +80,15 @@ export function formatHistory(history) {
 
 function summarizeState(state) {
   const { coverage, meta, facts, thoughts, feelings, reactions } = state;
+  const threads = (meta.savedThreads ?? []).length
+    ? `\nsaved_threads: ${JSON.stringify(meta.savedThreads)}`
+    : '';
   return `## STATE SUMMARY (hidden from user)
 stage: ${meta.currentStage}
 questions_this_stage: ${meta.questionCount}
 saturation: ${meta.saturationCount}
+question_aperture: ${meta.questionAperture}
+resistance: ${meta.resistanceFlag || 'none'}${threads}
 facts: ${JSON.stringify(facts)}
 thoughts: ${JSON.stringify(thoughts)}
 feelings: ${JSON.stringify(feelings)}
