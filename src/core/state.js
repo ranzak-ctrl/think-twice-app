@@ -37,6 +37,7 @@ export function createState() {
       awaitingConfirmation: false,
       safetyFlag: false,
       sessionComplete: false,
+      usage: { inputTokens: 0, outputTokens: 0, calls: 0 }, // real-API token tally
       kpi: {
         emotionIntensityStage3: null,
         emotionIntensityStage5: null,

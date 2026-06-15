@@ -16,6 +16,18 @@ import { preCheck } from '../safety/index.js';
 
 const PARSE_FALLBACK = 'שגיאה בעיבוד התשובה. נסה שוב.';
 
+const EMPTY_USAGE = { inputTokens: 0, outputTokens: 0, calls: 0 };
+
+// Accumulate a model call's token usage (real API only; the mock returns none).
+function addUsage(acc, u) {
+  if (!u) return acc;
+  return {
+    inputTokens: acc.inputTokens + (u.input_tokens ?? 0),
+    outputTokens: acc.outputTokens + (u.output_tokens ?? 0),
+    calls: acc.calls + 1,
+  };
+}
+
 // Process a single user message against (state, history).
 // Returns { nextState, reply, decision } — the caller owns the history array.
 export async function runTurn(state, history, userText) {
@@ -32,11 +44,13 @@ export async function runTurn(state, history, userText) {
   const stage = state.meta.currentStage;
   const currentHistory = [...history, { role: 'user', content: userText }];
   const messages = formatHistory(currentHistory);
+  let usage = state.meta.usage ?? EMPTY_USAGE;
   const result = await complete({
     stage,
     systemPrompt: buildSystemPrompt({ stage, state }),
     messages,
   });
+  usage = addUsage(usage, result.usage);
 
   let nextState = { ...state };
   const ev = result.evaluation ?? {};
@@ -125,6 +139,7 @@ export async function runTurn(state, history, userText) {
       messages,
       mode: 'summary',
     });
+    usage = addUsage(usage, summaryResult.usage);
     reply =
       (summaryResult.ok && summaryResult.message) ||
       'בוא נוודא שהבנתי נכון — עברנו על מה שקרה עד כאן. זה מדויק?';
@@ -145,6 +160,7 @@ export async function runTurn(state, history, userText) {
         stage7: { ...nextState.coverage.stage7, board_presented: 2 },
       },
     };
+    usage = addUsage(usage, boardResult.usage);
     reply = (boardResult.ok && boardResult.message) || 'הנה האפשרויות שאספנו. במה אתה בוחר?';
   }
 
@@ -169,5 +185,6 @@ export async function runTurn(state, history, userText) {
     nextState = { ...nextState, meta: { ...nextState.meta, sessionComplete: true } };
   }
 
+  nextState = { ...nextState, meta: { ...nextState.meta, usage } };
   return { nextState, reply, decision: decision.decision };
 }

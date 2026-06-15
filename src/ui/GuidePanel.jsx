@@ -18,6 +18,19 @@ const SLOT_COLOR = (v) => {
   return '#aaa';
 };
 
+// Sonnet 4.6 pricing (USD per 1M tokens); the ILS rate is approximate.
+const USD_PER_M_INPUT = 3;
+const USD_PER_M_OUTPUT = 15;
+const ILS_PER_USD = 3.7;
+
+function formatCost(usage) {
+  if (!usage || !usage.calls) return '—';
+  const usd =
+    (usage.inputTokens / 1e6) * USD_PER_M_INPUT +
+    (usage.outputTokens / 1e6) * USD_PER_M_OUTPUT;
+  return `$${usd.toFixed(4)} (≈ ${(usd * ILS_PER_USD).toFixed(2)} ₪)`;
+}
+
 export default function GuidePanel({ state }) {
   const { coverage, meta, facts, thoughts, feelings, reactions } = state;
 
@@ -50,6 +63,14 @@ export default function GuidePanel({ state }) {
         <SignalRow label="מוצף" on={meta.signals?.overflow} acute />
         <SignalRow label="הימנעות" on={meta.signals?.avoidance} />
         <SignalRow label="בריחה" on={meta.signals?.flight} />
+      </Section>
+
+      {/* Token / cost meter — real-API usage this session (display only) */}
+      <Section title="עלות (Sonnet 4.6)">
+        <Row label="קריאות API" value={meta.usage?.calls ?? 0} />
+        <Row label="input tokens" value={(meta.usage?.inputTokens ?? 0).toLocaleString()} />
+        <Row label="output tokens" value={(meta.usage?.outputTokens ?? 0).toLocaleString()} />
+        <Row label="עלות מצטברת" value={formatCost(meta.usage)} />
       </Section>
 
       {/* Coverage scorecard */}

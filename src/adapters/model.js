@@ -212,7 +212,7 @@ export async function complete({ stage, systemPrompt, messages, mode }) {
 
     const data = await res.json();
     const raw = data.content?.[0]?.text ?? '';
-    return parseResponse(raw);
+    return { ...parseResponse(raw), usage: data.usage ?? null };
   } catch (err) {
     console.error('Network error:', err);
     return { ok: false, error: err.message, message: 'בעיית תקשורת. בדוק חיבור לאינטרנט.', evaluation: null };
