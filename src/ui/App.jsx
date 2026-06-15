@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import Chat from './Chat.jsx';
 import GuidePanel from './GuidePanel.jsx';
-import { createState, exportState, importState } from '../core/state.js';
+import { createState, importState } from '../core/state.js';
 import { confirmAndAdvance, rejectConfirmation } from '../core/router.js';
 import { runTurn } from '../core/session.js';
 
@@ -51,8 +51,10 @@ export default function App() {
   }, []);
 
   const handleExport = () => {
-    const json = exportState(state);
-    const blob = new Blob([json], { type: 'application/json' });
+    // Full session: the transcript (history) + the StateDocument. The
+    // /export-conversation command turns this file into a Drive .docx.
+    const payload = { exportedAt: new Date().toISOString(), history, state };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -67,9 +69,15 @@ export default function App() {
     const reader = new FileReader();
     reader.onload = (ev) => {
       try {
-        const imported = importState(ev.target.result);
-        setState(imported);
-        addMessage('assistant', 'המשך מהנקודה שעצרנו. מה היה לנו?');
+        const raw = ev.target.result;
+        setState(importState(raw));
+        // Restore the transcript too, if the export carried it (faithful re-entry).
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed.history) && parsed.history.length) {
+          setHistory(parsed.history);
+        } else {
+          addMessage('assistant', 'המשך מהנקודה שעצרנו. מה היה לנו?');
+        }
       } catch {
         alert('קובץ לא תקין.');
       }

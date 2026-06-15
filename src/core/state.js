@@ -109,9 +109,11 @@ export function exportState(state) {
 
 export function importState(json) {
   const parsed = JSON.parse(json);
-  // Basic schema guard — must have coverage and meta.
-  if (!parsed.coverage || !parsed.meta) {
+  // New exports wrap the document as { exportedAt, history, state }; older
+  // exports are the StateDocument itself.
+  const state = parsed.state ?? parsed;
+  if (!state.coverage || !state.meta) {
     throw new Error('Invalid state document: missing coverage or meta');
   }
-  return parsed;
+  return state;
 }
