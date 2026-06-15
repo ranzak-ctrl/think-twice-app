@@ -3,6 +3,7 @@ import Chat from './Chat.jsx';
 import GuidePanel from './GuidePanel.jsx';
 import { createState, importState } from '../core/state.js';
 import { confirmAndAdvance, rejectConfirmation } from '../core/router.js';
+import { signpostForStage } from '../content/signposting.js';
 import { runTurn } from '../core/session.js';
 
 const OPENING_MESSAGE = {
@@ -41,8 +42,12 @@ export default function App() {
   );
 
   const handleConfirm = useCallback(() => {
-    setState((s) => confirmAndAdvance(s));
-    addMessage('assistant', 'מעולה. נמשיך.');
+    setState((s) => {
+      const next = confirmAndAdvance(s);
+      const msg = signpostForStage(next.meta.currentStage);
+      addMessage('assistant', msg);
+      return next;
+    });
   }, []);
 
   const handleReject = useCallback(() => {
