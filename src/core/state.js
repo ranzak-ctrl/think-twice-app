@@ -42,7 +42,10 @@ export function createState() {
         emotionIntensityStage3: null,
         emotionIntensityStage5: null,
         decisionType: null,    // 'sharp' | 'structured_deferral' | 'vague'
-        differsFromAutomatic: null,
+        differsFromAutomatic: null, // does the decision differ from the gut reaction?
+        selfRefs: 0,           // running count of first-person markers (יחס אני/הוא)
+        otherRefs: 0,          // running count of third-person markers
+        questionsPerStage: {}, // { stage1: n, ... } recorded as stages close
       },
     },
   };

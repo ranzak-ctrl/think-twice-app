@@ -40,6 +40,10 @@ export function parseResponse(raw) {
       alternatives: Array.isArray(evaluation.alternatives) ? evaluation.alternatives : [],
       board: Array.isArray(evaluation.board) ? evaluation.board : [],
       decisionType: evaluation.decision_type ?? null, // 'sharp' | 'structured_deferral' | 'vague'
+      differsFromAutomatic:
+        typeof evaluation.differs_from_automatic === 'boolean'
+          ? evaluation.differs_from_automatic
+          : null, // stage 7 — does the chosen decision differ from the automatic reaction?
       mergeAttempt: evaluation.merge_attempt ?? null, // 'real' | 'avoidance' | null (stage 7)
       emotionIntensity:
         typeof evaluation.emotion_intensity === 'number' ? evaluation.emotion_intensity : null,

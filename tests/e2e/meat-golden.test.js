@@ -29,10 +29,11 @@ describe('Meat golden script — end to end', () => {
         state = confirmAndAdvance(state);
         continue;
       }
-      const { nextState, reply } = await runTurn(state, history, 'ok');
+      const userText = 'אני לא יודע מה לעשות';
+      const { nextState, reply } = await runTurn(state, history, userText);
       history = [
         ...history,
-        { role: 'user', content: 'ok' },
+        { role: 'user', content: userText },
         { role: 'assistant', content: reply },
       ];
       state = nextState;
@@ -45,5 +46,16 @@ describe('Meat golden script — end to end', () => {
     expect(state.coverage.stage7.package_test).toBe(2);
     // The board was synthesised and stored by code (not printed by the model).
     expect(state.board.length).toBeGreaterThan(0);
+
+    // KPIs recorded across the full interview (dev-plan §155).
+    const { kpi } = state.meta;
+    expect(kpi.emotionIntensityStage3).toBe(8); // stage-3 baseline
+    expect(kpi.emotionIntensityStage5).toBe(4); // re-measured at stage 5 → delta 4
+    expect(kpi.decisionType).toBe('sharp');
+    expect(kpi.differsFromAutomatic).toBe(true);
+    expect(kpi.selfRefs).toBeGreaterThan(0); // "אני" counted each turn
+    // Per-stage question counts captured as each stage closed (1–6 + final 7).
+    expect(Object.keys(kpi.questionsPerStage)).toContain('stage1');
+    expect(kpi.questionsPerStage.stage7).toBeGreaterThanOrEqual(0);
   });
 });

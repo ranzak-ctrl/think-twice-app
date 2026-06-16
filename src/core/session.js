@@ -12,6 +12,7 @@ import {
   formatHistory,
 } from './promptBuilder.js';
 import { complete } from '../adapters/model.js';
+import { countSelfOther } from './kpi.js';
 import { preCheck } from '../safety/index.js';
 
 const PARSE_FALLBACK = 'שגיאה בעיבוד התשובה. נסה שוב.';
@@ -86,6 +87,20 @@ export async function runTurn(state, history, userText) {
     },
   };
 
+  // Self/other reference ratio KPI — accumulate over the user's words this turn.
+  const refs = countSelfOther(userText);
+  nextState = {
+    ...nextState,
+    meta: {
+      ...nextState.meta,
+      kpi: {
+        ...nextState.meta.kpi,
+        selfRefs: (nextState.meta.kpi.selfRefs ?? 0) + refs.self,
+        otherRefs: (nextState.meta.kpi.otherRefs ?? 0) + refs.other,
+      },
+    },
+  };
+
   // Resistance protocol: Router sets aperture based on detected signals.
   const resistance = resolveResistance(nextState.meta.signals);
   const modelAperture = ev.questionAperture ?? 'open';
@@ -128,6 +143,17 @@ export async function runTurn(state, history, userText) {
     nextState = {
       ...nextState,
       meta: { ...nextState.meta, kpi: { ...nextState.meta.kpi, decisionType: ev.decisionType } },
+    };
+  }
+
+  // Stage 7: change measure (מדד שינוי) — did the decision diverge from the gut reaction?
+  if (typeof ev.differsFromAutomatic === 'boolean') {
+    nextState = {
+      ...nextState,
+      meta: {
+        ...nextState.meta,
+        kpi: { ...nextState.meta.kpi, differsFromAutomatic: ev.differsFromAutomatic },
+      },
     };
   }
 
@@ -210,7 +236,20 @@ export async function runTurn(state, history, userText) {
   }
 
   if (decision.decision === Decision.SESSION_COMPLETE) {
-    nextState = { ...nextState, meta: { ...nextState.meta, sessionComplete: true } };
+    nextState = {
+      ...nextState,
+      meta: {
+        ...nextState.meta,
+        sessionComplete: true,
+        kpi: {
+          ...nextState.meta.kpi,
+          questionsPerStage: {
+            ...nextState.meta.kpi.questionsPerStage,
+            stage7: nextState.meta.questionCount,
+          },
+        },
+      },
+    };
   }
 
   nextState = { ...nextState, meta: { ...nextState.meta, usage } };

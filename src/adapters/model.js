@@ -59,7 +59,12 @@ export const MOCK_RESPONSES = {
   },
   '3:1': {
     message: 'כמה חזק, מ-1 עד 10?',
-    evaluation: { slots: { emotion: 2, intensity: 2 }, new_info: true, exhausted: false },
+    evaluation: {
+      slots: { emotion: 2, intensity: 2 },
+      new_info: true,
+      exhausted: false,
+      emotion_intensity: 8,
+    },
   },
   '3:2': {
     message: 'מזכיר לך משהו מהעבר?',
@@ -91,7 +96,12 @@ export const MOCK_RESPONSES = {
   },
   '5:3': {
     message: 'כשאתה מסתכל על זה ככה — כמה חזק הרגש עכשיו, מ-1 עד 10?',
-    evaluation: { slots: { alt_formulation: 2, re_emotion: 2 }, new_info: false, exhausted: true },
+    evaluation: {
+      slots: { alt_formulation: 2, re_emotion: 2 },
+      new_info: false,
+      exhausted: true,
+      emotion_intensity: 4,
+    },
   },
 
   // Stage 6 — Alternatives
@@ -119,7 +129,13 @@ export const MOCK_RESPONSES = {
   },
   '7:2': {
     message: 'במה אתה בוחר?',
-    evaluation: { slots: { sharp_decision: 2 }, new_info: true, exhausted: false },
+    evaluation: {
+      slots: { sharp_decision: 2 },
+      new_info: true,
+      exhausted: false,
+      decision_type: 'sharp',
+      differs_from_automatic: true,
+    },
   },
   '7:3': {
     message: 'מה אתה מרוויח מהבחירה הזו, ומה אתה מוותר עליו?',

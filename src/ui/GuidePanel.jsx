@@ -1,6 +1,8 @@
 // Clinician debug panel — visible only in "guide mode".
 // Shows live StateDocument, Scorecard, Router decisions, KPIs.
 
+import { formatSelfOther } from '../core/kpi.js';
+
 const STAGE_NAMES = {
   1: 'עובדות',
   2: 'פרשנות',
@@ -118,6 +120,28 @@ export default function GuidePanel({ state }) {
           }
         />
         <Row label="סוג הכרעה" value={meta.kpi.decisionType ?? '—'} />
+        <Row
+          label="מדד שינוי (≠ אוטומט)"
+          value={
+            meta.kpi.differsFromAutomatic == null
+              ? '—'
+              : meta.kpi.differsFromAutomatic
+              ? 'כן'
+              : 'לא'
+          }
+        />
+        <Row
+          label="יחס אני/הוא"
+          value={formatSelfOther(meta.kpi.selfRefs ?? 0, meta.kpi.otherRefs ?? 0)}
+        />
+        {Object.keys(meta.kpi.questionsPerStage ?? {}).length > 0 && (
+          <Row
+            label="שאלות לשלב"
+            value={Object.entries(meta.kpi.questionsPerStage)
+              .map(([k, n]) => `${k.replace('stage', '')}:${n}`)
+              .join('  ')}
+          />
+        )}
       </Section>
     </div>
   );

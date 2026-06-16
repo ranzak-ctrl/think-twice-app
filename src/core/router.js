@@ -165,6 +165,14 @@ export function confirmAndAdvance(state) {
       awaitingConfirmation: false,
       questionCount: 0,
       saturationCount: 0,
+      // KPI: record the closing stage's question count before it resets.
+      kpi: {
+        ...meta.kpi,
+        questionsPerStage: {
+          ...(meta.kpi?.questionsPerStage ?? {}),
+          [`stage${meta.currentStage}`]: meta.questionCount,
+        },
+      },
     },
   };
 }
