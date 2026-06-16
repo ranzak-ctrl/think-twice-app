@@ -180,6 +180,25 @@ function mockComplete({ stage, mode }) {
   return { ...parseResponse(raw), raw };
 }
 
+// JSON-stability retry (dev-plan §148): the model occasionally returns prose or a
+// broken object. On a parse failure we show the model its own raw output and ask
+// for a clean object, up to MAX_ATTEMPTS total. HTTP/network errors fail fast — a
+// 4xx won't fix itself on resend. Token usage is summed across attempts so the
+// cost meter stays accurate even when a turn took more than one call.
+const MAX_ATTEMPTS = 3;
+const REPAIR_NUDGE =
+  'הפלט הקודם לא היה JSON תקין. החזר אך ורק אובייקט JSON יחיד בפורמט ' +
+  '{"message": "...", "evaluation": {...}} — בלי טקסט נוסף ובלי code fences.';
+
+function mergeUsage(acc, u) {
+  if (!u) return acc;
+  if (!acc) return { input_tokens: u.input_tokens ?? 0, output_tokens: u.output_tokens ?? 0 };
+  return {
+    input_tokens: (acc.input_tokens ?? 0) + (u.input_tokens ?? 0),
+    output_tokens: (acc.output_tokens ?? 0) + (u.output_tokens ?? 0),
+  };
+}
+
 export async function complete({ stage, systemPrompt, messages, mode }) {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   const model = import.meta.env.VITE_MODEL ?? 'claude-sonnet-4-6';
@@ -188,35 +207,61 @@ export async function complete({ stage, systemPrompt, messages, mode }) {
     return mockComplete({ stage, mode });
   }
 
-  try {
-    const res = await fetch('/api/anthropic/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-      },
-      body: JSON.stringify({
-        model,
-        max_tokens: 1024,
-        system: systemPrompt,
-        messages,
-      }),
-    });
+  let usage = null;
+  let attemptMessages = messages;
+  let lastFailure = null;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let res;
+    try {
+      res = await fetch('/api/anthropic/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages: attemptMessages,
+        }),
+      });
+    } catch (err) {
+      console.error('Network error:', err);
+      return { ok: false, error: err.message, message: 'בעיית תקשורת. בדוק חיבור לאינטרנט.', evaluation: null, usage };
+    }
 
     if (!res.ok) {
       const err = await res.text();
       console.error('Anthropic API error:', err);
-      return { ok: false, error: err, message: 'שגיאה בחיבור למודל. נסה שוב.', evaluation: null };
+      return { ok: false, error: err, message: 'שגיאה בחיבור למודל. נסה שוב.', evaluation: null, usage };
     }
 
     const data = await res.json();
+    usage = mergeUsage(usage, data.usage);
     const raw = data.content?.[0]?.text ?? '';
-    return { ...parseResponse(raw), usage: data.usage ?? null };
-  } catch (err) {
-    console.error('Network error:', err);
-    return { ok: false, error: err.message, message: 'בעיית תקשורת. בדוק חיבור לאינטרנט.', evaluation: null };
+    const parsed = parseResponse(raw);
+    if (parsed.ok) return { ...parsed, usage };
+
+    // Parse failed — feed the broken turn back with a repair nudge and retry.
+    lastFailure = parsed;
+    attemptMessages = [
+      ...attemptMessages,
+      { role: 'assistant', content: raw },
+      { role: 'user', content: REPAIR_NUDGE },
+    ];
   }
+
+  console.error('JSON parse failed after', MAX_ATTEMPTS, 'attempts:', lastFailure?.error);
+  return {
+    ok: false,
+    error: lastFailure?.error ?? 'parse_failed',
+    message: 'שגיאה בעיבוד התשובה. נסה שוב.',
+    evaluation: null,
+    usage,
+  };
 }
 
 export function resetMockCounters() {
