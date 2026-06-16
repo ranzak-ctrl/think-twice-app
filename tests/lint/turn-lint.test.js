@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MOCK_RESPONSES, MOCK_SUMMARIES } from '../../src/adapters/model.js';
+import { MOCK_RESPONSES, MOCK_SUMMARIES, SCENARIOS } from '../../src/adapters/model.js';
 import { FORBIDDEN_PATTERNS } from '../../src/content/forbidden.js';
 
 // --- Lint utilities ---
@@ -122,5 +122,30 @@ describe('mock summaries pass lint rules', () => {
     it(`stage ${stage}: max 3 sentences before question`, () => {
       expect(sentenceCountBeforeQuestion(message)).toBeLessThanOrEqual(3);
     });
+  }
+});
+
+// --- Other golden scripts: lint their distinct shown content (recaps + tails) ---
+
+describe('golden-script scenarios pass lint rules', () => {
+  for (const [name, sc] of Object.entries(SCENARIOS)) {
+    if (name === 'meat') continue; // covered above
+
+    for (const [stage, message] of Object.entries(sc.summaries)) {
+      it(`${name} summary ${stage}: no jargon, one question, ≤3 sentences`, () => {
+        expect(containsForbiddenJargon(message)).toBe(false);
+        expect(questionCount(message)).toBe(1);
+        expect(sentenceCountBeforeQuestion(message)).toBeLessThanOrEqual(3);
+      });
+    }
+
+    // Turns that override meat's message (extras like a vague→sharp tail).
+    for (const [key, response] of Object.entries(sc.responses)) {
+      if (response === MOCK_RESPONSES[key]) continue; // unchanged from meat
+      it(`${name} ${key}: no jargon, ≤1 question`, () => {
+        expect(containsForbiddenJargon(response.message)).toBe(false);
+        expect(questionCount(response.message)).toBeLessThanOrEqual(1);
+      });
+    }
   }
 });

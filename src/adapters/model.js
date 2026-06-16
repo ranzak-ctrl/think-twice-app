@@ -163,14 +163,135 @@ export const MOCK_BOARD = [
   { option: 'לא לעשות כלום ולהמשיך הלאה', pro: 'חוסך עימות', con: 'משאיר את זה פתוח בפנים' },
 ];
 
+// --- Additional golden scripts (dev-plan §131: 4 scripts reach a sharp close) ---
+// The probing questions above are story-agnostic, so each extra scenario REUSES
+// meat's proven slot mechanics and only swaps the shown content (stage recaps +
+// board), the closure type, and KPI flavour. This guards the pipeline against
+// regressions for differently-shaped interviews; true clinical golden transcripts
+// are validated against the live API (LLM-judge + Natali), not the mock.
+
+// Clone meat's responses, merging per-key evaluation overrides; `extras` adds
+// turns beyond meat's keys (e.g., a vague→sharp stage-7 tail).
+function buildResponses(evalOverrides = {}, extras = {}) {
+  const responses = {};
+  for (const [key, base] of Object.entries(MOCK_RESPONSES)) {
+    responses[key] = evalOverrides[key]
+      ? { message: base.message, evaluation: { ...base.evaluation, ...evalOverrides[key] } }
+      : base;
+  }
+  return { ...responses, ...extras };
+}
+
+// "חבר בא להתייעץ" — friend consults; user jumps in to fix. Sharp close.
+const FRIEND_SUMMARIES = {
+  1: 'בוא נוודא שהבנתי נכון — חבר בא להתייעץ, ואתה קפצת מיד לתת פתרון. זה מדויק?',
+  2: 'בוא נוודא שהבנתי נכון — הבנת את זה כאילו אתה חייב לתקן הכול בשבילו. זה מדויק?',
+  3: 'בוא נוודא שהבנתי נכון — עלתה אי-נוחות כשלא היה לך מה לתת. זה מדויק?',
+  4: 'בוא נוודא שהבנתי נכון — לקחת פיקוד על השיחה במקום להקשיב. זה מדויק?',
+  5: 'בוא נוודא שהבנתי נכון — ניסחת מה הוא בעצם ביקש, וזה ריכך את הלחץ. זה מדויק?',
+  6: 'בוא נוודא שהבנתי נכון — אספנו כמה דרכים להיות שם בשבילו, כולל פשוט להקשיב. זה מדויק?',
+};
+const FRIEND_BOARD = [
+  { option: 'להקשיב בלי לתת פתרון', pro: 'נותן לו מקום', con: 'דורש ריסון' },
+  { option: 'לשאול אותו מה הוא צריך ממך', pro: 'מדויק לצורך שלו', con: 'פחות אינטואיטיבי לך' },
+  { option: 'לשתף מניסיון שלך בקצרה', pro: 'אותנטי', con: 'עלול להחזיר את הפוקוס אליך' },
+];
+
+// "המורה אמר שאני בעייתי" — identity wound. Structured-deferral close.
+const TEACHER_SUMMARIES = {
+  1: 'בוא נוודא שהבנתי נכון — המורה אמר שאתה בעייתי, וזה תפס אותך לא מוכן. זה מדויק?',
+  2: 'בוא נוודא שהבנתי נכון — הבנת את זה כאילו יש בך משהו פגום. זה מדויק?',
+  3: 'בוא נוודא שהבנתי נכון — עלתה בושה חזקה, שהזכירה הערות מהעבר. זה מדויק?',
+  4: 'בוא נוודא שהבנתי נכון — נסגרת ולא הגבת באותו רגע. זה מדויק?',
+  5: 'בוא נוודא שהבנתי נכון — ניסחת מה אולי המורה ניסה לומר, והבושה התרככה מעט. זה מדויק?',
+  6: 'בוא נוודא שהבנתי נכון — אספנו כמה דרכים להגיב, כולל לא להגיב מיד. זה מדויק?',
+};
+const TEACHER_BOARD = [
+  { option: 'לבקש שיחה עם המורה', pro: 'מברר ישירות', con: 'חושף אותך' },
+  { option: 'לכתוב מה שאתה מרגיש ולחכות יומיים', pro: 'זמן להתבהר', con: 'דוחה את העימות' },
+  { option: 'לשתף מישהו קרוב לפני שתחליט', pro: 'פרספקטיבה נוספת', con: 'תלוי בזמינות שלו' },
+];
+
+// "חברה אמרה שאין לה זמן" — rejection sensitivity. Vague→sharp close (proves the
+// vague guard end to end: the session does NOT close on a vague answer even when
+// both closing slots are at 2).
+const BUSY_SUMMARIES = {
+  1: 'בוא נוודא שהבנתי נכון — חברה אמרה שאין לה זמן, וזה צרב. זה מדויק?',
+  2: 'בוא נוודא שהבנתי נכון — הבנת את זה כאילו אתה לא מספיק חשוב לה. זה מדויק?',
+  3: 'בוא נוודא שהבנתי נכון — עלתה דחייה חזקה, מוכרת ממקומות אחרים. זה מדויק?',
+  4: 'בוא נוודא שהבנתי נכון — הגבת בריחוק פתאומי ממנה. זה מדויק?',
+  5: 'בוא נוודא שהבנתי נכון — ניסחת מה אולי עבר עליה, והעקיצה פחתה. זה מדויק?',
+  6: 'בוא נוודא שהבנתי נכון — אספנו כמה דרכים להגיב, כולל לתת לזה לנוח. זה מדויק?',
+};
+const BUSY_BOARD = [
+  { option: 'לומר לה ישירות שזה פגע', pro: 'כן ופתוח', con: 'חושף פגיעוּת' },
+  { option: 'להציע זמן אחר להיפגש', pro: 'מעשי', con: 'לא נוגע ברגש' },
+  { option: 'לתת לזה לנוח כמה ימים', pro: 'מצנן', con: 'משאיר אי-ודאות' },
+];
+
+const SCENARIOS = {
+  meat: { responses: MOCK_RESPONSES, summaries: MOCK_SUMMARIES, board: MOCK_BOARD },
+  friend: {
+    responses: buildResponses({
+      '3:1': { emotion_intensity: 6 },
+      '5:3': { emotion_intensity: 3 },
+      '7:2': { differs_from_automatic: true },
+    }),
+    summaries: FRIEND_SUMMARIES,
+    board: FRIEND_BOARD,
+  },
+  teacher: {
+    responses: buildResponses({
+      '7:2': { decision_type: 'structured_deferral', differs_from_automatic: true },
+    }),
+    summaries: TEACHER_SUMMARIES,
+    board: TEACHER_BOARD,
+  },
+  busyFriend: {
+    responses: buildResponses(
+      {
+        '3:1': { emotion_intensity: 9 },
+        '5:3': { emotion_intensity: 5 },
+        '7:2': { decision_type: 'vague', differs_from_automatic: null },
+        '7:3': { decision_type: 'vague' },
+      },
+      {
+        // Tail turn: the user finally sharpens, so the session can close.
+        '7:4': {
+          message: 'אז כשאתה אומר את זה ברור — במה אתה בוחר?',
+          evaluation: {
+            slots: {},
+            new_info: false,
+            decision_type: 'sharp',
+            differs_from_automatic: true,
+          },
+        },
+      }
+    ),
+    summaries: BUSY_SUMMARIES,
+    board: BUSY_BOARD,
+  },
+};
+
+let activeScenario = 'meat';
+
+// Test-only: select which golden script the mock plays (default 'meat').
+export function setMockScenario(name) {
+  activeScenario = SCENARIOS[name] ? name : 'meat';
+}
+
+export { SCENARIOS };
+
 const turnCounters = {};
 
 function mockComplete({ stage, mode }) {
+  const sc = SCENARIOS[activeScenario] ?? SCENARIOS.meat;
+
   // Summary mode — Router decided to transition; return the stage recap and
   // do NOT advance the turn counter (no probing turn was consumed).
   if (mode === 'summary') {
     const message =
-      MOCK_SUMMARIES[stage] ??
+      sc.summaries[stage] ??
       'בוא נוודא שהבנתי נכון — עברנו על עיקרי הדברים בשלב הזה. זה מדויק?';
     const raw = JSON.stringify({ message });
     return { ...parseResponse(raw), raw };
@@ -180,13 +301,13 @@ function mockComplete({ stage, mode }) {
   if (mode === 'board') {
     const raw = JSON.stringify({
       message: 'הנה האפשרויות שאספנו, במילים שלך. במה אתה בוחר?',
-      evaluation: { board: MOCK_BOARD },
+      evaluation: { board: sc.board },
     });
     return { ...parseResponse(raw), raw };
   }
 
   const key = `${stage}:${turnCounters[stage] ?? 0}`;
-  const response = MOCK_RESPONSES[key] ?? {
+  const response = sc.responses[key] ?? {
     message: '[Mock: no scripted response for this turn]',
     evaluation: { slots: {}, new_info: false, exhausted: false },
   };
