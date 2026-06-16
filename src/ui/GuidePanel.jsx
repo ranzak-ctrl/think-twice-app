@@ -20,6 +20,17 @@ const SLOT_COLOR = (v) => {
   return '#aaa';
 };
 
+// Router decision codes → Hebrew labels for the guide-mode trail.
+const DECISION_LABELS = {
+  stay: 'נשאר',
+  requestConfirmation: 'מבקש אישור סיכום',
+  advance: 'מעבר שלב',
+  reopen: 'פתיחה מחדש',
+  showBoard: 'הצגת לוח',
+  safetyStop: 'עצירת בטיחות',
+  sessionComplete: 'סיום סשן',
+};
+
 // Sonnet 4.6 pricing (USD per 1M tokens); the ILS rate is approximate.
 const USD_PER_M_INPUT = 3;
 const USD_PER_M_OUTPUT = 15;
@@ -66,6 +77,25 @@ export default function GuidePanel({ state }) {
         <SignalRow label="הימנעות" on={meta.signals?.avoidance} />
         <SignalRow label="בריחה" on={meta.signals?.flight} />
         <SignalRow label="ציניות" on={meta.signals?.cynicism} />
+      </Section>
+
+      {/* Router decision trail — newest first (deterministic transitions) */}
+      <Section title="החלטות Router">
+        {(meta.decisionLog ?? []).length === 0 ? (
+          <Row label="—" value="" />
+        ) : (
+          [...meta.decisionLog].reverse().map((d, i) => (
+            <div
+              key={i}
+              style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}
+            >
+              <span style={{ color: '#666' }}>
+                שלב {d.stage} {d.reason ? `· ${d.reason}` : ''}
+              </span>
+              <span style={{ fontWeight: 'bold' }}>{DECISION_LABELS[d.decision] ?? d.decision}</span>
+            </div>
+          ))
+        )}
       </Section>
 
       {/* Token / cost meter — real-API usage this session (display only) */}

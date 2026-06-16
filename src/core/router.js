@@ -2,6 +2,8 @@
 // Input: StateDocument. Output: RouterDecision.
 // THE LLM NEVER CALLS THIS. This module decides all stage transitions.
 
+import { appendDecisionLog } from './state.js';
+
 export const Decision = {
   STAY: 'stay',
   REQUEST_CONFIRMATION: 'requestConfirmation', // show summary, wait for user
@@ -173,6 +175,11 @@ export function confirmAndAdvance(state) {
           [`stage${meta.currentStage}`]: meta.questionCount,
         },
       },
+      decisionLog: appendDecisionLog(meta.decisionLog, {
+        decision: Decision.ADVANCE,
+        reason: 'confirmed',
+        stage: meta.currentStage,
+      }),
     },
   };
 }

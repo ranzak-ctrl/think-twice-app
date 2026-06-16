@@ -33,6 +33,7 @@ export function createState() {
       // for now — the Router does NOT read these (see docs/questions-for-natali.md §1).
       signals: { overflow: false, avoidance: false, flight: false, cynicism: false, contradiction: false },
       savedThreads: [],        // topics user drifted to — may contain useful info
+      decisionLog: [],         // recent Router decisions (guide mode) — capped
       mergeAttempt: null,      // stage-7 either-or: 'real' | 'avoidance' | null (transient)
       awaitingConfirmation: false,
       safetyFlag: false,
@@ -49,6 +50,12 @@ export function createState() {
       },
     },
   };
+}
+
+// Router decision log (guide mode) — keep the last few decisions for the panel.
+export const DECISION_LOG_MAX = 8;
+export function appendDecisionLog(log, entry) {
+  return [...(log ?? []), entry].slice(-DECISION_LOG_MAX);
 }
 
 // Immutable update helpers — always return a new state object.

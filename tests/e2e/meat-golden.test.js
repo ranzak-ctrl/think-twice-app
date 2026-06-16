@@ -57,5 +57,13 @@ describe('Meat golden script — end to end', () => {
     // Per-stage question counts captured as each stage closed (1–6 + final 7).
     expect(Object.keys(kpi.questionsPerStage)).toContain('stage1');
     expect(kpi.questionsPerStage.stage7).toBeGreaterThanOrEqual(0);
+
+    // Router decision trail recorded for guide mode (capped, newest last).
+    const log = state.meta.decisionLog;
+    expect(log.length).toBeGreaterThan(0);
+    expect(log.length).toBeLessThanOrEqual(8);
+    expect(log[log.length - 1].decision).toBe('sessionComplete');
+    expect(log.some((d) => d.decision === 'advance')).toBe(true);
+    expect(log.some((d) => d.decision === 'showBoard')).toBe(true);
   });
 });

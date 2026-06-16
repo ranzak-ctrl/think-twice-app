@@ -13,6 +13,7 @@ import {
 } from './promptBuilder.js';
 import { complete } from '../adapters/model.js';
 import { countSelfOther } from './kpi.js';
+import { appendDecisionLog } from './state.js';
 import { preCheck } from '../safety/index.js';
 
 const PARSE_FALLBACK = 'שגיאה בעיבוד התשובה. נסה שוב.';
@@ -36,7 +37,18 @@ export async function runTurn(state, history, userText) {
   const check = preCheck(userText);
   if (!check.safe) {
     return {
-      nextState: { ...state, meta: { ...state.meta, safetyFlag: true } },
+      nextState: {
+        ...state,
+        meta: {
+          ...state.meta,
+          safetyFlag: true,
+          decisionLog: appendDecisionLog(state.meta.decisionLog, {
+            decision: Decision.SAFETY_STOP,
+            reason: 'acute_distress',
+            stage: state.meta.currentStage,
+          }),
+        },
+      },
       reply: check.stopMessage,
       decision: Decision.SAFETY_STOP,
     };
@@ -251,6 +263,19 @@ export async function runTurn(state, history, userText) {
       },
     };
   }
+
+  // Record the decision for the guide-mode trail.
+  nextState = {
+    ...nextState,
+    meta: {
+      ...nextState.meta,
+      decisionLog: appendDecisionLog(nextState.meta.decisionLog, {
+        decision: decision.decision,
+        reason: decision.reason ?? '',
+        stage,
+      }),
+    },
+  };
 
   nextState = { ...nextState, meta: { ...nextState.meta, usage } };
   return { nextState, reply, decision: decision.decision };
