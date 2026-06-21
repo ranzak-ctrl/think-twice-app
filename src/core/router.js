@@ -50,8 +50,9 @@ export function evaluateStage(coverage, stage) {
 
   const atTwo = cores.filter((k) => slots[k] === 2).length;
   const softThresholdMet = allAtLeastOne && atTwo / cores.length >= SOFT_THRESHOLD;
+  const fullCoverage = atTwo === cores.length;
 
-  return { allAtLeastOne, softThresholdMet, missingSlots };
+  return { allAtLeastOne, softThresholdMet, fullCoverage, missingSlots };
 }
 
 function dependenciesMet(coverage, targetStage) {
@@ -113,11 +114,13 @@ export function route(state) {
   // Saturation
   const saturated = saturationCount >= SATURATION_LIMIT;
 
-  // Evaluate stage coverage
-  const { softThresholdMet } = evaluateStage(coverage, currentStage);
+  // Evaluate stage coverage. Full coverage (every core slot at 2) advances on its
+  // own — the stage's job is done, so we don't wait for a saturation signal that a
+  // rich, detailed story may never produce (see docs/questions-for-natali.md §1).
+  const { softThresholdMet, fullCoverage } = evaluateStage(coverage, currentStage);
 
   const readyToAdvance =
-    (softThresholdMet && saturated) || loadGuardTriggered;
+    fullCoverage || (softThresholdMet && saturated) || loadGuardTriggered;
 
   if (readyToAdvance && currentStage < 7) {
     const nextStage = currentStage + 1;
@@ -127,7 +130,7 @@ export function route(state) {
     return {
       decision: Decision.REQUEST_CONFIRMATION,
       nextStage,
-      reason: loadGuardTriggered ? 'load_guard' : 'exhausted',
+      reason: loadGuardTriggered ? 'load_guard' : saturated ? 'exhausted' : 'full_coverage',
     };
   }
 

@@ -52,10 +52,13 @@ describe('Stage 1 → 2 transition', () => {
     expect(r.nextStage).toBe(2);
   });
 
-  it('stays when saturation not met even with full coverage', () => {
+  it('advances on full coverage even without saturation', () => {
     let s = createState();
-    s = fillStage(s, 1);
-    expect(route(s).decision).toBe(Decision.STAY);
+    s = fillStage(s, 1); // every core slot at 2 → stage is done
+    const r = route(s);
+    expect(r.decision).toBe(Decision.REQUEST_CONFIRMATION);
+    expect(r.nextStage).toBe(2);
+    expect(r.reason).toBe('full_coverage');
   });
 
   it('stays when coverage not met even with saturation', () => {
@@ -89,9 +92,10 @@ describe('Soft threshold', () => {
 
 // ─── 4. Load guard ───────────────────────────────────────────────────────────
 describe('Load guard', () => {
-  it('triggers at 20 questions even without saturation', () => {
+  it('triggers at 20 questions on incomplete, unsaturated coverage', () => {
     let s = createState();
-    s = fillStage(s, 1);
+    // Partial coverage (not full, not saturated) so only the load guard can fire.
+    s = { ...s, coverage: { ...s.coverage, stage1: { ...s.coverage.stage1, trigger: 1 } } };
     s = withQuestionCount(s, 20);
     const r = route(s);
     expect(r.decision).toBe(Decision.REQUEST_CONFIRMATION);
@@ -102,7 +106,8 @@ describe('Load guard', () => {
     let s = createState();
     s = { ...s, meta: { ...s.meta, currentStage: 5, questionCount: 15 } };
     s = fillStage(s, 2); // satisfy stage-5 dependency
-    s = fillStage(s, 5);
+    // Partial stage-5 coverage so only the load guard can fire (not full coverage).
+    s = { ...s, coverage: { ...s.coverage, stage5: { ...s.coverage.stage5, perspective: 1 } } };
     const r = route(s);
     expect(r.decision).toBe(Decision.REQUEST_CONFIRMATION);
     expect(r.reason).toBe('load_guard');
