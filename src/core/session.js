@@ -13,7 +13,7 @@ import {
 } from './promptBuilder.js';
 import { complete } from '../adapters/model.js';
 import { countSelfOther } from './kpi.js';
-import { appendDecisionLog } from './state.js';
+import { appendDecisionLog, recordGapObservation } from './state.js';
 import { preCheck } from '../safety/index.js';
 
 const PARSE_FALLBACK = 'שגיאה בעיבוד התשובה. נסה שוב.';
@@ -56,6 +56,7 @@ export async function runTurn(state, history, userText) {
 
   const stage = state.meta.currentStage;
   const currentHistory = [...history, { role: 'user', content: userText }];
+  const turn = currentHistory.filter((m) => m.role === 'user').length; // monotonic turn index
   const messages = formatHistory(currentHistory);
   let usage = state.meta.usage ?? EMPTY_USAGE;
   const result = await complete({
@@ -98,6 +99,12 @@ export async function runTurn(state, history, userText) {
       },
     },
   };
+
+  // Gap-management: fold each consistency observation into the gap records
+  // (behind the scenes — the user never sees this). state.js owns the lifecycle.
+  for (const obs of ev.gapObservations ?? []) {
+    nextState = recordGapObservation(nextState, obs, turn);
+  }
 
   // Self/other reference ratio KPI — accumulate over the user's words this turn.
   const refs = countSelfOther(userText);

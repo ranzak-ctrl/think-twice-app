@@ -49,6 +49,30 @@ export function parseResponse(raw) {
         typeof evaluation.emotion_intensity === 'number' ? evaluation.emotion_intensity : null,
       decision:
         evaluation.decision && typeof evaluation.decision === 'object' ? evaluation.decision : null,
+      gapObservations: parseGapObservations(evaluation),
     },
   };
+}
+
+// Parse the model's gap observations (consistency measure). Each entry:
+// { target, dimension, level 1..10, note }. Under-specified entries are dropped;
+// level is clamped. docs/gap-management-implementation.md §3.2.
+function parseGapObservations(evaluation) {
+  const raw = evaluation.gap_observations;
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(
+      (o) =>
+        o &&
+        typeof o.target === 'string' &&
+        o.target.trim() &&
+        typeof o.level === 'number' &&
+        !Number.isNaN(o.level),
+    )
+    .map((o) => ({
+      target: o.target.trim(),
+      dimension: typeof o.dimension === 'string' ? o.dimension : 'factual',
+      level: Math.min(10, Math.max(1, Math.round(o.level))),
+      note: typeof o.note === 'string' ? o.note.trim() : '',
+    }));
 }

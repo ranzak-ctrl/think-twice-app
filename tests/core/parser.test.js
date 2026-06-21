@@ -58,3 +58,37 @@ describe('parseResponse — alternatives & board', () => {
     expect(r.evaluation.decision).toBeNull();
   });
 });
+
+describe('parseResponse — gap observations', () => {
+  it('parses and clamps gap_observations', () => {
+    const raw = JSON.stringify({
+      message: 'מתי הוא התקשר?',
+      evaluation: {
+        gap_observations: [
+          { target: 'stage1.timeline', dimension: 'factual', level: 2, note: 'סדר הפוך' },
+          { target: 'topic:חיסכון', level: 0 },
+        ],
+      },
+    });
+    expect(parseResponse(raw).evaluation.gapObservations).toEqual([
+      { target: 'stage1.timeline', dimension: 'factual', level: 2, note: 'סדר הפוך' },
+      { target: 'topic:חיסכון', dimension: 'factual', level: 1, note: '' },
+    ]);
+  });
+
+  it('drops entries without a target or numeric level', () => {
+    const raw = JSON.stringify({
+      message: 'שלום?',
+      evaluation: { gap_observations: [{ level: 3 }, { target: 'x', level: 'y' }, { target: '  ' }] },
+    });
+    expect(parseResponse(raw).evaluation.gapObservations).toEqual([]);
+  });
+
+  it('defaults gapObservations to an empty array when absent or non-array', () => {
+    expect(parseResponse(JSON.stringify({ message: 'a' })).evaluation.gapObservations).toEqual([]);
+    expect(
+      parseResponse(JSON.stringify({ message: 'a', evaluation: { gap_observations: 'x' } }))
+        .evaluation.gapObservations,
+    ).toEqual([]);
+  });
+});

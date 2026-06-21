@@ -13,7 +13,7 @@
     "flag_flight": false,
     "flag_overflow": false,
     "flag_cynicism": false,
-    "flag_contradiction": false,
+    "gap_observations": [],
     "drifted_topic": null,
     "new_info": true,
     "exhausted": false,
@@ -37,7 +37,8 @@
 - flag_flight: true אם המשתמש נודד לנושאים אחרים
 - flag_overflow: true אם המשתמש מוצף רגשית
 - flag_cynicism: true אם המשתמש ציני או תוקפני כלפי התהליך/המראיין
-- flag_contradiction: true אם המידע החדש סותר עובדה קודמת
+
+**gap_observations:** מדד עקביות מאחורי-הקלעים (לא דגל). לכל יעד שנגעת בו ויש בו אי-הלימה מול מה שכבר נמסר — דווח רשומה: `{ "target": "...", "dimension": "factual|emotional|cognitive", "level": <1–10>, "note": "..." }`. ברירת המחדל **לא לדווח** (יעד עקבי אינו נכנס לרשימה). הסולם: 10 = מלא ועקבי · 5 = עמום · 1 = סתירה ישירה. היעד = מזהה slot שאתה מכיר (למשל `stage1.timeline`) או תווית נושא/יישות (`topic:חיסכון` / `entity:החבר`). **מאחורי הקלעים בלבד — לעולם אל תשקף את הפער למשתמש ואל תשנה את אופן השאלה בגללו.** הסתייגות קהל-היעד (הפרעת קשב): שכחה או פיזור אינם סתירה — דווח ציון נמוך רק על אי-הלימה ממשית.
 
 **drifted_topic:** כאשר flag_flight=true — מחרוזת קצרה שמתארת לאן המשתמש נדד (למשל: "ילדות", "עבודה"). אחרת null.
 
