@@ -69,16 +69,30 @@ export async function runTurn(state, history, userText) {
   let nextState = { ...state };
   const ev = result.evaluation ?? {};
 
-  // Slot updates for the current stage.
-  if (ev.slots) {
-    const stageKey = `stage${stage}`;
-    nextState = {
-      ...nextState,
-      coverage: {
-        ...nextState.coverage,
-        [stageKey]: { ...nextState.coverage[stageKey], ...ev.slots },
-      },
-    };
+  // Slot updates. Bare slot names → the current stage (set as reported). Cross-stage
+  // keys ("stageN.slot") let the model capture info that belongs to a later stage as
+  // it surfaces — pre-seeded to level 1 only; the owning stage still explores it to 2
+  // (Ran, 21.6). Out-of-range / unknown cross-stage slots are ignored.
+  if (ev.slots && Object.keys(ev.slots).length) {
+    const currentKey = `stage${stage}`;
+    let coverage = nextState.coverage;
+    for (const [rawKey, value] of Object.entries(ev.slots)) {
+      const m = /^stage([1-7])\.(.+)$/.exec(rawKey);
+      const stageKey = m ? `stage${m[1]}` : currentKey;
+      const slot = m ? m[2] : rawKey;
+      if (stageKey === currentKey) {
+        coverage = { ...coverage, [stageKey]: { ...coverage[stageKey], [slot]: value } };
+      } else {
+        const stageSlots = coverage[stageKey];
+        if (!stageSlots || !(slot in stageSlots)) continue; // unknown slot — ignore
+        if (typeof value !== 'number' || value < 1) continue; // ignore 0 / 'U' / junk
+        coverage = {
+          ...coverage,
+          [stageKey]: { ...stageSlots, [slot]: Math.max(stageSlots[slot] ?? 0, 1) },
+        };
+      }
+    }
+    nextState = { ...nextState, coverage };
   }
 
   // Counters + per-turn signals.
