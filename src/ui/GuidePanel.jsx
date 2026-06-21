@@ -31,6 +31,37 @@ const DECISION_LABELS = {
   sessionComplete: 'סיום סשן',
 };
 
+// Gap-management (Build 1) — consistency records display.
+const GAP_STATUS = {
+  starred: { label: 'כוכבית', color: '#b88000' },
+  resolved: { label: 'נפתר', color: '#1a7a3c' },
+  escalated: { label: 'מהותי', color: '#c0392b' },
+};
+
+const GAP_LEVEL_COLOR = (v) => (v >= 8 ? '#1a7a3c' : v <= 3 ? '#c0392b' : '#b88000');
+
+// Trend from the level history: ▲ improving (toward consistent), ▼ worsening.
+function gapTrend(history) {
+  if (!history || history.length < 2) return { arrow: '–', color: '#aaa' };
+  const delta = history[history.length - 1].level - history[history.length - 2].level;
+  if (delta > 0) return { arrow: '▲', color: '#1a7a3c' };
+  if (delta < 0) return { arrow: '▼', color: '#c0392b' };
+  return { arrow: '–', color: '#aaa' };
+}
+
+// Patterns summary (§9, Phase 1): counts by status and by dimension.
+function gapsSummary(byTarget) {
+  const recs = Object.values(byTarget);
+  const count = (key) => {
+    const acc = {};
+    for (const r of recs) acc[r[key]] = (acc[r[key]] ?? 0) + 1;
+    return Object.entries(acc)
+      .map(([k, n]) => `${k}:${n}`)
+      .join(' ');
+  };
+  return `${recs.length} פערים · ${count('status')} · ${count('dimension')}`;
+}
+
 // Sonnet 4.6 pricing (USD per 1M tokens); the ILS rate is approximate.
 const USD_PER_M_INPUT = 3;
 const USD_PER_M_OUTPUT = 15;
@@ -46,6 +77,7 @@ function formatCost(usage) {
 
 export default function GuidePanel({ state }) {
   const { coverage, meta, facts, thoughts, feelings, reactions } = state;
+  const gaps = state.gaps ?? { byTarget: {}, log: [] };
 
   return (
     <div
@@ -126,6 +158,37 @@ export default function GuidePanel({ state }) {
             </div>
           );
         })}
+      </Section>
+
+      {/* Gap-management — consistency records (Build 1, behind the scenes) */}
+      <Section title="פערים / כוכביות">
+        {Object.keys(gaps.byTarget).length === 0 ? (
+          <Row label="—" value="אין" />
+        ) : (
+          <>
+            {Object.entries(gaps.byTarget).map(([key, rec]) => {
+              const status = GAP_STATUS[rec.status] ?? { label: rec.status, color: '#666' };
+              const trend = gapTrend(rec.history);
+              return (
+                <div
+                  key={key}
+                  style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}
+                >
+                  <span style={{ color: '#555' }}>{rec.target?.label ?? key}</span>
+                  <span style={{ display: 'flex', gap: 6, alignItems: 'center', fontWeight: 'bold' }}>
+                    <span style={{ color: GAP_LEVEL_COLOR(rec.level) }}>{rec.level}</span>
+                    <span style={{ color: trend.color }}>{trend.arrow}</span>
+                    <span style={{ color: status.color }}>{status.label}</span>
+                    <span style={{ color: '#999', fontWeight: 'normal', fontSize: 11 }}>
+                      ×{rec.touches}
+                    </span>
+                  </span>
+                </div>
+              );
+            })}
+            <div style={{ color: '#999', fontSize: 11, marginTop: 4 }}>{gapsSummary(gaps.byTarget)}</div>
+          </>
+        )}
       </Section>
 
       {/* State data */}
