@@ -20,6 +20,12 @@ const PARSE_FALLBACK = 'שגיאה בעיבוד התשובה. נסה שוב.';
 
 const EMPTY_USAGE = { inputTokens: 0, outputTokens: 0, calls: 0 };
 
+// Coverage level as a number for progress comparison ('U' is a terminal value).
+function slotLevel(v) {
+  if (v === 'U') return 2;
+  return typeof v === 'number' ? v : 0;
+}
+
 // Accumulate a model call's token usage (real API only; the mock returns none).
 function addUsage(acc, u) {
   if (!u) return acc;
@@ -95,8 +101,12 @@ export async function runTurn(state, history, userText) {
     nextState = { ...nextState, coverage };
   }
 
-  // Counters + per-turn signals.
-  const newInfo = ev.newInfo !== false;
+  // Counters + per-turn signals. Saturation tracks real coverage progress, not the
+  // model's "new_info" self-report (which over-reports — Ran, live testing: saturation
+  // stuck at 0). A turn that raised no current-stage slot counts toward saturation.
+  const beforeCov = state.coverage[`stage${stage}`] ?? {};
+  const afterCov = nextState.coverage[`stage${stage}`] ?? {};
+  const newInfo = Object.keys(afterCov).some((k) => slotLevel(afterCov[k]) > slotLevel(beforeCov[k]));
   nextState = {
     ...nextState,
     meta: {
@@ -216,10 +226,6 @@ export async function runTurn(state, history, userText) {
   let reply = result.message ?? PARSE_FALLBACK;
 
   if (decision.decision === Decision.REQUEST_CONFIRMATION) {
-    nextState = {
-      ...nextState,
-      meta: { ...nextState.meta, awaitingConfirmation: true, pendingNextStage: decision.nextStage },
-    };
     const summaryResult = await complete({
       stage: nextState.meta.currentStage,
       systemPrompt: buildSummaryPrompt({ state: nextState }),
@@ -227,9 +233,17 @@ export async function runTurn(state, history, userText) {
       mode: 'summary',
     });
     usage = addUsage(usage, summaryResult.usage);
-    reply =
-      (summaryResult.ok && summaryResult.message) ||
-      'בוא נוודא שהבנתי נכון — עברנו על מה שקרה עד כאן. זה מדויק?';
+    if (summaryResult.ok && summaryResult.message) {
+      nextState = {
+        ...nextState,
+        meta: { ...nextState.meta, awaitingConfirmation: true, pendingNextStage: decision.nextStage },
+      };
+      reply = summaryResult.message;
+    } else {
+      // Summary generation failed (e.g., rate limit). Don't enter a content-free
+      // confirmation — stay; the Router re-requests the summary next turn. (Ran.)
+      reply = summaryResult.message || 'רגע — לא הצלחתי לסכם כרגע, ננסה שוב עוד מעט.';
+    }
   }
 
   if (decision.decision === Decision.SHOW_BOARD) {

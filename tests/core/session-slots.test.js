@@ -41,3 +41,23 @@ describe('session — slot routing', () => {
     expect(nextState.coverage.stage5).not.toHaveProperty('bogus');
   });
 });
+
+describe('session — saturation from slot progress', () => {
+  // The mock harness reports new_info:true; saturation must still count up when no
+  // current-stage slot actually advanced (the bug Ran hit: saturation stuck at 0).
+  it('increments saturation when no current-stage slot advances', async () => {
+    const { nextState } = await runWithSlots({});
+    expect(nextState.meta.saturationCount).toBe(1);
+  });
+
+  it('resets saturation when a current-stage slot advances', async () => {
+    const { nextState } = await runWithSlots({ trigger: 2 });
+    expect(nextState.meta.saturationCount).toBe(0);
+  });
+
+  it('cross-stage-only progress still counts toward saturation', async () => {
+    const { nextState } = await runWithSlots({ 'stage3.emotion': 2 });
+    expect(nextState.coverage.stage3.emotion).toBe(1);
+    expect(nextState.meta.saturationCount).toBe(1);
+  });
+});
