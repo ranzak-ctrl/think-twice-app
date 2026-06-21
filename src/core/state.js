@@ -13,6 +13,11 @@ export function createState() {
     board: [],      // decision board rows (stage 7, built from basket)
     decision: {},   // { type, choice, rationale, package_gain, package_cost }
 
+    // Gap-management (Build 1): graded consistency records keyed by target.
+    // 1..10 measure (10 consistent / 5 ambiguous / 1 contradiction); behind the
+    // scenes — never surfaced to the user. docs/gap-management-implementation.md.
+    gaps: { byTarget: {}, log: [] },
+
     coverage: {
       stage1: { trigger: 0, timeline: 0, actors: 0, status: 0, auto_reaction: 0 },
       stage2: { causal: 0, meaning: 0, wound: 0, adhd_pattern: 0 },
@@ -112,6 +117,94 @@ export function reopenSlot(state, stageKey, slotKey) {
   return setSlot(state, stageKey, slotKey, 1);
 }
 
+// ── Gap-management (Build 1): consistency measure + asterisk (כוכבית) ──
+// The model reports a point observation { target, dimension, level, note }; the
+// CODE owns the record (status, counters, history). Build 1 scope = record + star
+// + resolve + re-open of a resolved target. Escalation / goal-gate is Build 2.
+// docs/gap-management-implementation.md §2, §4.
+
+export const GAP_DEFAULTS = { T_star: 5, T_resolved: 8 };
+
+function clampLevel(level) {
+  if (typeof level !== 'number' || Number.isNaN(level)) return null;
+  return Math.min(10, Math.max(1, Math.round(level)));
+}
+
+// Normalize a reported target into a stable key + descriptor.
+// slot → "stage{N}.{slot}" · topic/entity → "topic:{label}" / "entity:{label}".
+export function normalizeTarget(rawTarget) {
+  const t = String(rawTarget ?? '').trim();
+  if (!t) return null;
+  const slot = t.match(/^stage(\d+)\.([a-z_]+)$/i);
+  if (slot) {
+    const key = `stage${slot[1]}.${slot[2]}`;
+    return { key, target: { kind: 'slot', stage: Number(slot[1]), slot: slot[2], label: key } };
+  }
+  const tagged = t.match(/^(topic|entity):(.+)$/);
+  if (tagged) {
+    const label = tagged[2].trim();
+    if (!label) return null;
+    return { key: `${tagged[1]}:${label}`, target: { kind: tagged[1], label } };
+  }
+  return { key: `topic:${t}`, target: { kind: 'topic', label: t } }; // bare label → topic
+}
+
+function withGap(state, gaps, key, record, logEntry) {
+  return {
+    ...state,
+    gaps: {
+      byTarget: { ...gaps.byTarget, [key]: record },
+      log: [...gaps.log, { targetKey: key, ...logEntry }],
+    },
+  };
+}
+
+// Apply one model observation to the gap records. Returns a new state.
+// One record per targetKey — a new observation always updates, never duplicates.
+export function recordGapObservation(state, observation, turn, thresholds) {
+  const { T_star, T_resolved } = { ...GAP_DEFAULTS, ...thresholds };
+  const level = clampLevel(observation?.level);
+  const norm = normalizeTarget(observation?.target);
+  if (level == null || !norm) return state; // unusable observation
+
+  const { key, target } = norm;
+  const dimension = observation?.dimension ?? 'factual';
+  const note = typeof observation?.note === 'string' ? observation.note.trim() : '';
+  const gaps = state.gaps ?? { byTarget: {}, log: [] };
+  const existing = gaps.byTarget[key];
+
+  // First sighting: only open a record if it is actually a gap (≤ T_star).
+  if (!existing) {
+    if (level > T_star) return state; // consistent enough — ignore
+    const record = {
+      target, dimension, level, status: 'starred',
+      firstTurn: turn, lastTurn: turn, touches: 0,
+      history: [{ turn, level }], note,
+    };
+    return withGap(state, gaps, key, record, { turn, level, delta: null, action: 'star' });
+  }
+
+  // Re-touch of an existing record.
+  let status = existing.status;
+  let action = 'update';
+  if (level >= T_resolved) {
+    if (existing.status !== 'resolved') action = 'resolve';
+    status = 'resolved';
+  } else if (existing.status === 'resolved' && level <= T_star) {
+    status = 'starred'; // re-open — contradicting info on a settled target
+    action = 'reopen';
+  }
+  const record = {
+    ...existing,
+    level, status,
+    lastTurn: turn,
+    touches: existing.touches + 1,
+    history: [...existing.history, { turn, level }],
+    note: note || existing.note,
+  };
+  return withGap(state, gaps, key, record, { turn, level, delta: level - existing.level, action });
+}
+
 // Export / import (deep clone via JSON round-trip).
 export function exportState(state) {
   return JSON.stringify(state, null, 2);
@@ -125,5 +218,6 @@ export function importState(json) {
   if (!state.coverage || !state.meta) {
     throw new Error('Invalid state document: missing coverage or meta');
   }
-  return state;
+  // Back-compat: older exports predate gap-management.
+  return { ...state, gaps: state.gaps ?? { byTarget: {}, log: [] } };
 }
