@@ -303,8 +303,7 @@ function mockComplete({ stage, mode }) {
     const message =
       sc.summaries[stage] ??
       'בוא נוודא שהבנתי נכון — עברנו על עיקרי הדברים בשלב הזה. זה מדויק?';
-    const raw = JSON.stringify({ message });
-    return { ...parseResponse(raw), raw };
+    return { ok: true, message, evaluation: null }; // summary mode = plain text (no JSON)
   }
 
   // Board mode — Router returned SHOW_BOARD; return the synthesised board.
@@ -389,6 +388,14 @@ export async function complete({ stage, systemPrompt, messages, mode }) {
     const data = await res.json();
     usage = mergeUsage(usage, data.usage);
     const raw = data.content?.[0]?.text ?? '';
+    // Summary mode is a plain confirmation message — no JSON to parse, so the model's
+    // natural prose can't fail (live symptom was no_json: the model returns prose).
+    if (mode === 'summary') {
+      const message = raw.trim();
+      return message
+        ? { ok: true, message, evaluation: null, usage }
+        : { ok: false, error: 'empty_summary', message: 'שגיאה בעיבוד התשובה. נסה שוב.', evaluation: null, usage };
+    }
     const parsed = parseResponse(raw);
     if (parsed.ok) return { ...parsed, usage };
 

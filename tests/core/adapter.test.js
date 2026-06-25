@@ -94,4 +94,28 @@ describe('adapter complete() — JSON retry', () => {
     expect(fetchStub).toHaveBeenCalledTimes(1);
     expect(result.message).toBeTruthy();
   });
+
+  // Summary mode is plain text — the model returns prose, which must NOT be forced
+  // through JSON parsing (live bug: no_json on every summary). (test-plan §א.5)
+  it('summary mode takes the raw text as the message — no JSON, no retry', async () => {
+    const prose = 'בוא נוודא שהבנתי נכון — קרה כך וכך. זה מדויק?';
+    const fetchStub = makeFetch([prose]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    const result = await complete({ ...ARGS, mode: 'summary' });
+
+    expect(result.ok).toBe(true);
+    expect(result.message).toBe(prose);
+    expect(result.evaluation).toBeNull();
+    expect(fetchStub).toHaveBeenCalledTimes(1); // no JSON-repair retry
+  });
+
+  it('summary mode fails on an empty response', async () => {
+    const fetchStub = makeFetch(['   ']);
+    vi.stubGlobal('fetch', fetchStub);
+
+    const result = await complete({ ...ARGS, mode: 'summary' });
+
+    expect(result.ok).toBe(false);
+  });
 });
