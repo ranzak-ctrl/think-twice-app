@@ -280,6 +280,13 @@ export function setMockScenario(name) {
   activeScenario = SCENARIOS[name] ? name : 'meat';
 }
 
+// Test-only: force summary-mode generation to fail (simulates a rate-limit / API
+// error) so the summary-resilience path is testable. (docs/test-plan.md §א.3)
+let mockSummaryFails = false;
+export function setMockSummaryFailure(fails) {
+  mockSummaryFails = !!fails;
+}
+
 export { SCENARIOS };
 
 const turnCounters = {};
@@ -290,6 +297,9 @@ function mockComplete({ stage, mode }) {
   // Summary mode — Router decided to transition; return the stage recap and
   // do NOT advance the turn counter (no probing turn was consumed).
   if (mode === 'summary') {
+    if (mockSummaryFails) {
+      return { ok: false, error: 'mock_summary_failure', message: 'שגיאה בחיבור למודל. נסה שוב.', evaluation: null };
+    }
     const message =
       sc.summaries[stage] ??
       'בוא נוודא שהבנתי נכון — עברנו על עיקרי הדברים בשלב הזה. זה מדויק?';
