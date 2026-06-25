@@ -130,6 +130,43 @@ export default function GuidePanel({ state }) {
         )}
       </Section>
 
+      {/* Stage progression — turns the system dwelt in each stage. Collapsed by
+          default; current stage live, closed stages from questionsPerStage. */}
+      <Section title="התקדמות שלבים">
+        <details>
+          <summary style={{ cursor: 'pointer', color: '#666', marginBottom: 4 }}>
+            7 שלבים · תורות בכל שלב
+          </summary>
+          {[1, 2, 3, 4, 5, 6, 7].map((n) => {
+            const isCurrent = n === meta.currentStage;
+            const turns = isCurrent
+              ? meta.questionCount
+              : n < meta.currentStage
+              ? meta.kpi.questionsPerStage?.[`stage${n}`] ?? '—'
+              : null;
+            return (
+              <div
+                key={n}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  marginBottom: 3,
+                  paddingRight: 6,
+                  color: isCurrent ? '#0066cc' : n > meta.currentStage ? '#bbb' : '#444',
+                  fontWeight: isCurrent ? 'bold' : 'normal',
+                }}
+              >
+                <span>
+                  {n}. {STAGE_NAMES[n]}
+                  {isCurrent ? ' ●' : ''}
+                </span>
+                <span>{turns === null ? '—' : `${turns} תורות`}</span>
+              </div>
+            );
+          })}
+        </details>
+      </Section>
+
       {/* Token / cost meter — real-API usage this session (display only) */}
       <Section title="עלות (Sonnet 4.6)">
         <Row label="קריאות API" value={meta.usage?.calls ?? 0} />
