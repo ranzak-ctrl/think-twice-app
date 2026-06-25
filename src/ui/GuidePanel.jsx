@@ -1,6 +1,7 @@
 // Clinician debug panel — visible only in "guide mode".
 // Shows live StateDocument, Scorecard, Router decisions, KPIs.
 
+import { useState, useEffect, useRef } from 'react';
 import { formatSelfOther } from '../core/kpi.js';
 
 const STAGE_NAMES = {
@@ -79,6 +80,18 @@ export default function GuidePanel({ state }) {
   const { coverage, meta, facts, thoughts, feelings, reactions } = state;
   const gaps = state.gaps ?? { byTarget: {}, log: [] };
 
+  // Stage progression collapse: the current stage is auto-open; on advance the new
+  // stage opens and the previous collapses; any stage can still be toggled manually.
+  const [openStages, setOpenStages] = useState(() => ({ [meta.currentStage]: true }));
+  const prevStageRef = useRef(meta.currentStage);
+  useEffect(() => {
+    const prev = prevStageRef.current;
+    if (prev !== meta.currentStage) {
+      setOpenStages((o) => ({ ...o, [meta.currentStage]: true, [prev]: false }));
+      prevStageRef.current = meta.currentStage;
+    }
+  }, [meta.currentStage]);
+
   return (
     <div
       style={{
@@ -130,41 +143,41 @@ export default function GuidePanel({ state }) {
         )}
       </Section>
 
-      {/* Stage progression — turns the system dwelt in each stage. Collapsed by
-          default; current stage live, closed stages from questionsPerStage. */}
+      {/* Stage progression — each stage collapsible; current stage auto-open with its
+          live stay-turn count; previous collapses on advance; manual toggle anytime. */}
       <Section title="התקדמות שלבים">
-        <details>
-          <summary style={{ cursor: 'pointer', color: '#666', marginBottom: 4 }}>
-            7 שלבים · תורות בכל שלב
-          </summary>
-          {[1, 2, 3, 4, 5, 6, 7].map((n) => {
-            const isCurrent = n === meta.currentStage;
-            const turns = isCurrent
-              ? meta.questionCount
-              : n < meta.currentStage
-              ? meta.kpi.questionsPerStage?.[`stage${n}`] ?? '—'
-              : null;
-            return (
+        {[1, 2, 3, 4, 5, 6, 7].map((n) => {
+          const isCurrent = n === meta.currentStage;
+          const reached = n <= meta.currentStage;
+          const open = !!openStages[n];
+          const turns = isCurrent
+            ? meta.questionCount
+            : n < meta.currentStage
+            ? meta.kpi.questionsPerStage?.[`stage${n}`] ?? '—'
+            : null;
+          return (
+            <div key={n} style={{ marginBottom: 3 }}>
               <div
-                key={n}
+                onClick={() => setOpenStages((o) => ({ ...o, [n]: !o[n] }))}
                 style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  marginBottom: 3,
-                  paddingRight: 6,
-                  color: isCurrent ? '#0066cc' : n > meta.currentStage ? '#bbb' : '#444',
+                  cursor: 'pointer',
+                  color: isCurrent ? '#0066cc' : reached ? '#444' : '#bbb',
                   fontWeight: isCurrent ? 'bold' : 'normal',
                 }}
               >
-                <span>
-                  {n}. {STAGE_NAMES[n]}
-                  {isCurrent ? ' ●' : ''}
-                </span>
-                <span>{turns === null ? '—' : `${turns} תורות`}</span>
+                {open ? '▾' : '▸'} {n}. {STAGE_NAMES[n]}
+                {isCurrent ? ' ●' : ''}
               </div>
-            );
-          })}
-        </details>
+              {open && (
+                <div style={{ paddingRight: 16, color: '#666', marginBottom: 2 }}>
+                  {turns === null
+                    ? 'טרם הגענו לשלב'
+                    : `${turns} תורות${isCurrent ? ' (עד כה)' : ''}`}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </Section>
 
       {/* Token / cost meter — real-API usage this session (display only) */}
