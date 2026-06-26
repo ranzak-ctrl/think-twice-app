@@ -15,19 +15,53 @@ export const MOCK_RESPONSES = {
   },
   '1:1': {
     message: 'מי עוד היה שם באותו רגע?',
-    evaluation: { slots: { trigger: 2, timeline: 1 }, new_info: true, exhausted: false },
+    evaluation: {
+      slots: { trigger: 2, timeline: 1 },
+      // slot_findings flow the "meat" golden story (mock demo of the guide-mode
+      // findings feature; the real API reports these per turn for all stages).
+      slot_findings: {
+        trigger: ['הבשר שהזמנת הגיע למטבח'],
+        timeline: ['בתחילת המשמרת, כשהמשלוח הגיע'],
+      },
+      new_info: true,
+      exhausted: false,
+    },
   },
   '1:2': {
     message: 'ומה קרה מיד אחרי?',
-    evaluation: { slots: { actors: 2, status: 1 }, new_info: true, exhausted: false },
+    evaluation: {
+      slots: { actors: 2, status: 1 },
+      slot_findings: {
+        actors: ['אתה', 'הספק שמסר את הבשר', 'השף הראשי'],
+        status: ['יצאת מהמשמרת באמצע'],
+      },
+      new_info: true,
+      exhausted: false,
+    },
   },
   '1:3': {
     message: 'איפה זה עומד עכשיו?',
-    evaluation: { slots: { timeline: 2, auto_reaction: 1 }, new_info: true, exhausted: false },
+    evaluation: {
+      slots: { timeline: 2, auto_reaction: 1 },
+      slot_findings: {
+        timeline: ['אחרי שנאמר שהבשר לא איכותי'],
+        auto_reaction: ['יצאת בלי לומר מילה'],
+      },
+      new_info: true,
+      exhausted: false,
+    },
   },
   '1:4': {
     message: 'מה עשית ספונטנית באותו רגע, לפני שחשבת?',
-    evaluation: { slots: { status: 2, auto_reaction: 2 }, new_info: true, exhausted: false },
+    evaluation: {
+      slots: { status: 2, auto_reaction: 2 },
+      slot_findings: {
+        status: ['מאז לא חזרתם לדבר על זה'],
+        auto_reaction: ['עזבת את מקום העבודה'],
+      },
+      new_info: true,
+      exhausted: false,
+    },
   },
   '1:5': {
     message: 'בוא נוודא שהבנתי נכון — הבשר הגיע, הוא אמר שהוא לא איכותי, ואתה עזבת. זה מדויק?',

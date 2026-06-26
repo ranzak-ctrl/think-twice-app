@@ -13,7 +13,7 @@ import {
 } from './promptBuilder.js';
 import { complete } from '../adapters/model.js';
 import { countSelfOther } from './kpi.js';
-import { appendDecisionLog, recordGapObservation } from './state.js';
+import { appendDecisionLog, recordGapObservation, addFindings } from './state.js';
 import { preCheck } from '../safety/index.js';
 
 const PARSE_FALLBACK = 'שגיאה בעיבוד התשובה. נסה שוב.';
@@ -99,6 +99,20 @@ export async function runTurn(state, history, userText) {
       }
     }
     nextState = { ...nextState, coverage };
+  }
+
+  // Per-slot findings (guide-mode display): fold the model's textual findings into
+  // state, parallel to slots. Bare names → current stage; "stageN.slot" → that stage.
+  // Guarded to known slots. Observability only — findings never affect the Router.
+  if (ev.slotFindings && Object.keys(ev.slotFindings).length) {
+    const currentKey = `stage${stage}`;
+    for (const [rawKey, items] of Object.entries(ev.slotFindings)) {
+      const m = /^stage([1-7])\.(.+)$/.exec(rawKey);
+      const stageKey = m ? `stage${m[1]}` : currentKey;
+      const slot = m ? m[2] : rawKey;
+      if (!nextState.coverage[stageKey] || !(slot in nextState.coverage[stageKey])) continue;
+      nextState = addFindings(nextState, stageKey, slot, items);
+    }
   }
 
   // Counters + per-turn signals. Saturation tracks real coverage progress, not the

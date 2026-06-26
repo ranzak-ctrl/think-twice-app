@@ -59,6 +59,40 @@ describe('parseResponse — alternatives & board', () => {
   });
 });
 
+describe('parseResponse — slot findings', () => {
+  it('parses a slot_findings map, trimming and dropping empties', () => {
+    const raw = JSON.stringify({
+      message: 'מי עוד היה שם?',
+      evaluation: {
+        slot_findings: {
+          timeline: ['  האירוע בערב ', 'עד אז צריך לארגן את הבית'],
+          actors: ['אתה', '', '   ', 'רומי הבת הגדולה'],
+        },
+      },
+    });
+    expect(parseResponse(raw).evaluation.slotFindings).toEqual({
+      timeline: ['האירוע בערב', 'עד אז צריך לארגן את הבית'],
+      actors: ['אתה', 'רומי הבת הגדולה'],
+    });
+  });
+
+  it('drops non-array values and slots that end up empty', () => {
+    const raw = JSON.stringify({
+      message: 'a',
+      evaluation: { slot_findings: { timeline: 'x', actors: [' ', 5, null], status: ['ok'] } },
+    });
+    expect(parseResponse(raw).evaluation.slotFindings).toEqual({ status: ['ok'] });
+  });
+
+  it('defaults slotFindings to an empty object when absent or non-object', () => {
+    expect(parseResponse(JSON.stringify({ message: 'a' })).evaluation.slotFindings).toEqual({});
+    expect(
+      parseResponse(JSON.stringify({ message: 'a', evaluation: { slot_findings: ['x'] } }))
+        .evaluation.slotFindings,
+    ).toEqual({});
+  });
+});
+
 describe('parseResponse — gap observations', () => {
   it('parses and clamps gap_observations', () => {
     const raw = JSON.stringify({

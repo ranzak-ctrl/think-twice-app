@@ -27,6 +27,7 @@ export function parseResponse(raw) {
     message: obj.message.trim(),
     evaluation: {
       slots: evaluation.slots ?? {},
+      slotFindings: parseSlotFindings(evaluation),
       flagAvoidance: !!evaluation.flag_avoidance,
       flagFlight: !!evaluation.flag_flight,
       flagOverflow: !!evaluation.flag_overflow,
@@ -52,6 +53,22 @@ export function parseResponse(raw) {
       gapObservations: parseGapObservations(evaluation),
     },
   };
+}
+
+// Parse the model's per-slot findings — short textual info items for guide-mode
+// display. Map of slotKey → string[]; non-array values and empty strings dropped.
+// Keys (bare "slot" or cross-stage "stageN.slot") are routed by the session, the
+// same way slots are. Observability only — findings never affect the Router.
+function parseSlotFindings(evaluation) {
+  const raw = evaluation.slot_findings;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const out = {};
+  for (const [key, val] of Object.entries(raw)) {
+    if (!Array.isArray(val)) continue;
+    const items = val.map((s) => (typeof s === 'string' ? s.trim() : '')).filter(Boolean);
+    if (items.length) out[key] = items;
+  }
+  return out;
 }
 
 // Parse the model's gap observations (consistency measure). Each entry:

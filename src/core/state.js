@@ -28,6 +28,13 @@ export function createState() {
       stage7: { goal: 0, board_presented: 0, sharp_decision: 0, package_test: 0 },
     },
 
+    // Per-slot findings (guide-mode display) — short textual info items the model
+    // extracts per slot, accumulated parallel to coverage and keyed stageN.slot.
+    // Sparse: a slot appears only once it has findings. Observability ONLY — the
+    // model proposes content; the Router still decides transitions from coverage
+    // scores, never from findings. See addFindings below.
+    findings: {},
+
     meta: {
       currentStage: 1,
       questionCount: 0,        // questions asked in current stage
@@ -115,6 +122,42 @@ export function reopenSlot(state, stageKey, slotKey) {
   const current = state.coverage[stageKey]?.[slotKey] ?? 0;
   if (current <= 1) return state; // already open
   return setSlot(state, stageKey, slotKey, 1);
+}
+
+// ── Per-slot findings (guide-mode display) ──
+// The model reports short textual findings per slot; the CODE accumulates them
+// parallel to coverage. Append + dedupe, capped and length-limited. Findings are
+// observability only — they NEVER drive the Router (transitions read coverage
+// scores). Keep the most recent when the cap is reached.
+export const FINDINGS_PER_SLOT_MAX = 12;
+const FINDING_MAX_LEN = 140;
+
+export function addFindings(state, stageKey, slotKey, items) {
+  const incoming = (Array.isArray(items) ? items : [])
+    .map((s) => (typeof s === 'string' ? s.trim() : ''))
+    .filter(Boolean)
+    .map((s) => (s.length > FINDING_MAX_LEN ? s.slice(0, FINDING_MAX_LEN) : s));
+  if (!incoming.length) return state;
+
+  const findings = state.findings ?? {};
+  const stageFindings = findings[stageKey] ?? {};
+  const existing = stageFindings[slotKey] ?? [];
+  const seen = new Set(existing);
+  const merged = [...existing];
+  for (const item of incoming) {
+    if (!seen.has(item)) {
+      seen.add(item);
+      merged.push(item);
+    }
+  }
+  if (merged.length === existing.length) return state; // nothing new
+  return {
+    ...state,
+    findings: {
+      ...findings,
+      [stageKey]: { ...stageFindings, [slotKey]: merged.slice(-FINDINGS_PER_SLOT_MAX) },
+    },
+  };
 }
 
 // ── Gap-management (Build 1): consistency measure + asterisk (כוכבית) ──
@@ -218,6 +261,10 @@ export function importState(json) {
   if (!state.coverage || !state.meta) {
     throw new Error('Invalid state document: missing coverage or meta');
   }
-  // Back-compat: older exports predate gap-management.
-  return { ...state, gaps: state.gaps ?? { byTarget: {}, log: [] } };
+  // Back-compat: older exports predate gap-management / per-slot findings.
+  return {
+    ...state,
+    gaps: state.gaps ?? { byTarget: {}, log: [] },
+    findings: state.findings ?? {},
+  };
 }

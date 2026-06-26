@@ -79,6 +79,7 @@ function formatCost(usage) {
 export default function GuidePanel({ state }) {
   const { coverage, meta, facts, thoughts, feelings, reactions } = state;
   const gaps = state.gaps ?? { byTarget: {}, log: [] };
+  const findings = state.findings ?? {};
 
   // Stage progression collapse: the current stage is auto-open; on advance the new
   // stage opens and the previous collapses; any stage can still be toggled manually.
@@ -197,14 +198,32 @@ export default function GuidePanel({ state }) {
               <div style={{ fontWeight: 'bold', marginBottom: 2 }}>
                 {stageNum}. {STAGE_NAMES[stageNum]}
               </div>
-              {Object.entries(slots).map(([slot, val]) => (
-                <div key={slot} style={{ display: 'flex', gap: 6, paddingRight: 8 }}>
-                  <span style={{ color: SLOT_COLOR(val), fontWeight: 'bold', minWidth: 16 }}>
-                    {val}
-                  </span>
-                  <span style={{ color: '#555' }}>{slot}</span>
-                </div>
-              ))}
+              {Object.entries(slots).map(([slot, val]) => {
+                const slotFindings = findings[stageKey]?.[slot] ?? [];
+                return (
+                  <div key={slot} style={{ paddingRight: 8, marginBottom: slotFindings.length ? 4 : 0 }}>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <span style={{ color: SLOT_COLOR(val), fontWeight: 'bold', minWidth: 16 }}>
+                        {val}
+                      </span>
+                      <span style={{ color: '#555' }}>{slot}</span>
+                    </div>
+                    {slotFindings.length > 0 && (
+                      <ul style={{ listStyle: 'none', margin: '2px 22px 0 0', padding: 0 }}>
+                        {slotFindings.map((f, i) => (
+                          <li
+                            key={i}
+                            style={{ display: 'flex', gap: 4, color: '#777', fontSize: 11, lineHeight: 1.5 }}
+                          >
+                            <span style={{ color: '#ccc' }}>·</span>
+                            <span>{f}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           );
         })}
