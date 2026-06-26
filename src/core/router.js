@@ -2,7 +2,7 @@
 // Input: StateDocument. Output: RouterDecision.
 // THE LLM NEVER CALLS THIS. This module decides all stage transitions.
 
-import { appendDecisionLog } from './state.js';
+import { appendDecisionLog, hasUnclearActor } from './state.js';
 
 export const Decision = {
   STAY: 'stay',
@@ -119,8 +119,14 @@ export function route(state) {
   // rich, detailed story may never produce (see docs/questions-for-natali.md §1).
   const { softThresholdMet, fullCoverage } = evaluateStage(coverage, currentStage);
 
-  const readyToAdvance =
-    fullCoverage || (softThresholdMet && saturated) || loadGuardTriggered;
+  // Actor-map gate (stage 1): never advance on a muddled cast. While any character
+  // is unclear/contradicted, the normal coverage paths are blocked — only the load
+  // guard (anti-deadlock backstop) can still force through. transition-protocol §1
+  // ("מפת שחקנים — לכל דמות תפקיד ברור"); Ran's principle: no advance on unclear facts.
+  const actorsClearEnough = !(currentStage === 1 && hasUnclearActor(state.actorMap));
+  const coverageReady = fullCoverage || (softThresholdMet && saturated);
+
+  const readyToAdvance = (coverageReady && actorsClearEnough) || loadGuardTriggered;
 
   if (readyToAdvance && currentStage < 7) {
     const nextStage = currentStage + 1;
@@ -132,6 +138,11 @@ export function route(state) {
       nextStage,
       reason: loadGuardTriggered ? 'load_guard' : saturated ? 'exhausted' : 'full_coverage',
     };
+  }
+
+  // Coverage was ready but the cast is unclear — hold and keep clarifying (guide trail).
+  if (currentStage === 1 && coverageReady && !actorsClearEnough && !loadGuardTriggered) {
+    return { decision: Decision.STAY, reason: 'actors_unclear' };
   }
 
   return { decision: Decision.STAY };

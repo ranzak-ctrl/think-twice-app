@@ -5,6 +5,9 @@ import {
   DECISION_LOG_MAX,
   addFindings,
   FINDINGS_PER_SLOT_MAX,
+  setActorMap,
+  deriveActorsScore,
+  hasUnclearActor,
 } from '../../src/core/state.js';
 
 describe('appendDecisionLog', () => {
@@ -79,5 +82,41 @@ describe('addFindings', () => {
     expect(list.length).toBe(FINDINGS_PER_SLOT_MAX);
     expect(list[0]).toBe('item-3'); // earliest three dropped
     expect(list[list.length - 1]).toBe(`item-${FINDINGS_PER_SLOT_MAX + 2}`);
+  });
+});
+
+describe('actor map', () => {
+  it('setActorMap keys by id and replaces the whole cast', () => {
+    const s = setActorMap(createState(), [
+      { id: 'user', label: 'המשתמש', role: 'המספר', relation: 'עצמו', clear: true },
+      { id: 'romi', label: 'רומי', role: 'הבת הגדולה', relation: 'בת', clear: true },
+    ]);
+    expect(s.actorMap).toEqual({
+      user: { label: 'המשתמש', role: 'המספר', relation: 'עצמו', clear: true },
+      romi: { label: 'רומי', role: 'הבת הגדולה', relation: 'בת', clear: true },
+    });
+  });
+
+  it('setActorMap falls back id→label and defaults clear to true', () => {
+    const s = setActorMap(createState(), [{ label: 'אבא' }]);
+    expect(s.actorMap).toEqual({ אבא: { label: 'אבא', role: '', relation: '', clear: true } });
+  });
+
+  it('setActorMap does not mutate the input state', () => {
+    const base = createState();
+    setActorMap(base, [{ id: 'x', label: 'x' }]);
+    expect(base.actorMap).toEqual({});
+  });
+
+  it('deriveActorsScore: empty→0, all clear→2, any unclear→1', () => {
+    expect(deriveActorsScore({})).toBe(0);
+    expect(deriveActorsScore({ a: { clear: true }, b: { clear: true } })).toBe(2);
+    expect(deriveActorsScore({ a: { clear: true }, b: { clear: false } })).toBe(1);
+  });
+
+  it('hasUnclearActor flags only an explicit clear:false', () => {
+    expect(hasUnclearActor({})).toBe(false);
+    expect(hasUnclearActor({ a: { clear: true } })).toBe(false);
+    expect(hasUnclearActor({ a: { clear: true }, b: { clear: false } })).toBe(true);
   });
 });

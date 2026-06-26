@@ -32,9 +32,13 @@ export const MOCK_RESPONSES = {
     evaluation: {
       slots: { actors: 2, status: 1 },
       slot_findings: {
-        actors: ['אתה', 'הספק שמסר את הבשר', 'השף הראשי'],
         status: ['יצאת מהמשמרת באמצע'],
       },
+      // Resolved cast (מפת שחקנים) — every character clear → code derives actors=2.
+      actor_map: [
+        { id: 'user', label: 'המשתמש', role: 'הטבח שקיבל את הבשר', relation: 'עצמו', clear: true },
+        { id: 'manager', label: 'הממונה', role: 'אמר שהבשר לא איכותי', relation: 'הבוס במטבח', clear: true },
+      ],
       new_info: true,
       exhausted: false,
     },

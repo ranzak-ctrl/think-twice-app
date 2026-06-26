@@ -13,7 +13,13 @@ import {
 } from './promptBuilder.js';
 import { complete } from '../adapters/model.js';
 import { countSelfOther } from './kpi.js';
-import { appendDecisionLog, recordGapObservation, addFindings } from './state.js';
+import {
+  appendDecisionLog,
+  recordGapObservation,
+  addFindings,
+  setActorMap,
+  deriveActorsScore,
+} from './state.js';
 import { preCheck } from '../safety/index.js';
 
 const PARSE_FALLBACK = 'שגיאה בעיבוד התשובה. נסה שוב.';
@@ -113,6 +119,22 @@ export async function runTurn(state, history, userText) {
       if (!nextState.coverage[stageKey] || !(slot in nextState.coverage[stageKey])) continue;
       nextState = addFindings(nextState, stageKey, slot, items);
     }
+  }
+
+  // Actor map (מפת שחקנים): the model reports the full resolved cast; the code
+  // replaces the stored map and DERIVES the stage-1 `actors` score from its clarity
+  // (overriding whatever the model put in slots.actors). A muddled cast can't reach
+  // 2, so the Router won't advance stage 1 on it. Only when a map is reported —
+  // otherwise the reported slot score stands (back-compat). The code decides.
+  if (ev.actorMap) {
+    nextState = setActorMap(nextState, ev.actorMap);
+    nextState = {
+      ...nextState,
+      coverage: {
+        ...nextState.coverage,
+        stage1: { ...nextState.coverage.stage1, actors: deriveActorsScore(nextState.actorMap) },
+      },
+    };
   }
 
   // Counters + per-turn signals. Saturation tracks real coverage progress, not the

@@ -35,6 +35,13 @@ export function createState() {
     // scores, never from findings. See addFindings below.
     findings: {},
 
+    // Actor map (מפת שחקנים) — stage-1 resolved cast, keyed by id. Each entry:
+    // { label, role, relation, clear }. The model maintains one coherent cast; the
+    // CODE derives the `actors` slot score from its clarity and the Router refuses
+    // to advance stage 1 while any actor is unclear (transition-protocol §1: "מפת
+    // שחקנים — לכל דמות תפקיד ברור"). See setActorMap / deriveActorsScore below.
+    actorMap: {},
+
     meta: {
       currentStage: 1,
       questionCount: 0,        // questions asked in current stage
@@ -160,6 +167,43 @@ export function addFindings(state, stageKey, slotKey, items) {
   };
 }
 
+// ── Actor map (מפת שחקנים) — stage-1 resolved cast ──
+// The model reports the FULL current cast each turn (already merged: one record per
+// character); the CODE replaces the stored map and derives the `actors` slot score
+// from its clarity (the gate). A character that is ambiguous or contradicted
+// (clear:false) keeps actors below 2, and the Router refuses to advance stage 1
+// while it stands. Model proposes the cast; the code owns the score/gate.
+export function setActorMap(state, reported) {
+  const byId = {};
+  for (const a of Array.isArray(reported) ? reported : []) {
+    const label = typeof a?.label === 'string' ? a.label.trim() : '';
+    if (!label) continue;
+    const id = typeof a?.id === 'string' && a.id.trim() ? a.id.trim() : label;
+    byId[id] = {
+      label,
+      role: typeof a?.role === 'string' ? a.role.trim() : '',
+      relation: typeof a?.relation === 'string' ? a.relation.trim() : '',
+      clear: a?.clear !== false, // clear unless the model explicitly says otherwise
+    };
+  }
+  return { ...state, actorMap: byId };
+}
+
+// Derive the `actors` slot score from the cast: empty → 0 (untouched), any unclear
+// character → 1 (partial), every character clear → 2. Honest coverage that also
+// makes fullCoverage fail on a muddled cast.
+export function deriveActorsScore(actorMap) {
+  const entries = Object.values(actorMap ?? {});
+  if (entries.length === 0) return 0;
+  return entries.every((a) => a.clear) ? 2 : 1;
+}
+
+// True when at least one character is explicitly unclear/contradicted — the Router
+// reads this to refuse a stage-1 advance.
+export function hasUnclearActor(actorMap) {
+  return Object.values(actorMap ?? {}).some((a) => a && a.clear === false);
+}
+
 // ── Gap-management (Build 1): consistency measure + asterisk (כוכבית) ──
 // The model reports a point observation { target, dimension, level, note }; the
 // CODE owns the record (status, counters, history). Build 1 scope = record + star
@@ -261,10 +305,11 @@ export function importState(json) {
   if (!state.coverage || !state.meta) {
     throw new Error('Invalid state document: missing coverage or meta');
   }
-  // Back-compat: older exports predate gap-management / per-slot findings.
+  // Back-compat: older exports predate gap-management / findings / actor map.
   return {
     ...state,
     gaps: state.gaps ?? { byTarget: {}, log: [] },
     findings: state.findings ?? {},
+    actorMap: state.actorMap ?? {},
   };
 }

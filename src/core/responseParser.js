@@ -28,6 +28,7 @@ export function parseResponse(raw) {
     evaluation: {
       slots: evaluation.slots ?? {},
       slotFindings: parseSlotFindings(evaluation),
+      actorMap: parseActorMap(evaluation),
       flagAvoidance: !!evaluation.flag_avoidance,
       flagFlight: !!evaluation.flag_flight,
       flagOverflow: !!evaluation.flag_overflow,
@@ -53,6 +54,28 @@ export function parseResponse(raw) {
       gapObservations: parseGapObservations(evaluation),
     },
   };
+}
+
+// Parse the model's actor map (מפת שחקנים) — the resolved stage-1 cast. Each entry:
+// { id, label, role, relation, clear }. Entries without a label are dropped; `clear`
+// defaults to true unless the model explicitly reports false. Returns null when
+// absent/empty/non-array so the session leaves the actors score untouched (back-compat).
+function parseActorMap(evaluation) {
+  const raw = evaluation.actor_map;
+  if (!Array.isArray(raw)) return null;
+  const out = [];
+  for (const a of raw) {
+    const label = typeof a?.label === 'string' ? a.label.trim() : '';
+    if (!label) continue;
+    out.push({
+      id: typeof a?.id === 'string' && a.id.trim() ? a.id.trim() : label,
+      label,
+      role: typeof a?.role === 'string' ? a.role.trim() : '',
+      relation: typeof a?.relation === 'string' ? a.relation.trim() : '',
+      clear: a?.clear !== false,
+    });
+  }
+  return out.length ? out : null;
 }
 
 // Parse the model's per-slot findings — short textual info items for guide-mode

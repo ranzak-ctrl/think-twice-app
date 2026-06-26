@@ -93,6 +93,46 @@ describe('parseResponse — slot findings', () => {
   });
 });
 
+describe('parseResponse — actor map', () => {
+  it('parses and normalizes the cast, defaulting clear to true', () => {
+    const raw = JSON.stringify({
+      message: 'מי עוד היה שם?',
+      evaluation: {
+        actor_map: [
+          { id: 'user', label: ' המשתמש ', role: 'המספר', relation: 'עצמו' },
+          { id: 'father', label: 'אבא', role: '', relation: '', clear: false },
+        ],
+      },
+    });
+    expect(parseResponse(raw).evaluation.actorMap).toEqual([
+      { id: 'user', label: 'המשתמש', role: 'המספר', relation: 'עצמו', clear: true },
+      { id: 'father', label: 'אבא', role: '', relation: '', clear: false },
+    ]);
+  });
+
+  it('drops entries without a label and falls back id→label', () => {
+    const raw = JSON.stringify({
+      message: 'a',
+      evaluation: { actor_map: [{ role: 'x' }, { label: 'רומי' }] },
+    });
+    expect(parseResponse(raw).evaluation.actorMap).toEqual([
+      { id: 'רומי', label: 'רומי', role: '', relation: '', clear: true },
+    ]);
+  });
+
+  it('returns null when actor_map is absent, empty, or non-array', () => {
+    expect(parseResponse(JSON.stringify({ message: 'a' })).evaluation.actorMap).toBeNull();
+    expect(
+      parseResponse(JSON.stringify({ message: 'a', evaluation: { actor_map: [] } })).evaluation
+        .actorMap,
+    ).toBeNull();
+    expect(
+      parseResponse(JSON.stringify({ message: 'a', evaluation: { actor_map: 'x' } })).evaluation
+        .actorMap,
+    ).toBeNull();
+  });
+});
+
 describe('parseResponse — gap observations', () => {
   it('parses and clamps gap_observations', () => {
     const raw = JSON.stringify({

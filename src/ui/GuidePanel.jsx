@@ -80,6 +80,7 @@ export default function GuidePanel({ state }) {
   const { coverage, meta, facts, thoughts, feelings, reactions } = state;
   const gaps = state.gaps ?? { byTarget: {}, log: [] };
   const findings = state.findings ?? {};
+  const actorMap = state.actorMap ?? {};
 
   // Stage progression collapse: the current stage is auto-open; on advance the new
   // stage opens and the previous collapses; any stage can still be toggled manually.
@@ -199,15 +200,44 @@ export default function GuidePanel({ state }) {
                 {stageNum}. {STAGE_NAMES[stageNum]}
               </div>
               {Object.entries(slots).map(([slot, val]) => {
-                const slotFindings = findings[stageKey]?.[slot] ?? [];
+                // Stage-1 actors shows the resolved cast (one entry per character,
+                // with a clarity badge) instead of the raw per-turn findings stream.
+                const isActors = stageKey === 'stage1' && slot === 'actors';
+                const actors = isActors ? Object.values(actorMap) : [];
+                const slotFindings = isActors ? [] : findings[stageKey]?.[slot] ?? [];
+                const hasDetail = actors.length > 0 || slotFindings.length > 0;
                 return (
-                  <div key={slot} style={{ paddingRight: 8, marginBottom: slotFindings.length ? 4 : 0 }}>
+                  <div key={slot} style={{ paddingRight: 8, marginBottom: hasDetail ? 4 : 0 }}>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <span style={{ color: SLOT_COLOR(val), fontWeight: 'bold', minWidth: 16 }}>
                         {val}
                       </span>
                       <span style={{ color: '#555' }}>{slot}</span>
                     </div>
+                    {actors.length > 0 && (
+                      <ul style={{ listStyle: 'none', margin: '2px 22px 0 0', padding: 0 }}>
+                        {actors.map((a, i) => (
+                          <li
+                            key={i}
+                            style={{ display: 'flex', gap: 4, fontSize: 11, lineHeight: 1.5 }}
+                          >
+                            <span
+                              style={{ color: a.clear ? '#1a7a3c' : '#c0392b' }}
+                              title={a.clear ? 'ברור' : 'עמום / סותר'}
+                            >
+                              {a.clear ? '✓' : '⚠'}
+                            </span>
+                            <span style={{ color: '#555' }}>
+                              <b>{a.label}</b>
+                              {a.role ? ` — ${a.role}` : ''}
+                              {a.relation ? (
+                                <span style={{ color: '#999' }}>{` · ${a.relation}`}</span>
+                              ) : null}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     {slotFindings.length > 0 && (
                       <ul style={{ listStyle: 'none', margin: '2px 22px 0 0', padding: 0 }}>
                         {slotFindings.map((f, i) => (

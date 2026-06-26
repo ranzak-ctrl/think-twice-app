@@ -68,6 +68,41 @@ describe('Stage 1 → 2 transition', () => {
   });
 });
 
+// ─── Actor-map gate: stage 1 must not advance on a muddled cast ──────────────
+describe('Actor-map gate (stage 1)', () => {
+  const withActorMap = (state, actorMap) => ({ ...state, actorMap });
+
+  it('holds at stage 1 when a character is unclear, even on full coverage', () => {
+    let s = fillStage(createState(), 1); // all slots at 2
+    s = withActorMap(s, { user: { clear: true }, father: { clear: false } });
+    const r = route(s);
+    expect(r.decision).toBe(Decision.STAY);
+    expect(r.reason).toBe('actors_unclear');
+  });
+
+  it('advances when every character is clear', () => {
+    let s = fillStage(createState(), 1);
+    s = withActorMap(s, { user: { clear: true }, father: { clear: true } });
+    expect(route(s).decision).toBe(Decision.REQUEST_CONFIRMATION);
+  });
+
+  it('is stage-1 only — an unclear map does not block a later stage', () => {
+    let s = { ...createState(), meta: { ...createState().meta, currentStage: 2 } };
+    s = fillStage(s, 2);
+    s = withActorMap(s, { x: { clear: false } });
+    expect(route(s).decision).toBe(Decision.REQUEST_CONFIRMATION);
+  });
+
+  it('the load guard still forces through an unclear cast (anti-deadlock)', () => {
+    let s = fillStage(createState(), 1);
+    s = withActorMap(s, { x: { clear: false } });
+    s = withQuestionCount(s, 20);
+    const r = route(s);
+    expect(r.decision).toBe(Decision.REQUEST_CONFIRMATION);
+    expect(r.reason).toBe('load_guard');
+  });
+});
+
 // ─── 3. Soft threshold: ~80% at 2 is enough ─────────────────────────────────
 describe('Soft threshold', () => {
   it('advances when 4/5 slots at 2 and 1 at 1', () => {

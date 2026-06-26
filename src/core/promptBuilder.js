@@ -83,12 +83,17 @@ function summarizeState(state) {
   const threads = (meta.savedThreads ?? []).length
     ? `\nsaved_threads: ${JSON.stringify(meta.savedThreads)}`
     : '';
+  // Surface the current cast so the model maintains ONE coherent map (refine, don't
+  // duplicate) and knows which characters still need disambiguation.
+  const actorMap = Object.keys(state.actorMap ?? {}).length
+    ? `\nactor_map: ${JSON.stringify(state.actorMap)}`
+    : '';
   return `## STATE SUMMARY (hidden from user)
 stage: ${meta.currentStage}
 questions_this_stage: ${meta.questionCount}
 saturation: ${meta.saturationCount}
 question_aperture: ${meta.questionAperture}
-resistance: ${meta.resistanceFlag || 'none'}${threads}
+resistance: ${meta.resistanceFlag || 'none'}${threads}${actorMap}
 facts: ${JSON.stringify(facts)}
 thoughts: ${JSON.stringify(thoughts)}
 feelings: ${JSON.stringify(feelings)}
