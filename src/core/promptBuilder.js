@@ -53,6 +53,24 @@ export function buildSummaryPrompt({ state }) {
     .join('\n\n---\n\n');
 }
 
+// Summary mode reuses the live conversation, which on the real API can pull the
+// model into CONTINUING the dialogue (a fresh probe) instead of summarizing — the
+// dissonance Ran hit (confirmation requested, but the message was a follow-up
+// question, not a recap). Anchor the call with the model's last probe + an explicit
+// instruction so the next reply is a recap. Role-valid (… user → assistant → user).
+export const SUMMARY_NUDGE =
+  'תודה. לפני שנמשיך הלאה — סכם בקצרה, במילים שלי, את מה שמסרתי בשלב הזה בלבד, ובקש אישור. ' +
+  'פתח ב"בוא נוודא שהבנתי נכון —" וסיים ב"זה מדויק?". אל תשאל שאלה חדשה, אל תעמיק ואל תוסיף מידע.';
+
+export function buildSummaryMessages(messages, probeMessage) {
+  if (!probeMessage) return messages; // no probe to anchor (rare) — leave as-is
+  return [
+    ...messages,
+    { role: 'assistant', content: probeMessage },
+    { role: 'user', content: SUMMARY_NUDGE },
+  ];
+}
+
 // Board mode — built when the Router returns SHOW_BOARD (stage 7). The code owns
 // the board: the model synthesises rows from the collected basket; we render them.
 export function buildBoardPrompt({ state }) {

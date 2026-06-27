@@ -8,6 +8,7 @@ import { route, Decision, resolveResistance } from './router.js';
 import {
   buildSystemPrompt,
   buildSummaryPrompt,
+  buildSummaryMessages,
   buildBoardPrompt,
   formatHistory,
 } from './promptBuilder.js';
@@ -265,7 +266,9 @@ export async function runTurn(state, history, userText) {
     const summaryResult = await complete({
       stage: nextState.meta.currentStage,
       systemPrompt: buildSummaryPrompt({ state: nextState }),
-      messages,
+      // Anchor with the model's probe + an explicit "summarize now" turn so the reply
+      // is a recap, not a continuation of the dialogue (the dissonance Ran hit).
+      messages: buildSummaryMessages(messages, result.message),
       mode: 'summary',
     });
     usage = addUsage(usage, summaryResult.usage);
