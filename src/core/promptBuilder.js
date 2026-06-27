@@ -2,6 +2,7 @@ import personaMd from '../content/prompts/persona.md?raw';
 import evaluatorMd from '../content/prompts/evaluator.md?raw';
 import resistanceMd from '../content/prompts/resistance.md?raw';
 import summaryMd from '../content/prompts/summary.md?raw';
+import openerMd from '../content/prompts/opener.md?raw';
 import boardMd from '../content/prompts/board.md?raw';
 import stage1Md from '../content/prompts/agents/stage1-intake.md?raw';
 import stage2Md from '../content/prompts/agents/stage2-interpretation.md?raw';
@@ -69,6 +70,34 @@ export function buildSummaryMessages(messages, probeMessage) {
     { role: 'assistant', content: probeMessage },
     { role: 'user', content: SUMMARY_NUDGE },
   ];
+}
+
+// Opener mode — built on a stage transition. The opening question must NOT be a
+// generic prompt ("how do you see it?"); it must depart from the user's own words
+// (יציאה מדברי המרואיין) and anchor in a concrete detail of the story just told,
+// then aim at the new stage's focus. Includes the stage agent (for the focus) +
+// the opener instruction + state (findings/actor-map carry the story).
+export function buildOpenerPrompt({ stage, state }) {
+  const stagePrompt = STAGE_PROMPTS[stage] ?? '';
+  return [
+    personaMd,
+    stagePrompt,
+    openerMd,
+    '## הנחיות אסורות\n' + FORBIDDEN_PATTERNS.join('\n'),
+    summarizeState(state),
+  ]
+    .filter(Boolean)
+    .join('\n\n---\n\n');
+}
+
+// The opener runs right after the user confirmed the summary, so the conversation
+// ends on the assistant's summary — but the API requires the messages to END WITH A
+// USER turn (no assistant prefill). Append the user's confirmation so the model's
+// reply is the opening question.
+export const OPENER_NUDGE = 'כן, זה מדויק. אפשר להמשיך.';
+
+export function buildOpenerMessages(messages) {
+  return [...messages, { role: 'user', content: OPENER_NUDGE }];
 }
 
 // Board mode — built when the Router returns SHOW_BOARD (stage 7). The code owns

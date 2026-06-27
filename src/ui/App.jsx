@@ -3,8 +3,7 @@ import Chat from './Chat.jsx';
 import GuidePanel from './GuidePanel.jsx';
 import { createState, importState } from '../core/state.js';
 import { confirmAndAdvance, rejectConfirmation } from '../core/router.js';
-import { signpostForStage } from '../content/signposting.js';
-import { runTurn } from '../core/session.js';
+import { runTurn, generateStageOpener } from '../core/session.js';
 
 const OPENING_MESSAGE = {
   role: 'assistant',
@@ -41,14 +40,22 @@ export default function App() {
     [state, history, loading]
   );
 
-  const handleConfirm = useCallback(() => {
-    setState((s) => {
-      const next = confirmAndAdvance(s);
-      const msg = signpostForStage(next.meta.currentStage);
-      addMessage('assistant', msg);
-      return next;
-    });
-  }, []);
+  const handleConfirm = useCallback(async () => {
+    if (loading) return;
+    // Advance first (drops the confirm UI), then generate a story-anchored opening
+    // question for the new stage. addMessage runs OUTSIDE any setState updater, so it
+    // fires once (a side effect inside an updater double-fires under StrictMode).
+    const advanced = confirmAndAdvance(state);
+    setState(advanced);
+    setLoading(true);
+    try {
+      const { nextState, message } = await generateStageOpener(advanced, history);
+      setState(nextState);
+      addMessage('assistant', message);
+    } finally {
+      setLoading(false);
+    }
+  }, [state, history, loading]);
 
   const handleReject = useCallback(() => {
     setState((s) => rejectConfirmation(s));

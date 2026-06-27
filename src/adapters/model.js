@@ -347,6 +347,13 @@ const turnCounters = {};
 function mockComplete({ stage, mode }) {
   const sc = SCENARIOS[activeScenario] ?? SCENARIOS.meat;
 
+  // Opener mode — stage transition. The mock has no live story to anchor to, so
+  // signal failure and let the caller fall back to the static signpost (keeps dev
+  // and tests deterministic; the anchored opener is a real-API behavior).
+  if (mode === 'opener') {
+    return { ok: false, error: 'mock_no_opener', message: null, evaluation: null };
+  }
+
   // Summary mode — Router decided to transition; return the stage recap and
   // do NOT advance the turn counter (no probing turn was consumed).
   if (mode === 'summary') {
@@ -441,13 +448,13 @@ export async function complete({ stage, systemPrompt, messages, mode }) {
     const data = await res.json();
     usage = mergeUsage(usage, data.usage);
     const raw = data.content?.[0]?.text ?? '';
-    // Summary mode is a plain confirmation message — no JSON to parse, so the model's
-    // natural prose can't fail (live symptom was no_json: the model returns prose).
-    if (mode === 'summary') {
+    // Summary / opener modes are plain prose — no JSON to parse (the model's natural
+    // text can't fail a JSON parse; live symptom of forcing JSON here was no_json).
+    if (mode === 'summary' || mode === 'opener') {
       const message = raw.trim();
       return message
         ? { ok: true, message, evaluation: null, usage }
-        : { ok: false, error: 'empty_summary', message: 'שגיאה בעיבוד התשובה. נסה שוב.', evaluation: null, usage };
+        : { ok: false, error: `empty_${mode}`, message: 'שגיאה בעיבוד התשובה. נסה שוב.', evaluation: null, usage };
     }
     const parsed = parseResponse(raw);
     if (parsed.ok) return { ...parsed, usage };
