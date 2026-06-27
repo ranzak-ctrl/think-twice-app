@@ -57,9 +57,12 @@ export function parseResponse(raw) {
 }
 
 // Parse the model's actor map (מפת שחקנים) — the resolved stage-1 cast. Each entry:
-// { id, label, role, relation, clear }. Entries without a label are dropped; `clear`
-// defaults to true unless the model explicitly reports false. Returns null when
-// absent/empty/non-array so the session leaves the actors score untouched (back-compat).
+// { id, label, role, relation, clear, actions }. `actions` is what THAT character did
+// in the story (attribution — keeps other actors' actions out of the user's slots).
+// Entries without a label are dropped; `clear` defaults to true unless explicitly
+// false. Returns null when absent/empty/non-array (back-compat — actors score stands).
+const ACTOR_ACTIONS_MAX = 12;
+
 function parseActorMap(evaluation) {
   const raw = evaluation.actor_map;
   if (!Array.isArray(raw)) return null;
@@ -73,6 +76,12 @@ function parseActorMap(evaluation) {
       role: typeof a?.role === 'string' ? a.role.trim() : '',
       relation: typeof a?.relation === 'string' ? a.relation.trim() : '',
       clear: a?.clear !== false,
+      actions: Array.isArray(a?.actions)
+        ? a.actions
+            .map((s) => (typeof s === 'string' ? s.trim() : ''))
+            .filter(Boolean)
+            .slice(0, ACTOR_ACTIONS_MAX)
+        : [],
     });
   }
   return out.length ? out : null;

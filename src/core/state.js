@@ -184,6 +184,11 @@ export function setActorMap(state, reported) {
       role: typeof a?.role === 'string' ? a.role.trim() : '',
       relation: typeof a?.relation === 'string' ? a.relation.trim() : '',
       clear: a?.clear !== false, // clear unless the model explicitly says otherwise
+      // What this character did in the story — attribution keeps other actors'
+      // actions out of the user's auto_reaction slot.
+      actions: Array.isArray(a?.actions)
+        ? a.actions.map((s) => (typeof s === 'string' ? s.trim() : '')).filter(Boolean)
+        : [],
     };
   }
   return { ...state, actorMap: byId };

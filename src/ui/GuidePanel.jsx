@@ -219,21 +219,33 @@ export default function GuidePanel({ state }) {
                         {actors.map((a, i) => (
                           <li
                             key={i}
-                            style={{ display: 'flex', gap: 4, fontSize: 11, lineHeight: 1.5 }}
+                            style={{ fontSize: 11, lineHeight: 1.5, marginBottom: a.actions?.length ? 3 : 0 }}
                           >
-                            <span
-                              style={{ color: a.clear ? '#1a7a3c' : '#c0392b' }}
-                              title={a.clear ? 'ברור' : 'עמום / סותר'}
-                            >
-                              {a.clear ? '✓' : '⚠'}
-                            </span>
-                            <span style={{ color: '#555' }}>
-                              <b>{a.label}</b>
-                              {a.role ? ` — ${a.role}` : ''}
-                              {a.relation ? (
-                                <span style={{ color: '#999' }}>{` · ${a.relation}`}</span>
-                              ) : null}
-                            </span>
+                            <div style={{ display: 'flex', gap: 4 }}>
+                              <span
+                                style={{ color: a.clear ? '#1a7a3c' : '#c0392b' }}
+                                title={a.clear ? 'ברור' : 'עמום / סותר'}
+                              >
+                                {a.clear ? '✓' : '⚠'}
+                              </span>
+                              <span style={{ color: '#555' }}>
+                                <b>{a.label}</b>
+                                {a.role ? ` — ${a.role}` : ''}
+                                {a.relation ? (
+                                  <span style={{ color: '#999' }}>{` · ${a.relation}`}</span>
+                                ) : null}
+                              </span>
+                            </div>
+                            {a.actions?.length > 0 && (
+                              <ul style={{ listStyle: 'none', margin: '1px 18px 0 0', padding: 0 }}>
+                                {a.actions.map((act, j) => (
+                                  <li key={j} style={{ display: 'flex', gap: 4, color: '#888' }}>
+                                    <span style={{ color: '#bbb' }}>›</span>
+                                    <span>{act}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
                           </li>
                         ))}
                       </ul>

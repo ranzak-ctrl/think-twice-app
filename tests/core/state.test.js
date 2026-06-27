@@ -92,14 +92,23 @@ describe('actor map', () => {
       { id: 'romi', label: 'רומי', role: 'הבת הגדולה', relation: 'בת', clear: true },
     ]);
     expect(s.actorMap).toEqual({
-      user: { label: 'המשתמש', role: 'המספר', relation: 'עצמו', clear: true },
-      romi: { label: 'רומי', role: 'הבת הגדולה', relation: 'בת', clear: true },
+      user: { label: 'המשתמש', role: 'המספר', relation: 'עצמו', clear: true, actions: [] },
+      romi: { label: 'רומי', role: 'הבת הגדולה', relation: 'בת', clear: true, actions: [] },
     });
   });
 
   it('setActorMap falls back id→label and defaults clear to true', () => {
     const s = setActorMap(createState(), [{ label: 'אבא' }]);
-    expect(s.actorMap).toEqual({ אבא: { label: 'אבא', role: '', relation: '', clear: true } });
+    expect(s.actorMap).toEqual({ אבא: { label: 'אבא', role: '', relation: '', clear: true, actions: [] } });
+  });
+
+  it('setActorMap stores each actor’s own actions (attribution), trimming empties', () => {
+    const s = setActorMap(createState(), [
+      { id: 'user', label: 'המשתמש', actions: [' עזב את המקום ', ''] },
+      { id: 'sister', label: 'נורית', actions: ['לא ענתה להודעות', 'לא התקשרה בחזרה'] },
+    ]);
+    expect(s.actorMap.user.actions).toEqual(['עזב את המקום']);
+    expect(s.actorMap.sister.actions).toEqual(['לא ענתה להודעות', 'לא התקשרה בחזרה']);
   });
 
   it('setActorMap does not mutate the input state', () => {

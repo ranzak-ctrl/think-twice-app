@@ -30,6 +30,17 @@ describe('session — actor map → derived actors score', () => {
     expect(nextState.actorMap.romi.role).toBe('הבת הגדולה');
   });
 
+  it('carries each actor’s own actions through (attribution)', async () => {
+    const { nextState } = await runWithEval({
+      actor_map: [
+        { id: 'user', label: 'המשתמש', clear: true, actions: ['עזב את המקום'] },
+        { id: 'sister', label: 'נורית', clear: true, actions: ['לא ענתה להודעות'] },
+      ],
+    });
+    expect(nextState.actorMap.user.actions).toEqual(['עזב את המקום']);
+    expect(nextState.actorMap.sister.actions).toEqual(['לא ענתה להודעות']);
+  });
+
   it('derives actors=2 when every character is clear', async () => {
     const { nextState } = await runWithEval({
       actor_map: [{ id: 'user', label: 'המשתמש', clear: true }],

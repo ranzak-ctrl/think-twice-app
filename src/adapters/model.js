@@ -35,9 +35,24 @@ export const MOCK_RESPONSES = {
         status: ['יצאת מהמשמרת באמצע'],
       },
       // Resolved cast (מפת שחקנים) — every character clear → code derives actors=2.
+      // Each actor carries their own actions (attribution keeps the user's slot clean).
       actor_map: [
-        { id: 'user', label: 'המשתמש', role: 'הטבח שקיבל את הבשר', relation: 'עצמו', clear: true },
-        { id: 'manager', label: 'הממונה', role: 'אמר שהבשר לא איכותי', relation: 'הבוס במטבח', clear: true },
+        {
+          id: 'user',
+          label: 'המשתמש',
+          role: 'הטבח שקיבל את הבשר',
+          relation: 'עצמו',
+          clear: true,
+          actions: ['קיבל את משלוח הבשר', 'עזב את המשמרת באמצע'],
+        },
+        {
+          id: 'manager',
+          label: 'הממונה',
+          role: 'אמר שהבשר לא איכותי',
+          relation: 'הבוס במטבח',
+          clear: true,
+          actions: ['אמר שהבשר לא איכותי'],
+        },
       ],
       new_info: true,
       exhausted: false,

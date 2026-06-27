@@ -94,19 +94,21 @@ describe('parseResponse — slot findings', () => {
 });
 
 describe('parseResponse — actor map', () => {
-  it('parses and normalizes the cast, defaulting clear to true', () => {
+  it('parses the cast, defaulting clear→true and actions→[], trimming actions', () => {
     const raw = JSON.stringify({
       message: 'מי עוד היה שם?',
       evaluation: {
         actor_map: [
-          { id: 'user', label: ' המשתמש ', role: 'המספר', relation: 'עצמו' },
+          { id: 'user', label: ' המשתמש ', role: 'המספר', relation: 'עצמו', actions: [' עזב ', '', 'התקשר'] },
+          { id: 'sister', label: 'נורית', role: 'אחות', relation: 'אחות המשתמש', clear: true, actions: ['לא ענתה להודעות'] },
           { id: 'father', label: 'אבא', role: '', relation: '', clear: false },
         ],
       },
     });
     expect(parseResponse(raw).evaluation.actorMap).toEqual([
-      { id: 'user', label: 'המשתמש', role: 'המספר', relation: 'עצמו', clear: true },
-      { id: 'father', label: 'אבא', role: '', relation: '', clear: false },
+      { id: 'user', label: 'המשתמש', role: 'המספר', relation: 'עצמו', clear: true, actions: ['עזב', 'התקשר'] },
+      { id: 'sister', label: 'נורית', role: 'אחות', relation: 'אחות המשתמש', clear: true, actions: ['לא ענתה להודעות'] },
+      { id: 'father', label: 'אבא', role: '', relation: '', clear: false, actions: [] },
     ]);
   });
 
@@ -116,7 +118,7 @@ describe('parseResponse — actor map', () => {
       evaluation: { actor_map: [{ role: 'x' }, { label: 'רומי' }] },
     });
     expect(parseResponse(raw).evaluation.actorMap).toEqual([
-      { id: 'רומי', label: 'רומי', role: '', relation: '', clear: true },
+      { id: 'רומי', label: 'רומי', role: '', relation: '', clear: true, actions: [] },
     ]);
   });
 
