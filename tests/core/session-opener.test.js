@@ -51,4 +51,12 @@ describe('buildOpenerMessages', () => {
     const out = buildOpenerMessages([]);
     expect(out[out.length - 1].role).toBe('user');
   });
+
+  it('leaves messages unchanged when they already end with a user turn (Re-open)', () => {
+    const convo = [
+      { role: 'assistant', content: 'שאלה' },
+      { role: 'user', content: 'אני אדבר איתו וגם אחכה' },
+    ];
+    expect(buildOpenerMessages(convo)).toBe(convo);
+  });
 });

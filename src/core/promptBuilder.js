@@ -77,12 +77,17 @@ export function buildSummaryMessages(messages, probeMessage) {
 // (יציאה מדברי המרואיין) and anchor in a concrete detail of the story just told,
 // then aim at the new stage's focus. Includes the stage agent (for the focus) +
 // the opener instruction + state (findings/actor-map carry the story).
-export function buildOpenerPrompt({ stage, state }) {
+// `situation` (optional) frames the transition — e.g. a Re-open back to an earlier
+// stage to complete info — so the opener can explain why we returned. Forward
+// transitions omit it.
+export function buildOpenerPrompt({ stage, state, situation }) {
   const stagePrompt = STAGE_PROMPTS[stage] ?? '';
+  const situationBlock = situation ? `## הקשר המעבר\n${situation}` : '';
   return [
     personaMd,
     stagePrompt,
     openerMd,
+    situationBlock,
     '## הנחיות אסורות\n' + FORBIDDEN_PATTERNS.join('\n'),
     summarizeState(state),
   ]
@@ -90,13 +95,14 @@ export function buildOpenerPrompt({ stage, state }) {
     .join('\n\n---\n\n');
 }
 
-// The opener runs right after the user confirmed the summary, so the conversation
-// ends on the assistant's summary — but the API requires the messages to END WITH A
-// USER turn (no assistant prefill). Append the user's confirmation so the model's
-// reply is the opening question.
+// The API requires the messages to END WITH A USER turn (no assistant prefill).
+// Forward transitions end on the assistant's summary → append the user's
+// confirmation; a Re-open already ends on the user's own turn → leave it as is.
 export const OPENER_NUDGE = 'כן, זה מדויק. אפשר להמשיך.';
 
 export function buildOpenerMessages(messages) {
+  const last = messages[messages.length - 1];
+  if (last && last.role === 'user') return messages; // already ends with a user turn
   return [...messages, { role: 'user', content: OPENER_NUDGE }];
 }
 
