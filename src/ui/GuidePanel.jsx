@@ -76,7 +76,7 @@ function formatCost(usage) {
   return `$${usd.toFixed(4)} (≈ ${(usd * ILS_PER_USD).toFixed(2)} ₪)`;
 }
 
-export default function GuidePanel({ state }) {
+export default function GuidePanel({ state, width = 320 }) {
   const { coverage, meta, facts, thoughts, feelings, reactions } = state;
   const gaps = state.gaps ?? { byTarget: {}, log: [] };
   const findings = state.findings ?? {};
@@ -97,8 +97,8 @@ export default function GuidePanel({ state }) {
   return (
     <div
       style={{
-        width: 320,
-        borderRight: '1px solid #e0e0e0',
+        width,
+        flexShrink: 0,
         background: '#fff',
         overflowY: 'auto',
         padding: 16,

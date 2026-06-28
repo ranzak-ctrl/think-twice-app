@@ -15,11 +15,32 @@ export default function App() {
   const [state, setState] = useState(() => createState());
   const [history, setHistory] = useState([OPENING_MESSAGE]);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [guideWidth, setGuideWidth] = useState(340); // resizable via the divider
   const [loading, setLoading] = useState(false);
   const [safetyMessage, setSafetyMessage] = useState(null);
 
   const addMessage = (role, content) =>
     setHistory((h) => [...h, { role, content }]);
+
+  // Drag the divider to resize the guide panel vs. the chat. RTL: the guide panel
+  // sits on the left (x: 0..width), so its right edge follows the cursor's clientX.
+  const startGuideResize = useCallback((e) => {
+    e.preventDefault();
+    const onMove = (ev) => {
+      const w = Math.min(Math.max(ev.clientX, 240), window.innerWidth - 320);
+      setGuideWidth(w);
+    };
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, []);
 
   const handleUserMessage = useCallback(
     async (text) => {
@@ -174,8 +195,22 @@ export default function App() {
         />
       </div>
 
+      {/* Draggable divider — resize the guide panel vs. the chat */}
+      {guideOpen && (
+        <div
+          onMouseDown={startGuideResize}
+          title="גרור לשינוי רוחב"
+          style={{
+            width: 6,
+            flexShrink: 0,
+            cursor: 'col-resize',
+            background: '#d8d8d8',
+            borderInline: '1px solid #ccc',
+          }}
+        />
+      )}
       {/* Guide panel (clinician debug) */}
-      {guideOpen && <GuidePanel state={state} />}
+      {guideOpen && <GuidePanel state={state} width={guideWidth} />}
     </div>
   );
 }
