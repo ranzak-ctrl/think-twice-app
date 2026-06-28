@@ -94,7 +94,7 @@ describe('parseResponse — slot findings', () => {
 });
 
 describe('parseResponse — actor map', () => {
-  it('parses the cast, defaulting clear→true and actions→[], trimming actions', () => {
+  it('parses the cast; clear is null when unspecified (delta-friendly), actions trimmed', () => {
     const raw = JSON.stringify({
       message: 'מי עוד היה שם?',
       evaluation: {
@@ -106,19 +106,19 @@ describe('parseResponse — actor map', () => {
       },
     });
     expect(parseResponse(raw).evaluation.actorMap).toEqual([
-      { id: 'user', label: 'המשתמש', role: 'המספר', relation: 'עצמו', clear: true, actions: ['עזב', 'התקשר'] },
+      { id: 'user', label: 'המשתמש', role: 'המספר', relation: 'עצמו', clear: null, actions: ['עזב', 'התקשר'] },
       { id: 'sister', label: 'נורית', role: 'אחות', relation: 'אחות המשתמש', clear: true, actions: ['לא ענתה להודעות'] },
       { id: 'father', label: 'אבא', role: '', relation: '', clear: false, actions: [] },
     ]);
   });
 
-  it('drops entries without a label and falls back id→label', () => {
+  it('drops entries with neither id nor label; keeps an id-only delta', () => {
     const raw = JSON.stringify({
       message: 'a',
-      evaluation: { actor_map: [{ role: 'x' }, { label: 'רומי' }] },
+      evaluation: { actor_map: [{ role: 'x' }, { id: 'sister', actions: ['ניתקה'] }] },
     });
     expect(parseResponse(raw).evaluation.actorMap).toEqual([
-      { id: 'רומי', label: 'רומי', role: '', relation: '', clear: true, actions: [] },
+      { id: 'sister', label: '', role: '', relation: '', clear: null, actions: ['ניתקה'] },
     ]);
   });
 

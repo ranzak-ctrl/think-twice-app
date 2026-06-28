@@ -168,27 +168,33 @@ export function addFindings(state, stageKey, slotKey, items) {
 }
 
 // ── Actor map (מפת שחקנים) — stage-1 resolved cast ──
-// The model reports the FULL current cast each turn (already merged: one record per
-// character); the CODE replaces the stored map and derives the `actors` slot score
-// from its clarity (the gate). A character that is ambiguous or contradicted
-// (clear:false) keeps actors below 2, and the Router refuses to advance stage 1
-// while it stands. Model proposes the cast; the code owns the score/gate.
-export function setActorMap(state, reported) {
-  const byId = {};
+// The model reports DELTAS (new/changed characters this turn), not the full cast —
+// re-emitting the whole cast every turn was the main latency cost. The CODE MERGES
+// by id and derives the `actors` slot score from clarity (the gate). A character that
+// is ambiguous or contradicted (clear:false) keeps actors below 2, and the Router
+// refuses to advance stage 1 while it stands. Model proposes; the code owns the gate.
+export const ACTOR_ACTIONS_MAX = 12;
+
+export function mergeActorMap(state, reported) {
+  const byId = { ...(state.actorMap ?? {}) };
   for (const a of Array.isArray(reported) ? reported : []) {
     const label = typeof a?.label === 'string' ? a.label.trim() : '';
-    if (!label) continue;
     const id = typeof a?.id === 'string' && a.id.trim() ? a.id.trim() : label;
+    if (!id) continue;
+    const prev = byId[id] ?? { label: '', role: '', relation: '', clear: true, actions: [] };
+    // Append only this turn's new actions (deduped) — the model sends deltas.
+    const incoming = Array.isArray(a?.actions)
+      ? a.actions.map((s) => (typeof s === 'string' ? s.trim() : '')).filter(Boolean)
+      : [];
+    const actions = [...prev.actions];
+    for (const act of incoming) if (!actions.includes(act)) actions.push(act);
     byId[id] = {
-      label,
-      role: typeof a?.role === 'string' ? a.role.trim() : '',
-      relation: typeof a?.relation === 'string' ? a.relation.trim() : '',
-      clear: a?.clear !== false, // clear unless the model explicitly says otherwise
-      // What this character did in the story — attribution keeps other actors'
-      // actions out of the user's auto_reaction slot.
-      actions: Array.isArray(a?.actions)
-        ? a.actions.map((s) => (typeof s === 'string' ? s.trim() : '')).filter(Boolean)
-        : [],
+      label: label || prev.label,
+      role: typeof a?.role === 'string' && a.role.trim() ? a.role.trim() : prev.role,
+      relation: typeof a?.relation === 'string' && a.relation.trim() ? a.relation.trim() : prev.relation,
+      // null (unspecified this turn) keeps the prior value; new actors default to clear.
+      clear: typeof a?.clear === 'boolean' ? a.clear : prev.clear,
+      actions: actions.slice(0, ACTOR_ACTIONS_MAX),
     };
   }
   return { ...state, actorMap: byId };

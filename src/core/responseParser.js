@@ -69,13 +69,16 @@ function parseActorMap(evaluation) {
   const out = [];
   for (const a of raw) {
     const label = typeof a?.label === 'string' ? a.label.trim() : '';
-    if (!label) continue;
+    const id = typeof a?.id === 'string' && a.id.trim() ? a.id.trim() : label;
+    if (!id) continue; // need an id or a label (a delta may carry id-only)
     out.push({
-      id: typeof a?.id === 'string' && a.id.trim() ? a.id.trim() : label,
+      id,
       label,
       role: typeof a?.role === 'string' ? a.role.trim() : '',
       relation: typeof a?.relation === 'string' ? a.relation.trim() : '',
-      clear: a?.clear !== false,
+      // null = the model didn't specify clarity this turn → the merge keeps the
+      // existing value (delta reports). New actors default to clear in the merge.
+      clear: typeof a?.clear === 'boolean' ? a.clear : null,
       actions: Array.isArray(a?.actions)
         ? a.actions
             .map((s) => (typeof s === 'string' ? s.trim() : ''))

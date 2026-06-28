@@ -5,7 +5,7 @@ import {
   DECISION_LOG_MAX,
   addFindings,
   FINDINGS_PER_SLOT_MAX,
-  setActorMap,
+  mergeActorMap,
   deriveActorsScore,
   hasUnclearActor,
 } from '../../src/core/state.js';
@@ -86,34 +86,39 @@ describe('addFindings', () => {
 });
 
 describe('actor map', () => {
-  it('setActorMap keys by id and replaces the whole cast', () => {
-    const s = setActorMap(createState(), [
+  it('mergeActorMap adds new actors by id, keeping existing ones', () => {
+    let s = mergeActorMap(createState(), [
       { id: 'user', label: 'המשתמש', role: 'המספר', relation: 'עצמו', clear: true },
-      { id: 'romi', label: 'רומי', role: 'הבת הגדולה', relation: 'בת', clear: true },
     ]);
-    expect(s.actorMap).toEqual({
-      user: { label: 'המשתמש', role: 'המספר', relation: 'עצמו', clear: true, actions: [] },
-      romi: { label: 'רומי', role: 'הבת הגדולה', relation: 'בת', clear: true, actions: [] },
-    });
+    s = mergeActorMap(s, [{ id: 'romi', label: 'רומי', role: 'הבת הגדולה', relation: 'בת', clear: true }]);
+    expect(Object.keys(s.actorMap)).toEqual(['user', 'romi']);
+    expect(s.actorMap.user.role).toBe('המספר'); // earlier actor untouched
   });
 
-  it('setActorMap falls back id→label and defaults clear to true', () => {
-    const s = setActorMap(createState(), [{ label: 'אבא' }]);
-    expect(s.actorMap).toEqual({ אבא: { label: 'אבא', role: '', relation: '', clear: true, actions: [] } });
-  });
-
-  it('setActorMap stores each actor’s own actions (attribution), trimming empties', () => {
-    const s = setActorMap(createState(), [
-      { id: 'user', label: 'המשתמש', actions: [' עזב את המקום ', ''] },
-      { id: 'sister', label: 'נורית', actions: ['לא ענתה להודעות', 'לא התקשרה בחזרה'] },
+  it('mergeActorMap appends new actions to an existing actor (deduped), trimming empties', () => {
+    let s = mergeActorMap(createState(), [
+      { id: 'sister', label: 'נורית', clear: true, actions: [' לא הגיעה ', ''] },
     ]);
-    expect(s.actorMap.user.actions).toEqual(['עזב את המקום']);
-    expect(s.actorMap.sister.actions).toEqual(['לא ענתה להודעות', 'לא התקשרה בחזרה']);
+    s = mergeActorMap(s, [{ id: 'sister', label: 'נורית', actions: ['לא הגיעה', 'ניתקה טלפון'] }]);
+    expect(s.actorMap.sister.actions).toEqual(['לא הגיעה', 'ניתקה טלפון']);
   });
 
-  it('setActorMap does not mutate the input state', () => {
+  it('mergeActorMap: clear=null keeps the prior value; a boolean updates it', () => {
+    let s = mergeActorMap(createState(), [{ id: 'father', label: 'אבא', clear: false }]);
+    s = mergeActorMap(s, [{ id: 'father', label: 'אבא', clear: null, actions: ['x'] }]);
+    expect(s.actorMap.father.clear).toBe(false); // kept across a delta without clear
+    s = mergeActorMap(s, [{ id: 'father', label: 'אבא', clear: true }]);
+    expect(s.actorMap.father.clear).toBe(true); // updated when provided
+  });
+
+  it('mergeActorMap defaults a brand-new actor to clear when unspecified', () => {
+    const s = mergeActorMap(createState(), [{ id: 'x', label: 'דמות', clear: null }]);
+    expect(s.actorMap.x.clear).toBe(true);
+  });
+
+  it('mergeActorMap does not mutate the input state', () => {
     const base = createState();
-    setActorMap(base, [{ id: 'x', label: 'x' }]);
+    mergeActorMap(base, [{ id: 'x', label: 'דמות' }]);
     expect(base.actorMap).toEqual({});
   });
 

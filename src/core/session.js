@@ -21,7 +21,7 @@ import {
   appendDecisionLog,
   recordGapObservation,
   addFindings,
-  setActorMap,
+  mergeActorMap,
   deriveActorsScore,
 } from './state.js';
 import { preCheck } from '../safety/index.js';
@@ -130,8 +130,8 @@ export async function runTurn(state, history, userText) {
   // (overriding whatever the model put in slots.actors). A muddled cast can't reach
   // 2, so the Router won't advance stage 1 on it. Only when a map is reported —
   // otherwise the reported slot score stands (back-compat). The code decides.
-  if (ev.actorMap) {
-    nextState = setActorMap(nextState, ev.actorMap);
+  if (stage === 1 && ev.actorMap) {
+    nextState = mergeActorMap(nextState, ev.actorMap);
     nextState = {
       ...nextState,
       coverage: {
