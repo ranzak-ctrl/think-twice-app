@@ -21,7 +21,8 @@
 
 ## מבנה
 - src/ui — React, RTL, צ'אט, כפתורי אישור, לוח הכרעה (נבנה מה-state בקוד!), מצב מדריך
-- src/core — router.js (מכונת מצבים), state.js (StateDocument), promptBuilder.js, responseParser.js
+- src/core — router.js (מכונת מצבים), state.js (StateDocument: coverage · `findings` ממצאים-לסלוט · `actorMap` קאסט-פתור · `gaps` עקביות · meta), promptBuilder.js, responseParser.js, session.js (לולאת התור + `generateStageOpener`)
+- דיווח המודל (evaluation): `evaluation` **לפני** `message` ("חלץ, אז שאל"); כולל `slot_findings` · `actor_map` (דלתא) · `gap_observations`
 - src/content — prompts/ (דמות גלובלית, 7 סוכנים, מעריך), forbidden.js (רשימה שחורה)
 - src/adapters — model.js (ממשק complete() יחיד; כיום Artifact AI, מחר API)
 - src/safety — בדיקת קדם + פרוטוקול עצירה
@@ -30,11 +31,13 @@
 
 ## כללי Router קשיחים (מתוך ה-Transition Protocol)
 - סולם Slot: 0 / 1 / 2 / U (Unknown לגיטימי — ערך סופי תקין)
-- מעבר שלב: כל ה-Core Slots ≥ 1, רובם 2 (~80%), מונה מיצוי = 2 תורות בלי מידע חדש, ואישור משתמש לסיכום
-- מגן עומס: 5–7 שאלות לשלב (4–5 בשלב 5) או גלאי עייפות ← מעבר גם בלי מיצוי
+- מעבר שלב: **כיסוי-מלא** (כל ה-Core Slots ב-2) מעביר לבד; אחרת — כל ה-Slots ≥ 1, רובם 2 (~80%), מונה מיצוי = 2 תורות בלי מידע חדש. ואז אישור משתמש לסיכום
+- **שער מפת-שחקנים (שלב 1):** הראיון לא עובר כל עוד דמות במפה לא-ברורה (`clear:false`). הקוד גוזר את ציון `actors` מבהירות המפה (ריק→0 / עמום→1 / כולם ברורים→2) — לא מהמספר שהמודל מדווח. מגן-העומס = רשת ביטחון בלבד
+- מגן עומס: backstop גבוה (placeholder 20/15) ← מעבר כפוי גם בלי מיצוי. להחליף בגלאי עייפות (questions-for-natali §1)
 - תלויות: שלב 5 דורש שלב 2 ממוצה; שלב 7 דורש את שלב 6 + יעד מנוסח
 - חד-כיווניות 6→7: שיפוט לא חוזר לייצור; רק ייצור נפתח מחדש (מבחן "או-או")
-- Re-open: מידע סותר/מרחיב מוריד ציון Slot ופותח נושא סגור
+- Re-open: מידע סותר/מרחיב מוריד ציון Slot ופותח נושא סגור + מפיק **פתיח מעוגן** שמסביר למה חזרנו
+- כל מעבר (קדימה + Re-open) מפיק **פתיח-שלב שנוצר ע"י המודל ומעוגן בסיפור** (`opener.md` · `generateStageOpener`); ה-signpost הסטטי = fallback
 - פתח שאלה (open/closed) — משתנה state; הימנעות ← פתוח, בריחת נושא ← סגור זמנית
 - שלב 7: סיווג חדות (sharp / structured_deferral / vague); vague לעולם לא סוגר סשן; מבחן חבילה חובה לפני סגירה
 

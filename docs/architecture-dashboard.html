@@ -168,7 +168,7 @@
   </div>
 
   <div class="view show" id="view-arch"><div class="tt-arch"><div class="wrap">
-    <h1>ארכיטקטורה מאוחדת <span class="new">כולל ניהול פערים</span></h1>
+    <h1>ארכיטקטורה מאוחדת <span class="new">מפת-שחקנים · ממצאים · פתיחים</span></h1>
     <p class="sub">7 שלבים · 6 סוכנים · State · Router</p>
     <div class="layer-label"><span class="num">1</span> השיחה — מסע המשתמש (7 שלבים)</div>
     <div class="row">
@@ -206,33 +206,43 @@
           <div class="sat">0 / 1 / 2 / U · saturation = 1</div>
         </div>
       </div>
+      <div class="gaps" style="border-color:var(--accent)">
+        <div class="cap" style="color:var(--accent)">מפת שחקנים + ממצאים <span class="new">✅ ממומש</span></div>
+        <div class="gaplist">
+          • <code>actorMap</code> — קאסט פתור: <code>id → {label, role, relation, clear, actions[]}</code><br>
+          • הקוד גוזר <code>actors</code> מהבהירות: ריק→0 · עמום→1 · כולם ברורים→2<br>
+          • <code>findings</code> — ממצאים מילוליים לכל slot: <code>stageN.slot → [...]</code>
+        </div>
+        <div class="sat">המודל מדווח דלתא (לא הקאסט המלא) · הקוד ממזג לפי id · שלב-1 בלבד</div>
+      </div>
       <div class="gaps">
-        <div class="cap" style="color:var(--accent2)">Gaps — מדד עקביות <span class="new">🟡 באפיון</span></div>
+        <div class="cap" style="color:var(--accent2)">Gaps — מדד עקביות <span class="new">✅ Build 1</span></div>
         <div class="gaplist">
           • <code>stage1.timeline</code> · <b>9</b>/10 · <span class="st-res">resolved ▲</span><br>
-          • <code>stage2.wound</code> · <b>2</b>/10 · <span class="st-esc">escalated</span><br>
-          • <code>topic:חיסכון</code> · <b>4</b>/10 · <span class="st-star">starred</span>
+          • <code>topic:חיסכון</code> · <b>4</b>/10 · <span class="st-star">starred</span><br>
+          • <code>stage2.wound</code> · <b>2</b>/10 · <span class="st-esc">escalated</span> <span class="fbadge">🟡 Build 2</span>
         </div>
-        <div class="sat">10 עקבי · 5 עמום · 1 סתירה · history → מגמה · resolved הפיך</div>
+        <div class="sat">record · star · resolve · reopen-של-resolved ✅ · escalate + reprobe + reopenSlot = Build 2</div>
       </div>
     </div>
-    <div class="feedup" style="text-align:center;color:var(--warn);font-size:12px;margin:10px 0 2px">▲ control — ה-Router קובע את השלב הבא וחוזר לשכבה ①</div>
+    <div class="feedup" style="text-align:center;color:var(--warn);font-size:12px;margin:10px 0 2px">▲ control — ה-Router קובע את השלב הבא · מעבר מפיק <b>סיכום-לאישור</b> + <b>פתיח-שלב מעוגן</b> (opener) <span class="new">✅</span></div>
     <div class="router">
       <h3><span class="num">4</span> GRAPH-BASED ROUTER <span style="color:var(--mut);font-weight:400;font-size:12px">(קוד — לא LLM)</span></h3>
       <ul>
-        <li>קורא את ה-<b>Coverage</b> + מונה מיצוי</li>
+        <li>קורא את ה-<b>Coverage</b> + מונה מיצוי · מעבר על <b>כיסוי-מלא</b> או (סף-רך ∧ מיצוי) <span class="new">✅</span></li>
+        <li><b>שער מפת-שחקנים <span class="new">✅</span>:</b> שלב 1 לא עובר כל עוד דמות <code>clear:false</code> · load-guard = רשת ביטחון</li>
         <li><b>GATES:</b> שלב 5 דורש 2 · שלב 7 דורש 6 + יעד · 6▶7 חד-כיווני</li>
-        <li><b>פערים <span class="new">🟡 באפיון</span>:</b> יסודי/חוסם = <span class="st-esc">escalated</span> + <code>reopenSlot</code> · אחרת <span class="st-star">starred</span></li>
+        <li><b>פערים — Build 1 ✅:</b> יסודי/חוסם = <span class="st-esc">escalated</span> + <code>reopenSlot</code> <span class="new">🟡 Build 2</span> · אחרת <span class="st-star">starred</span></li>
         <li>מכריע ומחזיר <code>control</code> — <b>המודל מציע, הקוד מכריע</b></li>
       </ul>
       <div class="loops">
-        <div class="loop"><b>↺ Re-open</b> — מידע סותר מוריד slot, חוזר לצומת קודם.</div>
+        <div class="loop"><b>↺ Re-open</b> — חוזר לצומת קודם + <b>פתיח מעוגן</b> שמסביר למה חזרנו <span class="new">✅</span></div>
         <div class="loop"><b>↩ Backward</b> — סוכן מאוחר מנתב עדכון בחזרה לשלב 1.</div>
         <div class="loop rep"><b>↪ reprobe <span class="new">🟡</span></b> — חזרה דחויה ל-<span class="st-esc">escalated</span>, תזמון אלגנטי.</div>
       </div>
       <div class="fut-note future"><span class="fbadge">⬜ טרם תוכנן · לא פעיל</span><b style="color:#aab2c0">גלאי עייפות</b> — קלט עתידי ל-Router; יחליף את מגן-העומס (placeholder 20/15) במנגנון ששוקלל מורכבות-סיפור + שיתוף-פעולה.</div>
     </div>
-    <div class="status">סטטוס: מנוע הראיון (7 שלבים · Router · State) <b>✅ ממומש ונבדק</b> · ניהול פערים <b>🟡 באפיון</b> (Build 1 הבא) · גלאי עייפות <b style="color:#8a93a3">⬜ טרם תוכנן</b>.</div>
+    <div class="status">סטטוס: מנוע הראיון + <b>מפת-שחקנים (שער)</b> + <b>ממצאים</b> + <b>פתיחי-שלב מעוגנים</b> (קדימה + Re-open) + סדר eval-first <b>✅ ממומש ונבדק חי</b> · ניהול פערים Build 1 <b>✅</b> (escalation/reprobe = Build 2 <b style="color:var(--warn)">🟡</b>) · גלאי עייפות <b style="color:#8a93a3">⬜ טרם תוכנן</b>.</div>
   </div></div></div>
 
   <div class="view" id="view-flow"><div id="ttflow">
@@ -257,7 +267,7 @@
 
   <div class="view" id="view-router"><div id="rax">
     <h1>מה דוחף את ה-Router — שלושת הצירים</h1>
-    <p class="sub">שנה כל ציר וראה איך ההחלטה זזה ואיזו רשומת targetKey נפתחת.</p>
+    <p class="sub">שנה כל ציר וראה איך ההחלטה זזה ואיזו רשומת targetKey נפתחת. <span style="color:var(--esc)">שער מפת-השחקנים (שלב 1) — גייט קשיח נוסף שאינו מוצג כפקד.</span></p>
     <div class="axes">
       <div class="ax">
         <div class="axname">סף רך — כיסוי</div>
@@ -287,7 +297,7 @@
       <div class="rttl">RouterDecision</div>
       <div class="decision" id="dec"></div>
       <div class="why" id="why"></div>
-      <div class="formula"><b>ADVANCE</b> = (סף רך ✓ ∧ מיצוי ✓) → אישור סיכום<br>חריגים: <span class="dhold">targetKey מהותי = HOLD</span> (גובר) · <span class="dwait">מגן עומס = ADVANCE כפוי</span> · <span style="color:var(--mut)">כוכבית נרשם ולא משפיע</span></div>
+      <div class="formula"><b>ADVANCE</b> = <b>כיסוי-מלא</b> ∨ (סף רך ✓ ∧ מיצוי ✓) → אישור סיכום + פתיח מעוגן<br>חריגים: <span class="dhold">targetKey מהותי = HOLD</span> · <span class="dhold">שער מפת-שחקנים: דמות <code style="color:var(--esc)">clear:false</code> = HOLD (שלב 1)</span> · <span class="dwait">מגן עומס = ADVANCE כפוי</span></div>
       <div class="hintbar" id="rhint"></div>
     </div>
   </div></div>
@@ -306,14 +316,18 @@
     {role:"user", content:<span class="val">"החבר אמר שהבשר לא טוב."</span>} <span class="cm">// ← נוכחי</span>
   ]
 }</div>`,
-      p2:`<div class="json">{
-  <span class="k">message</span>: <span class="val">"מתי הוא התקשר?"</span>,
-  <span class="k">evaluation</span>: { slots:{<span class="g">trigger:2</span>}, facts:{trigger:<span class="val">"החבר אמר שהבשר לא טוב"</span>}, newInfo:true, gap_observations:[] }
+      p2:`<div class="cap2">evaluation לפני message — "חלץ, אז שאל"</div><div class="json">{
+  <span class="k">evaluation</span>: { slots:{<span class="g">trigger:2</span>},
+    slot_findings:{ trigger:[<span class="val">"החבר אמר שהבשר לא טוב"</span>] },
+    actor_map:[{ id:"friend", label:"החבר", clear:true }], newInfo:true, gap_observations:[] },
+  <span class="k">message</span>: <span class="val">"מתי הוא התקשר?"</span>
 }</div>`,
-      p3:`<div class="json">{ <span class="k">ok</span>:true, message:"…", evaluation:{slots,facts,gap_observations:[]}, usage:{…} }</div>`,
-      p4:`<div class="cap2">trigger 0→2 · facts +trigger</div><div class="json">state = {
+      p3:`<div class="json">{ <span class="k">ok</span>:true, message:"…", evaluation:{slots, slot_findings, actor_map, gap_observations:[]}, usage:{…} }</div>`,
+      p4:`<div class="cap2">trigger 0→2 · findings + actorMap (merge דלתא)</div><div class="json">state = {
   coverage:{ stage1:{ <span class="g">trigger:2</span>, timeline:1 } },
-  facts:{ trigger:"החבר אמר שהבשר לא טוב" }, meta:{ saturationCount:<span class="g">0</span> }, gaps:{byTarget:{}}
+  findings:{ stage1:{ trigger:["החבר אמר שהבשר לא טוב"] } },
+  actorMap:{ friend:{ label:"החבר", clear:true } },
+  meta:{ saturationCount:<span class="g">0</span> }, gaps:{byTarget:{}}
 }</div>`,
       p5:`<div class="json">{ <span class="k">decision</span>:<span class="val">"STAY"</span>, reason:"soft_threshold_not_met" }</div>`},
     fund:{stage:"שלב 1 — פער מהותי",user:"הצעתי לקנות בשר אחר.",

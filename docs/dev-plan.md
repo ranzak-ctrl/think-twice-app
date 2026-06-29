@@ -34,6 +34,13 @@ Think Twice — תכנית פיתוח: פרוטוטייפ
 3\. ארכיטקטורה מפורטת  
 \========================================
 
+**עדכון as-built (יוני 2026 — לאחר התנסות חיה בשלבים 5–6).** הארכיטקטורה הבסיסית עומדת כמתואר; הוספות מאז התכנית המקורית (פירוט חזותי: `docs/architecture-dashboard.html`):
+- **StateDocument:** התוכן נושא-המשמעות עבר ל-`findings` (ממצאים מילוליים לכל slot) ו-`actorMap` (קאסט פתור: `id→{label,role,relation,clear,actions}`); נוסף `gaps` (מדד עקביות, Build 1). השדות `facts/thoughts/feelings/reactions` הוחלפו ואינם בשימוש.
+- **Router:** מעבר גם על **כיסוי-מלא** (לא רק סף-רך+מיצוי); **שער מפת-שחקנים** — שלב 1 לא עובר כל עוד דמות `clear:false`, והקוד גוזר את ציון `actors` מבהירות המפה.
+- **מעברי שלב:** כל מעבר (קדימה + Re-open) מפיק **פתיח-שלב שנוצר ע"י המודל ומעוגן בסיפור** ("יציאה מדברי המרואיין", `core-assumptions §2`); הסיכום מעוגן כדי לסכם ולא להמשיך.
+- **דיווח המודל:** `evaluation` **לפני** `message` ("חלץ, אז שאל").
+- **ניהול פערים:** Build 1 (record/star/resolve/reopen-של-resolved) ✅; escalation + reprobe + reopenSlot = Build 2 (parked).
+
 3.1 חמש שכבות
 
 שכבה 1 — UI (React, RTL):  
