@@ -251,6 +251,7 @@
     <div class="tabs">
       <button data-k="clean" class="on">① תור נקי</button><button data-k="fund">② פער מהותי</button><button data-k="minor">③ פער לא-מהותי</button><button data-k="reprobe">④ חזרה דחויה</button>
     </div>
+    <div style="font-size:11px;color:var(--mut);margin:-4px 0 10px">תרחישים ②–④ ממחישים את ניהול-הפערים: מדידה · כוכבית · resolved = <b style="color:var(--accent2)">Build 1 ✅</b> · escalate · reprobe · reopenSlot = <b style="color:var(--warn)">Build 2 🟡</b></div>
     <div class="stepctl"><button id="ff-next">צעד הבא ▸</button><button id="ff-all">הצג הכל</button><span id="hint"></span></div>
     <div class="banner" id="ff-banner"></div>
     <div class="pcard r1" id="p1"><div class="pt"><span class="pnum">1</span> קלט — אובייקט הבקשה</div><div class="pbody"></div></div>
@@ -290,6 +291,7 @@
       </div>
     </div>
     <div class="tkpanel"><div class="tkttl">רשומת הפער — gaps.byTarget</div><div class="tk" id="tkbody"></div></div>
+    <div class="guard" style="border-color:#5a3128"><input type="checkbox" id="actor"><span><span class="gl" style="color:var(--esc)">שער מפת-שחקנים (שלב 1)</span> — דמות <code style="color:var(--esc)">clear:false</code> מחזיקה את המעבר</span></div>
     <div class="guard"><input type="checkbox" id="guard"><span><span class="gl">מגן עומס נורה</span> — רשת ביטחון: כופה מעבר (placeholder 20/15)</span></div>
     <div class="fatigue future"><span class="fbadge">⬜ טרם תוכנן · לא פעיל</span><span class="fl">גלאי עייפות</span> — המנגנון המיועד להחליף את מגן-העומס: ישקלל מורכבות-סיפור + שיתוף-פעולה (לא ספירת שאלות). עדיין לא בתכנון, ולכן אינו מוצג כפקד.</div>
     <div class="arrow">↓</div>
@@ -310,7 +312,7 @@
     clean:{stage:"שלב 1 — תור נקי",user:"החבר אמר שהבשר לא טוב.",
       p1:`<div class="cap2">complete({ systemPrompt, messages }) — התשובה = איבר אחרון</div><div class="json">{
   <span class="k">systemPrompt</span>: <span class="val">"דמות·Intake·מעריך·אסור"</span>,
-  <span class="k">stateSummary</span>: { coverage:{stage1:{trigger:0,timeline:1}}, facts:{actors:"חבר מארח"}, openGaps:[] },
+  <span class="k">stateSummary</span>: { coverage:{stage1:{trigger:0,timeline:1}}, actorMap:{friend:{label:"חבר מארח",clear:true}}, findings:{}, gaps:{byTarget:{}} },
   <span class="k">messages</span>: [
     {role:"assistant", content:"ומה קרה אז?"},
     {role:"user", content:<span class="val">"החבר אמר שהבשר לא טוב."</span>} <span class="cm">// ← נוכחי</span>
@@ -331,8 +333,8 @@
 }</div>`,
       p5:`<div class="json">{ <span class="k">decision</span>:<span class="val">"STAY"</span>, reason:"soft_threshold_not_met" }</div>`},
     fund:{stage:"שלב 1 — פער מהותי",user:"הצעתי לקנות בשר אחר.",
-      p1:`<div class="cap2">ב-stateSummary facts מבוסס שייסתר</div><div class="json">{
-  stateSummary:{ facts:{ auto_reaction:<span class="val">"אמרתי 'לא בא' וניתקתי"</span> }, openGaps:[] },
+      p1:`<div class="cap2">ב-stateSummary findings + actorMap שייסתרו</div><div class="json">{
+  stateSummary:{ findings:{ stage1:{ auto_reaction:[<span class="val">"אמרתי 'לא בא' וניתקתי"</span>] } }, openGaps:[] },
   messages:[ … {role:"user", content:<span class="esc">"הצעתי לקנות בשר אחר."</span>} ]
 }</div>`,
       p2:`<div class="json">{
@@ -352,12 +354,12 @@
 }</div>`,
       p2:`<div class="json">{
   <span class="k">message</span>: <span class="val">"מה זה אומר עליך, בעיניך?"</span>,
-  evaluation:{ slots:{<span class="g">causal:2</span>}, thoughts:{causal:<span class="val">"הוא לא סומך עליי"</span>},
+  evaluation:{ slots:{<span class="g">causal:2</span>}, slot_findings:{causal:[<span class="val">"הוא לא סומך עליי"</span>]},
     gap_observations:[{ target:"topic:חיסכון", <span class="w">level:5</span>, note:"יחס מתנדנד" }] }
 }</div>`,
       p3:`<div class="json">{ ok:true, evaluation:{ thoughts:{…}, gap_observations:[{ <span class="w">level:5</span> }] } }</div>`,
       p4:`<div class="cap2">targetKey starred · בלי reopenSlot</div><div class="json">state = {
-  coverage:{ stage2:{ <span class="g">causal:2</span> } }, thoughts:{ causal:"הוא לא סומך עליי" },
+  coverage:{ stage2:{ <span class="g">causal:2</span> } }, findings:{ stage2:{ causal:["הוא לא סומך עליי"] } },
   gaps:{ byTarget:{ "topic:חיסכון":{ <span class="w">level:5</span>, status:<span class="star">"starred"</span> } } }
 }</div>`,
       p5:`<div class="json">{ <span class="k">decision</span>:<span class="val">"REQUEST_CONFIRMATION"</span>, nextStage:3 }</div>`},
@@ -385,18 +387,20 @@
 })();
 (function(){
   var root=document.getElementById('rax'); if(!root) return;
-  var st={cov:60,sat:1,gap:'none',guard:false};
-  function decide(){var soft=st.cov>=80,sat=st.sat>=2;
+  var st={cov:60,sat:1,gap:'none',guard:false,actor:false};
+  function decide(){var soft=st.cov>=80,sat=st.sat>=2,full=st.cov>=100;
     if(st.gap==='escalated')return{d:'STAY',cls:'dhold',drv:'gap',why:'<b>targetKey מהותי (escalated)</b> מחזיק הכל — reopenSlot מוריד כיסוי. גובר על מגן העומס.'};
-    if(soft&&sat)return{d:'REQUEST_CONFIRMATION → ADVANCE',cls:'dadv',drv:'both',why:'<b>סף רך מולא ✓ ומיצוי ✓</b> → סיכום לאישור, ואז מעבר.'};
+    if(st.actor)return{d:'STAY',cls:'dhold',drv:'actor',why:'<b>שער מפת-שחקנים</b> — דמות לא-ברורה (<code style="color:var(--esc)">clear:false</code>) מחזיקה את שלב 1. מגן-העומס עדיין יכול לכפות.'};
+    if(full||(soft&&sat))return{d:'REQUEST_CONFIRMATION → ADVANCE',cls:'dadv',drv:'both',why:full?'<b>כיסוי מלא ✓</b> (כל הסלוטים ב-2) → מעבר לבד, גם בלי מיצוי.':'<b>סף רך מולא ✓ ומיצוי ✓</b> → סיכום לאישור, ואז מעבר.'};
     if(st.guard)return{d:'ADVANCE (גיבוי)',cls:'dwait',drv:'guard',why:'<b>מגן העומס נורה</b> — מעבר כפוי. רשת ביטחון בלבד (placeholder).'};
     var m=[];if(!soft)m.push('כיסוי <80%');if(!sat)m.push('עדיין נכנס מידע');return{d:'STAY',cls:'dwait',drv:'wait',why:'<b>ממתין</b> — '+m.join(' · ')+'.'};}
   function render(){
     root.querySelector('#covfill').style.width=st.cov+'%';root.querySelector('#covfill').style.background=st.cov>=80?'var(--accent2)':'var(--accent)';
-    root.querySelector('#covval').textContent=st.cov+'% '+(st.cov>=80?'(סף מולא)':'(מתחת לסף)');
+    root.querySelector('#covval').textContent=st.cov+'% '+(st.cov>=100?'(כיסוי מלא)':st.cov>=80?'(סף רך מולא)':'(מתחת לסף)');
     root.querySelectorAll('#sat button').forEach(function(b){b.classList.toggle('on',+b.dataset.v===st.sat);});
     root.querySelectorAll('#gap button').forEach(function(b){b.classList.toggle('on',b.dataset.v===st.gap);});
-    var pc=root.querySelector('#push-cov');if(st.cov>=80){pc.className='push adv';pc.textContent='דוחף ל-ADVANCE ✓';}else{pc.className='push neu';pc.textContent='מחזיק — כיסוי חסר';}
+    root.querySelector('#actor').checked=st.actor;
+    var pc=root.querySelector('#push-cov');if(st.cov>=100){pc.className='push adv';pc.textContent='כיסוי מלא → ADVANCE לבד ✓';}else if(st.cov>=80){pc.className='push adv';pc.textContent='סף רך מולא (+מיצוי) ✓';}else{pc.className='push neu';pc.textContent='מחזיק — כיסוי חסר';}
     var ps=root.querySelector('#push-sat');if(st.sat>=2){ps.className='push adv';ps.textContent='דוחף ל-ADVANCE ✓';}else{ps.className='push neu';ps.textContent='מחזיק — עוד נכנס מידע';}
     var pg=root.querySelector('#push-gap');if(st.gap==='escalated'){pg.className='push hold';pg.textContent='targetKey · escalated → HOLD';}else if(st.gap==='starred'){pg.className='push neu';pg.textContent='targetKey · starred — לא משפיע';}else{pg.className='push neu';pg.textContent='— אין targetKey';}
     var tk=root.querySelector('#tkbody');
@@ -404,12 +408,13 @@
     else if(st.gap==='starred')tk.innerHTML='gaps.byTarget {\n  "topic:חיסכון": { level:5, status:<span class="star">"starred"</span> }\n}\n<span class="cm">→ נרשם · לא משפיע · לא נשלח</span>';
     else tk.innerHTML='gaps.byTarget {\n  "stage1.timeline": { level:2, status:<span class="esc">"escalated"</span> }\n}\n<span class="cm">→ reopenSlot(2→1) → </span><span class="esc">HOLD</span>';
     var r=decide();var de=root.querySelector('#dec');de.innerHTML=r.d;de.className='decision '+r.cls;root.querySelector('#why').innerHTML=r.why;
-    root.querySelector('#rhint').textContent='גורם מכריע: '+({gap:'פערים (targetKey מהותי)',both:'מיצוי + סף רך',guard:'מגן עומס',wait:'אף ציר לא בשל'}[r.drv]);
+    root.querySelector('#rhint').textContent='גורם מכריע: '+({gap:'פערים (targetKey מהותי)',actor:'שער מפת-שחקנים',both:'כיסוי-מלא / מיצוי+סף-רך',guard:'מגן עומס',wait:'אף ציר לא בשל'}[r.drv]);
   }
   root.querySelector('#cov').addEventListener('input',function(e){st.cov=+e.target.value;render();});
   root.querySelectorAll('#sat button').forEach(function(b){b.onclick=function(){st.sat=+b.dataset.v;render();};});
   root.querySelectorAll('#gap button').forEach(function(b){b.onclick=function(){st.gap=b.dataset.v;render();};});
   root.querySelector('#guard').addEventListener('change',function(e){st.guard=e.target.checked;render();});
+  root.querySelector('#actor').addEventListener('change',function(e){st.actor=e.target.checked;render();});
   render();
 })();
 </script>
