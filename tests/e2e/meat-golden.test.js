@@ -40,23 +40,23 @@ describe('Meat golden script — end to end', () => {
     }
 
     expect(state.meta.sessionComplete).toBe(true);
-    expect(state.meta.currentStage).toBe(7);
-    expect(state.coverage.stage7.board_presented).toBe(2);
-    expect(state.coverage.stage7.sharp_decision).toBe(2);
-    expect(state.coverage.stage7.package_test).toBe(2);
+    expect(state.meta.currentStage).toBe(8);
+    expect(state.coverage.stage8.board_presented).toBe(2);
+    expect(state.coverage.stage8.sharp_decision).toBe(2);
+    expect(state.coverage.stage8.package_test).toBe(2);
     // The board was synthesised and stored by code (not printed by the model).
     expect(state.board.length).toBeGreaterThan(0);
 
     // KPIs recorded across the full interview (dev-plan §155).
     const { kpi } = state.meta;
     expect(kpi.emotionIntensityStage3).toBe(8); // stage-3 baseline
-    expect(kpi.emotionIntensityStage5).toBe(4); // re-measured at stage 5 → delta 4
+    expect(kpi.emotionIntensityStage6).toBe(4); // re-measured at stage 6 → delta 4
     expect(kpi.decisionType).toBe('sharp');
     expect(kpi.differsFromAutomatic).toBe(true);
     expect(kpi.selfRefs).toBeGreaterThan(0); // "אני" counted each turn
-    // Per-stage question counts captured as each stage closed (1–6 + final 7).
+    // Per-stage question counts captured as each stage closed (1–7 + final 8).
     expect(Object.keys(kpi.questionsPerStage)).toContain('stage1');
-    expect(kpi.questionsPerStage.stage7).toBeGreaterThanOrEqual(0);
+    expect(kpi.questionsPerStage.stage8).toBeGreaterThanOrEqual(0);
 
     // Router decision trail recorded for guide mode (capped, newest last).
     const log = state.meta.decisionLog;

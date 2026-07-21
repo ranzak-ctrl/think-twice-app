@@ -86,11 +86,11 @@ describe('Safety — stop message content', () => {
 });
 
 describe('Safety — signposting integration', () => {
-  it('exports the signpost map for all stages 2–7', () => {
+  it('exports the signpost map for all stages 2–8', () => {
     // Verifies the content module is importable and complete.
     const { SIGNPOST } = require('../../src/content/signposting.js');
-    expect(Object.keys(SIGNPOST).length).toBe(6);
-    for (let s = 2; s <= 7; s++) {
+    expect(Object.keys(SIGNPOST).length).toBe(7);
+    for (let s = 2; s <= 8; s++) {
       expect(SIGNPOST[s]).toBeTruthy();
       expect(typeof SIGNPOST[s]).toBe('string');
     }

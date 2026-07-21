@@ -12,7 +12,7 @@ function questionCount(text) {
 const FORBIDDEN_TERMS = [
   'פרשנות חלופית',
   'תגובה אדפטיבית',
-  'שלב 1', 'שלב 2', 'שלב 3', 'שלב 4', 'שלב 5', 'שלב 6', 'שלב 7',
+  'שלב 1', 'שלב 2', 'שלב 3', 'שלב 4', 'שלב 5', 'שלב 6', 'שלב 7', 'שלב 8',
   'כדאי לך',
   'אני ממליץ',
   'הייתי עושה',
@@ -34,7 +34,7 @@ function sentenceCountBeforeQuestion(text) {
 
 // Is this a placeholder / board display turn that is exempt from one-question rule?
 function isExemptTurn(key) {
-  return key === '7:1'; // board presentation — no question expected
+  return key === '8:1'; // board presentation — no question expected
 }
 
 // --- Lint rule unit tests ---

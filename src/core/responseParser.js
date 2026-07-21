@@ -45,8 +45,8 @@ export function parseResponse(raw) {
       differsFromAutomatic:
         typeof evaluation.differs_from_automatic === 'boolean'
           ? evaluation.differs_from_automatic
-          : null, // stage 7 — does the chosen decision differ from the automatic reaction?
-      mergeAttempt: evaluation.merge_attempt ?? null, // 'real' | 'avoidance' | null (stage 7)
+          : null, // stage 8 — does the chosen decision differ from the automatic reaction?
+      mergeAttempt: evaluation.merge_attempt ?? null, // 'real' | 'avoidance' | null (stage 8)
       emotionIntensity:
         typeof evaluation.emotion_intensity === 'number' ? evaluation.emotion_intensity : null,
       decision:

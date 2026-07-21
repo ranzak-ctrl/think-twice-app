@@ -87,22 +87,18 @@ export const MOCK_RESPONSES = {
     evaluation: { slots: {}, new_info: false, exhausted: true },
   },
 
-  // Stage 2 — Interpretation
+  // Stage 2 — Interpretation (mapping only: causal + meaning; wound/pattern moved to stage 5)
   '2:0': {
     message: 'למה לדעתך הוא עשה את זה?',
     evaluation: { slots: { causal: 1 }, new_info: true, exhausted: false },
   },
   '2:1': {
-    message: 'ואיך אתה מבין את זה — מה זה אומר עליך, בעיניך?',
+    message: 'ואיך אתה מבין את מה שהוא עשה — מה המשמעות בעיניך?',
     evaluation: { slots: { causal: 2, meaning: 1 }, new_info: true, exhausted: false },
   },
   '2:2': {
-    message: 'נסה לנסח את זה במשפט שמתחיל ב"אני..."',
-    evaluation: { slots: { meaning: 2, wound: 1 }, new_info: true, exhausted: false },
-  },
-  '2:3': {
-    message: 'זה מזכיר לך דפוס מוכר?',
-    evaluation: { slots: { wound: 2, adhd_pattern: 2 }, new_info: false, exhausted: true },
+    message: 'אז אם אני מבין נכון, ההסבר שלך הוא שהוא לא סמך עליך?',
+    evaluation: { slots: { meaning: 2 }, new_info: false, exhausted: true },
   },
 
   // Stage 3 — Feel
@@ -134,20 +130,34 @@ export const MOCK_RESPONSES = {
     evaluation: { slots: { planned_reaction: 2 }, new_info: false, exhausted: true },
   },
 
-  // Stage 5 — Transform
+  // Stage 5 — Insight ("מה זה אומר עליי": wound + adhd_pattern) — NEW
   '5:0': {
+    message: 'כשאתה חושב על ההסבר שנתת — מה זה אומר עליך, בעיניך?',
+    evaluation: { slots: { wound: 1 }, new_info: true, exhausted: false },
+  },
+  '5:1': {
+    message: 'נסה לנסח את זה במשפט שמתחיל ב"אני..."',
+    evaluation: { slots: { wound: 2 }, new_info: true, exhausted: false },
+  },
+  '5:2': {
+    message: 'המשפט הזה — איזה דבר מוכר לך מהקשב שלך עומד מאחוריו?',
+    evaluation: { slots: { adhd_pattern: 2 }, new_info: false, exhausted: true },
+  },
+
+  // Stage 6 — Transform (alternative perspective)
+  '6:0': {
     message: 'מה הוא ראה מהצד שלו באותו רגע?',
     evaluation: { slots: { perspective: 1 }, new_info: true, exhausted: false },
   },
-  '5:1': {
+  '6:1': {
     message: 'מה לדעתך הוא ניסה להשיג?',
     evaluation: { slots: { perspective: 2, intention: 1 }, new_info: true, exhausted: false },
   },
-  '5:2': {
+  '6:2': {
     message: 'נסה לנסח את זה במשפט שמתחיל ב"הוא..."',
     evaluation: { slots: { intention: 2, alt_formulation: 1 }, new_info: true, exhausted: false },
   },
-  '5:3': {
+  '6:3': {
     message: 'כשאתה מסתכל על זה ככה — כמה חזק הרגש עכשיו, מ-1 עד 10?',
     evaluation: {
       slots: { alt_formulation: 2, re_emotion: 2 },
@@ -157,30 +167,30 @@ export const MOCK_RESPONSES = {
     },
   },
 
-  // Stage 6 — Alternatives
-  '6:0': {
+  // Stage 7 — Alternatives
+  '7:0': {
     message: 'מה עוד אפשר לעשות?',
     evaluation: { slots: { alternatives: 1 }, new_info: true, exhausted: false },
   },
-  '6:1': {
+  '7:1': {
     message: 'עוד?',
     evaluation: { slots: { alternatives: 2, zero_action: 1 }, new_info: true, exhausted: false },
   },
-  '6:2': {
+  '7:2': {
     message: 'מה לגבי האפשרות של לא לעשות כלום?',
     evaluation: { slots: { zero_action: 2, alt_from_transform: 2 }, new_info: false, exhausted: true },
   },
 
-  // Stage 7 — Decision
-  '7:0': {
+  // Stage 8 — Decision
+  '8:0': {
     message: 'לפני שנסתכל על האפשרויות — מה אתה בעצם רוצה שיקרה?',
     evaluation: { slots: { goal: 2 }, new_info: true, exhausted: false },
   },
-  '7:1': {
+  '8:1': {
     message: 'הנה האפשרויות שאספנו. מה מדבר אליך?',
     evaluation: { slots: { board_presented: 2 }, new_info: false, exhausted: false },
   },
-  '7:2': {
+  '8:2': {
     message: 'במה אתה בוחר?',
     evaluation: {
       slots: { sharp_decision: 2 },
@@ -190,7 +200,7 @@ export const MOCK_RESPONSES = {
       differs_from_automatic: true,
     },
   },
-  '7:3': {
+  '8:3': {
     message: 'מה אתה מרוויח מהבחירה הזו, ומה אתה מוותר עליו?',
     evaluation: { slots: { package_test: 2 }, new_info: false, exhausted: true },
   },
@@ -201,11 +211,12 @@ export const MOCK_RESPONSES = {
 // the "meat" golden script, consistent with MOCK_RESPONSES.
 export const MOCK_SUMMARIES = {
   1: 'בוא נוודא שהבנתי נכון — הבשר הגיע, הוא אמר שהוא לא איכותי, ואתה עזבת את העבודה. זה מדויק?',
-  2: 'בוא נוודא שהבנתי נכון — הבנת את זה כאילו אתה לא מספיק טוב, וזה נגע במשהו מוכר. זה מדויק?',
+  2: 'בוא נוודא שהבנתי נכון — הבנת את זה כאילו הוא לא סמך עליך, שחשב שהתקמצנת. זה מדויק?',
   3: 'בוא נוודא שהבנתי נכון — מה שעלה היה עלבון חזק, בעוצמה גבוהה, והוא הזכיר לך משהו מהעבר. זה מדויק?',
   4: 'בוא נוודא שהבנתי נכון — באותו רגע עזבת בלי לומר מילה, ועכשיו אתה שוקל איך להגיב. זה מדויק?',
-  5: 'בוא נוודא שהבנתי נכון — ניסחת איך זה נראה מהצד שלו, והרגש ירד קצת כשהסתכלת ככה. זה מדויק?',
-  6: 'בוא נוודא שהבנתי נכון — אספנו כמה דרכים אפשריות להגיב, כולל לא לעשות כלום. זה מדויק?',
+  5: 'בוא נוודא שהבנתי נכון — זה נגע במשהו — "אני לא מספיק טוב" — ואתה מזהה בזה דפוס מוכר. זה מדויק?',
+  6: 'בוא נוודא שהבנתי נכון — ניסחת איך זה נראה מהצד שלו, והרגש ירד קצת כשהסתכלת ככה. זה מדויק?',
+  7: 'בוא נוודא שהבנתי נכון — אספנו כמה דרכים אפשריות להגיב, כולל לא לעשות כלום. זה מדויק?',
 };
 
 // Decision board rows returned in board mode (mode: 'board'). The Router decides
@@ -238,11 +249,12 @@ function buildResponses(evalOverrides = {}, extras = {}) {
 // "חבר בא להתייעץ" — friend consults; user jumps in to fix. Sharp close.
 const FRIEND_SUMMARIES = {
   1: 'בוא נוודא שהבנתי נכון — חבר בא להתייעץ, ואתה קפצת מיד לתת פתרון. זה מדויק?',
-  2: 'בוא נוודא שהבנתי נכון — הבנת את זה כאילו אתה חייב לתקן הכול בשבילו. זה מדויק?',
+  2: 'בוא נוודא שהבנתי נכון — הבנת את זה כאילו הוא מצפה שיהיה לך פתרון מוכן. זה מדויק?',
   3: 'בוא נוודא שהבנתי נכון — עלתה אי-נוחות כשלא היה לך מה לתת. זה מדויק?',
   4: 'בוא נוודא שהבנתי נכון — לקחת פיקוד על השיחה במקום להקשיב. זה מדויק?',
-  5: 'בוא נוודא שהבנתי נכון — ניסחת מה הוא בעצם ביקש, וזה ריכך את הלחץ. זה מדויק?',
-  6: 'בוא נוודא שהבנתי נכון — אספנו כמה דרכים להיות שם בשבילו, כולל פשוט להקשיב. זה מדויק?',
+  5: 'בוא נוודא שהבנתי נכון — זה נגע ב"אני חייב לתקן הכול בשבילו", ואתה מזהה בזה דפוס מוכר. זה מדויק?',
+  6: 'בוא נוודא שהבנתי נכון — ניסחת מה הוא בעצם ביקש, וזה ריכך את הלחץ. זה מדויק?',
+  7: 'בוא נוודא שהבנתי נכון — אספנו כמה דרכים להיות שם בשבילו, כולל פשוט להקשיב. זה מדויק?',
 };
 const FRIEND_BOARD = [
   { option: 'להקשיב בלי לתת פתרון', pro: 'נותן לו מקום', con: 'דורש ריסון' },
@@ -253,11 +265,12 @@ const FRIEND_BOARD = [
 // "המורה אמר שאני בעייתי" — identity wound. Structured-deferral close.
 const TEACHER_SUMMARIES = {
   1: 'בוא נוודא שהבנתי נכון — המורה אמר שאתה בעייתי, וזה תפס אותך לא מוכן. זה מדויק?',
-  2: 'בוא נוודא שהבנתי נכון — הבנת את זה כאילו יש בך משהו פגום. זה מדויק?',
+  2: 'בוא נוודא שהבנתי נכון — הבנת את זה כאילו המורה באמת מתכוון שיש בך בעיה. זה מדויק?',
   3: 'בוא נוודא שהבנתי נכון — עלתה בושה חזקה, שהזכירה הערות מהעבר. זה מדויק?',
   4: 'בוא נוודא שהבנתי נכון — נסגרת ולא הגבת באותו רגע. זה מדויק?',
-  5: 'בוא נוודא שהבנתי נכון — ניסחת מה אולי המורה ניסה לומר, והבושה התרככה מעט. זה מדויק?',
-  6: 'בוא נוודא שהבנתי נכון — אספנו כמה דרכים להגיב, כולל לא להגיב מיד. זה מדויק?',
+  5: 'בוא נוודא שהבנתי נכון — זה נגע ב"יש בי משהו פגום", ואתה מזהה בזה דפוס מוכר. זה מדויק?',
+  6: 'בוא נוודא שהבנתי נכון — ניסחת מה אולי המורה ניסה לומר, והבושה התרככה מעט. זה מדויק?',
+  7: 'בוא נוודא שהבנתי נכון — אספנו כמה דרכים להגיב, כולל לא להגיב מיד. זה מדויק?',
 };
 const TEACHER_BOARD = [
   { option: 'לבקש שיחה עם המורה', pro: 'מברר ישירות', con: 'חושף אותך' },
@@ -270,11 +283,12 @@ const TEACHER_BOARD = [
 // both closing slots are at 2).
 const BUSY_SUMMARIES = {
   1: 'בוא נוודא שהבנתי נכון — חברה אמרה שאין לה זמן, וזה צרב. זה מדויק?',
-  2: 'בוא נוודא שהבנתי נכון — הבנת את זה כאילו אתה לא מספיק חשוב לה. זה מדויק?',
+  2: 'בוא נוודא שהבנתי נכון — הבנת את זה כאילו היא בכוונה לא פינתה לך זמן. זה מדויק?',
   3: 'בוא נוודא שהבנתי נכון — עלתה דחייה חזקה, מוכרת ממקומות אחרים. זה מדויק?',
   4: 'בוא נוודא שהבנתי נכון — הגבת בריחוק פתאומי ממנה. זה מדויק?',
-  5: 'בוא נוודא שהבנתי נכון — ניסחת מה אולי עבר עליה, והעקיצה פחתה. זה מדויק?',
-  6: 'בוא נוודא שהבנתי נכון — אספנו כמה דרכים להגיב, כולל לתת לזה לנוח. זה מדויק?',
+  5: 'בוא נוודא שהבנתי נכון — זה נגע ב"אני לא מספיק חשוב לה", ואתה מזהה בזה דפוס מוכר. זה מדויק?',
+  6: 'בוא נוודא שהבנתי נכון — ניסחת מה אולי עבר עליה, והעקיצה פחתה. זה מדויק?',
+  7: 'בוא נוודא שהבנתי נכון — אספנו כמה דרכים להגיב, כולל לתת לזה לנוח. זה מדויק?',
 };
 const BUSY_BOARD = [
   { option: 'לומר לה ישירות שזה פגע', pro: 'כן ופתוח', con: 'חושף פגיעוּת' },
@@ -287,15 +301,15 @@ const SCENARIOS = {
   friend: {
     responses: buildResponses({
       '3:1': { emotion_intensity: 6 },
-      '5:3': { emotion_intensity: 3 },
-      '7:2': { differs_from_automatic: true },
+      '6:3': { emotion_intensity: 3 },
+      '8:2': { differs_from_automatic: true },
     }),
     summaries: FRIEND_SUMMARIES,
     board: FRIEND_BOARD,
   },
   teacher: {
     responses: buildResponses({
-      '7:2': { decision_type: 'structured_deferral', differs_from_automatic: true },
+      '8:2': { decision_type: 'structured_deferral', differs_from_automatic: true },
     }),
     summaries: TEACHER_SUMMARIES,
     board: TEACHER_BOARD,
@@ -304,13 +318,13 @@ const SCENARIOS = {
     responses: buildResponses(
       {
         '3:1': { emotion_intensity: 9 },
-        '5:3': { emotion_intensity: 5 },
-        '7:2': { decision_type: 'vague', differs_from_automatic: null },
-        '7:3': { decision_type: 'vague' },
+        '6:3': { emotion_intensity: 5 },
+        '8:2': { decision_type: 'vague', differs_from_automatic: null },
+        '8:3': { decision_type: 'vague' },
       },
       {
         // Tail turn: the user finally sharpens, so the session can close.
-        '7:4': {
+        '8:4': {
           message: 'אז כשאתה אומר את זה ברור — במה אתה בוחר?',
           evaluation: {
             slots: {},

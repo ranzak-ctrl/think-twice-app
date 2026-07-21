@@ -8,9 +8,10 @@ import stage1Md from '../content/prompts/agents/stage1-intake.md?raw';
 import stage2Md from '../content/prompts/agents/stage2-interpretation.md?raw';
 import stage3Md from '../content/prompts/agents/stage3-feel.md?raw';
 import stage4Md from '../content/prompts/agents/stage4-react.md?raw';
-import stage5Md from '../content/prompts/agents/stage5-transform.md?raw';
-import stage6Md from '../content/prompts/agents/stage6-alternatives.md?raw';
-import stage7Md from '../content/prompts/agents/stage7-decision.md?raw';
+import stage5Md from '../content/prompts/agents/stage5-insight.md?raw';
+import stage6Md from '../content/prompts/agents/stage6-transform.md?raw';
+import stage7Md from '../content/prompts/agents/stage7-alternatives.md?raw';
+import stage8Md from '../content/prompts/agents/stage8-decision.md?raw';
 import { FORBIDDEN_PATTERNS } from '../content/forbidden.js';
 
 const STAGE_PROMPTS = {
@@ -18,9 +19,10 @@ const STAGE_PROMPTS = {
   2: stage2Md,
   3: stage3Md,
   4: stage4Md,
-  5: stage5Md,
-  6: stage6Md,
-  7: stage7Md,
+  5: stage5Md, // Insight — "מה זה אומר עליי" (NEW)
+  6: stage6Md, // Transform — alternative perspective
+  7: stage7Md, // Alternatives — divergence
+  8: stage8Md, // Decision — convergence
 };
 
 const LAST_K_TURNS = 6;
@@ -106,7 +108,7 @@ export function buildOpenerMessages(messages) {
   return [...messages, { role: 'user', content: OPENER_NUDGE }];
 }
 
-// Board mode — built when the Router returns SHOW_BOARD (stage 7). The code owns
+// Board mode — built when the Router returns SHOW_BOARD (stage 8). The code owns
 // the board: the model synthesises rows from the collected basket; we render them.
 export function buildBoardPrompt({ state }) {
   const basket = `## BASKET (חלופות שנאספו)\n${JSON.stringify(state.basket ?? [])}`;
@@ -132,7 +134,7 @@ export function formatHistory(history) {
 }
 
 function summarizeState(state) {
-  const { coverage, meta, facts, thoughts, feelings, reactions } = state;
+  const { coverage, meta, facts, thoughts, feelings, reactions, selfInsight } = state;
   const threads = (meta.savedThreads ?? []).length
     ? `\nsaved_threads: ${JSON.stringify(meta.savedThreads)}`
     : '';
@@ -151,5 +153,6 @@ facts: ${JSON.stringify(facts)}
 thoughts: ${JSON.stringify(thoughts)}
 feelings: ${JSON.stringify(feelings)}
 reactions: ${JSON.stringify(reactions)}
+self_insight: ${JSON.stringify(selfInsight ?? {})}
 coverage: ${JSON.stringify(coverage)}`;
 }

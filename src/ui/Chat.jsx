@@ -38,7 +38,7 @@ export default function Chat({
         <div ref={bottomRef} />
       </div>
 
-      {/* Decision board (stage 7) — rendered by code from state */}
+      {/* Decision board (stage 8) — rendered by code from state */}
       <DecisionBoard board={board} />
 
       {/* Confirm buttons */}

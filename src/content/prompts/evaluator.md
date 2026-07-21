@@ -38,14 +38,16 @@
 
 **לכידה חוצת-שלבים:** אם עולה מידע שברור ששייך ל-slot של שלב אחר (בדרך כלל מאוחר יותר), תעד אותו כמפתח מלא `"stageN.slotname"` בתוך `slots` — **בלי לחקור אותו בתור זה.** הישאר במשימת השלב הנוכחי; השלב שאליו המידע שייך יבררו לעומק. (המידע נרשם כ"ידוע חלקית" ויושלם כשנגיע לשלב.) קטלוג ה-slots לפי שלב:
 - 1: trigger · timeline · actors · status · auto_reaction
-- 2: causal · meaning · wound · adhd_pattern
+- 2: causal · meaning
 - 3: emotion · intensity · past_echo
 - 4: auto_reaction · planned_reaction
-- 5: perspective · intention · alt_formulation · re_emotion
-- 6: alternatives · zero_action · alt_from_transform
-- 7: goal · board_presented · sharp_decision · package_test
+- 5: wound · adhd_pattern    ← "מה זה אומר עליי" (המוגלה + דפוס הקשב)
+- 6: perspective · intention · alt_formulation · re_emotion
+- 7: alternatives · zero_action · alt_from_transform
+- 8: goal · board_presented · sharp_decision · package_test
 
 דוגמה (בשלב 1): "הרגשתי מושפל" ← `"slots": { "stage3.emotion": 1 }` — נרשם, לא נחקר עכשיו.
+דוגמה (בשלב 2): "כי אני תמיד מפשל" ← `"slots": { "stage5.wound": 1 }` — משפט "אני..." שייך לשלב 5, נרשם ולא נחקר עכשיו.
 
 **slot_findings:** לכל slot שעדכנת בתור זה, רשום מערך של ממצאים קצרים — הפרטים הקונקרטיים שעלו, פריט אחד לכל פרט, בניסוח תמציתי במילות המשתמש (עובדות במבחן-המצלמה; לא פרשנות). המפתחות זהים ל-slots (`timeline` או חוצה-שלבים `stageN.slot`). דווח רק על מה שבאמת נמסר בתור זה — אל תמציא ואל תחזור על מה שכבר רשום. דוגמה (שלב 1):
 ```json
@@ -77,9 +79,9 @@
 **new_info:** false אם התור לא הוסיף מידע חדש לשום slot.
 **exhausted:** true אם זהו התור השני ברציפות ללא מידע חדש (new_info=false פעמיים).
 **question_aperture:** "open" (שאלה פתוחה) או "closed" (שאלה סגורה/ממוקדת).
-**alternatives:** בשלב 6 בלבד — מערך מחרוזות של חלופות תגובה חדשות שהמשתמש העלה בתור זה (פעולות ניתנות לצילום, במילותיו).
-**decision_type:** בשלב 7 בלבד — סיווג תשובת ההכרעה: "sharp" (בחירה חדה ומנומקת), "structured_deferral" (דחייה מובנית עם מסגרת זמן ונקודת חזרה), "vague" (עמומה — "אולי"/"נראה"; אינה סוגרת את הסשן).
-**differs_from_automatic:** בשלב 7 בלבד — true/false: האם ההכרעה שנבחרה שונה מהתגובה האוטומטית/האימפולסיבית שתועדה בשלבים 1/4. זהו מדד השינוי (המהות של Think Twice). null אם טרם הוכרע.
-**merge_attempt:** בשלב 7 בלבד — ניסיון "גם וגם": "real" אם המיזוג הוא פעולה קונקרטית חדשה עם מחיר משלה (דווח אותה גם ב-alternatives כדי שתיכנס למאגר); "avoidance" אם אין מאחוריו פעולה ברת-ביצוע (שקף בלעדיות); אחרת null.
-**emotion_intensity:** מספר 1–10 — עוצמת הרגש. בשלב 3 (בסיס) ובשלב 5 (מדידה חוזרת ל-Delta).
-**decision:** בשלב 7 — אובייקט הבחירה והחבילה במילות המשתמש: { "choice": "...", "package_gain": "...", "package_cost": "..." }.
+**alternatives:** בשלב 7 בלבד — מערך מחרוזות של חלופות תגובה חדשות שהמשתמש העלה בתור זה (פעולות ניתנות לצילום, במילותיו).
+**decision_type:** בשלב 8 בלבד — סיווג תשובת ההכרעה: "sharp" (בחירה חדה ומנומקת), "structured_deferral" (דחייה מובנית עם מסגרת זמן ונקודת חזרה), "vague" (עמומה — "אולי"/"נראה"; אינה סוגרת את הסשן).
+**differs_from_automatic:** בשלב 8 בלבד — true/false: האם ההכרעה שנבחרה שונה מהתגובה האוטומטית/האימפולסיבית שתועדה בשלבים 1/4. זהו מדד השינוי (המהות של Think Twice). null אם טרם הוכרע. (שינוי בהרגשה בלבד עם בחירה מודעת באפס-פעולה נחשב אף הוא הכרעה.)
+**merge_attempt:** בשלב 8 בלבד — ניסיון "גם וגם": "real" אם המיזוג הוא פעולה קונקרטית חדשה עם מחיר משלה (דווח אותה גם ב-alternatives כדי שתיכנס למאגר); "avoidance" אם אין מאחוריו פעולה ברת-ביצוע (שקף בלעדיות); אחרת null.
+**emotion_intensity:** מספר 1–10 — עוצמת הרגש. בשלב 3 (בסיס) ובשלב 6 (מדידה חוזרת ל-Delta, אחרי הפרשנות החלופית).
+**decision:** בשלב 8 — אובייקט הבחירה והחבילה במילות המשתמש: { "choice": "...", "package_gain": "...", "package_cost": "..." }.

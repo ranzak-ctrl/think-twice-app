@@ -93,7 +93,7 @@ export async function runTurn(state, history, userText) {
     const currentKey = `stage${stage}`;
     let coverage = nextState.coverage;
     for (const [rawKey, value] of Object.entries(ev.slots)) {
-      const m = /^stage([1-7])\.(.+)$/.exec(rawKey);
+      const m = /^stage([1-8])\.(.+)$/.exec(rawKey);
       const stageKey = m ? `stage${m[1]}` : currentKey;
       const slot = m ? m[2] : rawKey;
       if (stageKey === currentKey) {
@@ -117,7 +117,7 @@ export async function runTurn(state, history, userText) {
   if (ev.slotFindings && Object.keys(ev.slotFindings).length) {
     const currentKey = `stage${stage}`;
     for (const [rawKey, items] of Object.entries(ev.slotFindings)) {
-      const m = /^stage([1-7])\.(.+)$/.exec(rawKey);
+      const m = /^stage([1-8])\.(.+)$/.exec(rawKey);
       const stageKey = m ? `stage${m[1]}` : currentKey;
       const slot = m ? m[2] : rawKey;
       if (!nextState.coverage[stageKey] || !(slot in nextState.coverage[stageKey])) continue;
@@ -211,7 +211,7 @@ export async function runTurn(state, history, userText) {
     }
   }
 
-  // Stage 6: accumulate generated alternatives into the basket (deduped).
+  // Stage 7: accumulate generated alternatives into the basket (deduped).
   if (ev.alternatives?.length) {
     const current = nextState.basket ?? [];
     const seen = new Set(current.map((b) => b.text));
@@ -221,7 +221,7 @@ export async function runTurn(state, history, userText) {
     if (added.length) nextState = { ...nextState, basket: [...current, ...added] };
   }
 
-  // Stage 7: sharpness classification (KPI; a vague decision never closes).
+  // Stage 8: sharpness classification (KPI; a vague decision never closes).
   if (ev.decisionType) {
     nextState = {
       ...nextState,
@@ -229,7 +229,7 @@ export async function runTurn(state, history, userText) {
     };
   }
 
-  // Stage 7: change measure (מדד שינוי) — did the decision diverge from the gut reaction?
+  // Stage 8: change measure (מדד שינוי) — did the decision diverge from the gut reaction?
   if (typeof ev.differsFromAutomatic === 'boolean') {
     nextState = {
       ...nextState,
@@ -240,13 +240,14 @@ export async function runTurn(state, history, userText) {
     };
   }
 
-  // Emotion intensity (1-10) for the delta KPI: stage 3 baseline vs stage 5.
+  // Emotion intensity (1-10) for the delta KPI: stage 3 baseline vs stage 6
+  // (re-measured after the alternative perspective).
   if (typeof ev.emotionIntensity === 'number') {
     const kpiKey =
       nextState.meta.currentStage === 3
         ? 'emotionIntensityStage3'
-        : nextState.meta.currentStage === 5
-        ? 'emotionIntensityStage5'
+        : nextState.meta.currentStage === 6
+        ? 'emotionIntensityStage6'
         : null;
     if (kpiKey) {
       nextState = {
@@ -290,7 +291,7 @@ export async function runTurn(state, history, userText) {
 
   if (decision.decision === Decision.SHOW_BOARD) {
     const boardResult = await complete({
-      stage: 7,
+      stage: 8,
       systemPrompt: buildBoardPrompt({ state: nextState }),
       messages,
       mode: 'board',
@@ -300,7 +301,7 @@ export async function runTurn(state, history, userText) {
       board: boardResult.evaluation?.board ?? [],
       coverage: {
         ...nextState.coverage,
-        stage7: { ...nextState.coverage.stage7, board_presented: 2 },
+        stage8: { ...nextState.coverage.stage8, board_presented: 2 },
       },
     };
     usage = addUsage(usage, boardResult.usage);
@@ -319,7 +320,7 @@ export async function runTurn(state, history, userText) {
       },
       coverage: {
         ...nextState.coverage,
-        stage7: { ...nextState.coverage.stage7, board_presented: 0 },
+        stage8: { ...nextState.coverage.stage8, board_presented: 0 },
       },
     };
     // Anchored Re-open opener: the question must explain why we returned and tie to
@@ -342,7 +343,7 @@ export async function runTurn(state, history, userText) {
           ...nextState.meta.kpi,
           questionsPerStage: {
             ...nextState.meta.kpi.questionsPerStage,
-            stage7: nextState.meta.questionCount,
+            stage8: nextState.meta.questionCount,
           },
         },
       },
@@ -402,7 +403,7 @@ export async function generateStageOpener(state, history, opts = {}) {
 // anchors in what the user just raised.
 function reopenSituation(decision) {
   if (decision.reason === 'merge') {
-    return 'חזרה לשלב החלופות (6): המשתמש העלה פעולת "גם וגם" ממשית וברת-ביצוע. עגן את הפתיח בפעולה שהוא העלה — הוסף אותה לסל האפשרויות והזמן אותו להמשיך לבחון חלופות. אל תתייחס לזה כסגירה.';
+    return 'חזרה לשלב החלופות (7): המשתמש העלה פעולת "גם וגם" ממשית וברת-ביצוע. עגן את הפתיח בפעולה שהוא העלה — הוסף אותה לסל האפשרויות והזמן אותו להמשיך לבחון חלופות. אל תתייחס לזה כסגירה.';
   }
   return `חזרה לשלב ${decision.targetStage} כדי להשלים מידע שהתברר כחסר או סותר. עגן את הפתיח במה שעלה זה עתה, והבהר מה נשלים כאן.`;
 }

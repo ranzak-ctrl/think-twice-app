@@ -1,4 +1,4 @@
-// Decision board — rendered by code from state.board (built in stage 7).
+// Decision board — rendered by code from state.board (built in stage 8).
 // The model never renders this table; it only reports the rows as data.
 
 export default function DecisionBoard({ board }) {

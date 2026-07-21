@@ -157,7 +157,7 @@ export default function App() {
               padding: '2px 8px',
             }}
           >
-            שלב {state.meta.currentStage}/7
+            שלב {state.meta.currentStage}/8
           </span>
           <button onClick={handleNewSession} style={btnStyle('#1a1a1a')}>
             ראיון חדש

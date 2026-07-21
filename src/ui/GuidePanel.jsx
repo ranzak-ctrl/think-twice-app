@@ -9,9 +9,10 @@ const STAGE_NAMES = {
   2: 'פרשנות',
   3: 'רגש',
   4: 'תגובה',
-  5: 'פרשנות חלופית',
-  6: 'חלופות',
-  7: 'הכרעה',
+  5: 'מה זה אומר עליי',
+  6: 'פרשנות חלופית',
+  7: 'חלופות',
+  8: 'הכרעה',
 };
 
 const SLOT_COLOR = (v) => {
@@ -148,7 +149,7 @@ export default function GuidePanel({ state, width = 320 }) {
       {/* Stage progression — each stage collapsible; current stage auto-open with its
           live stay-turn count; previous collapses on advance; manual toggle anytime. */}
       <Section title="התקדמות שלבים">
-        {[1, 2, 3, 4, 5, 6, 7].map((n) => {
+        {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => {
           const isCurrent = n === meta.currentStage;
           const reached = n <= meta.currentStage;
           const open = !!openStages[n];
@@ -313,13 +314,13 @@ export default function GuidePanel({ state, width = 320 }) {
       {/* KPIs */}
       <Section title="KPIs">
         <Row label="רגש שלב 3" value={meta.kpi.emotionIntensityStage3 ?? '—'} />
-        <Row label="רגש שלב 5" value={meta.kpi.emotionIntensityStage5 ?? '—'} />
+        <Row label="רגש שלב 6" value={meta.kpi.emotionIntensityStage6 ?? '—'} />
         <Row
           label="דלתא"
           value={
             meta.kpi.emotionIntensityStage3 != null &&
-            meta.kpi.emotionIntensityStage5 != null
-              ? meta.kpi.emotionIntensityStage3 - meta.kpi.emotionIntensityStage5
+            meta.kpi.emotionIntensityStage6 != null
+              ? meta.kpi.emotionIntensityStage3 - meta.kpi.emotionIntensityStage6
               : '—'
           }
         />

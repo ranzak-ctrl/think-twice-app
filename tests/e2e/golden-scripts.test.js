@@ -48,11 +48,11 @@ describe('Golden scripts — end to end', () => {
     const state = await runScenario('friend');
 
     expect(state.meta.sessionComplete).toBe(true);
-    expect(state.meta.currentStage).toBe(7);
+    expect(state.meta.currentStage).toBe(8);
     expect(state.meta.kpi.decisionType).toBe('sharp');
     expect(state.meta.kpi.differsFromAutomatic).toBe(true);
     expect(state.meta.kpi.emotionIntensityStage3).toBe(6);
-    expect(state.meta.kpi.emotionIntensityStage5).toBe(3);
+    expect(state.meta.kpi.emotionIntensityStage6).toBe(3);
     // The scenario's own board was synthesised (not meat's).
     expect(state.board[0].option).toContain('להקשיב');
   });
@@ -74,7 +74,7 @@ describe('Golden scripts — end to end', () => {
     expect(state.meta.kpi.decisionType).toBe('sharp');
     expect(state.meta.kpi.differsFromAutomatic).toBe(true);
     expect(state.meta.kpi.emotionIntensityStage3).toBe(9);
-    expect(state.meta.kpi.emotionIntensityStage5).toBe(5);
+    expect(state.meta.kpi.emotionIntensityStage6).toBe(5);
     expect(state.board[0].option).toContain('פגע');
   });
 });

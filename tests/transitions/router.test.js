@@ -7,12 +7,13 @@ function fillStage(state, stage, value = 2) {
   const stageKey = `stage${stage}`;
   const cores = {
     1: ['trigger', 'timeline', 'actors', 'status', 'auto_reaction'],
-    2: ['causal', 'meaning', 'wound', 'adhd_pattern'],
+    2: ['causal', 'meaning'],
     3: ['emotion', 'intensity', 'past_echo'],
     4: ['auto_reaction', 'planned_reaction'],
-    5: ['perspective', 'intention', 'alt_formulation', 're_emotion'],
-    6: ['alternatives', 'zero_action', 'alt_from_transform'],
-    7: ['goal', 'board_presented', 'sharp_decision', 'package_test'],
+    5: ['wound', 'adhd_pattern'],
+    6: ['perspective', 'intention', 'alt_formulation', 're_emotion'],
+    7: ['alternatives', 'zero_action', 'alt_from_transform'],
+    8: ['goal', 'board_presented', 'sharp_decision', 'package_test'],
   };
   const slots = {};
   cores[stage].forEach((k) => (slots[k] = value));
@@ -140,9 +141,19 @@ describe('Load guard', () => {
   it('stage 5 load guard triggers at 15 questions', () => {
     let s = createState();
     s = { ...s, meta: { ...s.meta, currentStage: 5, questionCount: 15 } };
-    s = fillStage(s, 2); // satisfy stage-5 dependency
+    s = fillStage(s, 2); // satisfy stage-5 dependency (interpretation)
     // Partial stage-5 coverage so only the load guard can fire (not full coverage).
-    s = { ...s, coverage: { ...s.coverage, stage5: { ...s.coverage.stage5, perspective: 1 } } };
+    s = { ...s, coverage: { ...s.coverage, stage5: { ...s.coverage.stage5, wound: 1 } } };
+    const r = route(s);
+    expect(r.decision).toBe(Decision.REQUEST_CONFIRMATION);
+    expect(r.reason).toBe('load_guard');
+  });
+
+  it('stage 6 load guard also triggers at 15 questions (sensitive pair)', () => {
+    let s = createState();
+    s = { ...s, meta: { ...s.meta, currentStage: 6, questionCount: 15 } };
+    s = fillStage(s, 5); // satisfy stage-6 dependency (insight)
+    s = { ...s, coverage: { ...s.coverage, stage6: { ...s.coverage.stage6, perspective: 1 } } };
     const r = route(s);
     expect(r.decision).toBe(Decision.REQUEST_CONFIRMATION);
     expect(r.reason).toBe('load_guard');
@@ -182,8 +193,8 @@ describe('Confirmation flow', () => {
   });
 });
 
-// ─── 6. Dependency: stage 5 requires stage 2 ────────────────────────────────
-describe('Dependency: stage 5 requires stage 2', () => {
+// ─── 6. Dependencies: stage 5 requires stage 2; stage 6 requires stage 5 ─────
+describe('Dependency: stage 5 (insight) requires stage 2 (interpretation)', () => {
   it('blocks stage 5 when stage 2 not satisfied', () => {
     let s = createState();
     s = { ...s, meta: { ...s.meta, currentStage: 4 } };
@@ -204,26 +215,46 @@ describe('Dependency: stage 5 requires stage 2', () => {
     s = fillStage(s, 2); // satisfy dependency
     s = fillStage(s, 4);
     s = withSaturation(s);
-    expect(route(s).decision).toBe(Decision.REQUEST_CONFIRMATION);
+    const r = route(s);
+    expect(r.decision).toBe(Decision.REQUEST_CONFIRMATION);
+    expect(r.nextStage).toBe(5);
   });
 
-  it('stage 6 → 7 does not require a goal (goal gates the board, not entry)', () => {
+  it('holds in stage 5 when insight (wound/pattern) not satisfied', () => {
     let s = createState();
-    s = { ...s, meta: { ...s.meta, currentStage: 6 } };
-    s = fillStage(s, 6);
+    s = { ...s, meta: { ...s.meta, currentStage: 5 } };
+    // stage 5 coverage empty → not ready to advance to transform
+    s = withSaturation(s);
+    expect(route(s).decision).toBe(Decision.STAY);
+  });
+
+  it('allows stage 6 when stage 5 is satisfied', () => {
+    let s = createState();
+    s = { ...s, meta: { ...s.meta, currentStage: 5 } };
+    s = fillStage(s, 5); // insight satisfied → transform gate opens
     s = withSaturation(s);
     const r = route(s);
     expect(r.decision).toBe(Decision.REQUEST_CONFIRMATION);
-    expect(r.nextStage).toBe(7);
+    expect(r.nextStage).toBe(6);
+  });
+
+  it('stage 7 → 8 does not require a goal (goal gates the board, not entry)', () => {
+    let s = createState();
+    s = { ...s, meta: { ...s.meta, currentStage: 7 } };
+    s = fillStage(s, 7);
+    s = withSaturation(s);
+    const r = route(s);
+    expect(r.decision).toBe(Decision.REQUEST_CONFIRMATION);
+    expect(r.nextStage).toBe(8);
   });
 });
 
-// ─── 7. Unidirectional 6→7 (board shown, no revert to production) ───────────
-describe('Unidirectional 6→7', () => {
-  it('once in stage 7, router does not go back to 6', () => {
+// ─── 7. Unidirectional 7→8 (board shown, no revert to production) ───────────
+describe('Unidirectional 7→8', () => {
+  it('once in stage 8, router does not go back to 7', () => {
     let s = createState();
-    s = { ...s, meta: { ...s.meta, currentStage: 7 } };
-    s = { ...s, coverage: { ...s.coverage, stage7: { goal: 0, board_presented: 0, sharp_decision: 0, package_test: 0 } } };
+    s = { ...s, meta: { ...s.meta, currentStage: 8 } };
+    s = { ...s, coverage: { ...s.coverage, stage8: { goal: 0, board_presented: 0, sharp_decision: 0, package_test: 0 } } };
     const r = route(s);
     // Should show board or stay — never advance backwards
     expect([Decision.SHOW_BOARD, Decision.STAY]).toContain(r.decision);
@@ -264,52 +295,52 @@ describe('Safety stop', () => {
   });
 });
 
-// ─── 10. Stage 7 board and session complete ──────────────────────────────────
-describe('Stage 7 closure', () => {
+// ─── 10. Stage 8 board and session complete ──────────────────────────────────
+describe('Stage 8 closure', () => {
   it('shows board when goal known and board not yet presented', () => {
     let s = createState();
-    s = { ...s, meta: { ...s.meta, currentStage: 7 } };
-    s = { ...s, coverage: { ...s.coverage, stage7: { goal: 2, board_presented: 0, sharp_decision: 0, package_test: 0 } } };
+    s = { ...s, meta: { ...s.meta, currentStage: 8 } };
+    s = { ...s, coverage: { ...s.coverage, stage8: { goal: 2, board_presented: 0, sharp_decision: 0, package_test: 0 } } };
     expect(route(s).decision).toBe(Decision.SHOW_BOARD);
   });
 
   it('returns session complete when sharp decision + package test at 2', () => {
     let s = createState();
-    s = { ...s, meta: { ...s.meta, currentStage: 7 } };
-    s = { ...s, coverage: { ...s.coverage, stage7: { goal: 2, board_presented: 2, sharp_decision: 2, package_test: 2 } } };
+    s = { ...s, meta: { ...s.meta, currentStage: 8 } };
+    s = { ...s, coverage: { ...s.coverage, stage8: { goal: 2, board_presented: 2, sharp_decision: 2, package_test: 2 } } };
     expect(route(s).decision).toBe(Decision.SESSION_COMPLETE);
   });
 
   it('does not complete on a vague decision even with slots at 2', () => {
     let s = createState();
-    s = { ...s, meta: { ...s.meta, currentStage: 7, kpi: { ...s.meta.kpi, decisionType: 'vague' } } };
-    s = { ...s, coverage: { ...s.coverage, stage7: { goal: 2, board_presented: 2, sharp_decision: 2, package_test: 2 } } };
+    s = { ...s, meta: { ...s.meta, currentStage: 8, kpi: { ...s.meta.kpi, decisionType: 'vague' } } };
+    s = { ...s, coverage: { ...s.coverage, stage8: { goal: 2, board_presented: 2, sharp_decision: 2, package_test: 2 } } };
     expect(route(s).decision).not.toBe(Decision.SESSION_COMPLETE);
   });
 
   it('completes on a structured deferral with slots at 2', () => {
     let s = createState();
-    s = { ...s, meta: { ...s.meta, currentStage: 7, kpi: { ...s.meta.kpi, decisionType: 'structured_deferral' } } };
-    s = { ...s, coverage: { ...s.coverage, stage7: { goal: 2, board_presented: 2, sharp_decision: 2, package_test: 2 } } };
+    s = { ...s, meta: { ...s.meta, currentStage: 8, kpi: { ...s.meta.kpi, decisionType: 'structured_deferral' } } };
+    s = { ...s, coverage: { ...s.coverage, stage8: { goal: 2, board_presented: 2, sharp_decision: 2, package_test: 2 } } };
     expect(route(s).decision).toBe(Decision.SESSION_COMPLETE);
   });
 });
 
-// ─── 12. Either-or merge: stage 7 → 6 re-open ───────────────────────────────
+// ─── 12. Either-or merge: stage 8 → 7 re-open ───────────────────────────────
 describe('Either-or merge', () => {
-  it('a real merge re-opens production (stage 6)', () => {
+  it('a real merge re-opens production (stage 7)', () => {
     let s = createState();
-    s = { ...s, meta: { ...s.meta, currentStage: 7, mergeAttempt: 'real' } };
-    s = { ...s, coverage: { ...s.coverage, stage7: { goal: 2, board_presented: 2, sharp_decision: 0, package_test: 0 } } };
+    s = { ...s, meta: { ...s.meta, currentStage: 8, mergeAttempt: 'real' } };
+    s = { ...s, coverage: { ...s.coverage, stage8: { goal: 2, board_presented: 2, sharp_decision: 0, package_test: 0 } } };
     const r = route(s);
     expect(r.decision).toBe(Decision.REOPEN);
-    expect(r.targetStage).toBe(6);
+    expect(r.targetStage).toBe(7);
   });
 
   it('an avoidance merge does not re-open — model reflects exclusivity', () => {
     let s = createState();
-    s = { ...s, meta: { ...s.meta, currentStage: 7, mergeAttempt: 'avoidance' } };
-    s = { ...s, coverage: { ...s.coverage, stage7: { goal: 2, board_presented: 2, sharp_decision: 0, package_test: 0 } } };
+    s = { ...s, meta: { ...s.meta, currentStage: 8, mergeAttempt: 'avoidance' } };
+    s = { ...s, coverage: { ...s.coverage, stage8: { goal: 2, board_presented: 2, sharp_decision: 0, package_test: 0 } } };
     expect(route(s).decision).toBe(Decision.STAY);
   });
 });

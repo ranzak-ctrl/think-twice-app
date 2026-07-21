@@ -6,11 +6,12 @@ export const SLOT_UNKNOWN = 'U';
 export function createState() {
   return {
     facts: {},
-    thoughts: {},   // includes wound (מוגלה) and ADHD pattern tag
+    thoughts: {},   // causal + meaning only (interpretation, stage 2)
     feelings: {},   // emotion name + intensity + past echo
     reactions: {},  // automatic + planned
-    basket: [],     // alternative responses (stage 6)
-    board: [],      // decision board rows (stage 7, built from basket)
+    selfInsight: {},// wound (מוגלה) + ADHD pattern tag + link to reaction (stage 5)
+    basket: [],     // alternative responses (stage 7)
+    board: [],      // decision board rows (stage 8, built from basket)
     decision: {},   // { type, choice, rationale, package_gain, package_cost }
 
     // Gap-management (Build 1): graded consistency records keyed by target.
@@ -20,12 +21,13 @@ export function createState() {
 
     coverage: {
       stage1: { trigger: 0, timeline: 0, actors: 0, status: 0, auto_reaction: 0 },
-      stage2: { causal: 0, meaning: 0, wound: 0, adhd_pattern: 0 },
+      stage2: { causal: 0, meaning: 0 },
       stage3: { emotion: 0, intensity: 0, past_echo: 0 },
       stage4: { auto_reaction: 0, planned_reaction: 0 },
-      stage5: { perspective: 0, intention: 0, alt_formulation: 0, re_emotion: 0 },
-      stage6: { alternatives: 0, zero_action: 0, alt_from_transform: 0 },
-      stage7: { goal: 0, board_presented: 0, sharp_decision: 0, package_test: 0 },
+      stage5: { wound: 0, adhd_pattern: 0 },
+      stage6: { perspective: 0, intention: 0, alt_formulation: 0, re_emotion: 0 },
+      stage7: { alternatives: 0, zero_action: 0, alt_from_transform: 0 },
+      stage8: { goal: 0, board_presented: 0, sharp_decision: 0, package_test: 0 },
     },
 
     // Per-slot findings (guide-mode display) — short textual info items the model
@@ -60,7 +62,7 @@ export function createState() {
       usage: { inputTokens: 0, outputTokens: 0, calls: 0 }, // real-API token tally
       kpi: {
         emotionIntensityStage3: null,
-        emotionIntensityStage5: null,
+        emotionIntensityStage6: null, // re-measured after the alternative perspective (stage 6)
         decisionType: null,    // 'sharp' | 'structured_deferral' | 'vague'
         differsFromAutomatic: null, // does the decision differ from the gut reaction?
         selfRefs: 0,           // running count of first-person markers (יחס אני/הוא)
@@ -110,6 +112,10 @@ export function updateFeelings(state, patch) {
 
 export function updateReactions(state, patch) {
   return { ...state, reactions: { ...state.reactions, ...patch } };
+}
+
+export function updateSelfInsight(state, patch) {
+  return { ...state, selfInsight: { ...state.selfInsight, ...patch } };
 }
 
 export function addToBasket(state, option) {
@@ -322,5 +328,6 @@ export function importState(json) {
     gaps: state.gaps ?? { byTarget: {}, log: [] },
     findings: state.findings ?? {},
     actorMap: state.actorMap ?? {},
+    selfInsight: state.selfInsight ?? {},
   };
 }

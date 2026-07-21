@@ -9,7 +9,7 @@ export const Decision = {
   REQUEST_CONFIRMATION: 'requestConfirmation', // show summary, wait for user
   ADVANCE: 'advance',                          // confirmed — move to next stage
   REOPEN: 'reopen',                            // contradicting info — drop slot
-  SHOW_BOARD: 'showBoard',                     // stage 7: present decision board
+  SHOW_BOARD: 'showBoard',                     // stage 8: present decision board
   SAFETY_STOP: 'safetyStop',
   SESSION_COMPLETE: 'sessionComplete',
 };
@@ -24,16 +24,20 @@ const SATURATION_LIMIT = 2;
 // removing it would strand stages. Set deliberately high so it rarely fires —
 // do not treat 20/15 as clinically validated.
 const LOAD_GUARD_DEFAULT = 20;
-const LOAD_GUARD_STAGE5 = 15;
+// The two "change work" stages that touch the self-image (Insight, stage 5) and
+// require perspective-taking (Transform, stage 6) get a lower guard — the sensitive
+// pair where a slower pace and an earlier exit are clinically preferred.
+const LOAD_GUARD_SENSITIVE = 15;
 
 const CORE_SLOTS = {
   1: ['trigger', 'timeline', 'actors', 'status', 'auto_reaction'],
-  2: ['causal', 'meaning', 'wound', 'adhd_pattern'],
+  2: ['causal', 'meaning'],
   3: ['emotion', 'intensity', 'past_echo'],
   4: ['auto_reaction', 'planned_reaction'],
-  5: ['perspective', 'intention', 'alt_formulation', 're_emotion'],
-  6: ['alternatives', 'zero_action', 'alt_from_transform'],
-  7: ['goal', 'board_presented', 'sharp_decision', 'package_test'],
+  5: ['wound', 'adhd_pattern'],                                  // Insight ("מה זה אומר עליי")
+  6: ['perspective', 'intention', 'alt_formulation', 're_emotion'], // Transform
+  7: ['alternatives', 'zero_action', 'alt_from_transform'],       // Alternatives (divergence)
+  8: ['goal', 'board_presented', 'sharp_decision', 'package_test'], // Decision (convergence)
 };
 
 const STAGE_KEY = (n) => `stage${n}`;
@@ -56,14 +60,22 @@ export function evaluateStage(coverage, stage) {
 }
 
 function dependenciesMet(coverage, targetStage) {
+  // "מיפוי לפני שינוי" — entry to the change work (Insight, stage 5) requires the
+  // interpretation to be mapped. Stages 1–4 are guaranteed complete by the sequential
+  // advance; the interpretation gate is the explicit precondition for looking inward.
   if (targetStage === 5) {
     return evaluateStage(coverage, 2).softThresholdMet;
   }
-  if (targetStage === 7) {
-    // Stage 6 must be exhausted. The goal gates the BOARD (see SHOW_BOARD below),
-    // not entry into stage 7 — it is elicited as the first stage-7 question, so it
-    // cannot be a precondition for getting there.
-    return evaluateStage(coverage, 6).softThresholdMet;
+  // Transform (stage 6, "יציאה מעצמי") leans on the wound uncovered in Insight —
+  // "זה שהבשר לא בסדר לא אומר שאני לא בסדר". No alternative perspective without it.
+  if (targetStage === 6) {
+    return evaluateStage(coverage, 5).softThresholdMet;
+  }
+  if (targetStage === 8) {
+    // Stage 7 (alternatives) must be exhausted. The goal gates the BOARD (see
+    // SHOW_BOARD below), not entry into stage 8 — it is elicited as the first stage-8
+    // question, so it cannot be a precondition for getting there.
+    return evaluateStage(coverage, 7).softThresholdMet;
   }
   return true;
 }
@@ -87,28 +99,29 @@ export function route(state) {
     return { decision: Decision.STAY, reason: 'awaiting_confirmation' };
   }
 
-  // Stage 7: show board as soon as goal is known and board not yet shown
-  if (currentStage === 7) {
-    const s7 = coverage.stage7 ?? {};
+  // Stage 8: show board as soon as goal is known and board not yet shown
+  if (currentStage === 8) {
+    const s8 = coverage.stage8 ?? {};
     // Either-or: a real (actionable) merge is the only path back from convergence
-    // to production — re-open stage 6 (Transition Protocol §7ה, §5).
+    // to production — re-open stage 7 (alternatives) (Transition Protocol §7ה, §5).
     if (meta.mergeAttempt === 'real') {
-      return { decision: Decision.REOPEN, targetStage: 6, reason: 'merge' };
+      return { decision: Decision.REOPEN, targetStage: 7, reason: 'merge' };
     }
-    if (!s7.board_presented && (s7.goal ?? 0) >= 1) {
+    if (!s8.board_presented && (s8.goal ?? 0) >= 1) {
       return { decision: Decision.SHOW_BOARD };
     }
     // Session complete when sharp decision + package test both at 2
     // A vague decision never closes the session (Transition Protocol §7, מבחן החדות).
     const vague = meta.kpi?.decisionType === 'vague';
-    if (!vague && s7.sharp_decision === 2 && s7.package_test === 2) {
+    if (!vague && s8.sharp_decision === 2 && s8.package_test === 2) {
       return { decision: Decision.SESSION_COMPLETE };
     }
     return { decision: Decision.STAY };
   }
 
-  // Load guard
-  const limit = currentStage === 5 ? LOAD_GUARD_STAGE5 : LOAD_GUARD_DEFAULT;
+  // Load guard — lower ceiling on the sensitive change-work pair (Insight 5, Transform 6).
+  const limit =
+    currentStage === 5 || currentStage === 6 ? LOAD_GUARD_SENSITIVE : LOAD_GUARD_DEFAULT;
   const loadGuardTriggered = questionCount >= limit;
 
   // Saturation
@@ -128,9 +141,14 @@ export function route(state) {
 
   const readyToAdvance = (coverageReady && actorsClearEnough) || loadGuardTriggered;
 
-  if (readyToAdvance && currentStage < 7) {
+  if (readyToAdvance && currentStage < 8) {
     const nextStage = currentStage + 1;
-    if (!dependenciesMet(coverage, nextStage)) {
+    // Dependencies gate the NORMAL, coverage-driven advance. The load guard is an
+    // anti-deadlock backstop that must always be able to transition — otherwise a
+    // stage whose next-stage dependency is its OWN coverage (6←5: Transform needs the
+    // wound) could strand forever, since the guard fires precisely when that coverage
+    // is still incomplete. A forced load-guard advance therefore bypasses the gate.
+    if (!loadGuardTriggered && !dependenciesMet(coverage, nextStage)) {
       return { decision: Decision.STAY, reason: 'dependency_not_met' };
     }
     return {
