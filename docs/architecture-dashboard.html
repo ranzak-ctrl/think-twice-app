@@ -36,13 +36,16 @@
 .tt-arch .row{display:flex;gap:8px;flex-wrap:nowrap}
 .tt-arch .stage{flex:1;background:var(--chip);border:1px solid var(--line);border-radius:9px;padding:10px 6px;text-align:center;font-size:13px;font-weight:600}
 .tt-arch .stage b{display:block;color:var(--accent);font-size:15px;margin-bottom:2px}
-.tt-arch .agents{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:6px}
-.tt-arch .agent{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 4px;text-align:center;font-size:12.5px;font-weight:600;color:var(--accent2)}
+.tt-arch .agents{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin-top:6px}
+.tt-arch .agent{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 4px;text-align:center;font-size:11.5px;font-weight:600;color:var(--accent2)}
 .tt-arch .agent.act{grid-column:span 2;background:#1a2630;border-color:#2d4a3f}
+.tt-arch .agent.ins{background:#2a2018;border-color:#5a4a2d;color:var(--warn)}
+.tt-arch .chgline{flex:0 0 14px;display:flex;align-items:center;justify-content:center;color:var(--esc);font-weight:800;font-size:17px}
 .tt-arch .slotcap{color:var(--mut);font-size:10.5px;margin:8px 2px 4px}
-.tt-arch .slotrow{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.tt-arch .slotrow{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
 .tt-arch .slotcell{background:#14161c;border:1px solid var(--line);border-radius:8px;padding:7px 5px;text-align:center}
 .tt-arch .slotcell.act{grid-column:span 2;display:flex;gap:8px}
+.tt-arch .slotcell.ins{border-color:#5a4a2d;background:#1c1712}
 .tt-arch .slotcell .sgrp{flex:1}
 .tt-arch .slotcell .slc{display:block;font-family:Consolas,monospace;font-size:10px;color:var(--mut);line-height:1.7;direction:ltr}
 .tt-arch .slotcell .sgl{display:block;font-size:9px;color:var(--accent2);font-weight:700;margin-bottom:3px;letter-spacing:.03em;direction:ltr}
@@ -168,27 +171,30 @@
   </div>
 
   <div class="view show" id="view-arch"><div class="tt-arch"><div class="wrap">
-    <h1>ארכיטקטורה מאוחדת <span class="new">מפת-שחקנים · ממצאים · פתיחים</span></h1>
-    <p class="sub">7 שלבים · 6 סוכנים · State · Router</p>
-    <div class="layer-label"><span class="num">1</span> השיחה — מסע המשתמש (7 שלבים)</div>
+    <h1>ארכיטקטורה מאוחדת <span class="new">8 שלבים · Insight · מפת-שחקנים</span></h1>
+    <p class="sub">8 שלבים · 8 סוכנים · State · Router</p>
+    <div class="layer-label"><span class="num">1</span> השיחה — מסע המשתמש (8 שלבים)</div>
     <div class="row">
-      <div class="stage"><b>1</b>עובדות</div><div class="stage"><b>2</b>פרשנות</div><div class="stage"><b>3</b>רגש</div><div class="stage"><b>4</b>תגובה</div><div class="stage"><b>5</b>פרשנות חלופית</div><div class="stage"><b>6</b>חלופות תגובה</div><div class="stage"><b>7</b>לוח הכרעה</div>
+      <div class="stage"><b>1</b>עובדות</div><div class="stage"><b>2</b>פרשנות</div><div class="stage"><b>3</b>רגש</div><div class="stage"><b>4</b>תגובה</div><div class="chgline" title="קו השינוי">‖</div><div class="stage"><b>5</b>מה זה אומר עליי<span class="new">חדש</span></div><div class="stage"><b>6</b>פרשנות חלופית</div><div class="stage"><b>7</b>חלופות</div><div class="stage"><b>8</b>הכרעה</div>
     </div>
+    <div class="arcnote"><b style="color:var(--esc)">‖ קו השינוי</b> — שלבים 1–4 ממפים את המעגל האוטומטי · 5–8 עבודת השינוי (יציאה מהעצמי)</div>
     <div class="arcnote">פתח-השאלה נע: פתוח ("ספר לי מה קרה") ◀━━━━━▶ סגור ("במה אתה בוחר?")</div>
-    <div class="layer-label" style="margin-top:16px"><span class="num">2</span> הסוכנים שמנהלים (6) — 1:1 לשלבים 1–5, ו-Act על 6+7</div>
+    <div class="layer-label" style="margin-top:16px"><span class="num">2</span> הסוכנים שמנהלים (8) — 1:1 לשלבים</div>
     <div class="agents">
-      <div class="agent">Intake</div><div class="agent">Interpretation</div><div class="agent">Feel</div><div class="agent">React</div><div class="agent">Transform</div><div class="agent act">Act<br><span style="color:var(--mut);font-weight:400;font-size:11px">Divergence + Convergence</span></div>
+      <div class="agent">Intake</div><div class="agent">Interpretation</div><div class="agent">Feel</div><div class="agent">React</div><div class="agent ins">Insight<span class="new">חדש</span></div><div class="agent">Transform</div><div class="agent">Alternatives</div><div class="agent">Decision</div>
     </div>
     <div class="slotcap">▾ ה-Slots של כל סוכן (targetKey = stage{N}.{slot})</div>
     <div class="slotrow">
       <div class="slotcell"><span class="slc">trigger</span><span class="slc">timeline</span><span class="slc">actors</span><span class="slc">status</span><span class="slc">auto_reaction</span></div>
-      <div class="slotcell"><span class="slc">causal</span><span class="slc">meaning</span><span class="slc">wound</span><span class="slc">adhd_pattern</span></div>
+      <div class="slotcell"><span class="slc">causal</span><span class="slc">meaning</span></div>
       <div class="slotcell"><span class="slc">emotion</span><span class="slc">intensity</span><span class="slc">past_echo</span></div>
       <div class="slotcell"><span class="slc">auto_reaction</span><span class="slc">planned_reaction</span></div>
+      <div class="slotcell ins"><span class="sgl" style="color:var(--warn)">5 · Insight</span><span class="slc">wound (מוגלה)</span><span class="slc">adhd_pattern</span></div>
       <div class="slotcell"><span class="slc">perspective</span><span class="slc">intention</span><span class="slc">alt_formulation</span><span class="slc">re_emotion</span></div>
-      <div class="slotcell act"><div class="sgrp"><span class="sgl">6 · divergence</span><span class="slc">alternatives</span><span class="slc">zero_action</span><span class="slc">alt_from_transform</span></div><div class="sgrp"><span class="sgl">7 · convergence</span><span class="slc">goal</span><span class="slc">board_presented</span><span class="slc">sharp_decision</span><span class="slc">package_test</span></div></div>
+      <div class="slotcell"><span class="slc">alternatives</span><span class="slc">zero_action</span><span class="slc">alt_from_transform</span></div>
+      <div class="slotcell"><span class="slc">goal</span><span class="slc">board_presented</span><span class="slc">sharp_decision</span><span class="slc">package_test</span></div>
     </div>
-    <div class="arrows"><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span></div>
+    <div class="arrows"><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span></div>
     <div class="state">
       <h3><span class="num">3</span> STATE — Shared Context <span style="color:var(--mut);font-weight:400;font-size:12px">(JSON נסתר)</span></h3>
       <div class="panels">
@@ -196,12 +202,12 @@
           <div class="cap">Case Narrative — תוכן</div>
           <div class="arena"><span class="tag">▒ שכבת הזירה</span> (אופרציונלי — מה נעשה/תוכנן):<br>טריגר · ציר-זמן[] · שחקנים · מקום · אובייקט · סטטוס · Reactions · ResponseOptions[] · Decision</div>
           <div class="arcnote">▲ קשתות גרף ▼ (רגש→פרשנות, פרשנות→טריגר)</div>
-          <div class="meaning"><span class="tag2">▒ שכבת המשמעות</span> (נומינלי — פרשנות/משמעות/מטרה):<br>Thoughts(מוגלה) · Feelings · AltPerspectives(Δרגש) · Expectations(→יעד)</div>
+          <div class="meaning"><span class="tag2">▒ שכבת המשמעות</span> (נומינלי — פרשנות/משמעות/מטרה):<br>Thoughts · Feelings · <b style="color:var(--warn)">SelfInsight(מוגלה+דפוס·5)</b> · AltPerspectives(Δרגש) · Expectations(→יעד)</div>
         </div>
         <div class="panel">
           <div class="cap">Coverage Scorecard (נסתר)</div>
           <table class="cov">
-            <tr><td>1 intake</td><td>2 2 2 2 2</td></tr><tr><td>2 interpretation</td><td>2 2 2 1</td></tr><tr><td>3 feel</td><td>2 2 2</td></tr><tr><td>4 react</td><td>2 1</td></tr><tr><td>5 transform</td><td>2 2 2 2</td></tr><tr><td>6 act-diverg.</td><td>2 2 2</td></tr><tr><td>7 act-converg.</td><td>2 2 2 2 1</td></tr>
+            <tr><td>1 intake</td><td>2 2 2 2 2</td></tr><tr><td>2 interpretation</td><td>2 2</td></tr><tr><td>3 feel</td><td>2 2 2</td></tr><tr><td>4 react</td><td>2 1</td></tr><tr><td>5 insight</td><td>2 1</td></tr><tr><td>6 transform</td><td>2 2 2 2</td></tr><tr><td>7 alternatives</td><td>2 2 2</td></tr><tr><td>8 decision</td><td>2 2 2 2</td></tr>
           </table>
           <div class="sat">0 / 1 / 2 / U · saturation = 1</div>
         </div>
@@ -220,7 +226,7 @@
         <div class="gaplist">
           • <code>stage1.timeline</code> · <b>9</b>/10 · <span class="st-res">resolved ▲</span><br>
           • <code>topic:חיסכון</code> · <b>4</b>/10 · <span class="st-star">starred</span><br>
-          • <code>stage2.wound</code> · <b>2</b>/10 · <span class="st-esc">escalated</span> <span class="fbadge">🟡 Build 2</span>
+          • <code>stage5.wound</code> · <b>2</b>/10 · <span class="st-esc">escalated</span> <span class="fbadge">🟡 Build 2</span>
         </div>
         <div class="sat">record · star · resolve · reopen-של-resolved ✅ · escalate + reprobe + reopenSlot = Build 2</div>
       </div>
@@ -231,7 +237,7 @@
       <ul>
         <li>קורא את ה-<b>Coverage</b> + מונה מיצוי · מעבר על <b>כיסוי-מלא</b> או (סף-רך ∧ מיצוי) <span class="new">✅</span></li>
         <li><b>שער מפת-שחקנים <span class="new">✅</span>:</b> שלב 1 לא עובר כל עוד דמות <code>clear:false</code> · load-guard = רשת ביטחון</li>
-        <li><b>GATES:</b> שלב 5 דורש 2 · שלב 7 דורש 6 + יעד · 6▶7 חד-כיווני</li>
+        <li><b>GATES:</b> <span style="color:var(--esc)">קו השינוי — שלב 5 דורש 2</span> · שלב 6 דורש 5 (מוגלה) · שלב 8 דורש 7 · 7▶8 חד-כיווני</li>
         <li><b>פערים — Build 1 ✅:</b> יסודי/חוסם = <span class="st-esc">escalated</span> + <code>reopenSlot</code> <span class="new">🟡 Build 2</span> · אחרת <span class="st-star">starred</span></li>
         <li>מכריע ומחזיר <code>control</code> — <b>המודל מציע, הקוד מכריע</b></li>
       </ul>
@@ -242,7 +248,7 @@
       </div>
       <div class="fut-note future"><span class="fbadge">⬜ טרם תוכנן · לא פעיל</span><b style="color:#aab2c0">גלאי עייפות</b> — קלט עתידי ל-Router; יחליף את מגן-העומס (placeholder 20/15) במנגנון ששוקלל מורכבות-סיפור + שיתוף-פעולה.</div>
     </div>
-    <div class="status">סטטוס: מנוע הראיון + <b>מפת-שחקנים (שער)</b> + <b>ממצאים</b> + <b>פתיחי-שלב מעוגנים</b> (קדימה + Re-open) + סדר eval-first <b>✅ ממומש ונבדק חי</b> · ניהול פערים Build 1 <b>✅</b> (escalation/reprobe = Build 2 <b style="color:var(--warn)">🟡</b>) · גלאי עייפות <b style="color:#8a93a3">⬜ טרם תוכנן</b>.</div>
+    <div class="status">סטטוס: <b>מודל 8 שלבים + סוכן Insight (קו השינוי)</b> ✅ ממומש · מנוע הראיון + <b>מפת-שחקנים (שער)</b> + <b>ממצאים</b> + <b>פתיחי-שלב מעוגנים</b> (קדימה + Re-open) + סדר eval-first <b>✅ ממומש ונבדק חי</b> · ניהול פערים Build 1 <b>✅</b> (escalation/reprobe = Build 2 <b style="color:var(--warn)">🟡</b>) · גלאי עייפות <b style="color:#8a93a3">⬜ טרם תוכנן</b>.</div>
   </div></div></div>
 
   <div class="view" id="view-flow"><div id="ttflow">
