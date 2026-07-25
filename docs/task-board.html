@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Think Twice — לוח המשימות</title>
+</head>
+<body style="margin:0;padding:18px 10px 40px;background:#0f1115">
+<style>
+:root{--bg:#0f1115;--panel:#171a21;--panel2:#1d2129;--line:#2c323d;--txt:#e7eaf0;--mut:#9aa4b2;--accent:#7ca7ff;--accent2:#6ee0b0;--warn:#f0b46b;--esc:#ff9d7a;--chip:#222734;}
+#ttb *{box-sizing:border-box}
+#ttb{background:var(--bg);color:var(--txt);font-family:"Segoe UI",Arial,system-ui,sans-serif;padding:20px 16px 30px;border-radius:12px;direction:rtl;max-width:1180px;margin:0 auto}
+#ttb .dtitle{font-size:20px;font-weight:800;margin:0 0 2px}
+#ttb .dsub{color:var(--mut);font-size:12.5px;margin:0 0 14px}
+#ttb a{color:var(--accent);text-decoration:none}
+#ttb a:hover{text-decoration:underline}
+
+/* top status strip */
+#ttb .strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+#ttb .stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+#ttb .stat .k{color:var(--mut);font-size:11px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;margin-bottom:4px}
+#ttb .stat .v{font-size:16px;font-weight:800}
+#ttb .stat .v.g{color:var(--accent2)} #ttb .stat .v.o{color:var(--warn)} #ttb .stat .v.r{color:var(--esc)} #ttb .stat .v.b{color:var(--accent)}
+
+/* board columns */
+#ttb .board{display:grid;grid-template-columns:repeat(5,1fr);gap:11px;align-items:start}
+#ttb .col{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:10px 9px;min-height:60px}
+#ttb .col > h3{margin:0 0 9px;font-size:13px;font-weight:800;display:flex;align-items:center;gap:6px;padding-bottom:7px;border-bottom:1px solid var(--line)}
+#ttb .col .cnt{margin-inline-start:auto;font-size:11px;font-weight:700;color:var(--mut);background:var(--chip);border-radius:20px;padding:1px 8px}
+#ttb .dot{width:9px;height:9px;border-radius:50%;flex:none}
+#ttb .d-g{background:var(--accent2)} #ttb .d-b{background:var(--accent)} #ttb .d-o{background:var(--warn)} #ttb .d-r{background:var(--esc)} #ttb .d-m{background:var(--mut)}
+
+/* cards */
+#ttb .card{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 9px;margin-bottom:8px;font-size:12px;line-height:1.5}
+#ttb .card .t{font-weight:700;color:var(--txt);margin-bottom:3px;display:block}
+#ttb .card .m{color:var(--mut);font-size:11px}
+#ttb .card code{background:#0b0e13;padding:1px 5px;border-radius:4px;color:var(--accent);font-family:Consolas,monospace;font-size:10.5px}
+#ttb .card.blk{border-inline-start:3px solid var(--esc)}
+#ttb .card.who{display:inline-block;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:5px;margin-top:5px;letter-spacing:.02em}
+#ttb .who.natali{background:#2a1c30;color:#d9a8e8;border:1px solid #46324e}
+#ttb .who.ran{background:#1a2630;color:#8fd6c0;border:1px solid #2d4a3f}
+#ttb .who.dev{background:#22283a;color:#9db4ff;border:1px solid #35406a}
+
+#ttb .foot{margin-top:16px;color:var(--mut);font-size:11.5px;line-height:1.7;border-top:1px solid var(--line);padding-top:12px}
+#ttb .foot b{color:var(--txt)}
+@media(max-width:900px){#ttb .board{grid-template-columns:1fr 1fr}#ttb .strip{grid-template-columns:1fr 1fr}}
+</style>
+
+<div id="ttb">
+  <p class="dtitle">🗂️ Think Twice — לוח המשימות</p>
+  <p class="dsub">מצב פיתוח נכון ל-25.7.2026 · ענף <code style="font-family:Consolas,monospace">feat/gap-management</code> · PR&nbsp;#1 פתוח · מקור: זיכרון הפרויקט</p>
+
+  <div class="strip">
+    <div class="stat"><div class="k">Build 1 · Gap-Management</div><div class="v g">✅ הושלם</div></div>
+    <div class="stat"><div class="k">חבילת בדיקות</div><div class="v g">~319 ירוק</div></div>
+    <div class="stat"><div class="k">חוסמי שחרור</div><div class="v r">3 פתוחים</div></div>
+    <div class="stat"><div class="k">הצעד הבא (רן)</div><div class="v b">ייצוא הרצת-בדיקה</div></div>
+  </div>
+
+  <div class="board">
+
+    <!-- DONE -->
+    <div class="col">
+      <h3><span class="dot d-g"></span>✅ הושלם &amp; נדחף<span class="cnt">15+</span></h3>
+      <div class="card"><span class="t">Build 1 — מדד עקביות (gap)</span><span class="m">מדידה 1–10 מאחורי הקלעים, record/star/resolve/re-open. 5 יחידות. לא נוגע ב-Router.</span></div>
+      <div class="card"><span class="t">Router: מעבר על full-coverage</span><span class="m"><code>59a700f</code> — נפתר "תקוע בשלב 1 למרות כיסוי מלא".</span></div>
+      <div class="card"><span class="t">לכידה חוצת-שלבים</span><span class="m"><code>38cd877</code> — סלוטים של שלבים אחרים נלכדים לרמה 1.</span></div>
+      <div class="card"><span class="t">Saturation + חוסן סיכומים</span><span class="m"><code>5a68635</code> · summary-plaintext <code>23d0cb1</code></span></div>
+      <div class="card"><span class="t">מפת שחקנים + שער בהירות</span><span class="m"><code>ce05ffb</code> — פתר בלבול-דמויות. Router מסרב מעבר כשקאסט לא ברור.</span></div>
+      <div class="card"><span class="t">פעולות לכל שחקן + ייחוס</span><span class="m"><code>ee84eb3</code> — כל פעולה מיוחסת לשחקן שלה.</span></div>
+      <div class="card"><span class="t">Findings לכל סלוט</span><span class="m"><code>98d86d8</code> — תצפית בלבד, לא מניע Router.</span></div>
+      <div class="card"><span class="t">Openers מעוגנים בסיפור</span><span class="m"><code>55cc247</code> + Re-open <code>afcdaf6</code> — נטענים מהמודל, מעוגנים בפרט קונקרטי.</span></div>
+      <div class="card"><span class="t">תיקון dissonance בסיכום</span><span class="m"><code>9524526</code> — הסיכום הוא recap אמיתי לפני כפתורי האישור.</span></div>
+      <div class="card"><span class="t">Perf: actor-map דלתא בלבד</span><span class="m"><code>3b36e8f</code> — ~7–10 שנ'/תור (היה הרבה יותר).</span></div>
+      <div class="card"><span class="t">גבול שלב-2</span><span class="m"><code>42291c4</code> — לא לגלוש לעבודת שלב-5.</span></div>
+      <div class="card"><span class="t">Eval-first JSON</span><span class="m"><code>af5057d</code> — "חלץ, אז שאל". השאלה מעוגנת בניתוח.</span></div>
+      <div class="card"><span class="t">מחיצה נגררת בפאנל המדריך</span><span class="m"><code>867739c</code></span></div>
+      <div class="card"><span class="t">Sync דוקומנטציה + דשבורד (טאבים 2–3)</span><span class="m"><code>71d0805</code> · <code>8dd0efa</code> — as-built.</span></div>
+    </div>
+
+    <!-- VALIDATE -->
+    <div class="col">
+      <h3><span class="dot d-b"></span>🔵 אימות חי<span class="cnt">2</span></h3>
+      <div class="card"><span class="t">אימות actor-map מול API אמיתי</span><span class="m">האם המודל מפיק מפה נקייה ומדגיש עמימות?</span><br><span class="who ran">רן — live test</span></div>
+      <div class="card"><span class="t">ניסוח קליני — Natali</span><span class="m">ניסוח שאלת-הבהרה; האם "תפקיד ברור" מחייב יחס-למשתמש לכל דמות.</span><br><span class="who natali">נטלי</span></div>
+    </div>
+
+    <!-- NEXT -->
+    <div class="col">
+      <h3><span class="dot d-o"></span>🟠 הבא בתור<span class="cnt">3</span></h3>
+      <div class="card"><span class="t">Live golden scripts</span><span class="m">רן מייצא הרצה אמיתית (Export → <code>{history,state}</code>); לבנות scripts נאמנים — בלי לולאות, לעצור בנקודה התקועה.</span><br><span class="who ran">רן — ייצוא</span></div>
+      <div class="card"><span class="t">Build 2 (מנוע)</span><span class="m">escalation + reprobe + reopenSlot + §12.1 parked.</span><br><span class="who dev">פיתוח</span></div>
+      <div class="card"><span class="t">Stage-4 slots</span><span class="m">reaction consequences + satisfaction. ניסוח/מדידה קליניים.</span><br><span class="who natali">נטלי §4</span></div>
+    </div>
+
+    <!-- BLOCKERS -->
+    <div class="col">
+      <h3><span class="dot d-r"></span>🔴 חוסמי שחרור<span class="cnt">3</span></h3>
+      <div class="card blk"><span class="t">גלאי עייפות (fatigue detector)</span><span class="m">להחליף את ה-load-guard הזמני (20/15). האותות קיימים בקוד אבל "מתים" — wire-up + weighting + thresholds. <b>קריטי לפני sign-off.</b></span><br><span class="who natali">נטלי §1</span></div>
+      <div class="card blk"><span class="t">טיפול בסתירות</span><span class="m">לחבר <code>flag_contradiction</code> ל-Re-open Rule + ניסוח לא-שיפוטי. gap-management הוא ה-conception.</span><br><span class="who natali">נטלי §2</span></div>
+      <div class="card blk"><span class="t">reject-loop (באג מוכר)</span><span class="m">דחיית סיכום load-guard משאירה <code>questionCount</code> בתקרה → השער נפתח שוב מיד. תיקון קטן ב-Router.</span><br><span class="who dev">פיתוח</span></div>
+    </div>
+
+    <!-- PARKED -->
+    <div class="col">
+      <h3><span class="dot d-m"></span>⏸️ מוקפא / Backlog<span class="cnt">4</span></h3>
+      <div class="card"><span class="t">Case-story (סיפור המקרה)</span><span class="m">place/object/expectations כתוכן <code>facts</code>, לא סלוטים. צריך greenlight ל-dev-plan.</span><br><span class="who natali">נטלי</span></div>
+      <div class="card"><span class="t">K_wait — קונספט מחדש</span><span class="m">לא מונה-תורים אלא כמה הראיון יכול להתקדם בלי להשלים את הפער (progress-gate).</span></div>
+      <div class="card"><span class="t">הרחבת foundational</span><span class="m">causal/wound — <code>wound</code> רגיש ומתייצב מאוחר, חסימה מוקדמת עלולה להיתקע.</span></div>
+      <div class="card"><span class="t">מחיקת Drive IDs ישנים</span><span class="m">לקונקטור אין כלי מחיקה — מחיקה ידנית של דשבורד + case-story הישנים.</span><br><span class="who ran">רן — ידני</span></div>
+    </div>
+
+  </div>
+
+  <div class="foot">
+    <b>קישורים:</b> <a href="architecture-dashboard.html">דשבורד ארכיטקטורה →</a> · <a href="dev-plan.md">תכנית פיתוח</a> · <a href="gap-management-implementation.md">מפרט gap-management</a> · <a href="questions-for-natali.md">שאלות לנטלי</a> · <a href="test-plan.md">תכנית בדיקות</a><br>
+    <b>מקרא צבעים:</b> <span style="color:var(--accent2)">ירוק</span> = הושלם · <span style="color:var(--accent)">כחול</span> = אימות · <span style="color:var(--warn)">כתום</span> = הבא · <span style="color:var(--esc)">אדום</span> = חוסם · <span style="color:var(--mut)">אפור</span> = מוקפא. תגיות: <span class="who natali">נטלי</span> = צריך קלט קליני · <span class="who ran">רן</span> = פעולה שלך · <span class="who dev">פיתוח</span> = קוד.<br>
+    <span style="color:var(--mut);font-size:11px">לוח זה נבנה מזיכרון הפרויקט (think-twice-progress). עדכן אותו כשמצב המשימות משתנה.</span>
+  </div>
+</div>
+</body>
+</html>

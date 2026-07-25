@@ -1,5 +1,7 @@
 # CLAUDE.md — Think Twice App (Prototype)
 
+> 🏠 **מרכז העבודה של הפרויקט: [`docs/workspace.html`](docs/workspace.html)** — פתח תחילה למבט-על (הוראות · Context · Memory · Scheduled Tasks · Connectors · דשבורדים · מסמכים · צ'אטים). מהטרמינל: `open docs/workspace.html`
+
 ## מהות הפרויקט
 פרוטוטייפ של Think Twice (איפולמיינד): ראיון טיפולי חצי-מובנה בשבעה שלבים למבוגרים עם הפרעת קשב — מאירוע סוער ועד הכרעה חדה. המוצר הוא Artifact App (React) שמשותף לנטלי בקישור ורץ בחשבון Claude שלה.
 

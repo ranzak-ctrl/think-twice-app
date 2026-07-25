@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Think Twice — מרכז העבודה</title>
+</head>
+<body style="margin:0;padding:0;background:#0f1115">
+<style>
+:root{--bg:#0f1115;--panel:#171a21;--panel2:#1d2129;--line:#2c323d;--txt:#e7eaf0;--mut:#9aa4b2;--accent:#7ca7ff;--accent2:#6ee0b0;--warn:#f0b46b;--esc:#ff9d7a;--chip:#222734;}
+*{box-sizing:border-box}
+body{color:var(--txt);font-family:"Segoe UI",Arial,system-ui,sans-serif;direction:rtl}
+.wrap{max-width:1200px;margin:0 auto;padding:22px 16px 50px}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+
+/* hero */
+.hero{background:linear-gradient(135deg,#1a1f2b,#141821);border:1px solid var(--line);border-radius:14px;padding:20px 22px;margin-bottom:16px}
+.hero h1{font-size:26px;font-weight:800;margin:0 0 4px}
+.hero .sub{color:var(--mut);font-size:13.5px;margin:0 0 12px;max-width:760px;line-height:1.6}
+.hero .chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px;background:var(--chip);border:1px solid var(--line);color:var(--mut)}
+.chip.g{color:var(--accent2);border-color:#2d4a3f} .chip.b{color:var(--accent);border-color:#35406a} .chip.r{color:var(--esc);border-color:#4e332f}
+
+/* grid layout: right = instructions, left = content */
+.cols{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+@media(max-width:860px){.cols{grid-template-columns:1fr}}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 16px;margin-bottom:16px}
+.card h2{font-size:14px;font-weight:800;margin:0 0 11px;display:flex;align-items:center;gap:7px;padding-bottom:9px;border-bottom:1px solid var(--line)}
+.card h2 .em{font-size:16px}
+
+/* instructions panel (right) */
+.instr .rule{font-size:12px;line-height:1.55;color:var(--txt);padding:7px 0;border-bottom:1px solid #232833}
+.instr .rule:last-child{border-bottom:0}
+.instr .rule b{color:var(--accent2)}
+.instr .more{margin-top:10px;font-size:12px}
+
+/* dashboards */
+.dash{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:520px){.dash{grid-template-columns:1fr}}
+.dbtn{display:block;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:16px;text-align:center;transition:.15s}
+.dbtn:hover{border-color:var(--accent);text-decoration:none;transform:translateY(-2px)}
+.dbtn .ic{font-size:30px;display:block;margin-bottom:7px}
+.dbtn .nm{font-size:14px;font-weight:800;color:var(--txt)}
+.dbtn .ds{font-size:11px;color:var(--mut);margin-top:3px}
+
+/* docs list */
+.docs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:520px){.docs{grid-template-columns:1fr}}
+.doc{display:flex;align-items:center;gap:8px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px}
+.doc .di{color:var(--accent);font-size:14px}
+.doc .dm{color:var(--mut);font-size:10.5px;margin-inline-start:auto;direction:ltr}
+
+/* chats */
+.grp-label{font-size:11px;font-weight:800;color:var(--mut);letter-spacing:.04em;text-transform:uppercase;margin:4px 2px 8px}
+.chat{display:flex;gap:11px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin-bottom:8px}
+.chat .cav{width:30px;height:30px;border-radius:8px;background:#12283a;color:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:14px;flex:none;border:1px solid #2d4a3f}
+.chat .cbody{flex:1;min-width:0}
+.chat .ct{font-size:12.5px;font-weight:700;color:var(--txt);line-height:1.4}
+.chat .cm{font-size:10.5px;color:var(--mut);margin-top:3px;direction:ltr;text-align:right}
+.chat .cid{font-family:Consolas,monospace;font-size:9.5px;color:#5b6472}
+
+.note{background:#15161b;border:1px dashed #3a3f4a;border-radius:9px;padding:10px 13px;font-size:11.5px;color:var(--mut);line-height:1.7;margin-top:4px}
+.note b{color:var(--txt)}
+.note code{background:#0b0e13;padding:1px 5px;border-radius:4px;color:var(--accent);font-family:Consolas,monospace}
+.foot{margin-top:22px;color:#5b6472;font-size:11px;text-align:center}
+</style>
+
+<div class="wrap">
+
+  <div class="hero">
+    <h1>🧠 Think Twice</h1>
+    <p class="sub">אב-טיפוס לראיון טיפולי חצי-מובנה בן 7 שלבים למבוגרים עם ADHD — מאירוע סוער ועד הכרעה חדה. React Artifact App, בלי שרת, Router דטרמיניסטי. שיתוף עם נטלי לוולידציה קלינית.</p>
+    <div class="chips">
+      <span class="chip b">ענף: feat/gap-management</span>
+      <span class="chip">PR #1 פתוח</span>
+      <span class="chip g">~319 בדיקות ✅</span>
+      <span class="chip r">3 חוסמי שחרור</span>
+      <span class="chip">github.com/ranzak-ctrl/think-twice-app</span>
+    </div>
+  </div>
+
+  <div class="cols">
+
+    <!-- RIGHT: instructions -->
+    <div>
+      <div class="card instr">
+        <h2><span class="em">📜</span> הוראות הפרויקט</h2>
+        <div class="rule"><b>1.</b> המודל מציע — הקוד מכריע. ה-Router הדטרמיניסטי מחליט מעברי שלב, לא ה-LLM.</div>
+        <div class="rule"><b>2.</b> ה-Router לא מאציל ניווט למשתמש (חוץ מאישורי סיכום + הכרעת שלב 7).</div>
+        <div class="rule"><b>3.</b> פרומפטים הם תוכן, לא קוד — <code style="font-family:Consolas,monospace;font-size:10px">src/content/prompts/</code>, ממוספרי גרסה.</div>
+        <div class="rule"><b>4.</b> ליבה ניידת — <code style="font-family:Consolas,monospace;font-size:10px">src/core</code> בלי תלות ב-UI/פלטפורמה.</div>
+        <div class="rule"><b>5.</b> עברית-RTL אזרח ראשון.</div>
+        <div class="rule"><b>6.</b> אפס שרת בפרוטוטייפ — שום נתון לא עוזב את הדפדפן.</div>
+        <div class="rule"><b>7.</b> שכבת הבטיחות (<code style="font-family:Consolas,monospace;font-size:10px">src/safety</code>) — אסור להסיר/להחליש.</div>
+        <div class="more">
+          📄 <a href="../CLAUDE.md">CLAUDE.md המלא →</a><br>
+          📜 <a href="../src/content/prompts/super-prompt-v1.md">instruction — super-prompt v1 →</a><br>
+          🎭 <a href="../src/content/prompts/persona.md">persona.md →</a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="em">🔌</span> Connectors</h2>
+        <div style="font-size:12px;line-height:2;color:var(--txt)">
+          <span style="color:var(--accent2)">●</span> Google Drive <span style="color:var(--mut);font-size:11px">— מחובר</span><br>
+          <span style="color:var(--accent2)">●</span> Skills גלובליים <span style="color:var(--mut);font-size:11px">— figma · meetings · azure-wiki</span><br>
+          <span style="color:var(--accent2)">●</span> <code style="font-family:Consolas,monospace;font-size:10px">/export-conversation</code> <span style="color:var(--mut);font-size:11px">— command</span><br>
+          <span style="color:var(--accent2)">●</span> GitHub <span style="color:var(--mut);font-size:11px">— ranzak-ctrl (gh)</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="em">🗂️</span> Context</h2>
+        <div style="font-size:12px;line-height:1.9">
+          <div style="color:var(--mut);font-size:10px;font-weight:700;letter-spacing:.03em;margin-bottom:3px">📂 LOCAL FOLDER</div>
+          <div style="color:var(--txt);margin-bottom:6px;direction:ltr;text-align:right;font-family:Consolas,monospace;font-size:11px">~/Projects/think-twice-app</div>
+          <div style="color:var(--mut);font-size:10px;font-weight:700;letter-spacing:.03em;margin-bottom:3px">🔗 URL</div>
+          <a href="https://drive.google.com/drive/folders/18aRuMVNYmn5P1lFH2XEa0GzVqiLtDAzU" style="display:block;margin-bottom:6px">תיקיית Drive — מסמכי מקור של נטלי →</a>
+          <div style="color:var(--mut);font-size:10px;font-weight:700;letter-spacing:.03em;margin-bottom:3px">📁 IN-REPO</div>
+          <a href="." style="display:block;color:var(--txt)">📄 <span style="color:var(--accent)">docs/</span> · <a href="../src/content/prompts/" style="color:var(--accent)">prompts/</a></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="em">🧠</span> Memory <span style="font-size:11px;color:var(--mut);font-weight:600">· 9 קבצים</span></h2>
+        <div style="font-size:11.5px;line-height:1.5">
+          <div style="padding:5px 0;border-bottom:1px solid #232833"><b style="color:var(--accent2)">Progress / resume</b> — נקודת ההמשך המדויקת, מתעדכן כל סשן</div>
+          <div style="padding:5px 0;border-bottom:1px solid #232833"><b style="color:var(--accent2)">Gap-management</b> — קונספט ספקטרום העקביות</div>
+          <div style="padding:5px 0;border-bottom:1px solid #232833"><b style="color:var(--accent2)">Summary confirmation</b> — A1 + חוסמי שחרור קליניים</div>
+          <div style="padding:5px 0;border-bottom:1px solid #232833"><b style="color:var(--accent2)">Transcript tests</b> — golden scripts מהרצות אמיתיות</div>
+          <div style="padding:5px 0;border-bottom:1px solid #232833"><b style="color:var(--accent2)">Commit cadence</b> — לקמט יחידות נקיות בצ'קפוינטים</div>
+          <div style="padding:5px 0;border-bottom:1px solid #232833"><b style="color:var(--accent2)">Case-story</b> — פיצ'ר "סיפור המקרה" (concept)</div>
+          <div style="padding:5px 0;border-bottom:1px solid #232833"><b style="color:var(--accent2)">Project card recovery</b> — איך להחזיר פרויקט שנעלם</div>
+          <div style="padding:5px 0"><b style="color:var(--accent2)">Think Twice project</b> — סקירת הפרויקט</div>
+          <div style="color:var(--mut);font-size:10px;margin-top:8px">📁 <span style="font-family:Consolas,monospace">~/.claude/projects/-Users-ran-zak-Projects-think-twice-app/memory/</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="em">⏰</span> Scheduled Tasks</h2>
+        <div style="font-size:12px;color:var(--mut);line-height:1.7">
+          אין משימות חוזרות מוגדרות כרגע.
+          <div style="font-size:10.5px;margin-top:6px">להוספה: <code style="font-family:Consolas,monospace;font-size:10px">/schedule</code> ב-Claude Code.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEFT: main content -->
+    <div>
+
+      <div class="card">
+        <h2><span class="em">📊</span> דשבורדים</h2>
+        <div class="dash">
+          <a class="dbtn" href="architecture-dashboard.html"><span class="ic">🏗️</span><span class="nm">דשבורד ארכיטקטורה</span><span class="ds">3 טאבים: ארכיטקטורה · זרימת-תור · צירי Router</span></a>
+          <a class="dbtn" href="task-board.html"><span class="ic">🗂️</span><span class="nm">לוח המשימות</span><span class="ds">הושלם · הבא · חוסמים · מוקפא</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="em">📁</span> מסמכי המקור</h2>
+        <div class="docs">
+          <a class="doc" href="presenting-document.md"><span class="di">📄</span> המסמך המציג<span class="dm">spec מלא</span></a>
+          <a class="doc" href="transition-protocol.md"><span class="di">📄</span> פרוטוקול מעברים<span class="dm">slots · thresholds</span></a>
+          <a class="doc" href="principle-zero.md"><span class="di">📄</span> עיקרון 0<span class="dm">הובלה · אסור</span></a>
+          <a class="doc" href="dev-plan.md"><span class="di">📄</span> תכנית פיתוח<span class="dm">שלבים 0–7</span></a>
+          <a class="doc" href="gap-management.md"><span class="di">📄</span> ניהול פערים<span class="dm">קונספט</span></a>
+          <a class="doc" href="gap-management-implementation.md"><span class="di">📄</span> gap — מפרט מימוש<span class="dm">§12</span></a>
+          <a class="doc" href="core-assumptions.md"><span class="di">📄</span> הנחות יסוד<span class="dm">§2 openers</span></a>
+          <a class="doc" href="questions-for-natali.md"><span class="di">📄</span> שאלות לנטלי<span class="dm">§1 §2 §4</span></a>
+          <a class="doc" href="test-plan.md"><span class="di">📄</span> תכנית בדיקות<span class="dm">regressions</span></a>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="em">💬</span> הצ'אטים</h2>
+        <div class="grp-label">▸ פיתוח Think Twice</div>
+        <div class="chat"><div class="cav">💬</div><div class="cbody"><div class="ct">כניסה לשלב 6 — Context window מלא</div><div class="cm cid">2feda4d7 · 1568 תורים · 6.3MB</div></div></div>
+        <div class="chat"><div class="cav">💬</div><div class="cbody"><div class="ct">פיצ'ר מדריך: ממצאים מילוליים לכל סלוט (מפת שחקנים)</div><div class="cm cid">96b1c2d8 · 1765 תורים · 7.0MB</div></div></div>
+        <div class="chat"><div class="cav">💬</div><div class="cbody"><div class="ct">"נמשיך מחר" — הוספת כל הבאגים לתכנית הבדיקות</div><div class="cm cid">831bc366 · 954 תורים · 6.4MB</div></div></div>
+        <div class="chat"><div class="cav">💬</div><div class="cbody"><div class="ct">Command לייצוא תמלול שיחה ל-Drive</div><div class="cm cid">f21e01b8 · 694 תורים · 4.0MB</div></div></div>
+        <div class="chat"><div class="cav">💬</div><div class="cbody"><div class="ct">התקדמות בתכנית הפיתוח — "איפה עצרנו?"</div><div class="cm cid">48ae1c82 · 271 תורים · 897KB</div></div></div>
+        <div class="chat"><div class="cav">💬</div><div class="cbody"><div class="ct">שחזור פרויקט Think Twice שנעלם מהרשימה</div><div class="cm cid">9d9edf2b · 142 תורים · 599KB</div></div></div>
+
+        <div class="note"><b>איך פותחים צ'אט:</b> הצ'אטים הם סשני Claude Code. פתח אותם עם <code>/resume</code> — בטרמינל (<code>cd ~/Projects/think-twice-app && claude</code> → <code>/resume</code>) או בלשונית Code. הקבצים עצמם ב-<code>~/.claude/projects/-Users-ran-zak-Projects-think-twice-app/</code>.</div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="foot">מרכז העבודה — Think Twice · נבנה 25.7.2026 · עמוד סטטי, פותחים בדפדפן מתוך <code style="font-family:Consolas,monospace;color:#5b6472">docs/workspace.html</code></div>
+</div>
+</body>
+</html>
