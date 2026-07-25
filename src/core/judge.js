@@ -59,7 +59,7 @@ export function meetsThreshold(scores, threshold = 4) {
 export async function judgeTranscript({
   history,
   apiKey,
-  model = 'claude-sonnet-4-6',
+  model = 'claude-sonnet-5',
   fetchImpl = fetch,
   apiUrl = 'https://api.anthropic.com/v1/messages',
 }) {

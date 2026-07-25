@@ -408,7 +408,7 @@ function mergeUsage(acc, u) {
 
 export async function complete({ stage, systemPrompt, messages, mode }) {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-  const model = import.meta.env.VITE_MODEL ?? 'claude-sonnet-4-6';
+  const model = import.meta.env.VITE_MODEL ?? 'claude-sonnet-5';
   // Live mode: either a local dev key is present, OR VITE_LIVE=1 (deployed —
   // the server-side proxy holds the key, the browser never sees it).
   const live = isValidKey(apiKey) || import.meta.env.VITE_LIVE === '1';
