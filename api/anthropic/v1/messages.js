@@ -1,9 +1,6 @@
-// Serverless proxy (Vercel) — keeps the Anthropic API key server-side.
-// The browser calls /api/anthropic/v1/messages WITHOUT any key; this function
-// injects ANTHROPIC_API_KEY (a server-only env var) and forwards to Anthropic.
-//
-// Optional shared-password gate: if APP_PASSWORD is set, every request must
-// carry a matching `x-app-password` header, so a leaked URL can't burn credits.
+// Serverless proxy (Vercel) — fixed path matching the client's only call:
+// POST /api/anthropic/v1/messages. Keeps ANTHROPIC_API_KEY server-side; the
+// browser never sees it. Optional shared-password gate via APP_PASSWORD.
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -17,20 +14,14 @@ export default async function handler(req, res) {
     return;
   }
 
-  // Shared-password gate (only enforced when APP_PASSWORD is set on the server).
   const appPassword = process.env.APP_PASSWORD;
   if (appPassword && req.headers['x-app-password'] !== appPassword) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }
 
-  // Reconstruct the Anthropic path, e.g. ['v1','messages'] -> v1/messages
-  const parts = req.query.path;
-  const path = Array.isArray(parts) ? parts.join('/') : String(parts || '');
-  const url = `https://api.anthropic.com/${path}`;
-
   try {
-    const upstream = await fetch(url, {
+    const upstream = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
