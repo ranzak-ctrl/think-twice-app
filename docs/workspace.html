@@ -11,6 +11,10 @@
 *{box-sizing:border-box}
 body{color:var(--txt);font-family:"Segoe UI",Arial,system-ui,sans-serif;direction:rtl}
 .wrap{max-width:1200px;margin:0 auto;padding:22px 16px 50px}
+.homebar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:12px;margin:-22px -16px 18px;padding:11px 16px;background:rgba(15,17,21,.9);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.homebtn{display:inline-flex;align-items:center;gap:7px;background:var(--accent);color:#0b0e14;border-radius:9px;padding:8px 16px;font-size:13.5px;font-weight:800;text-decoration:none;transition:.15s}
+.homebtn:hover{filter:brightness(1.08);text-decoration:none}
+.homebar .hbnote{color:var(--mut);font-size:12px}
 a{color:var(--accent);text-decoration:none}
 a:hover{text-decoration:underline}
 
@@ -76,6 +80,11 @@ a.mem b{color:var(--accent2)}
 </style>
 
 <div class="wrap">
+
+  <div class="homebar">
+    <a class="homebtn" href="workspace.html">🏠 עמוד הבית</a>
+    <span class="hbnote">מרכז העבודה — Think Twice · v1.0.0</span>
+  </div>
 
   <div class="hero">
     <h1>🧠 Think Twice</h1>
