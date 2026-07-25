@@ -37,7 +37,7 @@ a:hover{text-decoration:underline}
 .instr .more{margin-top:10px;font-size:12px}
 
 /* dashboards */
-.dash{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dash{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
 @media(max-width:520px){.dash{grid-template-columns:1fr}}
 .dbtn{display:block;background:var(--panel2);border:1px solid var(--line);border-radius:11px;padding:16px;text-align:center;transition:.15s}
 .dbtn:hover{border-color:var(--accent);text-decoration:none;transform:translateY(-2px)}
@@ -82,7 +82,7 @@ a.mem b{color:var(--accent2)}
     <p class="sub">אב-טיפוס לראיון טיפולי חצי-מובנה בן 7 שלבים למבוגרים עם ADHD — מאירוע סוער ועד הכרעה חדה. React Artifact App, בלי שרת, Router דטרמיניסטי. שיתוף עם נטלי לוולידציה קלינית.</p>
     <div class="chips">
       <span class="chip b">ענף: main</span>
-      <span class="chip">PR #1 פתוח</span>
+      <span class="chip g">v1.0.0</span>
       <span class="chip g">~319 בדיקות ✅</span>
       <span class="chip r">3 חוסמי שחרור</span>
       <span class="chip">github.com/ranzak-ctrl/think-twice-app</span>
@@ -173,6 +173,7 @@ a.mem b{color:var(--accent2)}
         <div class="dash">
           <a class="dbtn" href="architecture-dashboard.html"><span class="ic">🏗️</span><span class="nm">דשבורד ארכיטקטורה</span><span class="ds">3 טאבים: ארכיטקטורה · זרימת-תור · צירי Router</span></a>
           <a class="dbtn" href="task-board.html"><span class="ic">🗂️</span><span class="nm">לוח המשימות</span><span class="ds">הושלם · הבא · חוסמים · מוקפא</span></a>
+          <a class="dbtn" href="branch-diagram.html"><span class="ic">🌳</span><span class="nm">מבנה הענפים</span><span class="ds">main · v1.0.0 · ניסוי 8-stage</span></a>
         </div>
       </div>
 
