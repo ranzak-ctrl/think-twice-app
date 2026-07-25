@@ -55,6 +55,14 @@ a:hover{text-decoration:underline}
 /* chats */
 .grp-label{font-size:11px;font-weight:800;color:var(--mut);letter-spacing:.04em;text-transform:uppercase;margin:4px 2px 8px}
 .chat{display:flex;gap:11px;align-items:flex-start;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin-bottom:8px}
+a.chat{text-decoration:none;color:inherit;transition:.15s}
+a.chat:hover{border-color:var(--accent);transform:translateX(-3px)}
+a.chat .ct::after{content:" ↗";color:var(--accent);font-size:11px;opacity:.6}
+a.mem{display:block;text-decoration:none;color:inherit;padding:5px 0;border-bottom:1px solid #232833;transition:.12s}
+a.mem:last-child{border-bottom:0}
+a.mem:hover{padding-inline-start:5px}
+a.mem:hover b{text-decoration:underline}
+a.mem b{color:var(--accent2)}
 .chat .cav{width:30px;height:30px;border-radius:8px;background:#12283a;color:var(--accent2);display:flex;align-items:center;justify-content:center;font-size:14px;flex:none;border:1px solid #2d4a3f}
 .chat .cbody{flex:1;min-width:0}
 .chat .ct{font-size:12.5px;font-weight:700;color:var(--txt);line-height:1.4}
@@ -126,15 +134,15 @@ a:hover{text-decoration:underline}
       <div class="card">
         <h2><span class="em">🧠</span> Memory <span style="font-size:11px;color:var(--mut);font-weight:600">· 9 קבצים</span></h2>
         <div style="font-size:11.5px;line-height:1.5">
-          <div style="padding:5px 0;border-bottom:1px solid #232833"><b style="color:var(--accent2)">Progress / resume</b> — נקודת ההמשך המדויקת, מתעדכן כל סשן</div>
-          <div style="padding:5px 0;border-bottom:1px solid #232833"><b style="color:var(--accent2)">Gap-management</b> — קונספט ספקטרום העקביות</div>
-          <div style="padding:5px 0;border-bottom:1px solid #232833"><b style="color:var(--accent2)">Summary confirmation</b> — A1 + חוסמי שחרור קליניים</div>
-          <div style="padding:5px 0;border-bottom:1px solid #232833"><b style="color:var(--accent2)">Transcript tests</b> — golden scripts מהרצות אמיתיות</div>
-          <div style="padding:5px 0;border-bottom:1px solid #232833"><b style="color:var(--accent2)">Commit cadence</b> — לקמט יחידות נקיות בצ'קפוינטים</div>
-          <div style="padding:5px 0;border-bottom:1px solid #232833"><b style="color:var(--accent2)">Case-story</b> — פיצ'ר "סיפור המקרה" (concept)</div>
-          <div style="padding:5px 0;border-bottom:1px solid #232833"><b style="color:var(--accent2)">Project card recovery</b> — איך להחזיר פרויקט שנעלם</div>
-          <div style="padding:5px 0"><b style="color:var(--accent2)">Think Twice project</b> — סקירת הפרויקט</div>
-          <div style="color:var(--mut);font-size:10px;margin-top:8px">📁 <span style="font-family:Consolas,monospace">~/.claude/projects/-Users-ran-zak-Projects-think-twice-app/memory/</span></div>
+          <a class="mem" href="file:///Users/ran.zak/.claude/projects/-Users-ran-zak-Projects-think-twice-app/memory/think-twice-progress.md"><b>Progress / resume</b> — נקודת ההמשך המדויקת, מתעדכן כל סשן</a>
+          <a class="mem" href="file:///Users/ran.zak/.claude/projects/-Users-ran-zak-Projects-think-twice-app/memory/think-twice-gap-management.md"><b>Gap-management</b> — קונספט ספקטרום העקביות</a>
+          <a class="mem" href="file:///Users/ran.zak/.claude/projects/-Users-ran-zak-Projects-think-twice-app/memory/think-twice-summary-confirmation.md"><b>Summary confirmation</b> — A1 + חוסמי שחרור קליניים</a>
+          <a class="mem" href="file:///Users/ran.zak/.claude/projects/-Users-ran-zak-Projects-think-twice-app/memory/think-twice-transcript-tests.md"><b>Transcript tests</b> — golden scripts מהרצות אמיתיות</a>
+          <a class="mem" href="file:///Users/ran.zak/.claude/projects/-Users-ran-zak-Projects-think-twice-app/memory/commit-cadence.md"><b>Commit cadence</b> — לקמט יחידות נקיות בצ'קפוינטים</a>
+          <a class="mem" href="file:///Users/ran.zak/.claude/projects/-Users-ran-zak-Projects-think-twice-app/memory/feature-case-story.md"><b>Case-story</b> — פיצ'ר "סיפור המקרה" (concept)</a>
+          <a class="mem" href="file:///Users/ran.zak/.claude/projects/-Users-ran-zak-Projects-think-twice-app/memory/think-twice-project-card-recovery.md"><b>Project card recovery</b> — איך להחזיר פרויקט שנעלם</a>
+          <a class="mem" href="file:///Users/ran.zak/.claude/projects/-Users-ran-zak-Projects-think-twice-app/memory/project_think_twice.md"><b>Think Twice project</b> — סקירת הפרויקט</a>
+          <div style="color:var(--mut);font-size:10px;margin-top:8px">📁 <span style="font-family:Consolas,monospace">memory/ · לחיצה פותחת את קובץ ה-md</span></div>
         </div>
       </div>
 
@@ -149,6 +157,16 @@ a:hover{text-decoration:underline}
 
     <!-- LEFT: main content -->
     <div>
+
+      <div class="card">
+        <h2><span class="em">🚀</span> האפליקציה החיה</h2>
+        <a class="dbtn" href="http://localhost:5173/" target="_blank" style="display:block">
+          <span class="ic">🧠</span>
+          <span class="nm">פתח את Think Twice →</span>
+          <span class="ds">האפליקציה על http://localhost:5173/</span>
+        </a>
+        <div class="note" style="margin-top:10px">להפעלה (אם לא רץ): <code>cd ~/Projects/think-twice-app &amp;&amp; npm run dev</code> — ואז הקישור למעלה ייפתח.</div>
+      </div>
 
       <div class="card">
         <h2><span class="em">📊</span> דשבורדים</h2>
@@ -176,14 +194,14 @@ a:hover{text-decoration:underline}
       <div class="card">
         <h2><span class="em">💬</span> הצ'אטים</h2>
         <div class="grp-label">▸ פיתוח Think Twice</div>
-        <div class="chat"><div class="cav">💬</div><div class="cbody"><div class="ct">כניסה לשלב 6 — Context window מלא</div><div class="cm cid">2feda4d7 · 1568 תורים · 6.3MB</div></div></div>
-        <div class="chat"><div class="cav">💬</div><div class="cbody"><div class="ct">פיצ'ר מדריך: ממצאים מילוליים לכל סלוט (מפת שחקנים)</div><div class="cm cid">96b1c2d8 · 1765 תורים · 7.0MB</div></div></div>
-        <div class="chat"><div class="cav">💬</div><div class="cbody"><div class="ct">"נמשיך מחר" — הוספת כל הבאגים לתכנית הבדיקות</div><div class="cm cid">831bc366 · 954 תורים · 6.4MB</div></div></div>
-        <div class="chat"><div class="cav">💬</div><div class="cbody"><div class="ct">Command לייצוא תמלול שיחה ל-Drive</div><div class="cm cid">f21e01b8 · 694 תורים · 4.0MB</div></div></div>
-        <div class="chat"><div class="cav">💬</div><div class="cbody"><div class="ct">התקדמות בתכנית הפיתוח — "איפה עצרנו?"</div><div class="cm cid">48ae1c82 · 271 תורים · 897KB</div></div></div>
-        <div class="chat"><div class="cav">💬</div><div class="cbody"><div class="ct">שחזור פרויקט Think Twice שנעלם מהרשימה</div><div class="cm cid">9d9edf2b · 142 תורים · 599KB</div></div></div>
+        <a class="chat" href="chats/2feda4d7-8549-4db5-b74b-7122b4c7a7ad.html"><div class="cav">💬</div><div class="cbody"><div class="ct">כניסה לשלב 6 — Context window מלא</div><div class="cm cid">2feda4d7 · 506 הודעות · 6.3MB</div></div></a>
+        <a class="chat" href="chats/96b1c2d8-d323-47a0-a662-f82f601c93ca.html"><div class="cav">💬</div><div class="cbody"><div class="ct">פיצ'ר מדריך: ממצאים מילוליים לכל סלוט (מפת שחקנים)</div><div class="cm cid">96b1c2d8 · 631 הודעות · 7.0MB</div></div></a>
+        <a class="chat" href="chats/831bc366-52fe-4561-babe-2069cda51981.html"><div class="cav">💬</div><div class="cbody"><div class="ct">"נמשיך מחר" — הוספת כל הבאגים לתכנית הבדיקות</div><div class="cm cid">831bc366 · 342 הודעות · 6.4MB</div></div></a>
+        <a class="chat" href="chats/f21e01b8-b7f8-4f6d-8a3b-b836e60a8474.html"><div class="cav">💬</div><div class="cbody"><div class="ct">Command לייצוא תמלול שיחה ל-Drive</div><div class="cm cid">f21e01b8 · 315 הודעות · 4.0MB</div></div></a>
+        <a class="chat" href="chats/48ae1c82-e6c4-4582-b8da-019093d6336d.html"><div class="cav">💬</div><div class="cbody"><div class="ct">התקדמות בתכנית הפיתוח — "איפה עצרנו?"</div><div class="cm cid">48ae1c82 · 106 הודעות · 897KB</div></div></a>
+        <a class="chat" href="chats/9d9edf2b-70c9-4a4e-b01d-2eb6bb07b129.html"><div class="cav">💬</div><div class="cbody"><div class="ct">שחזור פרויקט Think Twice שנעלם מהרשימה</div><div class="cm cid">9d9edf2b · 51 הודעות · 599KB</div></div></a>
 
-        <div class="note"><b>איך פותחים צ'אט:</b> הצ'אטים הם סשני Claude Code. פתח אותם עם <code>/resume</code> — בטרמינל (<code>cd ~/Projects/think-twice-app && claude</code> → <code>/resume</code>) או בלשונית Code. הקבצים עצמם ב-<code>~/.claude/projects/-Users-ran-zak-Projects-think-twice-app/</code>.</div>
+        <div class="note"><b>לחיצה על צ'אט</b> פותחת תמלול קריא (בועות שיחה) שנשמר ב-<code>docs/chats/</code>. להמשך שיחה חיה: <code>/resume</code> בטרמינל או בלשונית Code.</div>
       </div>
 
     </div>
