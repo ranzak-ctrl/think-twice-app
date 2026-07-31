@@ -440,6 +440,10 @@ export async function complete({ stage, systemPrompt, messages, mode }) {
         body: JSON.stringify({
           model,
           max_tokens: 1024,
+          // Sonnet 5 runs adaptive thinking by default; thinking tokens count
+          // against max_tokens and add cost/latency. This flow wants a compact
+          // JSON envelope, not reasoning — keep it off.
+          thinking: { type: 'disabled' },
           system: systemPrompt,
           messages: attemptMessages,
         }),
@@ -457,7 +461,10 @@ export async function complete({ stage, systemPrompt, messages, mode }) {
 
     const data = await res.json();
     usage = mergeUsage(usage, data.usage);
-    const raw = data.content?.[0]?.text ?? '';
+    // Pick the first block that carries text — never assume content[0]. Models
+    // with thinking on (sonnet-5 default) lead with a `thinking` block, which
+    // has no `text`; reading content[0].text there yields '' -> no_json.
+    const raw = data.content?.find((b) => typeof b?.text === 'string')?.text ?? '';
     // Summary / opener modes are plain prose — no JSON to parse (the model's natural
     // text can't fail a JSON parse; live symptom of forcing JSON here was no_json).
     if (mode === 'summary' || mode === 'opener') {

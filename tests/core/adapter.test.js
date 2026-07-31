@@ -14,7 +14,7 @@ function makeFetch(rawTexts) {
     return {
       ok: true,
       json: async () => ({
-        content: [{ text }],
+        content: [{ type: 'text', text }],
         usage: { input_tokens: 10, output_tokens: 5 },
       }),
       text: async () => '',
@@ -36,6 +36,30 @@ describe('adapter complete() — JSON retry', () => {
 
   it('returns the parse on the first try when JSON is valid (one call)', async () => {
     const fetchStub = makeFetch([VALID]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    const result = await complete(ARGS);
+
+    expect(result.ok).toBe(true);
+    expect(result.message).toBe('שלום');
+    expect(fetchStub).toHaveBeenCalledTimes(1);
+  });
+
+  // Regression: models that think (sonnet-5 runs adaptive thinking by default)
+  // lead with a `thinking` block. Reading content[0].text there returned '' and
+  // the turn failed with no_json even though the API call succeeded.
+  it('reads the text block when a thinking block comes first', async () => {
+    const fetchStub = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        content: [
+          { type: 'thinking', thinking: '', signature: 'sig' },
+          { type: 'text', text: VALID },
+        ],
+        usage: { input_tokens: 10, output_tokens: 5 },
+      }),
+      text: async () => '',
+    }));
     vi.stubGlobal('fetch', fetchStub);
 
     const result = await complete(ARGS);
