@@ -61,8 +61,25 @@
 - commit קטן וממוקד; הודעות באנגלית קצרה; branch לכל שלב
 - ספק בשאלה קלינית (ניסוח, טון, ספים) ← לא להחליט לבד; לרשום ל-docs/questions-for-natali.md
 
+## מכונת העבודה — `.claude/`
+סשן חדש מתחיל ב-`/resume` (בונה את נקודת ההמשך ממצב הריפו, לא מהזיכרון).
+
+**סוכני-משנה** (`.claude/agents/`) — לבודד הקשר ולאכוף עקרונות:
+- `router-guard` — סוקר כל שינוי ב-core מול 7 העקרונות ומטריצת המעברים. קריאה בלבד.
+- `prompt-editor` — **היחיד** שעורך `src/content/prompts/**`. אחריו: golden scripts + judge.
+- `clinical-triage` — לא מכריע; כותב ערך תקני ל-`questions-for-natali.md`.
+- `live-run-analyst` — מנתח ייצוא של הרצה חיה → אבחון תקיעה + fixture נאמן.
+
+**פקודות** (`.claude/commands/`):
+`/resume` · `/ship-check` · `/deploy` · `/tester-brief` · `/live-test` · `/ask-natali` · `/natali-decided` · `/sync-board` · `/export-conversation`
+
+**Skills** (`.claude/skills/`): `golden-script` (חוזה הנאמנות), `turn-lint` (מפרט ה-lint השיחתי).
+
+כלל: שאלה קלינית ← `clinical-triage`, לא הכרעה עצמאית. שינוי פרומפט ← `prompt-editor`, לא עריכה ישירה. שינוי Router ← `router-guard` אחרי.
+
 ## סגנון
 - קוד והערות: אנגלית. תוכן פרומפטים ו-UI: עברית.
+- קבצי `.claude/` (סוכנים/פקודות/skills) — אנגלית, כמו קוד. פלט שמגיע לנטלי/בודקים — עברית.
 - תמציתי וישיר. לא להסביר את המובן מאליו.
 
 ## אסור

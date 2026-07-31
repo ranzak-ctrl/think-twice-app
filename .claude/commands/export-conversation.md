@@ -5,7 +5,7 @@ description: Export the latest Think Twice conversation transcript to Google Dri
 Export the most recent Think Twice interview transcript to Google Drive as a `.docx`. Work through these steps; do not skip the verification.
 
 ## 1. Locate the export file
-Glob `C:\Users\ran.zak.GL-GROUP\Downloads\think-twice-session-*.json` and pick the **most recently modified** match. This file is produced by the app's "ייצא" button and has the shape `{ exportedAt, history, state }`.
+Glob `~/Downloads/think-twice-session-*.json` and pick the **most recently modified** match. This file is produced by the app's "ייצא" button and has the shape `{ exportedAt, history, state }`.
 
 - If no match exists: tell the user to click **"ייצא"** in the app first (it now exports the full transcript), then stop.
 
