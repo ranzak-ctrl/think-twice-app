@@ -1,33 +1,51 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Chat from './Chat.jsx';
 import GuidePanel from './GuidePanel.jsx';
+import { Mark, Plus, Download, Upload, Gauge } from './icons.jsx';
 import { createState, importState } from '../core/state.js';
 import { confirmAndAdvance, rejectConfirmation } from '../core/router.js';
 import { runTurn, generateStageOpener } from '../core/session.js';
 
-const OPENING_MESSAGE = {
+const OPENING_TEXT =
+  'אני אוביל אותך שלב-שלב. התפקיד שלך — לענות בכנות, שאלה אחת בכל פעם. ההחלטה בסוף — שלך לגמרי. אפשר לעצור מתי שרוצים.\n\nספר לי — מה קרה?';
+
+// Messages carry a timestamp so the chat can show one; `at` is additive and
+// ignored by the core (formatHistory maps role/content only), so older exports
+// import cleanly without it.
+const openingMessage = () => ({
   role: 'assistant',
-  content:
-    'אני אוביל אותך שלב-שלב. התפקיד שלך — לענות בכנות, שאלה אחת בכל פעם. ההחלטה בסוף — שלך לגמרי. אפשר לעצור מתי שרוצים.\n\nספר לי — מה קרה?',
-};
+  content: OPENING_TEXT,
+  at: Date.now(),
+});
+
+const GUIDE_MIN = 260;
+const CHAT_MIN = 360;
 
 export default function App() {
   const [state, setState] = useState(() => createState());
-  const [history, setHistory] = useState([OPENING_MESSAGE]);
+  const [history, setHistory] = useState(() => [openingMessage()]);
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideWidth, setGuideWidth] = useState(340); // resizable via the divider
   const [loading, setLoading] = useState(false);
-  const [safetyMessage, setSafetyMessage] = useState(null);
+  const fileRef = useRef(null);
 
   const addMessage = (role, content) =>
-    setHistory((h) => [...h, { role, content }]);
+    setHistory((h) => [...h, { role, content, at: Date.now() }]);
+
+  // Escape closes the guide — it is an overlay drawer on narrow screens.
+  useEffect(() => {
+    if (!guideOpen) return;
+    const onKey = (e) => e.key === 'Escape' && setGuideOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [guideOpen]);
 
   // Drag the divider to resize the guide panel vs. the chat. RTL: the guide panel
   // sits on the left (x: 0..width), so its right edge follows the cursor's clientX.
   const startGuideResize = useCallback((e) => {
     e.preventDefault();
     const onMove = (ev) => {
-      const w = Math.min(Math.max(ev.clientX, 240), window.innerWidth - 320);
+      const w = Math.min(Math.max(ev.clientX, GUIDE_MIN), window.innerWidth - CHAT_MIN);
       setGuideWidth(w);
     };
     const onUp = () => {
@@ -47,12 +65,11 @@ export default function App() {
       if (loading) return;
 
       // Thin wrapper around the portable core loop (src/core/session.js).
-      setHistory((h) => [...h, { role: 'user', content: text }]);
+      setHistory((h) => [...h, { role: 'user', content: text, at: Date.now() }]);
       setLoading(true);
       try {
         const { nextState, reply } = await runTurn(state, history, text);
         setState(nextState);
-        if (nextState.meta.safetyFlag) setSafetyMessage(reply);
         addMessage('assistant', reply);
       } finally {
         setLoading(false);
@@ -116,73 +133,64 @@ export default function App() {
       }
     };
     reader.readAsText(file);
+    e.target.value = ''; // re-importing the same file must fire change again
   };
 
   const handleNewSession = () => {
     setState(createState());
-    setHistory([OPENING_MESSAGE]);
-    setSafetyMessage(null);
+    setHistory([openingMessage()]);
   };
 
   return (
-    <div
-      dir="rtl"
-      style={{
-        display: 'flex',
-        height: '100vh',
-        fontFamily: 'system-ui, Arial, sans-serif',
-        background: '#f9f9f9',
-      }}
-    >
-      {/* Main chat area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-        {/* Toolbar */}
-        <div
-          style={{
-            padding: '10px 16px',
-            borderBottom: '1px solid #e0e0e0',
-            display: 'flex',
-            gap: 8,
-            alignItems: 'center',
-            background: '#fff',
-          }}
-        >
-          <strong style={{ flex: 1, fontSize: 16 }}>Think Twice</strong>
-          <span
-            style={{
-              fontSize: 12,
-              color: '#888',
-              border: '1px solid #ddd',
-              borderRadius: 4,
-              padding: '2px 8px',
-            }}
-          >
-            שלב {state.meta.currentStage}/7
-          </span>
-          <button onClick={handleNewSession} style={btnStyle('#1a1a1a')}>
-            ראיון חדש
-          </button>
-          <button onClick={handleExport} style={btnStyle('#444')}>
-            ייצוא
-          </button>
-          <label style={{ ...btnStyle('#444'), cursor: 'pointer' }}>
-            ייבוא
+    <div className="app" dir="rtl">
+      <div className="main">
+        <header className="header">
+          <div className="brand">
+            <span className="brand-mark">
+              <Mark />
+            </span>
+            Think Twice
+          </div>
+
+          <div className="header-spacer" />
+
+          <StageMeter stage={state.meta.currentStage} />
+
+          <div className="header-actions">
+            <button className="btn" onClick={handleNewSession} title="ראיון חדש">
+              <Plus />
+              <span className="btn-label">ראיון חדש</span>
+            </button>
+
+            <button className="btn" onClick={handleExport} title="ייצוא">
+              <Download />
+              <span className="btn-label">ייצוא</span>
+            </button>
+
+            <button className="btn" onClick={() => fileRef.current?.click()} title="ייבוא">
+              <Upload />
+              <span className="btn-label">ייבוא</span>
+            </button>
             <input
+              ref={fileRef}
               type="file"
               accept=".json"
-              style={{ display: 'none' }}
+              hidden
               onChange={handleImport}
             />
-          </label>
-          <button
-            onClick={() => setGuideOpen((o) => !o)}
-            style={btnStyle(guideOpen ? '#0066cc' : '#666')}
-          >
-            {guideOpen ? 'סגור מדריך' : 'מצב מדריך'}
-          </button>
-        </div>
 
-        {/* Chat */}
+            <button
+              className={`btn${guideOpen ? ' is-on' : ''}`}
+              onClick={() => setGuideOpen((o) => !o)}
+              aria-pressed={guideOpen}
+              title="מצב מדריך"
+            >
+              <Gauge />
+              <span className="btn-label">מדריך</span>
+            </button>
+          </div>
+        </header>
+
         <Chat
           history={history}
           loading={loading}
@@ -195,34 +203,47 @@ export default function App() {
         />
       </div>
 
-      {/* Draggable divider — resize the guide panel vs. the chat */}
+      {/* Draggable divider — desktop split only; CSS hides it under 900px, where
+          the guide becomes an overlay drawer with a backdrop. */}
       {guideOpen && (
-        <div
-          onMouseDown={startGuideResize}
-          title="גרור לשינוי רוחב"
-          style={{
-            width: 6,
-            flexShrink: 0,
-            cursor: 'col-resize',
-            background: '#d8d8d8',
-            borderInline: '1px solid #ccc',
-          }}
-        />
+        <>
+          <div
+            className="guide-backdrop"
+            onClick={() => setGuideOpen(false)}
+            aria-hidden="true"
+          />
+          <div
+            className="divider"
+            onMouseDown={startGuideResize}
+            title="גרור לשינוי רוחב"
+            role="separator"
+            aria-orientation="vertical"
+          />
+          <GuidePanel
+            state={state}
+            width={guideWidth}
+            onClose={() => setGuideOpen(false)}
+          />
+        </>
       )}
-      {/* Guide panel (clinician debug) */}
-      {guideOpen && <GuidePanel state={state} width={guideWidth} />}
     </div>
   );
 }
 
-function btnStyle(bg) {
-  return {
-    background: bg,
-    color: '#fff',
-    border: 'none',
-    borderRadius: 6,
-    padding: '5px 12px',
-    fontSize: 13,
-    cursor: 'pointer',
-  };
+// Display-only stage indicator. It is never clickable: the Router owns every
+// transition, and the UI must not offer navigation.
+function StageMeter({ stage }) {
+  return (
+    <div className="stage" title={`שלב ${stage} מתוך 7`}>
+      <span className="stage-label">שלב {stage}/7</span>
+      <span className="stage-track" aria-hidden="true">
+        {[1, 2, 3, 4, 5, 6, 7].map((n) => (
+          <span
+            key={n}
+            className={`stage-seg${n < stage ? ' done' : n === stage ? ' current' : ''}`}
+          />
+        ))}
+      </span>
+    </div>
+  );
 }

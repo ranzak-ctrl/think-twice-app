@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { formatSelfOther } from '../core/kpi.js';
+import { Close } from './icons.jsx';
 
 const STAGE_NAMES = {
   1: 'עובדות',
@@ -76,7 +77,7 @@ function formatCost(usage) {
   return `$${usd.toFixed(4)} (≈ ${(usd * ILS_PER_USD).toFixed(2)} ₪)`;
 }
 
-export default function GuidePanel({ state, width = 320 }) {
+export default function GuidePanel({ state, width = 320, onClose }) {
   const { coverage, meta, facts, thoughts, feelings, reactions } = state;
   const gaps = state.gaps ?? { byTarget: {}, log: [] };
   const findings = state.findings ?? {};
@@ -95,18 +96,14 @@ export default function GuidePanel({ state, width = 320 }) {
   }, [meta.currentStage]);
 
   return (
-    <div
-      style={{
-        width,
-        flexShrink: 0,
-        background: '#fff',
-        overflowY: 'auto',
-        padding: 16,
-        fontSize: 13,
-        direction: 'rtl',
-      }}
-    >
-      <strong style={{ fontSize: 15 }}>מצב מדריך</strong>
+    <aside className="guide" style={{ width }} aria-label="מצב מדריך">
+      <div className="guide-head">
+        <span>מצב מדריך</span>
+        {/* Visible only in the narrow-screen drawer; CSS hides it on desktop. */}
+        <button className="guide-close" onClick={onClose} aria-label="סגור מדריך">
+          <Close />
+        </button>
+      </div>
 
       {/* Stage indicator */}
       <Section title={`שלב ${meta.currentStage} — ${STAGE_NAMES[meta.currentStage]}`}>
@@ -347,24 +344,14 @@ export default function GuidePanel({ state, width = 320 }) {
           />
         )}
       </Section>
-    </div>
+    </aside>
   );
 }
 
 function Section({ title, children }) {
   return (
-    <div style={{ marginTop: 16 }}>
-      <div
-        style={{
-          fontWeight: 'bold',
-          borderBottom: '1px solid #eee',
-          paddingBottom: 4,
-          marginBottom: 8,
-          color: '#333',
-        }}
-      >
-        {title}
-      </div>
+    <div className="g-section">
+      <div className="g-title">{title}</div>
       {children}
     </div>
   );
@@ -372,9 +359,9 @@ function Section({ title, children }) {
 
 function Row({ label, value }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-      <span style={{ color: '#666' }}>{label}</span>
-      <span style={{ fontWeight: 'bold' }}>{String(value)}</span>
+    <div className="g-row">
+      <span>{label}</span>
+      <span>{String(value)}</span>
     </div>
   );
 }
@@ -382,9 +369,9 @@ function Row({ label, value }) {
 function SignalRow({ label, on, acute }) {
   const color = on ? (acute ? '#c0392b' : '#b88000') : '#aaa';
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-      <span style={{ color: '#666' }}>{label}</span>
-      <span style={{ fontWeight: 'bold', color }}>{on ? 'כן' : 'לא'}</span>
+    <div className="g-row">
+      <span>{label}</span>
+      <span style={{ color }}>{on ? 'כן' : 'לא'}</span>
     </div>
   );
 }
@@ -394,21 +381,8 @@ function Pre({ label, data }) {
   if (content === '{}' || content === '[]') return null;
   return (
     <div style={{ marginBottom: 6 }}>
-      <div style={{ color: '#666', marginBottom: 2 }}>{label}</div>
-      <pre
-        style={{
-          background: '#f5f5f5',
-          borderRadius: 4,
-          padding: 6,
-          fontSize: 11,
-          overflow: 'auto',
-          direction: 'ltr',
-          textAlign: 'left',
-          margin: 0,
-        }}
-      >
-        {content}
-      </pre>
+      <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>{label}</div>
+      <pre className="g-pre">{content}</pre>
     </div>
   );
 }

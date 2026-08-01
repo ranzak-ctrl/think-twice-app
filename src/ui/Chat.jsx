@@ -1,6 +1,16 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import ConfirmButtons from './ConfirmButtons.jsx';
 import DecisionBoard from './DecisionBoard.jsx';
+import { Mark, Send, ArrowDown } from './icons.jsx';
+
+// Treat the reader as "at the bottom" within this many pixels — the standard
+// chat rule: auto-scroll only while they are following the live conversation.
+const NEAR_BOTTOM_PX = 120;
+
+const TIME_FMT = new Intl.DateTimeFormat('he-IL', {
+  hour: '2-digit',
+  minute: '2-digit',
+});
 
 export default function Chat({
   history,
@@ -13,127 +23,177 @@ export default function Chat({
   onReject,
 }) {
   const [input, setInput] = useState('');
-  const bottomRef = useRef(null);
+  const [showJump, setShowJump] = useState(false);
 
+  const scrollerRef = useRef(null);
+  const textareaRef = useRef(null);
+  const stickRef = useRef(true); // following the bottom?
+
+  const scrollToBottom = useCallback((behavior) => {
+    const el = scrollerRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior });
+  }, []);
+
+  const handleScroll = () => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const near = el.scrollHeight - el.scrollTop - el.clientHeight < NEAR_BOTTOM_PX;
+    stickRef.current = near;
+    setShowJump(!near);
+  };
+
+  // New content pulls the view down only if the reader was already following it.
+  // Sending your own message always does — that is what every chat client does.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [history, loading]);
+    if (history[history.length - 1]?.role === 'user') {
+      stickRef.current = true;
+      setShowJump(false);
+    }
+    // Instant, not smooth: a smooth scroll would race the scroll handler and
+    // flicker the jump pill on every incoming message. Only the jump button
+    // animates.
+    if (stickRef.current) scrollToBottom('auto');
+  }, [history, loading, board, scrollToBottom]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  // Auto-grow the composer up to the max-height set in CSS, then let it scroll.
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [input]);
+
+  const blocked = loading || awaitingConfirmation || sessionComplete;
+  const canSend = !blocked && input.trim().length > 0;
+
+  const submit = () => {
+    if (!canSend) return;
     const text = input.trim();
-    if (!text || loading || awaitingConfirmation || sessionComplete) return;
     setInput('');
     onSend(text);
+    // Keep the caret in the composer so the next turn can be typed straight away
+    // (and the on-screen keyboard stays up on mobile).
+    requestAnimationFrame(() => textareaRef.current?.focus());
+  };
+
+  const handleKeyDown = (e) => {
+    // Enter sends, Shift+Enter breaks the line. Never send mid-IME-composition.
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      submit();
+    }
   };
 
   return (
-    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      {/* Messages */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
-        {history.map((msg, i) => (
-          <Bubble key={i} role={msg.role} content={msg.content} />
-        ))}
-        {loading && <Bubble role="assistant" content="…" loading />}
-        <div ref={bottomRef} />
+    <div className="chat">
+      <div className="stream">
+        <div className="scroller" ref={scrollerRef} onScroll={handleScroll}>
+          <div
+            className="column"
+            role="log"
+            aria-live="polite"
+            aria-relevant="additions"
+          >
+            {history.map((msg, i) => (
+              <Message
+                key={i}
+                role={msg.role}
+                content={msg.content}
+                at={msg.at}
+                grouped={i > 0 && history[i - 1].role === msg.role}
+              />
+            ))}
+
+            {loading && (
+              <div className="msg assistant">
+                <div className="avatar" aria-hidden="true">
+                  <Mark size={16} />
+                </div>
+                <div className="bubble-wrap">
+                  <div className="bubble" aria-label="מנסח תשובה">
+                    <div className="typing">
+                      <i />
+                      <i />
+                      <i />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Decision board (stage 7) — built by code from state, never by the
+                model, and rendered inline as the last card in the thread. */}
+            <DecisionBoard board={board} />
+          </div>
+        </div>
+
+        {showJump && (
+          <button
+            className="jump"
+            onClick={() => {
+              stickRef.current = true;
+              setShowJump(false);
+              scrollToBottom('smooth');
+            }}
+          >
+            <ArrowDown size={15} />
+            להודעה האחרונה
+          </button>
+        )}
       </div>
 
-      {/* Decision board (stage 7) — rendered by code from state */}
-      <DecisionBoard board={board} />
-
-      {/* Confirm buttons */}
       {awaitingConfirmation && (
         <ConfirmButtons onConfirm={onConfirm} onReject={onReject} />
       )}
 
-      {/* Session complete banner */}
-      {sessionComplete && (
-        <div
-          style={{
-            background: '#d4edda',
-            padding: '12px 20px',
-            textAlign: 'center',
-            fontSize: 15,
-            fontWeight: 'bold',
-          }}
-        >
-          הראיון הסתיים. ההחלטה — שלך.
+      {sessionComplete ? (
+        <div className="banner done">הראיון הסתיים. ההחלטה — שלך.</div>
+      ) : (
+        <div className="composer">
+          <div className={`composer-inner${awaitingConfirmation ? ' disabled' : ''}`}>
+            <textarea
+              ref={textareaRef}
+              rows={1}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              // Editable while the model works, so the next answer can be typed
+              // ahead; only sending is gated. Confirmation is a real gate.
+              disabled={awaitingConfirmation}
+              placeholder={
+                awaitingConfirmation ? 'אשר את הסיכום כדי להמשיך' : 'כתוב כאן…'
+              }
+              aria-label="הודעה"
+            />
+            <button
+              className="send"
+              onClick={submit}
+              disabled={!canSend}
+              aria-label="שלח"
+              title="שלח"
+            >
+              <Send />
+            </button>
+          </div>
+          <div className="hint">Enter לשליחה · Shift+Enter לשורה חדשה</div>
         </div>
-      )}
-
-      {/* Input */}
-      {!sessionComplete && (
-        <form
-          onSubmit={handleSubmit}
-          style={{
-            borderTop: '1px solid #e0e0e0',
-            padding: '12px 16px',
-            display: 'flex',
-            gap: 8,
-            background: '#fff',
-          }}
-        >
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={loading || awaitingConfirmation}
-            placeholder={awaitingConfirmation ? 'אשר את הסיכום למעלה' : 'כתוב כאן...'}
-            style={{
-              flex: 1,
-              padding: '10px 14px',
-              borderRadius: 8,
-              border: '1px solid #ccc',
-              fontSize: 15,
-              direction: 'rtl',
-              outline: 'none',
-            }}
-          />
-          <button
-            type="submit"
-            disabled={loading || awaitingConfirmation || !input.trim()}
-            style={{
-              background: loading || awaitingConfirmation ? '#ccc' : '#1a1a1a',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 8,
-              padding: '10px 20px',
-              fontSize: 15,
-              cursor: loading || awaitingConfirmation ? 'not-allowed' : 'pointer',
-            }}
-          >
-            שלח
-          </button>
-        </form>
       )}
     </div>
   );
 }
 
-function Bubble({ role, content, loading: isLoading }) {
+function Message({ role, content, at, grouped }) {
   const isAssistant = role === 'assistant';
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: isAssistant ? 'flex-start' : 'flex-end',
-        marginBottom: 12,
-      }}
-    >
-      <div
-        style={{
-          maxWidth: '72%',
-          background: isAssistant ? '#fff' : '#1a1a1a',
-          color: isAssistant ? '#1a1a1a' : '#fff',
-          border: isAssistant ? '1px solid #e0e0e0' : 'none',
-          borderRadius: isAssistant ? '4px 16px 16px 16px' : '16px 4px 16px 16px',
-          padding: '10px 14px',
-          fontSize: 15,
-          lineHeight: 1.6,
-          whiteSpace: 'pre-wrap',
-          opacity: isLoading ? 0.5 : 1,
-        }}
-      >
-        {content}
+    <div className={`msg ${isAssistant ? 'assistant' : 'user'}${grouped ? ' grouped' : ''}`}>
+      {isAssistant && (
+        <div className={`avatar${grouped ? ' ghost' : ''}`} aria-hidden="true">
+          <Mark size={16} />
+        </div>
+      )}
+      <div className="bubble-wrap">
+        <div className="bubble">{content}</div>
+        {at ? <div className="stamp">{TIME_FMT.format(at)}</div> : null}
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import './ui/styles.css';
 import App from './ui/App.jsx';
 import PasswordGate from './ui/PasswordGate.jsx';
 
