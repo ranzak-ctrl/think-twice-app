@@ -196,8 +196,6 @@ export default function App() {
 
           <div className="header-spacer" />
 
-          <StageMeter stage={state.meta.currentStage} />
-
           <div className="header-actions">
             <button className="btn" onClick={handleNewSession} title="ראיון חדש">
               <Plus />
@@ -301,24 +299,6 @@ export default function App() {
           }
         />
       )}
-    </div>
-  );
-}
-
-// Display-only stage indicator. It is never clickable: the Router owns every
-// transition, and the UI must not offer navigation.
-function StageMeter({ stage }) {
-  return (
-    <div className="stage" title={`שלב ${stage} מתוך 7`}>
-      <span className="stage-label">שלב {stage}/7</span>
-      <span className="stage-track" aria-hidden="true">
-        {[1, 2, 3, 4, 5, 6, 7].map((n) => (
-          <span
-            key={n}
-            className={`stage-seg${n < stage ? ' done' : n === stage ? ' current' : ''}`}
-          />
-        ))}
-      </span>
     </div>
   );
 }
