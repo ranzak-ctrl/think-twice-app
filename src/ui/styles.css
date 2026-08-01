@@ -367,7 +367,10 @@ button {
   background: none;
   color: var(--text-faint);
   cursor: pointer;
-  opacity: 0;
+  /* Quiet but always present: guide mode is an explicit opt-in to testing, so
+     hiding the affordance until hover just makes it undiscoverable (and there
+     is no hover at all on touch). */
+  opacity: 0.45;
   transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
@@ -385,13 +388,6 @@ button {
 
 .note-btn.on {
   color: var(--brand);
-}
-
-/* No hover on touch — keep the affordance permanently discoverable instead. */
-@media (hover: none) {
-  .note-btn {
-    opacity: 0.55;
-  }
 }
 
 .note,
