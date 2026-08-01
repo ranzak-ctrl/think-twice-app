@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import Chat from './Chat.jsx';
 import GuidePanel from './GuidePanel.jsx';
+import ConfirmDialog from './ConfirmDialog.jsx';
 import { Mark, Plus, Download, Upload, Gauge } from './icons.jsx';
 import { createState, importState } from '../core/state.js';
 import { confirmAndAdvance, rejectConfirmation } from '../core/router.js';
@@ -27,7 +28,24 @@ export default function App() {
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideWidth, setGuideWidth] = useState(340); // resizable via the divider
   const [loading, setLoading] = useState(false);
+  const [confirmNew, setConfirmNew] = useState(false);
   const fileRef = useRef(null);
+
+  // Nothing is persisted anywhere (no server, no storage — see CLAUDE.md), so
+  // anything past the opening message is lost for good unless it is exported.
+  const isDirty = history.length > 1;
+
+  // The browser only allows its own generic "leave site?" prompt here — the text
+  // cannot be customised and no download button can be attached to it.
+  useEffect(() => {
+    if (!isDirty) return;
+    const onBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [isDirty]);
 
   const addMessage = (role, content) =>
     setHistory((h) => [...h, { role, content, at: Date.now() }]);
@@ -153,9 +171,16 @@ export default function App() {
     e.target.value = ''; // re-importing the same file must fire change again
   };
 
-  const handleNewSession = () => {
+  const startNewSession = () => {
     setState(createState());
     setHistory([openingMessage()]);
+    setConfirmNew(false);
+  };
+
+  // Warn before discarding a live interview; a fresh one resets straight away.
+  const handleNewSession = () => {
+    if (isDirty) setConfirmNew(true);
+    else startNewSession();
   };
 
   return (
@@ -247,6 +272,34 @@ export default function App() {
             onClose={() => setGuideOpen(false)}
           />
         </>
+      )}
+
+      {confirmNew && (
+        <ConfirmDialog
+          title="להתחיל ראיון חדש?"
+          body="הראיון הנוכחי — התמלול, הערות הבודק והמצב — יימחק. אין שמירה אוטומטית ואי אפשר לשחזר."
+          onClose={() => setConfirmNew(false)}
+          actions={
+            <>
+              <button
+                className="btn btn-primary"
+                onClick={() => {
+                  handleExport();
+                  startNewSession();
+                }}
+              >
+                <Download />
+                הורד קובץ והתחל ראיון חדש
+              </button>
+              <button className="btn" onClick={startNewSession}>
+                התחל בלי לשמור
+              </button>
+              <button className="btn" onClick={() => setConfirmNew(false)}>
+                ביטול
+              </button>
+            </>
+          }
+        />
       )}
     </div>
   );
