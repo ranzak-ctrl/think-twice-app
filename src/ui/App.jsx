@@ -32,6 +32,23 @@ export default function App() {
   const addMessage = (role, content) =>
     setHistory((h) => [...h, { role, content, at: Date.now() }]);
 
+  // Tester feedback on a specific interviewer question. It lives on the history
+  // entry, so it rides along in the export with no storage of any kind — and the
+  // core strips it (formatHistory maps role/content only), so a note can never
+  // reach the model. Passing null removes the note entirely.
+  const handleFeedback = useCallback((index, feedback) => {
+    setHistory((h) =>
+      h.map((m, i) => {
+        if (i !== index) return m;
+        if (!feedback) {
+          const { feedback: _removed, ...rest } = m;
+          return rest;
+        }
+        return { ...m, feedback };
+      })
+    );
+  }, []);
+
   // Escape closes the guide — it is an overlay drawer on narrow screens.
   useEffect(() => {
     if (!guideOpen) return;
@@ -197,6 +214,8 @@ export default function App() {
           board={state.board}
           awaitingConfirmation={state.meta.awaitingConfirmation}
           sessionComplete={state.meta.sessionComplete}
+          feedbackEnabled={guideOpen}
+          onFeedback={handleFeedback}
           onSend={handleUserMessage}
           onConfirm={handleConfirm}
           onReject={handleReject}
@@ -222,6 +241,9 @@ export default function App() {
           <GuidePanel
             state={state}
             width={guideWidth}
+            notes={history
+              .map((m, i) => (m.feedback ? { i, question: m.content, ...m.feedback } : null))
+              .filter(Boolean)}
             onClose={() => setGuideOpen(false)}
           />
         </>

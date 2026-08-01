@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import ConfirmButtons from './ConfirmButtons.jsx';
 import DecisionBoard from './DecisionBoard.jsx';
-import { Mark, Send, ArrowDown } from './icons.jsx';
+import { Mark, Send, ArrowDown, Note, Trash } from './icons.jsx';
 
 // Treat the reader as "at the bottom" within this many pixels — the standard
 // chat rule: auto-scroll only while they are following the live conversation.
@@ -18,6 +18,8 @@ export default function Chat({
   board,
   awaitingConfirmation,
   sessionComplete,
+  feedbackEnabled,
+  onFeedback,
   onSend,
   onConfirm,
   onReject,
@@ -97,10 +99,14 @@ export default function Chat({
             {history.map((msg, i) => (
               <Message
                 key={i}
+                index={i}
                 role={msg.role}
                 content={msg.content}
                 at={msg.at}
                 grouped={i > 0 && history[i - 1].role === msg.role}
+                feedback={msg.feedback}
+                feedbackEnabled={feedbackEnabled}
+                onFeedback={onFeedback}
               />
             ))}
 
@@ -182,8 +188,45 @@ export default function Chat({
   );
 }
 
-function Message({ role, content, at, grouped }) {
+function Message({
+  index,
+  role,
+  content,
+  at,
+  grouped,
+  feedback,
+  feedbackEnabled,
+  onFeedback,
+}) {
   const isAssistant = role === 'assistant';
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+  const draftRef = useRef(null);
+
+  // Only the interviewer's questions can be annotated, and only in guide mode:
+  // this is instrumentation for testers, not part of the user's screen.
+  const canAnnotate = isAssistant && feedbackEnabled;
+
+  useEffect(() => {
+    if (editing) draftRef.current?.focus();
+  }, [editing]);
+
+  // Leaving guide mode closes any open editor, so re-entering never resurrects it.
+  useEffect(() => {
+    if (!feedbackEnabled) setEditing(false);
+  }, [feedbackEnabled]);
+
+  const openEditor = () => {
+    setDraft(feedback?.text ?? '');
+    setEditing(true);
+  };
+
+  const save = () => {
+    const text = draft.trim();
+    onFeedback(index, text ? { text, at: Date.now() } : null);
+    setEditing(false);
+  };
+
   return (
     <div className={`msg ${isAssistant ? 'assistant' : 'user'}${grouped ? ' grouped' : ''}`}>
       {isAssistant && (
@@ -191,10 +234,68 @@ function Message({ role, content, at, grouped }) {
           <Mark size={16} />
         </div>
       )}
+
       <div className="bubble-wrap">
         <div className="bubble">{content}</div>
         {at ? <div className="stamp">{TIME_FMT.format(at)}</div> : null}
+
+        {canAnnotate && editing && (
+          <div className="note-edit">
+            <textarea
+              ref={draftRef}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setEditing(false);
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) save();
+              }}
+              placeholder="מה עבד או לא עבד בשאלה הזו?"
+              aria-label="הערת בודק"
+            />
+            <div className="note-edit-actions">
+              <button className="btn btn-primary" onClick={save}>
+                שמור
+              </button>
+              <button className="btn" onClick={() => setEditing(false)}>
+                ביטול
+              </button>
+            </div>
+          </div>
+        )}
+
+        {canAnnotate && feedback && !editing && (
+          <div className="note">
+            <div className="note-head">
+              <span>הערת בודק</span>
+              <span className="spacer" />
+              <button className="note-act" onClick={openEditor} title="עריכה" aria-label="ערוך הערה">
+                <Note size={13} />
+              </button>
+              <button
+                className="note-act"
+                onClick={() => onFeedback(index, null)}
+                title="מחיקה"
+                aria-label="מחק הערה"
+              >
+                <Trash />
+              </button>
+            </div>
+            {feedback.text}
+          </div>
+        )}
       </div>
+
+      {canAnnotate && (
+        <button
+          className={`note-btn${feedback ? ' on' : ''}`}
+          onClick={() => (editing ? setEditing(false) : openEditor())}
+          title={feedback ? 'ערוך הערה' : 'השאר הערה על השאלה'}
+          aria-label={feedback ? 'ערוך הערת בודק' : 'השאר הערת בודק'}
+          aria-expanded={editing}
+        >
+          <Note />
+        </button>
+      )}
     </div>
   );
 }

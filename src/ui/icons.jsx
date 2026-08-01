@@ -95,6 +95,25 @@ export function Pencil({ size = 16 }) {
   );
 }
 
+export function Note({ size = 15 }) {
+  return (
+    <svg {...base(size)}>
+      <path d="M21 15a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2Z" />
+      <path d="M8 9h9M8 12.5h6" strokeWidth={1.5} />
+    </svg>
+  );
+}
+
+export function Trash({ size = 14 }) {
+  return (
+    <svg {...base(size)}>
+      <path d="M4 7h16M10 11v6M14 11v6" />
+      <path d="m6 7 1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" />
+      <path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+    </svg>
+  );
+}
+
 export function Close({ size = 16 }) {
   return (
     <svg {...base(size)}>

@@ -77,7 +77,7 @@ function formatCost(usage) {
   return `$${usd.toFixed(4)} (≈ ${(usd * ILS_PER_USD).toFixed(2)} ₪)`;
 }
 
-export default function GuidePanel({ state, width = 320, onClose }) {
+export default function GuidePanel({ state, width = 320, notes = [], onClose }) {
   const { coverage, meta, facts, thoughts, feelings, reactions } = state;
   const gaps = state.gaps ?? { byTarget: {}, log: [] };
   const findings = state.findings ?? {};
@@ -109,6 +109,21 @@ export default function GuidePanel({ state, width = 320, onClose }) {
       <Section title={`שלב ${meta.currentStage} — ${STAGE_NAMES[meta.currentStage]}`}>
         <Row label="פתח שאלה" value={meta.questionAperture} />
         <Row label="ממתין לאישור" value={meta.awaitingConfirmation ? 'כן' : 'לא'} />
+      </Section>
+
+      {/* Tester feedback collected on individual interviewer questions. Rides in
+          the export; never sent to the model. */}
+      <Section title={`הערות בודק (${notes.length})`}>
+        {notes.length === 0 ? (
+          <Row label="—" value="אין" />
+        ) : (
+          notes.map((n) => (
+            <div key={n.i} className="g-note">
+              <div className="g-note-q">{n.question}</div>
+              <div className="g-note-t">{n.text}</div>
+            </div>
+          ))
+        )}
       </Section>
 
       {/* Resistance signals — the Router reads these to set question aperture.
