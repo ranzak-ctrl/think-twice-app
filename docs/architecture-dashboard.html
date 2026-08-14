@@ -275,6 +275,34 @@
     <div class="stepctl"><button id="ff-next">צעד הבא ▸</button><button id="ff-all">הצג הכל</button><span id="hint"></span></div>
     <div class="banner" id="ff-banner"></div>
     <div class="pcard r1" id="p1"><div class="pt"><span class="pnum">1</span> קלט — אובייקט הבקשה</div><div class="pbody"></div></div>
+
+    <div class="pcard" style="border-color:#4a3a1e">
+      <div class="pt"><span class="fbadge" style="background:rgba(240,180,107,.14);color:var(--warn)">🟡 באפיון · טרם מומש</span> הרכב הבקשה — מה ייכנס למטמון ומה לא</div>
+      <div class="pbody" style="font-size:12px;line-height:1.75">
+        <b style="color:var(--accent2)">חשוב:</b> מטמון הפרומפט <b>לא מקטין את מה שנשלח</b>. כל הבייטים עוברים בכל תור, כמו היום. מה שמשתנה הוא החיוב: השרת מזהה קידומת שכבר עיבד וגובה עליה 0.1× במקום 1×.<br><br>
+
+        <b>הקידומת היציבה — נכנסת למטמון (‏~15,900 תווים):</b>
+        <div class="gaplist" style="margin:6px 0">
+          • <code>persona.md</code> — 1,277 · הדמות הגלובלית · <span style="color:var(--accent2)">קבוע לכל הסשן</span><br>
+          • <code>resistance.md</code> — 2,195 · פרסונות ההתנגדות · <span style="color:var(--accent2)">קבוע לכל הסשן</span><br>
+          • <code>evaluator.md</code> — <b>9,240</b> · המעריך · <span style="color:var(--accent2)">קבוע לכל הסשן</span> — <b>58% מהקידומת</b><br>
+          • <code>forbidden.js</code> — 1,349 · הרשימה השחורה · <span style="color:var(--accent2)">קבוע לכל הסשן</span><br>
+          • <code>stage&lt;N&gt;.md</code> — ‏~1,800 · סוכן השלב · <span style="color:var(--warn)">מתחלף במעבר שלב</span> (6 פעמים בראיון)
+        </div>
+
+        <b>הזנב התנודתי — במכוון מחוץ למטמון:</b>
+        <div class="gaplist" style="margin:6px 0">
+          • <code>summarizeState(state)</code> — נבנה מחדש בכל תור מה-StateDocument (coverage · findings · actorMap). לו היה בתוך הבלוק המקומטן, המטמון היה נשבר בכל תור — כתיבה ב-1.25× ואפס קריאות. <b style="color:var(--esc)">גרוע מלא לעשות כלום.</b>
+        </div>
+
+        <div class="sat" style="margin-top:8px">סדר ההרכבה ב-<code>buildSystemPrompt</code> הוא מה שמאפשר את זה: המטמון הוא <b>התאמת-קידומת</b> — שינוי בית אחד מבטל את כל מה שאחריו. <code>stateSummary</code> נמצא <b>אחרון</b>, ולכן הבלוק היציב שמעליו ניתן למטמון כמו-שהוא. אילו היה ראשון, לא היה ניתן לממש מטמון בלי לפרק את המבנה.</div>
+
+        <div class="sat" style="margin-top:8px">‏<b>‏TTL:</b> ברירת המחדל היא 5 דקות. בראיון טיפולי שמזמין רפלקציה, הפסקת מחשבה של שש דקות מפילה את הרשומה ומחזירה כתיבה מלאה — ולכן מומלץ <code>ttl: "1h"</code> (כתיבה 2× במקום 1.25×, נקודת איזון 3 בקשות).</div>
+
+        <div class="sat" style="margin-top:8px"><b style="color:var(--accent2)">✅ מה שכבר בוצע (v1.1):</b> ארבעת דלי הטוקנים נישאים מקצה לקצה — <code>adapter → session → state → מד העלות</code>. זה תנאי מוקדם, לא קוסמטיקה: כשמטמון פעיל, <code>input_tokens</code> הוא רק <b>השארית הלא-מקומטנת</b>, ומד שעיוור ל-<code>cache_read</code> גם מדווח חסר וגם מסתיר את הסימן היחיד שאומר אם המטמון עובד בכלל — <code>cache_read</code> שנתקע על 0 פירושו שמשהו מבטל את הקידומת.</div>
+      </div>
+    </div>
+
     <div class="arrow">↓ <span class="flab">request →</span></div>
     <div class="pcard r2" id="p2"><div class="pt"><span class="pnum">2</span> מודל — פלט גולמי</div><div class="pbody"></div></div>
     <div class="arrow">↓ <span class="flab">raw response →</span></div>
