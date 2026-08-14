@@ -22,19 +22,16 @@
 
   --brand: #2563eb;
 
-  /* Honey accent. Three steps, because one value cannot serve all three uses:
-     --honey fills the send button and the current-stage dot; --honey-ink is
-     darker so 14px bold text clears WCAG AA on white (~6.5:1, where --honey
-     alone manages only ~3:1); --honey-line is the same hue at low alpha, so
-     container borders read as warm without turning into a second accent.
-     The fill is deepened slightly from a literal honey so the white arrow on
-     the send button clears the 3:1 non-text minimum — a lighter, prettier
-     gold left the icon barely visible.
-     brief.md asks for a quiet screen — the accent is allowed to be warm, the
-     borders are not allowed to shout. */
-  --honey: #bd8a24;
-  --honey-ink: #8a6110;
-  --honey-line: rgba(189, 138, 36, 0.45);
+  /* Accent. Named by role, not by hue, so changing the colour is one edit here
+     rather than a rename across the sheet.
+     #ffa500 is bright: ~2.0:1 on white and ~2.1:1 under white. That is fine
+     for a filled shape and fails for anything that has to be READ, so the
+     colour carries the fill and legibility is solved by what sits on it —
+     a dark glyph on the button, a dark label beside the dot. No second
+     orange invented to paper over it. */
+  --accent: #ffa500;
+  --accent-deep: #cc8400; /* hover only */
+  --accent-line: rgba(255, 165, 0, 0.55);
   --ok: #15803d;
   --warn: #b45309;
   --danger: #b91c1c;
@@ -318,14 +315,14 @@ button {
 }
 
 .rail-step.is-current {
-  color: var(--honey-ink);
+  color: var(--text);
   font-weight: 700;
 }
 .rail-step.is-current .rail-dot {
   width: 13px;
   height: 13px;
-  background: var(--honey);
-  box-shadow: inset 0 0 0 1.5px var(--honey), 0 0 0 3px rgba(189, 138, 36, 0.18);
+  background: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent), 0 0 0 3px rgba(255, 165, 0, 0.22);
 }
 
 /* Narrow screens: keep the orientation, drop the labels rather than the rail —
@@ -465,7 +462,7 @@ button {
 
 .msg.assistant .bubble {
   background: var(--surface);
-  border: 1px solid var(--honey-line);
+  border: 1px solid var(--accent-line);
   box-shadow: var(--shadow-sm);
   border-start-start-radius: 6px;
 }
@@ -753,7 +750,7 @@ button {
   align-items: flex-end;
   gap: 8px;
   padding: 6px 6px 6px 6px;
-  border: 1px solid var(--honey-line);
+  border: 1px solid var(--accent-line);
   border-radius: var(--radius-lg);
   background: var(--surface);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -811,8 +808,8 @@ button {
      Note --radius-lg here would render as a circle, not a matching corner:
      18px exceeds half of this 34px button, so the browser clamps it to 17px. */
   border-radius: var(--radius);
-  background: var(--honey);
-  color: var(--on-ink);
+  background: var(--accent);
+  color: #5c3b00; /* white on this orange is 2.1:1 — the arrow vanishes */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -821,7 +818,7 @@ button {
 }
 
 .send:hover:not(:disabled) {
-  background: var(--honey-ink);
+  background: var(--accent-deep);
 }
 
 .send:disabled {
