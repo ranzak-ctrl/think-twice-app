@@ -48,20 +48,24 @@
 
 <div id="ttb">
   <p class="dtitle">🗂️ Think Twice — לוח המשימות</p>
-  <p class="dsub">מצב פיתוח נכון ל-25.7.2026 · ענף <code style="font-family:Consolas,monospace">main</code> · PR&nbsp;#1 פתוח · מקור: זיכרון הפרויקט</p>
+  <p class="dsub">מצב פיתוח נכון ל-14.8.2026 · ענף <code style="font-family:Consolas,monospace">ui/tester-feedback</code> · 20 קומיטים מאז <code style="font-family:Consolas,monospace">v1.0.0</code> · אין PR פתוח · מקור: מצב הריפו</p>
 
   <div class="strip">
     <div class="stat"><div class="k">Build 1 · Gap-Management</div><div class="v g">✅ הושלם</div></div>
-    <div class="stat"><div class="k">חבילת בדיקות</div><div class="v g">~319 ירוק</div></div>
-    <div class="stat"><div class="k">חוסמי שחרור</div><div class="v r">3 פתוחים</div></div>
-    <div class="stat"><div class="k">הצעד הבא (רן)</div><div class="v b">ייצוא הרצת-בדיקה</div></div>
+    <div class="stat"><div class="k">חבילת בדיקות</div><div class="v g">323 ירוק (+1 מדולג)</div></div>
+    <div class="stat"><div class="k">חוסמי שחרור</div><div class="v r">4 פתוחים</div></div>
+    <div class="stat"><div class="k">הצעד הבא (רן)</div><div class="v b">רוטציית מפתח + ניקוי Vercel</div></div>
   </div>
 
   <div class="board">
 
     <!-- DONE -->
     <div class="col">
-      <h3><span class="dot d-g"></span>✅ הושלם &amp; נדחף<span class="cnt">15+</span></h3>
+      <h3><span class="dot d-g"></span>✅ הושלם &amp; נדחף<span class="cnt">19+</span></h3>
+      <div class="card"><span class="t">המפתח יצא מה-bundle</span><span class="m"><code>96ec371</code> — <code>isValidKey</code>, קריאת <code>VITE_ANTHROPIC_API_KEY</code> וכותרת <code>x-api-key</code> הוסרו. חי/מדומה = <code>VITE_USE_MOCK</code>. אומת: <code>grep -c "sk-ant" dist</code> → 0. הייצור לא נפגע מעולם.</span></div>
+      <div class="card"><span class="t">הכרעת נטלי — שלב 2</span><span class="m"><code>3cc553d</code> — המוגלה עולה בתוך הפרשנות. מודל 8-השלבים נדחה; המבנה נשאר 7. <code>wound</code>+<code>adhd_pattern</code> בשלב 2.</span></div>
+      <div class="card"><span class="t">‏CLAUDE.md מתאר את המציאות</span><span class="m"><code>cf42f32</code> — עיקרון 6 נכתב מחדש (אין אחסון-שרת, לא "אפס שרת"), עיקרון 4 מסומן כמופר ביודעין, מסלול ההגשה = web על Vercel.</span></div>
+      <div class="card"><span class="t">ניקוי עץ העבודה + דחיפה</span><span class="m"><code>9468ff3</code> — <code>settings.local.json</code> הופסק מעקב, <code>.gitignore</code> תוקן, 11 קומיטים נדחפו ל-origin.</span></div>
       <div class="card"><span class="t">Build 1 — מדד עקביות (gap)</span><span class="m">מדידה 1–10 מאחורי הקלעים, record/star/resolve/re-open. 5 יחידות. לא נוגע ב-Router.</span></div>
       <div class="card"><span class="t">Router: מעבר על full-coverage</span><span class="m"><code>59a700f</code> — נפתר "תקוע בשלב 1 למרות כיסוי מלא".</span></div>
       <div class="card"><span class="t">לכידה חוצת-שלבים</span><span class="m"><code>38cd877</code> — סלוטים של שלבים אחרים נלכדים לרמה 1.</span></div>
@@ -87,7 +91,9 @@
 
     <!-- NEXT -->
     <div class="col">
-      <h3><span class="dot d-o"></span>🟠 הבא בתור<span class="cnt">3</span></h3>
+      <h3><span class="dot d-o"></span>🟠 הבא בתור<span class="cnt">5</span></h3>
+      <div class="card"><span class="t">לפרוש את <code>feature/8-stage-insight</code></span><span class="m">מממש מודל שנטלי דחתה ב-14.8. לא נמזג (3 קומיטים ב-origin), אבל <code>branch-diagram.html</code> עדיין מתייג אותו <code>t-keep</code>.</span><br><span class="who dev">פיתוח</span></div>
+      <div class="card"><span class="t">ניקוי Vercel</span><span class="m">4 פרויקטים · 6 עותקים של המפתח. למחוק <code>think-twice-app</code>, <code>think-twice-live</code>, <code>tt-probe</code> → מוריד 4 עותקים. ואז לכבות <code>Require Log In</code>.</span><br><span class="who ran">רן — ידני</span></div>
       <div class="card"><span class="t">Live golden scripts</span><span class="m">רן מייצא הרצה אמיתית (Export → <code>{history,state}</code>); לבנות scripts נאמנים — בלי לולאות, לעצור בנקודה התקועה.</span><br><span class="who ran">רן — ייצוא</span></div>
       <div class="card"><span class="t">Build 2 (מנוע)</span><span class="m">escalation + reprobe + reopenSlot + §12.1 parked.</span><br><span class="who dev">פיתוח</span></div>
       <div class="card"><span class="t">Stage-4 slots</span><span class="m">reaction consequences + satisfaction. ניסוח/מדידה קליניים.</span><br><span class="who natali">נטלי §4</span></div>
@@ -95,7 +101,8 @@
 
     <!-- BLOCKERS -->
     <div class="col">
-      <h3><span class="dot d-r"></span>🔴 חוסמי שחרור<span class="cnt">3</span></h3>
+      <h3><span class="dot d-r"></span>🔴 חוסמי שחרור<span class="cnt">4</span></h3>
+      <div class="card blk"><span class="t">הפרומפט סותר את הכרעת נטלי</span><span class="m">שלב 2 מבקש מהמשתמש לספק את החיבור לקשב (<code>'זה מזכיר לך דפוס מוכר?'</code>) — אבל ההכרעה קובעת שהמראיין מנסח אותו כהשערה מנורמלת. גם כלל אי-החשיפה של המוגלה חסר, ו-<code>forbidden.js</code> לא נושא אף אחד מהשניים. <b>מתועד אך לא נאכף.</b></span><br><span class="who natali">נטלי §6 · דרך prompt-editor</span></div>
       <div class="card blk"><span class="t">גלאי עייפות (fatigue detector)</span><span class="m">להחליף את ה-load-guard הזמני (20/15). האותות קיימים בקוד אבל "מתים" — wire-up + weighting + thresholds. <b>קריטי לפני sign-off.</b></span><br><span class="who natali">נטלי §1</span></div>
       <div class="card blk"><span class="t">טיפול בסתירות</span><span class="m">לחבר <code>flag_contradiction</code> ל-Re-open Rule + ניסוח לא-שיפוטי. gap-management הוא ה-conception.</span><br><span class="who natali">נטלי §2</span></div>
       <div class="card blk"><span class="t">reject-loop (באג מוכר)</span><span class="m">דחיית סיכום load-guard משאירה <code>questionCount</code> בתקרה → השער נפתח שוב מיד. תיקון קטן ב-Router.</span><br><span class="who dev">פיתוח</span></div>
@@ -103,7 +110,9 @@
 
     <!-- PARKED -->
     <div class="col">
-      <h3><span class="dot d-m"></span>⏸️ מוקפא / Backlog<span class="cnt">4</span></h3>
+      <h3><span class="dot d-m"></span>⏸️ מוקפא / Backlog<span class="cnt">6</span></h3>
+      <div class="card"><span class="t">ליבה ניידת — עיקרון 4 מופר</span><span class="m"><code>promptBuilder.js</code> (13) ו-<code>judge.js</code> מייבאים <code>.md?raw</code> — תחביר Vite שלא ירוץ ב-Node. להזריק פרומפטים במקום לייבא. <code>judge.js</code> כבר מדגים את התבנית עם <code>fetchImpl</code>.</span><br><span class="who dev">פיתוח</span></div>
+      <div class="card"><span class="t">שחזור סשן מקומי</span><span class="m">עיקרון 8 מתיר persistence, אבל ה-UX טרם אושר קלינית — חזרה לאזור רגיש, מה נכון לשמור, TTL. לא לממש שחזור אוטומטי.</span><br><span class="who natali">נטלי §7</span></div>
       <div class="card"><span class="t">Case-story (סיפור המקרה)</span><span class="m">place/object/expectations כתוכן <code>facts</code>, לא סלוטים. צריך greenlight ל-dev-plan.</span><br><span class="who natali">נטלי</span></div>
       <div class="card"><span class="t">K_wait — קונספט מחדש</span><span class="m">לא מונה-תורים אלא כמה הראיון יכול להתקדם בלי להשלים את הפער (progress-gate).</span></div>
       <div class="card"><span class="t">הרחבת foundational</span><span class="m">causal/wound — <code>wound</code> רגיש ומתייצב מאוחר, חסימה מוקדמת עלולה להיתקע.</span></div>
