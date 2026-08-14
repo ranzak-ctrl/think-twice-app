@@ -87,8 +87,17 @@ export default function Chat({
     }
   };
 
+  // State 0 — the opening turn is on screen and the person hasn't answered yet.
+  // Until they do, the composer sits directly under the opener in the middle of
+  // the screen rather than pinned to the bottom edge: the first answer is the
+  // only thing being asked for, so it shouldn't be at the far end of an empty
+  // page. It drops to the normal position the moment they reply.
+  // Keyed on "no user turn yet" rather than history.length, so it survives an
+  // opener that spans more than one message.
+  const atStart = !history.some((m) => m.role === 'user');
+
   return (
-    <div className="chat">
+    <div className={`chat${atStart ? ' is-start' : ''}`}>
       <div className="stream">
         <div className="scroller" ref={scrollerRef} onScroll={handleScroll}>
           <div

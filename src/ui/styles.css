@@ -335,6 +335,24 @@ button {
   min-height: 0;
 }
 
+/* State 0 — nothing has been answered yet. The opener and the composer sit
+   together in the middle of the screen instead of at opposite ends of an empty
+   page; the composer returns to the bottom edge on the first reply. */
+.chat.is-start {
+  justify-content: center;
+}
+
+.chat.is-start .stream {
+  flex: 0 1 auto; /* shrink to the opener rather than filling the page */
+}
+
+/* The bottom border belongs to a composer docked at the edge; centred, it would
+   read as a rule across the middle of the screen. */
+.chat.is-start .composer {
+  border-top-color: transparent;
+  background: transparent;
+}
+
 .scroller {
   flex: 1;
   overflow-y: auto;
