@@ -1,49 +1,24 @@
-// Intro card — "איך זה עובד", shown above the first message.
+// Intro note — the one thing said before the interview starts.
 //
-// Expectation-setting that would not fit in the opening turn: the conversational
-// lint allows ~3 sentences and one question per system turn, and a five-step
-// roadmap is neither. So the roadmap lives here, as interface rather than as
-// something the interviewer says. Ported from the Claude Design artifact
-// (project 21ed9722) and deliberately sharing the spine-and-dot language of
-// StageRail, so the preview and the in-session orientation read as one system.
+// This began as a five-step "איך זה עובד" card. The stage rail made it
+// redundant (Ran, 15.8): the rail carries the roadmap, permanently and in the
+// authoritative seven steps, while the card restated it in five that did not
+// match. The lead line went the same way — it repeated the opening turn, which
+// already names the invitation.
 //
-// design/brief.md governs the treatment: "the screen must be quiet", nothing may
-// read as a scorecard, and the sharpest constraint — anything that smells of
-// criticism triggers defensiveness. Hence no icons, no emoji, no gradient, no
-// encouragement copy. It states what will happen and stops.
+// What survived is the only claim neither the rail nor the opener makes, and
+// the one that matters most to someone deciding whether to type something
+// painful into a browser: it stays in the browser. That is factually true of
+// the architecture — no server-side storage, the proxy is a stateless
+// pass-through — so it can be stated plainly rather than hedged.
 //
-// The steps are the journey in plain words, never stage numbers ("שלב 3" is
-// jargon toward the user) and never a control — the Router owns every
-// transition.
-
-const STEPS = [
-  { lead: 'מה בדיוק קרה', rest: '— מי היה שם, מה נאמר, מה עשית' },
-  { lead: 'איך הבנת את זה,', rest: 'ולמה זה תפס אותך ככה' },
-  { lead: 'מה הרגשת,', rest: 'ואיך הגבת ברגע עצמו' },
-  { lead: 'איך זה נראה', rest: 'מזווית אחרת' },
-  { lead: 'ומה אתה בוחר', rest: 'לעשות עכשיו' },
-];
+// Kept deliberately quiet per design/brief.md: no border, no heading, no icon.
+// It is a reassurance, not a feature to announce.
 
 export default function IntroCard() {
   return (
-    <section className="intro" aria-label="איך זה עובד">
-      <h2 className="intro-title">איך זה עובד</h2>
-      <p className="intro-lead">נעבור יחד על אירוע אחד שהסעיר אותך, בקצב שלך.</p>
-
-      <div className="intro-steps">
-        {STEPS.map(({ lead, rest }, i) => (
-          <div className={`intro-step${i === 0 ? ' is-first' : ''}`} key={lead}>
-            <span className="intro-dot" aria-hidden="true" />
-            <span className="intro-text">
-              {lead} <span className="intro-quiet">{rest}</span>
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <p className="intro-foot">
-        אפשר לעצור בכל רגע. מה שנכתב כאן נשאר בדפדפן שלך ולא נשמר בשום מקום.
-      </p>
-    </section>
+    <p className="intro-note">
+      אפשר לעצור בכל רגע. מה שנכתב כאן נשאר בדפדפן שלך ולא נשמר בשום מקום.
+    </p>
   );
 }
