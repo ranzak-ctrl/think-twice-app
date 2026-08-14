@@ -1,9 +1,15 @@
 node_modules/
-.env
-.env.local
 dist/
 build/
 .DS_Store
 *.log
 .vercel
+
+# Secrets — every .env variant stays local. .env.example is tracked
+# deliberately (it holds names only, never values) and is force-added.
 .env*
+!.env.example
+
+# Per-machine Claude Code permission grants. settings.json is shared;
+# settings.local.json is personal and must not travel with the repo.
+.claude/settings.local.json
