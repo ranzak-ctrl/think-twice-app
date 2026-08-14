@@ -161,6 +161,7 @@
   <div class="dtitle">Think Twice — דשבורד ארכיטקטורה</div>
   <p class="dsub">שלושה מבטים על אותה מערכת: מבט-על → תור בודד → החלטת Router.</p>
   <p class="dlegend">מקרא בשלות: <b style="color:var(--accent2)">✅ ממומש</b> · <b style="color:var(--warn)">🟡 באפיון</b> · <b style="color:#8a93a3">⬜ טרם תוכנן · לא פעיל</b></p>
+  <p class="dlegend" style="color:#8b949e">נכון ל-<b>15.8.2026</b> · <b>v1.1</b> · שלושת המבטים אומתו מול <code style="font-family:ui-monospace,Menlo,Consolas,monospace">src/core/router.js</code> — ספים, שערים ונוסחת ה-ADVANCE תואמים לקוד.</p>
   <div class="dnav">
     <button data-v="arch" class="on"><span class="step">מבט-על</span> ארכיטקטורה מאוחדת</button>
     <button data-v="flow"><span class="step">תור בודד</span> מחזור התור</button>
@@ -241,9 +242,9 @@
         <div class="loop"><b>↩ Backward</b> — סוכן מאוחר מנתב עדכון בחזרה לשלב 1.</div>
         <div class="loop rep"><b>↪ reprobe <span class="new">🟡</span></b> — חזרה דחויה ל-<span class="st-esc">escalated</span>, תזמון אלגנטי.</div>
       </div>
-      <div class="fut-note future"><span class="fbadge">⬜ טרם תוכנן · לא פעיל</span><b style="color:#aab2c0">גלאי עייפות</b> — קלט עתידי ל-Router; יחליף את מגן-העומס (placeholder 20/15) במנגנון ששוקלל מורכבות-סיפור + שיתוף-פעולה.</div>
+      <div class="fut-note future" style="border-color:#5a3128"><span class="fbadge" style="background:rgba(255,157,122,.14);color:#ff9d7a">🔴 חוסם שחרור</span><b style="color:#aab2c0">גלאי עייפות</b> — יחליף את מגן-העומס (placeholder 20/15) במנגנון ששוקלל מורכבות-סיפור + שיתוף-פעולה. הקונספט מתועד; ממתין להכרעת נטלי על ספים וטון.</div>
     </div>
-    <div class="status">סטטוס: מנוע הראיון + <b>מפת-שחקנים (שער)</b> + <b>ממצאים</b> + <b>פתיחי-שלב מעוגנים</b> (קדימה + Re-open) + סדר eval-first <b>✅ ממומש ונבדק חי</b> · ניהול פערים Build 1 <b>✅</b> (escalation/reprobe = Build 2 <b style="color:var(--warn)">🟡</b>) · גלאי עייפות <b style="color:#8a93a3">⬜ טרם תוכנן</b>.</div>
+    <div class="status">סטטוס: מנוע הראיון + <b>מפת-שחקנים (שער)</b> + <b>ממצאים</b> + <b>פתיחי-שלב מעוגנים</b> (קדימה + Re-open) + סדר eval-first <b>✅ ממומש ונבדק חי</b> · ניהול פערים Build 1 <b>✅</b> (escalation/reprobe = Build 2 <b style="color:var(--warn)">🟡</b>) · גלאי עייפות <b style="color:var(--esc)">🔴 חוסם שחרור</b> · טיפול בסתירות <b style="color:var(--esc)">🔴 חוסם שחרור</b>.</div>
 
     <div class="layer-label" style="margin-top:22px"><span class="num">5</span> ההגשה — איך זה מגיע לבודק <span style="color:var(--mut);font-weight:400;font-size:11px">· נוסף 14.8.2026</span></div>
     <div class="router" style="border-color:#35406a">
@@ -312,7 +313,9 @@
     <div class="tkpanel"><div class="tkttl">רשומת הפער — gaps.byTarget</div><div class="tk" id="tkbody"></div></div>
     <div class="guard" style="border-color:#5a3128"><input type="checkbox" id="actor"><span><span class="gl" style="color:var(--esc)">שער מפת-שחקנים (שלב 1)</span> — דמות <code style="color:var(--esc)">clear:false</code> מחזיקה את המעבר</span></div>
     <div class="guard"><input type="checkbox" id="guard"><span><span class="gl">מגן עומס נורה</span> — רשת ביטחון: כופה מעבר (placeholder 20/15)</span></div>
-    <div class="fatigue future"><span class="fbadge">⬜ טרם תוכנן · לא פעיל</span><span class="fl">גלאי עייפות</span> — המנגנון המיועד להחליף את מגן-העומס: ישקלל מורכבות-סיפור + שיתוף-פעולה (לא ספירת שאלות). עדיין לא בתכנון, ולכן אינו מוצג כפקד.</div>
+    <div class="fatigue future" style="border-color:#5a3128"><span class="fbadge" style="background:rgba(255,157,122,.14);color:#ff9d7a">🔴 חוסם שחרור · לא ממומש</span><span class="fl">גלאי עייפות</span> — המנגנון שיחליף את מגן-העומס: ישקלל מורכבות-סיפור + שיתוף-פעולה, לא ספירת שאלות. <b>הקונספט קיים ומתועד</b> (questions-for-natali §1 + §1א); מה שחסר הוא הכרעת נטלי על הספים והטון. dev-plan §129: "אין סגירת פיתוח בלי זה". אינו מוצג כפקד כי אינו פעיל.</div>
+    <div class="fatigue future" style="border-color:#5a3128"><span class="fbadge" style="background:rgba(255,157,122,.14);color:#ff9d7a">🔴 חוסם שחרור · לא מחווט</span><span class="fl">טיפול בסתירות</span> — <code style="color:var(--esc)">flag_contradiction</code> נפרסר ע"י ה-parser ואז <b>נזרק</b>: הדגל אינו מחווט ל-Re-open Rule, ולכן מידע סותר לא מוריד ציון slot ולא פותח נושא סגור. dev-plan §131. הניסוח הלא-שיפוטי בבעלות נטלי (questions-for-natali §2).</div>
+    <div class="fatigue future" style="border-color:#4a3a1e"><span class="fbadge" style="background:rgba(240,180,107,.14);color:var(--warn)">🟡 באג מוכר</span><span class="fl">reject-loop</span> — דחיית סיכום שנוצר ע"י מגן-העומס משאירה את <code style="color:var(--warn)">questionCount</code> בתקרה, ולכן השער נפתח שוב מיד בתור הבא. תיקון קטן ב-Router; נראה כאן כי הוא מתנהג כמו לולאה בציר מגן-העומס.</div>
     <div class="arrow">↓</div>
     <div class="router">
       <div class="rttl">RouterDecision</div>
