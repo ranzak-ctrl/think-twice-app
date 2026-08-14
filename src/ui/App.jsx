@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import Chat from './Chat.jsx';
 import GuidePanel from './GuidePanel.jsx';
+import StageRail from './StageRail.jsx';
 import ConfirmDialog from './ConfirmDialog.jsx';
 import { Mark, Plus, Download, Upload, Gauge } from './icons.jsx';
 import { createState, importState } from '../core/state.js';
@@ -231,18 +232,26 @@ export default function App() {
           </div>
         </header>
 
-        <Chat
-          history={history}
-          loading={loading}
-          board={state.board}
-          awaitingConfirmation={state.meta.awaitingConfirmation}
-          sessionComplete={state.meta.sessionComplete}
-          feedbackEnabled={guideOpen}
-          onFeedback={handleFeedback}
-          onSend={handleUserMessage}
-          onConfirm={handleConfirm}
-          onReject={handleReject}
-        />
+        {/* Chat first, rail second: in RTL the second child lands on the left,
+            which is where the rail belongs — beside the chat, not over it. */}
+        <div className="main-body">
+          <Chat
+            history={history}
+            loading={loading}
+            board={state.board}
+            awaitingConfirmation={state.meta.awaitingConfirmation}
+            sessionComplete={state.meta.sessionComplete}
+            feedbackEnabled={guideOpen}
+            onFeedback={handleFeedback}
+            onSend={handleUserMessage}
+            onConfirm={handleConfirm}
+            onReject={handleReject}
+          />
+          <StageRail
+            stage={state.meta.currentStage}
+            sessionComplete={state.meta.sessionComplete}
+          />
+        </div>
       </div>
 
       {/* Draggable divider — desktop split only; CSS hides it under 900px, where

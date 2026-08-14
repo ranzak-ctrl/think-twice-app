@@ -193,11 +193,112 @@ button {
 
 /* ----------------------------------------------------------------- chat -- */
 
+/* Row below the header: chat, then the stage rail. In RTL the second child
+   lands on the left, which is where the rail sits. */
+.main-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  min-width: 0;
+}
+
 .chat {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
+}
+
+/* ------------------------------------------------------- stage rail -- */
+/* Read-only orientation strip. Never interactive — see StageRail.jsx and
+   design/brief.md §61. No pointer cursor, no hover affordance, no focus
+   ring: nothing here should read as clickable, because it isn't. */
+
+.rail {
+  flex: none;
+  width: 164px; /* fits the longest label on one line at 12.5px */
+  padding: 26px 14px 26px 18px;
+  border-inline-start: 1px solid var(--border);
+  overflow-y: auto;
+  user-select: none;
+}
+
+.rail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+}
+
+/* Connecting spine, drawn behind the dots on the inline-start edge. */
+.rail-list::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 4px;
+  top: 6px;
+  bottom: 6px;
+  width: 1px;
+  background: var(--border);
+}
+
+.rail-step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--text-faint);
+  transition: color 0.18s ease;
+}
+
+.rail-dot {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1.5px var(--border-strong);
+  transition: all 0.18s ease;
+}
+
+.rail-step.is-done {
+  color: var(--text-muted);
+}
+.rail-step.is-done .rail-dot {
+  background: var(--border-strong);
+  box-shadow: inset 0 0 0 1.5px var(--border-strong);
+}
+
+.rail-step.is-current {
+  color: var(--text);
+  font-weight: 700;
+}
+.rail-step.is-current .rail-dot {
+  width: 11px;
+  height: 11px;
+  background: var(--brand);
+  box-shadow: inset 0 0 0 1.5px var(--brand), 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+/* Narrow screens: keep the orientation, drop the labels rather than the rail —
+   the guide becomes an overlay here and horizontal room is scarce. */
+@media (max-width: 900px) {
+  .rail {
+    width: 34px;
+    padding: 22px 9px;
+  }
+  .rail-label {
+    display: none;
+  }
+}
+
+/* Very narrow: the rail costs more than it gives. */
+@media (max-width: 560px) {
+  .rail {
+    display: none;
+  }
 }
 
 /* Positioning context for the jump pill. It must be the scrolling area alone —
