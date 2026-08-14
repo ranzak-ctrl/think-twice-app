@@ -35,7 +35,13 @@
   --shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.16);
 
   --header-h: 56px;
-  --column: 46rem; /* conversation reading width */
+  --column: 46rem; /* conversation reading width (outer track) */
+  --column-pad: 20px; /* .column's horizontal padding */
+  /* The width content actually occupies inside the track. Messages and the
+     intro card live inside .column and are inset by its padding, so anything
+     that must line up with them — composer, confirm bar, hint — has to use
+     this, not --column, or it sits 40px wider. */
+  --column-content: calc(var(--column) - var(--column-pad) * 2);
 
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue',
     'Arial Hebrew', 'Noto Sans Hebrew', Arial, sans-serif;
@@ -408,7 +414,7 @@ button {
   width: 100%;
   max-width: var(--column);
   margin-inline: auto;
-  padding: 20px 20px 8px;
+  padding: 20px var(--column-pad) 8px;
 }
 
 /* -------------------------------------------------------------- message -- */
@@ -719,7 +725,7 @@ button {
 }
 
 .confirm-inner {
-  max-width: var(--column);
+  max-width: var(--column-content);
   margin-inline: auto;
   display: flex;
   align-items: center;
@@ -745,7 +751,7 @@ button {
 }
 
 .composer-inner {
-  max-width: var(--column);
+  max-width: var(--column-content);
   margin-inline: auto;
   display: flex;
   align-items: flex-end;
@@ -816,7 +822,7 @@ button {
 }
 
 .hint {
-  max-width: var(--column);
+  max-width: var(--column-content);
   margin: 6px auto 0;
   font-size: 11px;
   color: var(--text-faint);
