@@ -52,9 +52,9 @@
   <a class="back" href="workspace.html">← מרכז העבודה</a>
   <div class="titlerow">
     <h1>Think Twice — מבנה הענפים</h1>
-    <span class="badge">v1.0.0</span>
+    <span class="badge">v1.1</span>
   </div>
-  <p class="sub">אחרי קונסולידציה · <span class="mono">ranzak-ctrl/think-twice-app</span> · 25.7.2026</p>
+  <p class="sub">‏27 קומיטים מאז v1.0.0 · <span class="mono">ranzak-ctrl/think-twice-app</span> · 15.8.2026</p>
 
   <div class="card diagram-scroll">
    <svg viewBox="0 0 760 300" width="760" role="img" aria-label="תרשים ענפי גיט אחרי קונסולידציה">
@@ -64,9 +64,12 @@
     <circle cx="410" cy="195" r="7" fill="#58a6ff"/>
     <circle cx="620" cy="195" r="15" fill="#3fb950"/>
     <text x="620" y="200" text-anchor="middle" fill="#0d1117" font-size="14" font-weight="900">✓</text>
+    <circle cx="500" cy="195" r="7" fill="#58a6ff"/>
     <line x1="620" y1="180" x2="620" y2="150" stroke="#3fb950" stroke-width="2"/>
-    <rect x="588" y="128" width="64" height="24" rx="6" fill="#3fb950"/>
+    <rect x="596" y="128" width="48" height="24" rx="6" fill="#3fb950"/>
     <text x="620" y="145" text-anchor="middle" fill="#0d1117" font-size="13" font-weight="900"
+          font-family="ui-monospace,Menlo,Consolas,monospace">v1.1</text>
+    <text x="500" y="176" text-anchor="middle" fill="#8b949e" font-size="10.5"
           font-family="ui-monospace,Menlo,Consolas,monospace">v1.0.0</text>
     <text x="620" y="228" text-anchor="middle" fill="#58a6ff" font-size="15" font-weight="800"
           font-family="ui-monospace,Menlo,Consolas,monospace">main</text>
@@ -96,7 +99,20 @@
      <div class="mark" style="color:var(--main)">⭐</div>
      <div class="body">
       <div class="h">ענף ראשי יחיד</div>
-      <div class="d"><span class="tag t-main">main</span> — מאכלס את כל האפליקציה, ברירת המחדל ב-GitHub, מתויג <span class="tag" style="background:rgba(63,185,80,.12);color:var(--ok);border:1px solid rgba(63,185,80,.35)">v1.0.0</span></div>
+      <div class="d"><span class="tag t-main">main</span> — מאכלס את כל האפליקציה, ברירת המחדל ב-GitHub, מתויג <span class="tag" style="background:rgba(63,185,80,.12);color:var(--ok);border:1px solid rgba(63,185,80,.35)">v1.1</span></div>
+     </div>
+    </div>
+    <div class="row main">
+     <div class="mark" style="color:var(--ok)">🏷️</div>
+     <div class="body">
+      <div class="h">מה נכנס ל-v1.1 (‏27 קומיטים)</div>
+      <div class="d">
+        <b>אבטחה:</b> המפתח יצא מה-bundle — <span class="mono">isValidKey</span>, קריאת <span class="mono">VITE_ANTHROPIC_API_KEY</span> וכותרת <span class="mono">x-api-key</span> הוסרו; חי/מדומה = דגל מפורש <span class="mono">VITE_USE_MOCK</span>.<br>
+        <b>פריסה:</b> חסם הפריסה אותר ונפתר — Vercel חסמה build של קומיט שהמחבר שלו לא מזוהה כחשבון GitHub. עיקרון ברזל: הפרויקט מנוהל מ-<span class="mono">ranzak@gmail.com</span> בלבד.<br>
+        <b>קליני:</b> הכרעת נטלי (14.8) — המוגלה עולה בתוך הפרשנות; המבנה נשאר 7 שלבים.<br>
+        <b>UI:</b> משטח צ'אט סטנדרטי, הערות בודקים, אזהרה לפני מחיקת ראיון, מד עלות מתומחר נכון לפי המודל בפועל.<br>
+        <b>תיעוד:</b> CLAUDE.md, DEPLOY-STATUS ושלושת הדשבורדים סונכרנו למצב as-built.
+      </div>
      </div>
     </div>
     <div class="row keep">
@@ -113,8 +129,15 @@
       <div class="d"><span class="tag t-arch">master</span><span class="tag t-arch">gap-management</span><span class="tag t-arch">stage-4</span><span class="tag t-arch">stage-6</span><span class="tag t-arch">fix-stage-3</span> נמחקו — שמורים בתגיות גיבוי לשחזור.</div>
      </div>
     </div>
+    <div class="row arch">
+     <div class="mark" style="color:var(--stale)">🧹</div>
+     <div class="body">
+      <div class="h">שלושה ענפים מקומיים — מוזגו ל-main, ניתנים למחיקה</div>
+      <div class="d"><span class="tag t-arch">ui/tester-feedback</span> (מקור v1.1 — מוזג ב-fast-forward) · <span class="tag t-arch">chore/claude-project-scaffold</span> · <span class="tag t-arch">ui/standard-chat-shell</span> — כולם אבות-קדמונים של <span class="mono">main</span>; אין בהם עבודה ייחודית.</div>
+     </div>
+    </div>
    </div>
-   <p class="foot">מבנה נקי: ענף ראשי אחד (<span class="mono">main</span> · v1.0.0) + ענף ניסוי אחד.</p>
+   <p class="foot">מבנה נקי: ענף ראשי אחד (<span class="mono">main</span> · v1.1) + ענף ניסוי אחד שנדחה ומיועד לפרישה.</p>
   </div>
  </div>
 </body>
