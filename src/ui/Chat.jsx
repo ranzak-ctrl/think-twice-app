@@ -241,7 +241,15 @@ function Message({
   };
 
   return (
-    <div className={`msg ${isAssistant ? 'assistant' : 'user'}${grouped ? ' grouped' : ''}`}>
+    // The opening turn is framing, not a conversational reply: it introduces the
+    // process rather than answering anything. So it spans the full column and
+    // lines up with the composer beneath it, instead of sitting in a 78% bubble
+    // indented past an avatar. Every later turn keeps the normal bubble rhythm.
+    <div
+      className={`msg ${isAssistant ? 'assistant' : 'user'}${grouped ? ' grouped' : ''}${
+        index === 0 && isAssistant ? ' is-opening' : ''
+      }`}
+    >
       {isAssistant && (
         <div className={`avatar${grouped ? ' ghost' : ''}`} aria-hidden="true">
           <Mark size={16} />

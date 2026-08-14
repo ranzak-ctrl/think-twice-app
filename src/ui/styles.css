@@ -406,6 +406,19 @@ button {
   display: none;
 }
 
+/* The opening turn spans the column so its box lines up with the composer
+   below it — it frames the process rather than answering, so the bubble
+   rhythm (78%, indented past an avatar) does not apply. The avatar goes with
+   it: an interviewer mark on a preamble reads as a reply to something. */
+.msg.is-opening .avatar {
+  display: none;
+}
+
+.msg.is-opening .bubble-wrap {
+  max-width: 100%;
+  flex: 1;
+}
+
 .bubble-wrap {
   display: flex;
   flex-direction: column;
