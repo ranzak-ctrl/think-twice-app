@@ -3,7 +3,10 @@
 > 🏠 **מרכז העבודה של הפרויקט: [`docs/workspace.html`](docs/workspace.html)** — פתח תחילה למבט-על (הוראות · Context · Memory · Scheduled Tasks · Connectors · דשבורדים · מסמכים · צ'אטים). מהטרמינל: `open docs/workspace.html`
 
 ## מהות הפרויקט
-פרוטוטייפ של Think Twice (איפולמיינד): ראיון טיפולי חצי-מובנה בשבעה שלבים למבוגרים עם הפרעת קשב — מאירוע סוער ועד הכרעה חדה. המוצר הוא Artifact App (React) שמשותף לנטלי בקישור ורץ בחשבון Claude שלה.
+פרוטוטייפ של Think Twice (איפולמיינד): ראיון טיפולי חצי-מובנה בשבעה שלבים למבוגרים עם הפרעת קשב — מאירוע סוער ועד הכרעה חדה.
+
+**אופן ההגשה (השתנה ב-25.7.2026):** המוצר רץ כאפליקציית web (React/Vite על Vercel), ומשותף לבודקים בקישור + סיסמה משותפת. **הם לא צריכים חשבון Claude.** קריאות המודל עוברות דרך proxy serverless שמחזיק את המפתח בצד שרת.
+המסלול המקורי — Artifact App שרץ בחשבון Claude של נטלי — נזנח כי לבודקים אין חשבונות Claude. כל תשתית הפריסה (`api/`, שער הסיסמה, משתני הסביבה) נובעת מההחלטה הזו. פרטים ומצב עדכני: [`DEPLOY-STATUS.md`](DEPLOY-STATUS.md).
 
 מסמכי המקור המלאים נמצאים בתיקיית "Think Twice" ב-Google Drive של רן. עותקים מיוצאים חיים ב-/docs:
 - docs/presenting-document.md — המסמך המציג (הכלי במלואו)
@@ -17,8 +20,9 @@
 2. ה-Router לעולם לא מאציל ניווט למשתמש. נקודות החלטה ב-UI: אישורי סיכום + ההכרעה בשלב 7. ותו לא.
 3. פרומפטים הם תוכן, לא קוד — src/content/prompts/, עם מספור גרסה. שינויי ניסוח של נטלי לא נוגעים בקוד.
 4. ליבה ניידת — src/core ללא שום תלות ב-UI או בפלטפורמה (יעבור כמו-שהוא לשרת web עתידי).
+   ⚠️ **כרגע מופר, ביודעין.** `promptBuilder.js` (13 ייבואים) ו-`judge.js` מייבאים `.md?raw` — תחביר ייחודי ל-Vite שלא ירוץ ב-Node נקי. גם `session.js` מייבא ישירות את `adapters/model.js`, שקורא `import.meta.env`. לפני העברה לשרת: להזריק פרומפטים ואדפטר במקום לייבא אותם. `judge.js` כבר מדגים את התבנית הנכונה (`fetchImpl` מוזרק) — ללכת לפיה.
 5. עברית-RTL אזרח ראשון — בכל רכיב UI ובכל פרומפט.
-6. אפס שרת בפרוטוטייפ — שום נתון לא עוזב את הדפדפן; ייצוא ידני בלבד.
+6. **אין אחסון בצד שרת.** קיים proxy serverless חסר-state (`api/anthropic/v1/messages.js`) שרק מזריק את המפתח ומעביר את הבקשה הלאה — הוא לא כותב, לא שומר ולא מתעד תוכן משתמש. תוכן הראיון חי בזיכרון הדפדפן בלבד; ייצוא ידני בלבד. (הניסוח הקודם "אפס שרת" תיאר את מסלול ה-Artifact ואינו נכון יותר — ראה "אופן ההגשה" למעלה.)
 7. שכבת הבטיחות (src/safety) — אסור להסיר, לעקוף או להחליש. אזכור מצוקה חריפה ← עצירה בטוחה.
 
 ## מבנה
@@ -26,7 +30,8 @@
 - src/core — router.js (מכונת מצבים), state.js (StateDocument: coverage · `findings` ממצאים-לסלוט · `actorMap` קאסט-פתור · `gaps` עקביות · meta), promptBuilder.js, responseParser.js, session.js (לולאת התור + `generateStageOpener`)
 - דיווח המודל (evaluation): `evaluation` **לפני** `message` ("חלץ, אז שאל"); כולל `slot_findings` · `actor_map` (דלתא) · `gap_observations`
 - src/content — prompts/ (דמות גלובלית, 7 סוכנים, מעריך), forbidden.js (רשימה שחורה)
-- src/adapters — model.js (ממשק complete() יחיד; כיום Artifact AI, מחר API)
+- src/adapters — model.js (ממשק complete() יחיד; קורא ל-`/api/anthropic/v1/messages` **בלי מפתח** — ה-proxy מזריק אותו. חי/מדומה נקבע ע"י `VITE_USE_MOCK`), appAuth.js (סיסמת הגישה, ב-sessionStorage לכל טאב)
+- api/ — `anthropic/v1/messages.js` (ה-proxy: מזריק `ANTHROPIC_API_KEY`, בודק `APP_PASSWORD`), `ping.js` (בדיקת חיים)
 - src/safety — בדיקת קדם + פרוטוקול עצירה
 - tests/ — transitions/ (מטריצת מעברים), lint/ (בדיקות תור), judge/ (שופט-LLM), fixtures/ (תסריטי זהב ופרסונות)
 - sim/ — סימולציות מראיין-מול-פרסונה (headless)
@@ -86,6 +91,8 @@
 - אסור ל-LLM להחליט מעבר שלב
 - אסור להציג למשתמש החלטות ניווט או תפריטים
 - אסור לייצר המלצה למשתמש במה לבחור
-- אסור localStorage / sessionStorage (לא נתמך ב-Artifacts) — state בזיכרון + ייצוא/ייבוא
+- אסור לאחסן **תוכן ראיון** ב-localStorage / sessionStorage — state בזיכרון + ייצוא/ייבוא בלבד
+  (חריג יחיד ומכוון: `src/adapters/appAuth.js` שומר את **סיסמת הגישה** ב-sessionStorage לכל טאב. זה לא תוכן משתמש. האיסור המקורי נומק ב"לא נתמך ב-Artifacts" — נימוק שלא חל על מסלול ה-web. אם חוזרים אי-פעם ל-Artifact — הקובץ הזה נשבר ראשון.)
+- אסור להגדיר סוד כלשהו עם קידומת `VITE_` — כל משתנה `VITE_` נצרב ל-bundle ומוגש לכל דפדפן
 - אסור להסיר או להחליש את שכבת הבטיחות
 - אסור לאחסן תוכן משתמש מחוץ לדפדפן
