@@ -12,7 +12,16 @@
       "Bash(git branch:*)",
       "Bash(git describe:*)",
       "Bash(git show:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(npx vercel ls:*)",
+      "Bash(npx vercel inspect:*)",
+      "Bash(npx vercel logs:*)",
+      "Bash(npx vercel env ls:*)",
+      "Bash(npx vercel project ls:*)",
+      "Bash(npx vercel whoami)",
+      "Bash(npx vercel build:*)",
+      "Bash(curl -s -o /dev/null -w:*)",
+      "Bash(curl -sI:*)"
     ],
     "deny": [
       "Read(./.env)",
