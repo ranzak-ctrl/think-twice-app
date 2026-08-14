@@ -5,7 +5,7 @@ import { runTurn } from '../../src/core/session.js';
 // Integration: model gap_observations → parser → runTurn → state.gaps.byTarget.
 // Mirrors the mock harness in resistance-session.test.js (env stub forces the
 // mock model path; MOCK_RESPONSES is keyed by `stage:questionCount`).
-beforeEach(() => vi.stubEnv('VITE_ANTHROPIC_API_KEY', ''));
+beforeEach(() => vi.stubEnv('VITE_USE_MOCK', 'true'));
 afterEach(() => vi.unstubAllEnvs());
 
 async function runWithEval(evaluation, userText = 'תשובה') {

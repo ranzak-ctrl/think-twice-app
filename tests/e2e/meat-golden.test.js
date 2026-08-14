@@ -8,10 +8,10 @@ import { resetMockCounters } from '../../src/adapters/model.js';
 // Drives the real pipeline (session.runTurn) plus the summary-confirm gate, and
 // asserts the interview reaches a sharp close — the stage-4 exit criterion.
 describe('Meat golden script — end to end', () => {
-  // Force the mock path (a real VITE_ANTHROPIC_API_KEY in the env would send
-  // runTurn down the network path, which has no connectivity under test).
+  // Force the mock path — live is now the default, and the network path has no
+  // connectivity under test.
   beforeEach(() => {
-    vi.stubEnv('VITE_ANTHROPIC_API_KEY', '');
+    vi.stubEnv('VITE_USE_MOCK', 'true');
     resetMockCounters();
   });
   afterEach(() => vi.unstubAllEnvs());

@@ -90,7 +90,9 @@ describe('judgeTranscript (injectable fetch)', () => {
 // valid key AND RUN_JUDGE=1, so routine `npm test` and CI both skip it.
 // Acceptance run: `RUN_JUDGE=1 npm test` (PowerShell: `$env:RUN_JUDGE='1'`). ---
 
-const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+// Server-side name only — never VITE_-prefixed, so it is never bundled to the
+// browser. Run with: ANTHROPIC_API_KEY=sk-ant-... RUN_JUDGE=1 npm test
+const apiKey = process.env.ANTHROPIC_API_KEY;
 const hasKey = typeof apiKey === 'string' && apiKey.startsWith('sk-ant-') && apiKey.length > 30;
 const runJudge = process.env.RUN_JUDGE === '1';
 

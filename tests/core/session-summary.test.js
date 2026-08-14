@@ -6,7 +6,7 @@ import { buildSummaryMessages, SUMMARY_NUDGE } from '../../src/core/promptBuilde
 // The summary-confirmation flow: on a stage transition the Router asks for a
 // summary; a failed generation (rate limit) must NOT show a content-free
 // confirmation. (docs/test-plan.md §א.3; fix 5a68635.)
-beforeEach(() => vi.stubEnv('VITE_ANTHROPIC_API_KEY', ''));
+beforeEach(() => vi.stubEnv('VITE_USE_MOCK', 'true'));
 afterEach(async () => {
   vi.unstubAllEnvs();
   const m = await import('../../src/adapters/model.js');

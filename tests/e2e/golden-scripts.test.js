@@ -37,7 +37,7 @@ async function runScenario(name) {
 }
 
 describe('Golden scripts — end to end', () => {
-  beforeEach(() => vi.stubEnv('VITE_ANTHROPIC_API_KEY', ''));
+  beforeEach(() => vi.stubEnv('VITE_USE_MOCK', 'true'));
   afterEach(() => {
     vi.unstubAllEnvs();
     setMockScenario('meat');

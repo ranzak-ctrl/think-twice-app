@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { complete } from '../../src/adapters/model.js';
 
 // JSON-stability retry (dev-plan §148). These tests force the real (network) path
-// with a valid-looking key and a stubbed fetch, then verify the adapter retries a
+// with VITE_USE_MOCK=false and a stubbed fetch, then verify the adapter retries a
 // malformed response, sums usage, and fails gracefully when retries are exhausted.
 
 // Build a fetch stub that returns one scripted assistant `text` per call.
@@ -27,7 +27,7 @@ const ARGS = { stage: 1, systemPrompt: 'sys', messages: [{ role: 'user', content
 
 describe('adapter complete() — JSON retry', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_ANTHROPIC_API_KEY', 'sk-ant-' + 'a'.repeat(40));
+    vi.stubEnv('VITE_USE_MOCK', 'false');
   });
   afterEach(() => {
     vi.unstubAllEnvs();

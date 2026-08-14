@@ -6,7 +6,7 @@ import { signpostForStage } from '../../src/content/signposting.js';
 // Re-open: a stage-7 "real" merge sends production back to stage 6. The reply must be
 // an anchored Re-open opener (core-assumptions §2), not the raw stage-7 probe. Offline
 // the opener falls back to the static signpost for the re-opened stage.
-beforeEach(() => vi.stubEnv('VITE_ANTHROPIC_API_KEY', ''));
+beforeEach(() => vi.stubEnv('VITE_USE_MOCK', 'true'));
 afterEach(() => vi.unstubAllEnvs());
 
 async function runStage7Turn(evaluation) {

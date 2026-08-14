@@ -5,7 +5,7 @@ import { runTurn } from '../../src/core/session.js';
 // Integration: per-slot findings routing in runTurn — bare slot names attach to the
 // current stage; "stageN.slot" keys attach to that stage; unknown slots are ignored.
 // Findings are guide-mode observability only and never affect the Router.
-beforeEach(() => vi.stubEnv('VITE_ANTHROPIC_API_KEY', ''));
+beforeEach(() => vi.stubEnv('VITE_USE_MOCK', 'true'));
 afterEach(() => vi.unstubAllEnvs());
 
 async function runWithEval(evaluation) {

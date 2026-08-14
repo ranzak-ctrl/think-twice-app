@@ -6,7 +6,7 @@ import { signpostForStage } from '../../src/content/signposting.js';
 
 // The stage opener is model-generated and anchored in the user's story (real API).
 // Offline (mock / no key) it falls back to the static signpost — deterministic.
-beforeEach(() => vi.stubEnv('VITE_ANTHROPIC_API_KEY', ''));
+beforeEach(() => vi.stubEnv('VITE_USE_MOCK', 'true'));
 afterEach(() => vi.unstubAllEnvs());
 
 const atStage = (n) => {

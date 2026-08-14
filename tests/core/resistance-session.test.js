@@ -7,7 +7,7 @@ import { exportState, importState } from '../../src/core/state.js';
 // (model → parser → session → resolveResistance → state).
 // Uses vitest env-stub to force the mock path, then patches MOCK_RESPONSES.
 
-beforeEach(() => vi.stubEnv('VITE_ANTHROPIC_API_KEY', ''));
+beforeEach(() => vi.stubEnv('VITE_USE_MOCK', 'true'));
 afterEach(() => vi.unstubAllEnvs());
 
 // Helper: inject a custom mock response for a specific stage:turn.

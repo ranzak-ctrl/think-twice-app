@@ -5,7 +5,7 @@ import { runTurn } from '../../src/core/session.js';
 // Integration: the model reports a resolved actor map (מפת שחקנים); the code stores
 // it and DERIVES the stage-1 `actors` score from its clarity — a muddled cast can't
 // reach 2 (so the Router won't advance on it). No map reported → reported score stands.
-beforeEach(() => vi.stubEnv('VITE_ANTHROPIC_API_KEY', ''));
+beforeEach(() => vi.stubEnv('VITE_USE_MOCK', 'true'));
 afterEach(() => vi.unstubAllEnvs());
 
 async function runWithEval(evaluation) {

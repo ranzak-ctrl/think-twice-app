@@ -1,11 +1,11 @@
 // Model Adapter — single complete() interface.
-// Falls back to mock when VITE_ANTHROPIC_API_KEY is absent or placeholder.
+// Runs the scripted mock when VITE_USE_MOCK=true; otherwise calls the serverless
+// proxy at /api/anthropic/v1/messages, which injects ANTHROPIC_API_KEY server-side.
+// No API key is ever exposed to the browser — there is no VITE_-prefixed secret.
 // This is the ONLY file that touches the network.
 
 import { parseResponse } from '../core/responseParser.js';
 import { getAppPassword } from './appAuth.js';
-
-const isValidKey = (k) => k && k.startsWith('sk-ant-') && k.length > 30 && k !== 'sk-ant-...';
 
 // Scripted mock responses keyed by stage:turn — used in dev (no key) and Vitest.
 export const MOCK_RESPONSES = {
@@ -407,11 +407,10 @@ function mergeUsage(acc, u) {
 }
 
 export async function complete({ stage, systemPrompt, messages, mode }) {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   const model = import.meta.env.VITE_MODEL ?? 'claude-sonnet-5';
-  // Live mode: either a local dev key is present, OR VITE_LIVE=1 (deployed —
-  // the server-side proxy holds the key, the browser never sees it).
-  const live = isValidKey(apiKey) || import.meta.env.VITE_LIVE === '1';
+  // Mock mode is explicit: VITE_USE_MOCK=true (local dev + tests). Anything else
+  // runs live against the serverless proxy, which holds the key server-side.
+  const live = import.meta.env.VITE_USE_MOCK !== 'true';
 
   if (!live || !systemPrompt || !messages?.length) {
     return mockComplete({ stage, mode });
@@ -424,13 +423,12 @@ export async function complete({ stage, systemPrompt, messages, mode }) {
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     let res;
     try {
+      // The client sends NO key, in any environment — the serverless proxy
+      // injects ANTHROPIC_API_KEY. Only the shared app password travels here.
       const headers = {
         'Content-Type': 'application/json',
         'anthropic-version': '2023-06-01',
       };
-      // Local dev sends the key directly (the vite proxy forwards it). In
-      // production the client sends NO key — the serverless proxy injects it.
-      if (isValidKey(apiKey)) headers['x-api-key'] = apiKey;
       const appPw = getAppPassword();
       if (appPw) headers['x-app-password'] = appPw;
 

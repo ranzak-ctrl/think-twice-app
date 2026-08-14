@@ -5,7 +5,7 @@ import { runTurn } from '../../src/core/session.js';
 // Integration: slot routing in runTurn — bare names → current stage; "stageN.slot"
 // keys capture later-stage info, pre-seeded to level 1 only (Ran, 21.6). Mirrors the
 // mock harness in resistance-session.test.js.
-beforeEach(() => vi.stubEnv('VITE_ANTHROPIC_API_KEY', ''));
+beforeEach(() => vi.stubEnv('VITE_USE_MOCK', 'true'));
 afterEach(() => vi.unstubAllEnvs());
 
 async function runWithSlots(slots) {
