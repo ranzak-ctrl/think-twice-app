@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import ConfirmButtons from './ConfirmButtons.jsx';
 import DecisionBoard from './DecisionBoard.jsx';
+import IntroCard from './IntroCard.jsx';
 import { Mark, Send, ArrowDown, Note, Trash } from './icons.jsx';
 
 // Treat the reader as "at the bottom" within this many pixels — the standard
@@ -96,6 +97,9 @@ export default function Chat({
             aria-live="polite"
             aria-relevant="additions"
           >
+            {/* Sits above the opening turn and scrolls away with it — the
+                roadmap is preview, not something to keep referring back to. */}
+            <IntroCard />
             {history.map((msg, i) => (
               <Message
                 key={i}

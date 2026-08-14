@@ -8,8 +8,17 @@ import { createState, importState } from '../core/state.js';
 import { confirmAndAdvance, rejectConfirmation } from '../core/router.js';
 import { runTurn, generateStageOpener } from '../core/session.js';
 
+// Opening turn. Rewritten 15.8.2026 (Ran): the previous version described the
+// mechanics ("שלב-שלב", "התפקיד שלך") without saying what to bring or why it is
+// worth it. This one names the invitation — an event that stirred you — sketches
+// the arc in plain words, and lowers the cost of answering.
+//
+// Still turn-lint compliant: three sentences, then exactly one directed
+// question. The arc is described without stage numbers, which are jargon toward
+// the user; the fuller roadmap lives in the intro card, which is interface, not
+// a turn, and so is not bound by the lint.
 const OPENING_TEXT =
-  'אני אוביל אותך שלב-שלב. התפקיד שלך — לענות בכנות, שאלה אחת בכל פעם. ההחלטה בסוף — שלך לגמרי. אפשר לעצור מתי שרוצים.\n\nספר לי — מה קרה?';
+  'אם קרה משהו שהסעיר אותך והוא עדיין רץ לך בראש — כאן המקום לעבור עליו לאט. נתחיל ממה שקרה בפועל, נמשיך להבין למה זה תפס אותך ככה, ונגיע לתגובה שהכי נכונה לך. אני מוביל, שואל שאלה אחת בכל פעם, וההחלטה בסוף שלך.\n\nאז ספר לי — מה קרה?';
 
 // Messages carry a timestamp so the chat can show one; `at` is additive and
 // ignored by the core (formatHistory maps role/content only), so older exports
