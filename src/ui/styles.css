@@ -42,6 +42,7 @@
      that must line up with them — composer, confirm bar, hint — has to use
      this, not --column, or it sits 40px wider. */
   --column-content: calc(var(--column) - var(--column-pad) * 2);
+  --rail-w: 186px; /* stage rail: both its width and its outer gutter */
 
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue',
     'Arial Hebrew', 'Noto Sans Hebrew', Arial, sans-serif;
@@ -236,9 +237,14 @@ button {
 
 .rail {
   flex: none;
-  width: 186px;
+  width: var(--rail-w);
   padding: 26px 16px 26px 20px;
-  border-inline-start: 1px solid var(--border);
+  /* The divider stays where it was; the rail moved to its inner side. The
+     margin reserves the old rail track as empty gutter against the window
+     edge, so the line lands at the same x and the labels now sit between it
+     and the conversation. Both use --rail-w, so they cannot drift apart. */
+  margin-inline-end: var(--rail-w);
+  border-inline-end: 1px solid var(--border);
   overflow-y: auto;
   user-select: none;
   /* Centred against the conversation rather than hugging the header — the rail
@@ -313,6 +319,9 @@ button {
   .rail {
     width: 34px;
     padding: 22px 9px;
+    /* No room for a decorative gutter on a narrow screen — the rail goes back
+       against the edge, divider on its inner side as above. */
+    margin-inline-end: 0;
   }
   .rail-label {
     display: none;
@@ -453,6 +462,15 @@ button {
 }
 
 .msg.grouped .bubble {
+  border-start-start-radius: var(--radius-lg);
+  border-start-end-radius: var(--radius-lg);
+}
+
+/* The opening turn keeps all four corners even. The 6px notch above is a
+   speech-bubble tail pointing at the avatar — and the opener has no avatar,
+   because it frames the process rather than replying to anything. Uniform
+   corners also let it match the composer stacked beneath it. */
+.msg.is-opening .bubble {
   border-start-start-radius: var(--radius-lg);
   border-start-end-radius: var(--radius-lg);
 }
@@ -765,7 +783,13 @@ button {
   height: 34px;
   flex-shrink: 0;
   border: none;
-  border-radius: var(--radius-full);
+  /* Concentric with the composer that holds it: an inner corner should equal
+     the outer radius minus the padding between them, or the two curves run at
+     different centres and read as unrelated shapes. The composer is 18px with
+     6px padding, so 18 − 6 = 12px = --radius.
+     Note --radius-lg here would render as a circle, not a matching corner:
+     18px exceeds half of this 34px button, so the browser clamps it to 17px. */
+  border-radius: var(--radius);
   background: var(--ink);
   color: var(--on-ink);
   display: flex;
