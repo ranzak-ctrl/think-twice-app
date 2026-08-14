@@ -88,7 +88,7 @@ a.mem b{color:var(--accent2)}
 
   <div class="hero">
     <h1>🧠 Think Twice</h1>
-    <p class="sub">אב-טיפוס לראיון טיפולי חצי-מובנה בן 7 שלבים למבוגרים עם ADHD — מאירוע סוער ועד הכרעה חדה. React Artifact App, בלי שרת, Router דטרמיניסטי. שיתוף עם נטלי לוולידציה קלינית.</p>
+    <p class="sub">אב-טיפוס לראיון טיפולי חצי-מובנה בן 7 שלבים למבוגרים עם ADHD — מאירוע סוער ועד הכרעה חדה. אפליקציית web (React/Vite) על Vercel, עם proxy חסר-state שמחזיק את המפתח בצד שרת. Router דטרמיניסטי. הבודקים נכנסים בקישור + סיסמה, בלי חשבון Claude.</p>
     <div class="chips">
       <span class="chip b">ענף: ui/tester-feedback</span>
       <span class="chip g">v1.0.0 +20</span>
@@ -107,10 +107,12 @@ a.mem b{color:var(--accent2)}
         <div class="rule"><b>1.</b> המודל מציע — הקוד מכריע. ה-Router הדטרמיניסטי מחליט מעברי שלב, לא ה-LLM.</div>
         <div class="rule"><b>2.</b> ה-Router לא מאציל ניווט למשתמש (חוץ מאישורי סיכום + הכרעת שלב 7).</div>
         <div class="rule"><b>3.</b> פרומפטים הם תוכן, לא קוד — <code style="font-family:Consolas,monospace;font-size:10px">src/content/prompts/</code>, ממוספרי גרסה.</div>
-        <div class="rule"><b>4.</b> ליבה ניידת — <code style="font-family:Consolas,monospace;font-size:10px">src/core</code> בלי תלות ב-UI/פלטפורמה.</div>
+        <div class="rule"><b>4.</b> ליבה ניידת — <code style="font-family:Consolas,monospace;font-size:10px">src/core</code> בלי תלות ב-UI/פלטפורמה. <span style="color:var(--esc)">⚠️ מופר ביודעין: ייבואי <code style="font-family:Consolas,monospace;font-size:10px">.md?raw</code> הם תחביר Vite.</span></div>
         <div class="rule"><b>5.</b> עברית-RTL אזרח ראשון.</div>
-        <div class="rule"><b>6.</b> אפס שרת בפרוטוטייפ — שום נתון לא עוזב את הדפדפן.</div>
+        <div class="rule"><b>6.</b> אין אחסון בצד שרת — ה-proxy הוא pass-through חסר-state. תוכן הראיון בזיכרון הדפדפן, ייצוא ידני. <span style="color:var(--mut)">(היה "אפס שרת" — תיאר את מסלול ה-Artifact.)</span></div>
         <div class="rule"><b>7.</b> שכבת הבטיחות (<code style="font-family:Consolas,monospace;font-size:10px">src/safety</code>) — אסור להסיר/להחליש.</div>
+        <div class="rule"><b>8.</b> Persistence מקומי הותר (14.8) אך <b>טרם מומש</b> — <code style="font-family:Consolas,monospace;font-size:10px">gaps</code> לא נשמר, שחזור מוצע ולא נכפה, וה-UX ממתין לאישור נטלי.</div>
+        <div class="rule" style="border-color:var(--esc)"><b>⛔</b> אסור סוד עם קידומת <code style="font-family:Consolas,monospace;font-size:10px">VITE_</code> — נצרב ל-bundle ומוגש לכל דפדפן.</div>
         <div class="more">
           📄 <a href="../CLAUDE.md">CLAUDE.md המלא →</a><br>
           📜 <a href="../src/content/prompts/super-prompt-v1.md">instruction — super-prompt v1 →</a><br>
@@ -208,7 +210,7 @@ a.mem b{color:var(--accent2)}
         <div class="dash">
           <a class="dbtn" href="architecture-dashboard.html"><span class="ic">🏗️</span><span class="nm">דשבורד ארכיטקטורה</span><span class="ds">3 טאבים: ארכיטקטורה · זרימת-תור · צירי Router</span></a>
           <a class="dbtn" href="task-board.html"><span class="ic">🗂️</span><span class="nm">לוח המשימות</span><span class="ds">הושלם · הבא · חוסמים · מוקפא</span></a>
-          <a class="dbtn" href="branch-diagram.html"><span class="ic">🌳</span><span class="nm">מבנה הענפים</span><span class="ds">main · v1.0.0 · ניסוי 8-stage</span></a>
+          <a class="dbtn" href="branch-diagram.html"><span class="ic">🌳</span><span class="nm">מבנה הענפים</span><span class="ds">main · v1.0.0 · 8-stage נדחה 14.8</span></a>
         </div>
       </div>
 

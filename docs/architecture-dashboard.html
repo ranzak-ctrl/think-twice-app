@@ -175,9 +175,9 @@
       <div class="stage"><b>1</b>עובדות</div><div class="stage"><b>2</b>פרשנות</div><div class="stage"><b>3</b>רגש</div><div class="stage"><b>4</b>תגובה</div><div class="stage"><b>5</b>פרשנות חלופית</div><div class="stage"><b>6</b>חלופות תגובה</div><div class="stage"><b>7</b>לוח הכרעה</div>
     </div>
     <div class="arcnote">פתח-השאלה נע: פתוח ("ספר לי מה קרה") ◀━━━━━▶ סגור ("במה אתה בוחר?")</div>
-    <div class="layer-label" style="margin-top:16px"><span class="num">2</span> הסוכנים שמנהלים (6) — 1:1 לשלבים 1–5, ו-Act על 6+7</div>
+    <div class="layer-label" style="margin-top:16px"><span class="num">2</span> הסוכנים שמנהלים (7) — 1:1 לשלבים <span style="color:var(--mut);font-weight:400;font-size:11px">· תוקן 14.8: Act פוצל ל-Alternatives + Decision, לפי 7 קבצי הסוכן בקוד</span></div>
     <div class="agents">
-      <div class="agent">Intake</div><div class="agent">Interpretation</div><div class="agent">Feel</div><div class="agent">React</div><div class="agent">Transform</div><div class="agent act">Act<br><span style="color:var(--mut);font-weight:400;font-size:11px">Divergence + Convergence</span></div>
+      <div class="agent">Intake</div><div class="agent">Interpretation</div><div class="agent">Feel</div><div class="agent">React</div><div class="agent">Transform</div><div class="agent">Alternatives<br><span style="color:var(--mut);font-weight:400;font-size:11px">divergence</span></div><div class="agent">Decision<br><span style="color:var(--mut);font-weight:400;font-size:11px">convergence</span></div>
     </div>
     <div class="slotcap">▾ ה-Slots של כל סוכן (targetKey = stage{N}.{slot})</div>
     <div class="slotrow">
@@ -186,9 +186,10 @@
       <div class="slotcell"><span class="slc">emotion</span><span class="slc">intensity</span><span class="slc">past_echo</span></div>
       <div class="slotcell"><span class="slc">auto_reaction</span><span class="slc">planned_reaction</span></div>
       <div class="slotcell"><span class="slc">perspective</span><span class="slc">intention</span><span class="slc">alt_formulation</span><span class="slc">re_emotion</span></div>
-      <div class="slotcell act"><div class="sgrp"><span class="sgl">6 · divergence</span><span class="slc">alternatives</span><span class="slc">zero_action</span><span class="slc">alt_from_transform</span></div><div class="sgrp"><span class="sgl">7 · convergence</span><span class="slc">goal</span><span class="slc">board_presented</span><span class="slc">sharp_decision</span><span class="slc">package_test</span></div></div>
+      <div class="slotcell"><span class="slc">alternatives</span><span class="slc">zero_action</span><span class="slc">alt_from_transform</span></div>
+      <div class="slotcell"><span class="slc">goal</span><span class="slc">board_presented</span><span class="slc">sharp_decision</span><span class="slc">package_test</span></div>
     </div>
-    <div class="arrows"><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span></div>
+    <div class="arrows"><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span></div>
     <div class="state">
       <h3><span class="num">3</span> STATE — Shared Context <span style="color:var(--mut);font-weight:400;font-size:12px">(JSON נסתר)</span></h3>
       <div class="panels">
@@ -243,6 +244,24 @@
       <div class="fut-note future"><span class="fbadge">⬜ טרם תוכנן · לא פעיל</span><b style="color:#aab2c0">גלאי עייפות</b> — קלט עתידי ל-Router; יחליף את מגן-העומס (placeholder 20/15) במנגנון ששוקלל מורכבות-סיפור + שיתוף-פעולה.</div>
     </div>
     <div class="status">סטטוס: מנוע הראיון + <b>מפת-שחקנים (שער)</b> + <b>ממצאים</b> + <b>פתיחי-שלב מעוגנים</b> (קדימה + Re-open) + סדר eval-first <b>✅ ממומש ונבדק חי</b> · ניהול פערים Build 1 <b>✅</b> (escalation/reprobe = Build 2 <b style="color:var(--warn)">🟡</b>) · גלאי עייפות <b style="color:#8a93a3">⬜ טרם תוכנן</b>.</div>
+
+    <div class="layer-label" style="margin-top:22px"><span class="num">5</span> ההגשה — איך זה מגיע לבודק <span style="color:var(--mut);font-weight:400;font-size:11px">· נוסף 14.8.2026</span></div>
+    <div class="router" style="border-color:#35406a">
+      <h3><span class="num">5</span> DELIVERY &amp; SECRETS <span style="color:var(--mut);font-weight:400;font-size:12px">(web app על Vercel — לא Artifact)</span></h3>
+      <div class="gaplist" style="line-height:2">
+        <code>דפדפן</code> ──<b>בלי מפתח</b>──▶ <code>/api/anthropic/v1/messages</code> ──<b>+ x-api-key</b>──▶ <code>api.anthropic.com</code>
+      </div>
+      <ul>
+        <li><b>הבודקים לא צריכים חשבון Claude</b> — קישור + סיסמה משותפת. זו הסיבה שמסלול ה-Artifact נזנח (25.7).</li>
+        <li><b>הדפדפן לא מחזיק מפתח, באף סביבה <span class="new">✅ 14.8</span>.</b> הוא שולח רק <code>x-app-password</code>; ה-proxy מזריק את <code>ANTHROPIC_API_KEY</code> בצד שרת.</li>
+        <li><b>אסור סוד עם קידומת <code>VITE_</code></b> — כל משתנה <code>VITE_</code> נצרב ל-bundle ומוגש לכל דפדפן.</li>
+        <li>חי/מדומה = דגל מפורש <code>VITE_USE_MOCK === 'true'</code>. <b>חי הוא ברירת המחדל</b> — תקלת שרת נראית כתקלה, לא כשיחה תקינה.</li>
+        <li><b>אין אחסון בצד שרת</b> — ה-proxy הוא pass-through חסר-state. תוכן הראיון חי בזיכרון הדפדפן; ייצוא ידני בלבד.</li>
+      </ul>
+      <div class="fut-note future"><span class="fbadge">🟡 הותר, טרם מומש</span><b style="color:#aab2c0">Persistence מקומי</b> — עיקרון 8 (14.8) מתיר שחזור סשן. <code>gaps</code> לא נשמר (מודיעין פנימי). ה-UX טרם אושר קלינית — אין שחזור אוטומטי עד אישור נטלי.</div>
+      <div class="fut-note future"><span class="fbadge">⬜ חוב ידוע</span><b style="color:#aab2c0">הליבה אינה ניידת</b> — <code>promptBuilder.js</code> (13) ו-<code>judge.js</code> מייבאים <code>.md?raw</code>, תחביר Vite שלא ירוץ ב-Node. עיקרון 4 מופר ביודעין. התבנית הנכונה: הזרקה, כמו <code>fetchImpl</code> ב-<code>judge.js</code>.</div>
+    </div>
+    <div class="status" style="border-color:var(--esc)">⚠️ <b>פער קליני פתוח:</b> הכרעת נטלי (14.8) קובעת ש-<code>adhd_pattern</code> נאמר <b>ע"י המראיין</b> כהשערה מנורמלת, ו-<code>wound</code> מגיע <b>מהמשתמש</b> בלי שנחשוף אותו. הפרומפט של שלב 2 עדיין מציב את שניהם תחת "מה לחקור", ו-<code>forbidden.js</code> לא נושא אף אחד מהכללים. <b>מתועד אך לא נאכף.</b></div>
   </div></div></div>
 
   <div class="view" id="view-flow"><div id="ttflow">
