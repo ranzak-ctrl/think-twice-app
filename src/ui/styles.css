@@ -315,7 +315,7 @@ button {
 }
 
 .rail-step.is-current {
-  color: var(--text);
+  color: var(--accent);
   font-weight: 700;
 }
 .rail-step.is-current .rail-dot {
