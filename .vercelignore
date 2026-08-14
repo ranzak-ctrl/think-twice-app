@@ -1,0 +1,17 @@
+# Never upload local env files to a Vercel build.
+#
+# This is not only about secrets. A local .env carrying VITE_USE_MOCK=true
+# gets read by Vite during the Vercel build, folds `live` to false, and the
+# minifier then dead-code-eliminates the entire network branch — producing a
+# production bundle that physically cannot call the API and silently serves
+# the scripted mock instead. That shipped once (14.8.2026).
+#
+# Production configuration belongs in the Vercel project environment, never
+# in an uploaded file.
+.env
+.env.*
+!.env.example
+
+# Local build output — Vercel builds server-side.
+dist
+node_modules
