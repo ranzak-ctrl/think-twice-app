@@ -43,6 +43,7 @@
      this, not --column, or it sits 40px wider. */
   --column-content: calc(var(--column) - var(--column-pad) * 2);
   --rail-w: 186px; /* stage rail: both its width and its outer gutter */
+  --send-size: 34px; /* send button; the composer row matches it exactly */
 
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue',
     'Arial Hebrew', 'Noto Sans Hebrew', Arial, sans-serif;
@@ -764,7 +765,12 @@ button {
   font: inherit;
   font-size: 15px;
   line-height: 1.55;
-  padding: 7px 10px;
+  /* Sized so a single row is exactly --send-size tall. The composer uses
+     align-items:flex-end, so any extra height here would push the button down
+     and open a bigger gap above it than beside or below it. Matching the two
+     puts all three at the container's 6px padding. */
+  padding: 5px 10px;
+  min-height: var(--send-size);
   max-height: 168px; /* ~6 rows, then it scrolls */
   overflow-y: auto;
   direction: rtl;
@@ -779,8 +785,8 @@ button {
 }
 
 .send {
-  width: 34px;
-  height: 34px;
+  width: var(--send-size);
+  height: var(--send-size);
   flex-shrink: 0;
   border: none;
   /* Concentric with the composer that holds it: an inner corner should equal
