@@ -22,16 +22,19 @@
 
   --brand: #2563eb;
 
-  /* Amber accent. Three steps, because one value cannot serve all three uses:
-     --amber fills the send button and the current-stage dot; --amber-ink is
-     darker so 14px bold text clears WCAG AA on white (5.9:1, where --amber
-     manages only 3.9:1); --amber-line is the same hue at low alpha, so
+  /* Honey accent. Three steps, because one value cannot serve all three uses:
+     --honey fills the send button and the current-stage dot; --honey-ink is
+     darker so 14px bold text clears WCAG AA on white (~6.5:1, where --honey
+     alone manages only ~3:1); --honey-line is the same hue at low alpha, so
      container borders read as warm without turning into a second accent.
+     The fill is deepened slightly from a literal honey so the white arrow on
+     the send button clears the 3:1 non-text minimum — a lighter, prettier
+     gold left the icon barely visible.
      brief.md asks for a quiet screen — the accent is allowed to be warm, the
      borders are not allowed to shout. */
-  --amber: #d97706;
-  --amber-ink: #b45309;
-  --amber-line: rgba(217, 119, 6, 0.38);
+  --honey: #bd8a24;
+  --honey-ink: #8a6110;
+  --honey-line: rgba(189, 138, 36, 0.45);
   --ok: #15803d;
   --warn: #b45309;
   --danger: #b91c1c;
@@ -315,14 +318,14 @@ button {
 }
 
 .rail-step.is-current {
-  color: var(--amber-ink);
+  color: var(--honey-ink);
   font-weight: 700;
 }
 .rail-step.is-current .rail-dot {
   width: 13px;
   height: 13px;
-  background: var(--amber);
-  box-shadow: inset 0 0 0 1.5px var(--amber), 0 0 0 3px rgba(217, 119, 6, 0.16);
+  background: var(--honey);
+  box-shadow: inset 0 0 0 1.5px var(--honey), 0 0 0 3px rgba(189, 138, 36, 0.18);
 }
 
 /* Narrow screens: keep the orientation, drop the labels rather than the rail —
@@ -462,7 +465,7 @@ button {
 
 .msg.assistant .bubble {
   background: var(--surface);
-  border: 1px solid var(--amber-line);
+  border: 1px solid var(--honey-line);
   box-shadow: var(--shadow-sm);
   border-start-start-radius: 6px;
 }
@@ -750,7 +753,7 @@ button {
   align-items: flex-end;
   gap: 8px;
   padding: 6px 6px 6px 6px;
-  border: 1px solid var(--amber-line);
+  border: 1px solid var(--honey-line);
   border-radius: var(--radius-lg);
   background: var(--surface);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -808,7 +811,7 @@ button {
      Note --radius-lg here would render as a circle, not a matching corner:
      18px exceeds half of this 34px button, so the browser clamps it to 17px. */
   border-radius: var(--radius);
-  background: var(--amber);
+  background: var(--honey);
   color: var(--on-ink);
   display: flex;
   align-items: center;
@@ -818,7 +821,7 @@ button {
 }
 
 .send:hover:not(:disabled) {
-  background: var(--amber-ink);
+  background: var(--honey-ink);
 }
 
 .send:disabled {
