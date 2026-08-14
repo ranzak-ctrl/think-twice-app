@@ -57,7 +57,15 @@ export function createState() {
       awaitingConfirmation: false,
       safetyFlag: false,
       sessionComplete: false,
-      usage: { inputTokens: 0, outputTokens: 0, calls: 0 }, // real-API token tally
+      // Real-API token tally. `inputTokens` is the UNCACHED remainder once prompt
+      // caching is on; cache buckets bill at different rates and are kept apart.
+      usage: {
+        inputTokens: 0,
+        outputTokens: 0,
+        cacheWriteTokens: 0,
+        cacheReadTokens: 0,
+        calls: 0,
+      },
       kpi: {
         emotionIntensityStage3: null,
         emotionIntensityStage5: null,

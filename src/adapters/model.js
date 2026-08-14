@@ -397,12 +397,30 @@ const REPAIR_NUDGE =
   'הפלט הקודם לא היה JSON תקין. החזר אך ורק אובייקט JSON יחיד בפורמט ' +
   '{"message": "...", "evaluation": {...}} — בלי טקסט נוסף ובלי code fences.';
 
+// Carries all four token buckets, not just input/output. With prompt caching on,
+// `input_tokens` is only the UNCACHED remainder — the full prompt is
+// input + cache_creation + cache_read. Dropping the cache fields would make the
+// meter under-report cost and, worse, hide the one signal that tells you caching
+// is working at all: cache_read staying at 0 means something is invalidating the
+// prefix. These are absent from the response until caching is enabled, so they
+// default to 0 and change nothing today.
 function mergeUsage(acc, u) {
   if (!u) return acc;
-  if (!acc) return { input_tokens: u.input_tokens ?? 0, output_tokens: u.output_tokens ?? 0 };
+  const pick = (o) => ({
+    input_tokens: o.input_tokens ?? 0,
+    output_tokens: o.output_tokens ?? 0,
+    cache_creation_input_tokens: o.cache_creation_input_tokens ?? 0,
+    cache_read_input_tokens: o.cache_read_input_tokens ?? 0,
+  });
+  if (!acc) return pick(u);
+  const a = pick(acc);
+  const b = pick(u);
   return {
-    input_tokens: (acc.input_tokens ?? 0) + (u.input_tokens ?? 0),
-    output_tokens: (acc.output_tokens ?? 0) + (u.output_tokens ?? 0),
+    input_tokens: a.input_tokens + b.input_tokens,
+    output_tokens: a.output_tokens + b.output_tokens,
+    cache_creation_input_tokens:
+      a.cache_creation_input_tokens + b.cache_creation_input_tokens,
+    cache_read_input_tokens: a.cache_read_input_tokens + b.cache_read_input_tokens,
   };
 }
 

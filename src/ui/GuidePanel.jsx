@@ -64,17 +64,68 @@ function gapsSummary(byTarget) {
   return `${recs.length} פערים · ${count('status')} · ${count('dimension')}`;
 }
 
-// Sonnet 4.6 pricing (USD per 1M tokens); the ILS rate is approximate.
-const USD_PER_M_INPUT = 3;
-const USD_PER_M_OUTPUT = 15;
-const ILS_PER_USD = 3.7;
+/* ------------------------------------------------------------------ cost -- */
+/* Rates are USD per 1M tokens, keyed by the model the adapter actually calls.
+   Previously this was hardcoded to Sonnet 4.6's $3/$15 while the app sent
+   claude-sonnet-5 — the meter over-reported by 50%, and would have gone
+   silently correct on 1.9.2026 when the intro period ends. Keep the table
+   keyed by model id so the two cannot drift again. */
+
+const ILS_PER_USD = 3.7; // approximate
+
+// Sonnet 5 launched on introductory pricing. After this date it moves to the
+// standard rate; the meter switches on its own rather than quietly going stale.
+const SONNET_5_INTRO_ENDS = Date.UTC(2026, 7, 31, 23, 59, 59); // 31.8.2026
+
+const RATES = {
+  'claude-sonnet-5': () =>
+    Date.now() <= SONNET_5_INTRO_ENDS ? { in: 2, out: 10 } : { in: 3, out: 15 },
+  'claude-sonnet-4-6': () => ({ in: 3, out: 15 }),
+  'claude-opus-4-8': () => ({ in: 5, out: 25 }),
+  'claude-haiku-4-5': () => ({ in: 1, out: 5 }),
+};
+
+const MODEL_ID = import.meta.env.VITE_MODEL ?? 'claude-sonnet-5';
+
+function rates() {
+  return (RATES[MODEL_ID] ?? RATES['claude-sonnet-5'])();
+}
+
+/* Cache multipliers, per Anthropic pricing: a write costs 1.25x base input
+   (2x on the 1h TTL), a read costs 0.1x. Uncached input and output are 1x. */
+const CACHE_WRITE_MULTIPLIER = 1.25;
+const CACHE_READ_MULTIPLIER = 0.1;
+
+function sessionCostUsd(usage) {
+  const { in: rIn, out: rOut } = rates();
+  const m = 1e6;
+  return (
+    (usage.inputTokens / m) * rIn +
+    ((usage.cacheWriteTokens ?? 0) / m) * rIn * CACHE_WRITE_MULTIPLIER +
+    ((usage.cacheReadTokens ?? 0) / m) * rIn * CACHE_READ_MULTIPLIER +
+    (usage.outputTokens / m) * rOut
+  );
+}
 
 function formatCost(usage) {
   if (!usage || !usage.calls) return '—';
-  const usd =
-    (usage.inputTokens / 1e6) * USD_PER_M_INPUT +
-    (usage.outputTokens / 1e6) * USD_PER_M_OUTPUT;
+  const usd = sessionCostUsd(usage);
   return `$${usd.toFixed(4)} (≈ ${(usd * ILS_PER_USD).toFixed(2)} ₪)`;
+}
+
+// What the same tokens would have cost with no caching — every cached token
+// billed at full input rate. Shown only once caching is actually in play.
+function formatCacheSaving(usage) {
+  const cached = (usage?.cacheWriteTokens ?? 0) + (usage?.cacheReadTokens ?? 0);
+  if (!cached) return null;
+  const { in: rIn } = rates();
+  const uncachedUsd =
+    (usage.inputTokens / 1e6) * rIn +
+    (cached / 1e6) * rIn +
+    (usage.outputTokens / 1e6) * rates().out;
+  const saved = uncachedUsd - sessionCostUsd(usage);
+  if (saved <= 0) return null;
+  return `$${saved.toFixed(4)} (${Math.round((saved / uncachedUsd) * 100)}%)`;
 }
 
 export default function GuidePanel({ state, width = 320, notes = [], onClose }) {
@@ -194,12 +245,28 @@ export default function GuidePanel({ state, width = 320, notes = [], onClose }) 
         })}
       </Section>
 
-      {/* Token / cost meter — real-API usage this session (display only) */}
-      <Section title="עלות (Sonnet 4.6)">
+      {/* Token / cost meter — real-API usage this session (display only).
+          Title carries the live model id so it cannot drift from the adapter. */}
+      <Section title={`עלות (${MODEL_ID})`}>
         <Row label="קריאות API" value={meta.usage?.calls ?? 0} />
         <Row label="input tokens" value={(meta.usage?.inputTokens ?? 0).toLocaleString()} />
         <Row label="output tokens" value={(meta.usage?.outputTokens ?? 0).toLocaleString()} />
+        {(meta.usage?.cacheWriteTokens ?? 0) > 0 && (
+          <Row
+            label="cache write"
+            value={(meta.usage.cacheWriteTokens).toLocaleString()}
+          />
+        )}
+        {(meta.usage?.cacheReadTokens ?? 0) > 0 && (
+          <Row
+            label="cache read"
+            value={(meta.usage.cacheReadTokens).toLocaleString()}
+          />
+        )}
         <Row label="עלות מצטברת" value={formatCost(meta.usage)} />
+        {formatCacheSaving(meta.usage) && (
+          <Row label="נחסך במטמון" value={formatCacheSaving(meta.usage)} />
+        )}
       </Section>
 
       {/* Coverage scorecard */}

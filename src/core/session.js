@@ -28,7 +28,13 @@ import { preCheck } from '../safety/index.js';
 
 const PARSE_FALLBACK = 'שגיאה בעיבוד התשובה. נסה שוב.';
 
-const EMPTY_USAGE = { inputTokens: 0, outputTokens: 0, calls: 0 };
+const EMPTY_USAGE = {
+  inputTokens: 0,
+  outputTokens: 0,
+  cacheWriteTokens: 0,
+  cacheReadTokens: 0,
+  calls: 0,
+};
 
 // Coverage level as a number for progress comparison ('U' is a terminal value).
 function slotLevel(v) {
@@ -37,11 +43,17 @@ function slotLevel(v) {
 }
 
 // Accumulate a model call's token usage (real API only; the mock returns none).
+// `inputTokens` is the uncached remainder once prompt caching is on; the cache
+// buckets are billed at different multipliers, so they are tallied separately
+// rather than folded into the input total.
 function addUsage(acc, u) {
   if (!u) return acc;
   return {
     inputTokens: acc.inputTokens + (u.input_tokens ?? 0),
     outputTokens: acc.outputTokens + (u.output_tokens ?? 0),
+    cacheWriteTokens:
+      (acc.cacheWriteTokens ?? 0) + (u.cache_creation_input_tokens ?? 0),
+    cacheReadTokens: (acc.cacheReadTokens ?? 0) + (u.cache_read_input_tokens ?? 0),
     calls: acc.calls + 1,
   };
 }

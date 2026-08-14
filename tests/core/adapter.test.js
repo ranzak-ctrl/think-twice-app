@@ -78,8 +78,53 @@ describe('adapter complete() — JSON retry', () => {
     expect(result.ok).toBe(true);
     expect(result.message).toBe('שלום');
     expect(fetchStub).toHaveBeenCalledTimes(2);
-    // Usage summed over both calls (10+10 in, 5+5 out).
-    expect(result.usage).toEqual({ input_tokens: 20, output_tokens: 10 });
+    // Usage summed over both calls (10+10 in, 5+5 out). The cache buckets are
+    // absent from the stubbed response and must therefore tally as 0, not
+    // undefined — the meter multiplies them by a rate.
+    expect(result.usage).toEqual({
+      input_tokens: 20,
+      output_tokens: 10,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 0,
+    });
+  });
+
+  // Prompt caching reports two extra token buckets, billed at different rates
+  // (write 1.25x, read 0.1x). They must survive the merge: `input_tokens` is
+  // only the UNCACHED remainder, so dropping them under-reports cost and hides
+  // whether caching is working at all.
+  it('sums the cache token buckets alongside input/output', async () => {
+    const withCache = (rawTexts) => {
+      let i = 0;
+      return vi.fn(async () => {
+        const text = rawTexts[Math.min(i, rawTexts.length - 1)];
+        i++;
+        return {
+          ok: true,
+          json: async () => ({
+            content: [{ type: 'text', text }],
+            usage: {
+              input_tokens: 10,
+              output_tokens: 5,
+              cache_creation_input_tokens: 800,
+              cache_read_input_tokens: 7000,
+            },
+          }),
+          text: async () => '',
+        };
+      });
+    };
+    vi.stubGlobal('fetch', withCache(['not json', VALID]));
+
+    const result = await complete(ARGS);
+
+    expect(result.ok).toBe(true);
+    expect(result.usage).toEqual({
+      input_tokens: 20,
+      output_tokens: 10,
+      cache_creation_input_tokens: 1600,
+      cache_read_input_tokens: 14000,
+    });
   });
 
   it('feeds a repair nudge back into the messages on retry', async () => {
@@ -105,7 +150,12 @@ describe('adapter complete() — JSON retry', () => {
     expect(result.message).toBeTruthy(); // user still sees a (fallback) reply
     expect(result.evaluation).toBeNull();
     // Usage from all three failed attempts is still reported.
-    expect(result.usage).toEqual({ input_tokens: 30, output_tokens: 15 });
+    expect(result.usage).toEqual({
+      input_tokens: 30,
+      output_tokens: 15,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 0,
+    });
   });
 
   it('does not retry on an HTTP error (fail fast)', async () => {
