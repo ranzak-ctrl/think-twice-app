@@ -285,6 +285,11 @@ function Message({
 
         {canAnnotate && editing && (
           <div className="note-edit">
+            {/* Names the panel as the tester's, so an open editor is never read
+                as the interview addressing the person. */}
+            <div className="note-head">
+              <span>הערת בודק</span>
+            </div>
             <textarea
               ref={draftRef}
               value={draft}

@@ -46,6 +46,27 @@ export default defineConfig(({ mode }) => {
                   '            Add it to .env (no VITE_ prefix) and restart.\n'
               );
             }
+            // Vite's proxy forwards the browser's request headers verbatim,
+            // Origin and Referer included. Anthropic reads those as a direct
+            // browser call and rejects it:
+            //   "CORS requests must set 'anthropic-dangerous-direct-browser-access'"
+            //
+            // Setting that header would be the wrong fix. It exists to permit
+            // calling the API straight from a browser holding a key — the exact
+            // arrangement removed in 96ec371. This request is not a browser
+            // call: it originates in the Vite dev server, in Node, and the key
+            // is attached here. Stripping the two headers makes the request
+            // look like what it actually is.
+            //
+            // The deployed function (api/anthropic/v1/messages.js) never had
+            // this problem: it builds a fresh fetch with an explicit header
+            // object, so nothing from the browser is carried over. This keeps
+            // dev matching production rather than diverging from it.
+            proxy.on('proxyReq', (proxyReq) => {
+              proxyReq.removeHeader('origin');
+              proxyReq.removeHeader('referer');
+            });
+
             proxy.on('error', (err) => {
               console.error('[dev-proxy] upstream error:', err.message);
             });

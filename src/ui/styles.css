@@ -22,6 +22,17 @@
 
   --brand: #2563eb;
 
+  /* The guide layer — a third voice, and the reason it needs its own colour.
+     The interview has exactly two speakers: the interviewer (white card, accent
+     outline) and the person (dark fill, light text). Tester instrumentation is
+     neither, and must never be mistaken for either, so it gets a channel of its
+     own: blue, tinted, and dashed. Dashed is the load-bearing part — a broken
+     edge reads as "annotation, not record" before any colour is processed, and
+     it survives greyscale and colour-blindness where hue alone would not. */
+  --guide: #2563eb;
+  --guide-tint: #f2f6ff;
+  --guide-line: #bfd0f7;
+
   /* Accent. Named by role, not by hue, so changing the colour is one edit here
      rather than a rename across the sheet.
      #ffa500 is bright: ~2.0:1 on white and ~2.1:1 under white. That is fine
@@ -216,8 +227,8 @@ button {
 }
 
 .btn.is-on {
-  background: var(--brand);
-  border-color: var(--brand);
+  background: var(--guide);
+  border-color: var(--guide);
   color: #fff;
 }
 
@@ -554,7 +565,7 @@ button {
 }
 
 .note-btn.on {
-  color: var(--brand);
+  color: var(--guide);
 }
 
 .note,
@@ -563,11 +574,23 @@ button {
   min-width: min(300px, 100%);
 }
 
-.note {
-  border: 1px solid var(--border);
-  border-inline-start: 3px solid var(--brand);
+.note-edit {
+  border: 1px dashed var(--guide-line);
+  border-inline-start: 3px solid var(--guide);
   border-radius: var(--radius-sm);
-  background: var(--surface-sunken);
+  background: var(--guide-tint);
+  padding: 8px 10px;
+}
+
+.note-edit .note-head {
+  color: var(--guide);
+}
+
+.note {
+  border: 1px dashed var(--guide-line);
+  border-inline-start: 3px solid var(--guide);
+  border-radius: var(--radius-sm);
+  background: var(--guide-tint);
   padding: 8px 10px;
   font-size: 12.5px;
   line-height: 1.55;
@@ -622,16 +645,16 @@ button {
 }
 
 .note-edit textarea:focus {
-  border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  border-color: var(--guide);
 }
 
-/* The replacement question is a different kind of input from the note above
-   it: the note records an opinion, this one changes the interview. The accent
-   border marks it as consequential without adding a second colour. */
+/* The replacement question is a different kind of input from the note above it:
+   the note records an opinion, this one changes the interview. It is marked
+   inside the guide layer's own palette — an accent border here would have
+   borrowed the interviewer's colour for a tester control. */
 .note-rewrite {
   margin-top: 6px;
-  border-color: var(--accent-line) !important;
+  border-color: var(--guide-line) !important;
 }
 
 .note-edit-hint {
@@ -664,11 +687,25 @@ button {
 .note-edit-actions .btn {
   height: 28px;
   font-size: 12px;
+  border-color: var(--guide-line);
+  background: var(--surface);
+}
+
+.note-edit-actions .btn:hover:not(:disabled) {
+  border-color: var(--guide);
+}
+
+/* Saving is a guide action, so it is guide-coloured. --ink here would have
+   dressed a tester control as the person's own voice. */
+.note-edit-actions .btn-primary {
+  background: var(--guide);
+  border-color: var(--guide);
+  color: #fff;
 }
 
 /* Guide-panel note list */
 .g-note {
-  border-inline-start: 2px solid var(--brand);
+  border-inline-start: 2px solid var(--guide);
   padding-inline-start: 8px;
   margin-bottom: 10px;
 }
