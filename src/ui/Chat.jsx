@@ -21,6 +21,7 @@ export default function Chat({
   sessionComplete,
   feedbackEnabled,
   onFeedback,
+  onRewrite,
   onSend,
   onConfirm,
   onReject,
@@ -117,6 +118,8 @@ export default function Chat({
                 feedback={msg.feedback}
                 feedbackEnabled={feedbackEnabled}
                 onFeedback={onFeedback}
+                onRewrite={onRewrite}
+                trailing={history.length - 1 - i}
               />
             ))}
 
@@ -212,6 +215,8 @@ function Message({
   feedback,
   feedbackEnabled,
   onFeedback,
+  onRewrite,
+  trailing = 0,
 }) {
   const isAssistant = role === 'assistant';
   // The opener is framing, not a reply — it answers nothing and was not "sent"
@@ -220,6 +225,7 @@ function Message({
   const isOpening = index === 0 && isAssistant;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
+  const [rewriteDraft, setRewriteDraft] = useState('');
   const draftRef = useRef(null);
 
   // Only the interviewer's questions can be annotated, and only in guide mode:
@@ -237,12 +243,23 @@ function Message({
 
   const openEditor = () => {
     setDraft(feedback?.text ?? '');
+    setRewriteDraft(feedback?.rewrite ?? '');
     setEditing(true);
   };
 
+  // How many turns a rewrite would discard. Shown before saving, never after:
+  // there is no undo, and the tester should decide with the number in front of
+  // them rather than discover it from a suddenly shorter transcript.
+  const discards = rewriteDraft.trim() ? trailing : 0;
+
   const save = () => {
     const text = draft.trim();
-    onFeedback(index, text ? { text, at: Date.now() } : null);
+    const question = rewriteDraft.trim();
+    // A replacement question rewrites the turn (and carries the note with it);
+    // without one this stays what it has always been — an annotation that
+    // changes nothing about the interview.
+    if (question) onRewrite(index, question, text);
+    else onFeedback(index, text ? { text, at: Date.now() } : null);
     setEditing(false);
   };
 
@@ -279,6 +296,30 @@ function Message({
               placeholder="מה עבד או לא עבד בשאלה הזו?"
               aria-label="הערת בודק"
             />
+
+            {/* The replacement question. Filling this in does not just record an
+                opinion — it swaps the interviewer's turn for the tester's and
+                the interview continues from it. */}
+            <textarea
+              className="note-rewrite"
+              value={rewriteDraft}
+              onChange={(e) => setRewriteDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') setEditing(false);
+                if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) save();
+              }}
+              placeholder="נסח את השאלה שהיית מצפה לקבל בשלב הזה"
+              aria-label="השאלה שציפית לה"
+            />
+
+            <p className={`note-edit-hint${discards ? ' is-warn' : ''}`}>
+              {!rewriteDraft.trim()
+                ? 'שדה ריק — רק ההערה תישמר, והראיון ימשיך כרגיל.'
+                : discards
+                ? `בשמירה השאלה תחליף את זו שנשאלה, ${discards} התורות שאחריה יימחקו, והראיון ימשיך מכאן. אין ביטול.`
+                : 'בשמירה השאלה תחליף את זו שנשאלה, והראיון ימשיך ממנה.'}
+            </p>
+
             <div className="note-edit-actions">
               <button className="btn btn-primary" onClick={save}>
                 שמור
@@ -308,6 +349,11 @@ function Message({
               </button>
             </div>
             {feedback.text}
+            {feedback.original && (
+              <div className="note-was">
+                במקום: &laquo;{feedback.original}&raquo;
+              </div>
+            )}
           </div>
         )}
       </div>

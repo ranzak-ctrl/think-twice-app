@@ -7,6 +7,7 @@ import { Logo, Plus, Download, Upload, Gauge } from './icons.jsx';
 import { createState, importState } from '../core/state.js';
 import { confirmAndAdvance, rejectConfirmation } from '../core/router.js';
 import { runTurn, generateStageOpener } from '../core/session.js';
+import { rewriteTurn } from './rewriteTurn.js';
 
 // Opening turn. Rewritten 15.8.2026 (Ran): the previous version described the
 // mechanics ("שלב-שלב", "התפקיד שלך") without saying what to bring or why it is
@@ -75,6 +76,32 @@ export default function App() {
         return { ...m, feedback };
       })
     );
+  }, []);
+
+  // Guide-mode instrument: the tester replaces an interviewer question with the
+  // one they expected, and the interview carries on from there.
+  //
+  // "Continues from" is literal — everything after the rewritten turn is
+  // dropped, because those turns answered a question that is no longer on
+  // screen. Keeping them would leave a transcript that reads as a non-sequitur
+  // and would feed the model a conversation that never happened.
+  //
+  // The model's original wording is kept on the feedback entry, never
+  // overwritten by a second rewrite, so the export still shows what the
+  // interviewer actually asked and what the tester wanted instead. The core
+  // strips feedback (formatHistory maps role/content only), so only the new
+  // question reaches the model — as the interviewer's own turn, which is the
+  // point: the next reply answers the tester's question.
+  //
+  // The StateDocument is deliberately NOT rewound. It cannot be: coverage
+  // scores came from the model's evaluations of turns that are now gone, and
+  // there is no inverse. So a rewrite that discards turns leaves state ahead of
+  // the transcript. That is acceptable in guide mode — this is an instrument
+  // for probing phrasing, not a time machine — but it is why the editor warns
+  // before discarding, and why exports of a rewritten session should be read
+  // with the rewrite in mind.
+  const handleRewrite = useCallback((index, question, note) => {
+    setHistory((h) => rewriteTurn(h, index, question, note));
   }, []);
 
   // Escape closes the guide — it is an overlay drawer on narrow screens.
@@ -252,6 +279,7 @@ export default function App() {
             sessionComplete={state.meta.sessionComplete}
             feedbackEnabled={guideOpen}
             onFeedback={handleFeedback}
+            onRewrite={handleRewrite}
             onSend={handleUserMessage}
             onConfirm={handleConfirm}
             onReject={handleReject}

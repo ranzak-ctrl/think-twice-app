@@ -170,7 +170,11 @@ export default function GuidePanel({ state, width = 320, notes = [], onClose }) 
         ) : (
           notes.map((n) => (
             <div key={n.i} className="g-note">
-              <div className="g-note-q">{n.question}</div>
+              {/* n.question is the turn as it stands now — for a rewritten turn
+                  that is the tester's wording, so show the model's original
+                  alongside it rather than letting the panel quietly lose it. */}
+              <div className="g-note-q">{n.original ?? n.question}</div>
+              {n.rewrite && <div className="g-note-q">← {n.rewrite}</div>}
               <div className="g-note-t">{n.text}</div>
             </div>
           ))

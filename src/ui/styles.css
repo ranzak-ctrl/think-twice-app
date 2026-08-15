@@ -626,6 +626,35 @@ button {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 
+/* The replacement question is a different kind of input from the note above
+   it: the note records an opinion, this one changes the interview. The accent
+   border marks it as consequential without adding a second colour. */
+.note-rewrite {
+  margin-top: 6px;
+  border-color: var(--accent-line) !important;
+}
+
+.note-edit-hint {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-faint);
+  margin: 6px 0 0;
+}
+
+.note-edit-hint.is-warn {
+  color: var(--warn);
+}
+
+/* What the interviewer actually asked, kept beside the tester's replacement so
+   the transcript never loses the original wording. */
+.note-was {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 .note-edit-actions {
   display: flex;
   gap: 6px;
