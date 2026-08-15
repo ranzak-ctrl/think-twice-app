@@ -126,7 +126,7 @@ export default function Chat({
             {loading && (
               <div className="msg assistant">
                 <div className="avatar" aria-hidden="true">
-                  <Mark size={16} />
+                  <Mark size={26} />
                 </div>
                 <div className="bubble-wrap">
                   <div className="bubble" aria-label="מנסח תשובה">
@@ -275,7 +275,7 @@ function Message({
     >
       {isAssistant && (
         <div className={`avatar${grouped ? ' ghost' : ''}`} aria-hidden="true">
-          <Mark size={16} />
+          <Mark size={26} />
         </div>
       )}
 

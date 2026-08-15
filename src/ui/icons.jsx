@@ -57,12 +57,36 @@ export function Logo() {
   );
 }
 
-// Conversation avatar: two overlapping circles — "think twice".
+// Conversation avatar — the "mark only" variant from the logo board: the two
+// profiles back to back, reading as one head split down the middle.
+//
+// Replaces the two overlapping circles. Those were a stand-in from before there
+// was a real mark; keeping them meant the interviewer's avatar was the one
+// place in the app not wearing the brand.
+//
+// Drawn as a single SVG rather than the board's two side-by-side elements so it
+// drops into a fixed avatar box as one glyph. The geometry is still the
+// board's: source viewBox 100 10 83 201 at 0.398 scale (201 -> 80), stroke 17,
+// and the same 8-unit gap between the halves, which is what makes it read as a
+// split rather than a silhouette.
 export function Mark({ size = 20 }) {
   return (
-    <svg {...base(size)} strokeWidth={1.8}>
-      <circle cx="9" cy="12" r="6" />
-      <circle cx="15" cy="12" r="6" />
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 74 80"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={17}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {/* left half, mirrored */}
+      <path transform="translate(33,0) scale(-0.398,0.398) translate(-100,-10)" d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203" />
+      {/* right half */}
+      <path transform="translate(41,0) scale(0.398,0.398) translate(-100,-10)" d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203" />
     </svg>
   );
 }

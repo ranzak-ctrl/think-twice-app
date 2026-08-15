@@ -459,13 +459,15 @@ button {
   flex-direction: row-reverse; /* pushes the bubble to the inline end */
 }
 
+/* No disc behind it any more: the mark is a closed, self-contained shape, and
+   the board shows it unbacked. A filled circle would also have forced the
+   on-dark orange (#e8834a) for contrast, splitting the mark into two colours
+   depending on where it sits. */
 .avatar {
   width: 28px;
   height: 28px;
   flex-shrink: 0;
-  border-radius: var(--radius-full);
-  background: var(--ink);
-  color: var(--on-ink);
+  color: var(--logo-orange);
   display: flex;
   align-items: center;
   justify-content: center;
