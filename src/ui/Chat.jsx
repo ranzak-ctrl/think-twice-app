@@ -247,19 +247,19 @@ function Message({
     setEditing(true);
   };
 
-  // How many turns a rewrite would discard. Shown before saving, never after:
-  // there is no undo, and the tester should decide with the number in front of
-  // them rather than discover it from a suddenly shorter transcript.
-  const discards = rewriteDraft.trim() ? trailing : 0;
+  // Both fields are required (Ran, 15.8): feedback without the question the
+  // tester expected is an opinion nobody can act on, and a replacement question
+  // without a reason leaves no record of why the interview was steered.
+  const canSave = draft.trim().length > 0 && rewriteDraft.trim().length > 0;
+
+  // How many turns saving would discard. Shown before, never after: there is no
+  // undo, and the tester should decide with the number in front of them rather
+  // than discover it from a suddenly shorter transcript.
+  const discards = trailing;
 
   const save = () => {
-    const text = draft.trim();
-    const question = rewriteDraft.trim();
-    // A replacement question rewrites the turn (and carries the note with it);
-    // without one this stays what it has always been — an annotation that
-    // changes nothing about the interview.
-    if (question) onRewrite(index, question, text);
-    else onFeedback(index, text ? { text, at: Date.now() } : null);
+    if (!canSave) return;
+    onRewrite(index, rewriteDraft.trim(), draft.trim());
     setEditing(false);
   };
 
@@ -317,16 +317,27 @@ function Message({
               aria-label="השאלה שציפית לה"
             />
 
-            <p className={`note-edit-hint${discards ? ' is-warn' : ''}`}>
-              {!rewriteDraft.trim()
-                ? 'שדה ריק — רק ההערה תישמר, והראיון ימשיך כרגיל.'
-                : discards
-                ? `בשמירה השאלה תחליף את זו שנשאלה, ${discards} התורות שאחריה יימחקו, והראיון ימשיך מכאן. אין ביטול.`
-                : 'בשמירה השאלה תחליף את זו שנשאלה, והראיון ימשיך ממנה.'}
+            <p className="note-edit-hint">
+              הראיון ימשך מהשאלה שהזנת בטופס המשוב.
             </p>
 
+            {/* Kept alongside Ran's line rather than folded into it: that line
+                says what happens next, this one says what stops existing. Only
+                appears when turns are actually at stake, and saving cannot be
+                undone. */}
+            {discards > 0 && (
+              <p className="note-edit-hint is-warn">
+                {discards} התורות שאחרי השאלה הזו יימחקו. אין ביטול.
+              </p>
+            )}
+
             <div className="note-edit-actions">
-              <button className="btn btn-primary" onClick={save}>
+              <button
+                className="btn btn-primary"
+                onClick={save}
+                disabled={!canSave}
+                title={canSave ? undefined : 'יש למלא את שני השדות'}
+              >
                 שמור
               </button>
               <button className="btn" onClick={() => setEditing(false)}>
