@@ -3,7 +3,7 @@ import Chat from './Chat.jsx';
 import GuidePanel from './GuidePanel.jsx';
 import StageRail from './StageRail.jsx';
 import ConfirmDialog from './ConfirmDialog.jsx';
-import { Mark, Plus, Download, Upload, Gauge } from './icons.jsx';
+import { Logo, Plus, Download, Upload, Gauge } from './icons.jsx';
 import { createState, importState } from '../core/state.js';
 import { confirmAndAdvance, rejectConfirmation } from '../core/router.js';
 import { runTurn, generateStageOpener } from '../core/session.js';
@@ -199,9 +199,9 @@ export default function App() {
         <header className="header">
           <div className="brand">
             <span className="brand-mark">
-              <Mark />
+              <Logo />
             </span>
-            Think Twice
+            <span className="brand-name">Think Twice</span>
           </div>
 
           <div className="header-spacer" />

@@ -4,7 +4,7 @@
    Colours, spacing and radii are tokens — a dark theme is one override block. */
 
 :root {
-  --bg: #f3f4f6;
+  --bg: #f7f7f8;
   --surface: #ffffff;
   --surface-sunken: #f9fafb;
   --surface-accent: #fffaf0;
@@ -29,6 +29,11 @@
      colour carries the fill and legibility is solved by what sits on it —
      a dark glyph on the button, a dark label beside the dot. No second
      orange invented to paper over it. */
+  /* The mark's orange, from the logo asset sheet. Deliberately NOT --accent:
+     the logo is fixed brand identity, the accent is a UI decision that has
+     already changed twice. Retuning the interface must not restyle the mark. */
+  --logo-orange: #d2691e;
+
   --accent: #ffa500;
   --accent-deep: #cc8400; /* hover only */
   --accent-line: rgba(255, 165, 0, 0.55);
@@ -132,8 +137,18 @@ button {
 }
 
 .brand-mark {
-  color: var(--ink);
+  display: flex;
   flex-shrink: 0;
+}
+
+/* Spectral, as the lockup specifies — the wordmark is type, not an image.
+   Georgia is the fallback: also a serif, so a slow font load shifts the
+   weight of the wordmark rather than its shape. */
+.brand-name {
+  font-family: 'Spectral', Georgia, serif;
+  font-weight: 400;
+  font-size: 19px;
+  letter-spacing: 0;
 }
 
 .header-spacer {
@@ -155,7 +170,7 @@ button {
   gap: 6px;
   height: 32px;
   padding-inline: 10px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--accent-line);
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text);
@@ -167,7 +182,7 @@ button {
 
 .btn:hover:not(:disabled) {
   background: var(--surface-sunken);
-  border-color: var(--border-strong);
+  border-color: var(--accent);
 }
 
 .btn:active:not(:disabled) {
@@ -234,10 +249,13 @@ button {
    (design/brief.md): no border, no heading, no icon. */
 
 .intro-note {
-  font-size: 12.5px;
+  font-size: 11.5px;
   line-height: 1.6;
   color: var(--text-faint);
-  margin: 4px 0 18px;
+  /* Sits under the composer now, so it aligns to the same track and needs no
+     bottom margin — the composer's own padding closes the gap. */
+  margin: 4px auto 0;
+  max-width: var(--column-content);
   text-align: center;
   text-wrap: pretty;
 }
@@ -477,12 +495,12 @@ button {
   border-start-end-radius: var(--radius-lg);
 }
 
-/* The opening turn keeps all four corners even. The 6px notch above is a
-   speech-bubble tail pointing at the avatar — and the opener has no avatar,
-   because it frames the process rather than replying to anything. Uniform
-   corners also let it match the composer stacked beneath it. */
+/* The opener keeps the same start-corner notch as every other interviewer
+   turn, so the column reads as one voice rather than a banner followed by a
+   conversation. Only the end corner stays full: there is no avatar beside the
+   opener to point a tail at. */
 .msg.is-opening .bubble {
-  border-start-start-radius: var(--radius-lg);
+  border-start-start-radius: 6px;
   border-start-end-radius: var(--radius-lg);
 }
 
@@ -736,7 +754,7 @@ button {
 
 .composer {
   flex-shrink: 0;
-  background: var(--surface);
+  background: var(--bg);
   border-top: 1px solid var(--border);
   padding: 12px 20px;
   padding-bottom: max(12px, env(safe-area-inset-bottom));

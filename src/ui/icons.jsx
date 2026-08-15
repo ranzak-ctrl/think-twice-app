@@ -15,7 +15,36 @@ const base = (size) => ({
   focusable: false,
 });
 
-// App mark: two overlapping circles — "think twice".
+// The brand mark, from the logo asset sheet. Its own orange (--logo-orange),
+// not --accent: the accent is a UI decision that has already been retuned more
+// than once, and the mark must not move with it.
+//
+// aria-hidden, unlike the source file it was ported from: the wordmark beside
+// it is real text, so labelling the glyph too would announce "Think Twice"
+// twice to a screen reader.
+//
+// Not interchangeable with Mark below — this is ~1:2.7 and only works at the
+// header's size. The avatars keep Mark.
+export function Logo({ height = 40 }) {
+  return (
+    <svg
+      width={Math.round((height * 15) / 40)}
+      height={height}
+      viewBox="105 15 73 191"
+      fill="none"
+      stroke="var(--logo-orange)"
+      strokeWidth={9}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203" />
+    </svg>
+  );
+}
+
+// Conversation avatar: two overlapping circles — "think twice".
 export function Mark({ size = 20 }) {
   return (
     <svg {...base(size)} strokeWidth={1.8}>

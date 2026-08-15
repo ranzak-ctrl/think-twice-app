@@ -14,6 +14,10 @@
 //
 // Kept deliberately quiet per design/brief.md: no border, no heading, no icon.
 // It is a reassurance, not a feature to announce.
+//
+// Rendered inside the composer, below the hint (15.8) — not above the opening
+// turn, where it scrolled away after the first answer. Someone deciding whether
+// to type the painful sentence wants it on the third turn as much as the first.
 
 export default function IntroCard() {
   return (

@@ -106,9 +106,6 @@ export default function Chat({
             aria-live="polite"
             aria-relevant="additions"
           >
-            {/* Sits above the opening turn and scrolls away with it — the
-                roadmap is preview, not something to keep referring back to. */}
-            <IntroCard />
             {history.map((msg, i) => (
               <Message
                 key={i}
@@ -195,6 +192,11 @@ export default function Chat({
             </button>
           </div>
           <div className="hint">Enter לשליחה · Shift+Enter לשורה חדשה</div>
+          {/* Under the composer, not above the opener: the reassurance that
+              nothing is stored is most wanted at the moment of typing, and
+              there it stays on screen instead of scrolling away after the
+              first answer. */}
+          <IntroCard />
         </div>
       )}
     </div>
@@ -212,6 +214,10 @@ function Message({
   onFeedback,
 }) {
   const isAssistant = role === 'assistant';
+  // The opener is framing, not a reply — it answers nothing and was not "sent"
+  // at a moment worth marking. Stamping it invites reading the interview as a
+  // clock, which is the pressure design/brief.md rules out.
+  const isOpening = index === 0 && isAssistant;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const draftRef = useRef(null);
@@ -247,7 +253,7 @@ function Message({
     // indented past an avatar. Every later turn keeps the normal bubble rhythm.
     <div
       className={`msg ${isAssistant ? 'assistant' : 'user'}${grouped ? ' grouped' : ''}${
-        index === 0 && isAssistant ? ' is-opening' : ''
+        isOpening ? ' is-opening' : ''
       }`}
     >
       {isAssistant && (
@@ -258,7 +264,7 @@ function Message({
 
       <div className="bubble-wrap">
         <div className="bubble">{content}</div>
-        {at ? <div className="stamp">{TIME_FMT.format(at)}</div> : null}
+        {at && !isOpening ? <div className="stamp">{TIME_FMT.format(at)}</div> : null}
 
         {canAnnotate && editing && (
           <div className="note-edit">
