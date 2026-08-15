@@ -15,62 +15,45 @@ const base = (size) => ({
   focusable: false,
 });
 
-// The brand lockup, transcribed from design/think-twice-logo.svg: two profiles
-// facing the wordmark from either side — the two readings of the same event
-// that the whole tool is built around.
+// The brand lockup, from the top variant on the logo board
+// (design/Think Twice Logo.html): two profiles facing the wordmark from either
+// side — the two readings of the same event the tool is built around.
 //
-// Geometry is the asset's, not re-derived: same viewBox, same 0.2094 scale,
-// same 9-unit stroke. The left profile is the right one mirrored (negative x
-// scale), which is why both share one path.
+// Composed the way the board composes it: two SVG marks flanking real HTML
+// text, not one SVG with <text> inside. That keeps the wordmark selectable and
+// hinted by the OS, and it is what the board's own markup does.
 //
-// The wordmark stays SVG text rather than an HTML span so the lockup keeps the
-// asset's own spacing and never drifts from it. Spectral is loaded in
-// index.html; Georgia carries it if that request fails.
+// Only the mark geometry is fixed here (viewBox and stroke-width straight from
+// the board). Every dimension — mark size, wordmark size, the gap between them
+// — is expressed in em and driven by one font-size in CSS, so the lockup scales
+// as a unit and holds the board's proportions exactly at any size.
 //
-// aria-label on the <svg> with aria-hidden off: the wordmark is the accessible
-// name of the app here, so it must reach the accessibility tree once — hence
-// no separate visible text beside it.
-//
-// Sized by height; width follows the asset's 5:1 ratio.
-export function Logo({ height = 36 }) {
-  const mark = (x, flip) => (
-    <path
-      transform={`translate(${x},10) scale(${flip ? '-0.2094' : '0.2094'},0.2094) translate(-105,-15)`}
-      d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203"
-    />
-  );
+// The left profile is the right one mirrored, so both share a single path.
+const Profile = ({ flip }) => (
+  <svg
+    className={`brand-mark${flip ? ' is-flipped' : ''}`}
+    viewBox="100 10 83 201"
+    fill="none"
+    stroke="var(--logo-orange)"
+    strokeWidth={17}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <path d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203" />
+  </svg>
+);
 
+// Renders into .brand, which is the flex row itself — no extra wrapper, so the
+// gap the board specifies is the gap that applies.
+export function Logo() {
   return (
-    <svg
-      width={height * 5}
-      height={height}
-      viewBox="0 0 300 60"
-      role="img"
-      aria-label="Think Twice"
-      focusable="false"
-    >
-      <g
-        fill="none"
-        stroke="var(--logo-orange)"
-        strokeWidth={9}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        {mark(15.3, true)}
-        {mark(284.7, false)}
-      </g>
-      <text
-        x="150"
-        y="31"
-        textAnchor="middle"
-        dominantBaseline="central"
-        fontFamily="Spectral, Georgia, 'Times New Roman', serif"
-        fontSize="28"
-        fill="var(--logo-ink)"
-      >
-        Think Twice
-      </text>
-    </svg>
+    <>
+      <Profile flip />
+      <span className="brand-name">Think Twice</span>
+      <Profile />
+    </>
   );
 }
 

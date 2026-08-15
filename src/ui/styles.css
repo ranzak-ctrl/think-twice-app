@@ -44,7 +44,11 @@
      the logo is fixed brand identity, the accent is a UI decision that has
      already changed twice. Retuning the interface must not restyle the mark. */
   --logo-orange: #d2691e;
-  --logo-ink: #1e293b; /* the wordmark's own ink, per the asset */
+  --logo-ink: #1e293b; /* the wordmark's own ink, per the board */
+  /* The board also specifies an on-dark pair — mark #e8834a, wordmark #f8fafc.
+     Recorded here rather than defined, since there is no dark theme yet and a
+     token nothing reads is just clutter. Do not substitute --accent for either:
+     the logo is fixed identity, the interface palette is not. */
 
   --accent: #ffa500;
   --accent-deep: #cc8400; /* hover only */
@@ -138,23 +142,42 @@ button {
   padding-top: env(safe-area-inset-top);
 }
 
+/* The logo lockup. Ratios are the board's top variant — 44px wordmark, 26x66
+   marks, 10px gap — re-expressed against the wordmark so one font-size scales
+   the whole thing and the proportions cannot drift apart:
+     mark width  26/44 = 0.591em
+     mark height 66/44 = 1.5em
+     gap         10/44 = 0.227em
+   The board's own header rendition is 19px, but it shrinks the marks harder
+   than the top lockup does; Ran asked for the top version, so the header is
+   that lockup at half scale (22px) — which lands at the same 33px height a
+   56px header wants. */
 .brand {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: -0.01em;
+  gap: 0.227em;
+  font-size: 22px;
   white-space: nowrap;
 }
 
-/* The lockup is one SVG — mark, wordmark and their spacing all come from the
-   asset, so there is nothing to align here. It shrinks on narrow screens rather
-   than wrapping or pushing the buttons off the row. */
-.brand svg {
+.brand-mark {
   display: block;
-  height: 36px;
-  width: auto;
+  flex-shrink: 0;
+  width: 0.591em;
+  height: 1.5em;
+}
+
+.brand-mark.is-flipped {
+  transform: scaleX(-1);
+}
+
+.brand-name {
+  font-family: 'Spectral', Georgia, serif;
+  font-weight: 400;
+  font-size: 1em;
+  line-height: 1;
+  letter-spacing: 0;
+  color: var(--logo-ink);
 }
 
 .header-spacer {
@@ -1266,8 +1289,8 @@ button {
     gap: 6px;
   }
 
-  .brand svg {
-    height: 28px;
+  .brand {
+    font-size: 17px;
   }
 
   .btn-label {
