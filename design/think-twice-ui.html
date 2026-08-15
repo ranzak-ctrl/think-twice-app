@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400&display=swap" rel="stylesheet">
 <title>Think Twice — מסכי הראיון</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400&display=swap" rel="stylesheet">
 <style>
 /* Think Twice — UI stylesheet.
    The app is Hebrew-RTL first: every directional rule uses logical properties
@@ -31,9 +32,16 @@
 
   --brand: #2563eb;
 
-  /* Logo colours — from the Think Twice logo asset sheet. Kept separate from
-     --accent: the mark owns its own orange and must not drift with the UI. */
-  --logo-orange: #D2691E;
+  /* The guide layer — a third voice, and the reason it needs its own colour.
+     The interview has exactly two speakers: the interviewer (white card, accent
+     outline) and the person (dark fill, light text). Tester instrumentation is
+     neither, and must never be mistaken for either, so it gets a channel of its
+     own: blue, tinted, and dashed. Dashed is the load-bearing part — a broken
+     edge reads as "annotation, not record" before any colour is processed, and
+     it survives greyscale and colour-blindness where hue alone would not. */
+  --guide: #2563eb;
+  --guide-tint: #f2f6ff;
+  --guide-line: #bfd0f7;
 
   /* Accent. Named by role, not by hue, so changing the colour is one edit here
      rather than a rename across the sheet.
@@ -42,6 +50,12 @@
      colour carries the fill and legibility is solved by what sits on it —
      a dark glyph on the button, a dark label beside the dot. No second
      orange invented to paper over it. */
+  /* The mark's orange, from the logo asset sheet. Deliberately NOT --accent:
+     the logo is fixed brand identity, the accent is a UI decision that has
+     already changed twice. Retuning the interface must not restyle the mark. */
+  --logo-orange: #d2691e;
+  --logo-ink: #1e293b; /* the wordmark's own ink, per the asset */
+
   --accent: #ffa500;
   --accent-deep: #cc8400; /* hover only */
   --accent-line: rgba(255, 165, 0, 0.55);
@@ -144,17 +158,13 @@ button {
   white-space: nowrap;
 }
 
-.brand-mark {
-  display: flex;
-  flex-shrink: 0;
-}
-
-/* Spectral, as the lockup specifies — the wordmark is type, not an image. */
-.brand-name {
-  font-family: 'Spectral', Georgia, serif;
-  font-weight: 400;
-  font-size: 19px;
-  letter-spacing: 0;
+/* The lockup is one SVG — mark, wordmark and their spacing all come from the
+   asset, so there is nothing to align here. It shrinks on narrow screens rather
+   than wrapping or pushing the buttons off the row. */
+.brand svg {
+  display: block;
+  height: 36px;
+  width: auto;
 }
 
 .header-spacer {
@@ -222,8 +232,8 @@ button {
 }
 
 .btn.is-on {
-  background: var(--brand);
-  border-color: var(--brand);
+  background: var(--guide);
+  border-color: var(--guide);
   color: #fff;
 }
 
@@ -258,6 +268,8 @@ button {
   font-size: 11.5px;
   line-height: 1.6;
   color: var(--text-faint);
+  /* Sits under the composer now, so it aligns to the same track and needs no
+     bottom margin — the composer's own padding closes the gap. */
   margin: 4px auto 0;
   max-width: var(--column-content);
   text-align: center;
@@ -499,12 +511,11 @@ button {
   border-start-end-radius: var(--radius-lg);
 }
 
-/* The opening turn keeps all four corners even. The 6px notch above is a
-   speech-bubble tail pointing at the avatar — and the opener has no avatar,
-   because it frames the process rather than replying to anything. Uniform
-   corners also let it match the composer stacked beneath it. */
+/* The opener keeps the same start-corner notch as every other interviewer
+   turn, so the column reads as one voice rather than a banner followed by a
+   conversation. Only the end corner stays full: there is no avatar beside the
+   opener to point a tail at. */
 .msg.is-opening .bubble {
-  /* Same sharpened start corner as the replies below it, by request. */
   border-start-start-radius: 6px;
   border-start-end-radius: var(--radius-lg);
 }
@@ -559,7 +570,7 @@ button {
 }
 
 .note-btn.on {
-  color: var(--brand);
+  color: var(--guide);
 }
 
 .note,
@@ -568,11 +579,23 @@ button {
   min-width: min(300px, 100%);
 }
 
-.note {
-  border: 1px solid var(--border);
-  border-inline-start: 3px solid var(--brand);
+.note-edit {
+  border: 1px dashed var(--guide-line);
+  border-inline-start: 3px solid var(--guide);
   border-radius: var(--radius-sm);
-  background: var(--surface-sunken);
+  background: var(--guide-tint);
+  padding: 8px 10px;
+}
+
+.note-edit .note-head {
+  color: var(--guide);
+}
+
+.note {
+  border: 1px dashed var(--guide-line);
+  border-inline-start: 3px solid var(--guide);
+  border-radius: var(--radius-sm);
+  background: var(--guide-tint);
   padding: 8px 10px;
   font-size: 12.5px;
   line-height: 1.55;
@@ -627,8 +650,37 @@ button {
 }
 
 .note-edit textarea:focus {
-  border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  border-color: var(--guide);
+}
+
+/* The replacement question is a different kind of input from the note above it:
+   the note records an opinion, this one changes the interview. It is marked
+   inside the guide layer's own palette — an accent border here would have
+   borrowed the interviewer's colour for a tester control. */
+.note-rewrite {
+  margin-top: 6px;
+  border-color: var(--guide-line) !important;
+}
+
+.note-edit-hint {
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-faint);
+  margin: 6px 0 0;
+}
+
+.note-edit-hint.is-warn {
+  color: var(--warn);
+}
+
+/* What the interviewer actually asked, kept beside the tester's replacement so
+   the transcript never loses the original wording. */
+.note-was {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 .note-edit-actions {
@@ -640,11 +692,25 @@ button {
 .note-edit-actions .btn {
   height: 28px;
   font-size: 12px;
+  border-color: var(--guide-line);
+  background: var(--surface);
+}
+
+.note-edit-actions .btn:hover:not(:disabled) {
+  border-color: var(--guide);
+}
+
+/* Saving is a guide action, so it is guide-coloured. --ink here would have
+   dressed a tester control as the person's own voice. */
+.note-edit-actions .btn-primary {
+  background: var(--guide);
+  border-color: var(--guide);
+  color: #fff;
 }
 
 /* Guide-panel note list */
 .g-note {
-  border-inline-start: 2px solid var(--brand);
+  border-inline-start: 2px solid var(--guide);
   padding-inline-start: 8px;
   margin-bottom: 10px;
 }
@@ -1210,6 +1276,10 @@ button {
     gap: 6px;
   }
 
+  .brand svg {
+    height: 28px;
+  }
+
   .btn-label {
     display: none;
   }
@@ -1241,17 +1311,16 @@ button {
 
 
 /* ── Gallery shell ─────────────────────────────────────────────────────────
-   Only for viewing the screens side by side in Claude Design. The app CSS
-   above is the real stylesheet, byte for byte — nothing here belongs in the
-   product, and nothing here should be ported back.
+   Viewing scaffolding only. Everything above is src/ui/styles.css verbatim;
+   nothing in this block belongs in the product or should be ported back.
    The app pins itself to the viewport (height:100dvh, overflow:hidden), so
-   each screen is re-scoped to a fixed frame instead. */
+   each screen is re-scoped into a fixed frame instead. */
 body.gallery { overflow: auto; height: auto; background: #e8eaee; }
 .gallery-wrap { max-width: 1180px; margin: 0 auto; padding: 40px 24px 72px; }
 .gallery-title { font-size: 13px; font-weight: 600; letter-spacing: .04em;
   text-transform: uppercase; color: #6b7280; margin: 0 0 10px; direction: rtl; }
 .gallery-note { font-size: 14px; color: #4b5563; margin: 0 0 28px;
-  direction: rtl; line-height: 1.6; max-width: 60ch; }
+  direction: rtl; line-height: 1.6; max-width: 62ch; }
 .frame { height: 720px; border-radius: 14px; overflow: hidden;
   border: 1px solid #d5d8dd; background: var(--bg); margin: 0 0 40px;
   box-shadow: 0 10px 30px rgba(16,24,40,.10); }
@@ -1264,9 +1333,10 @@ body.gallery { overflow: auto; height: auto; background: #e8eaee; }
 
   <p class="gallery-title">Think Twice · מצב נוכחי · 15.8.2026</p>
   <p class="gallery-note">
-    שני המסכים למטה הם ה-DOM וה-CSS האמיתיים של האפליקציה — אותם שמות מחלקות,
+    שלושת המסכים למטה הם ה-DOM וה-CSS האמיתיים של האפליקציה — אותם שמות מחלקות,
     אותם טוקנים. כל שינוי כאן ניתן להעברה ישירה ל-<code>src/ui/styles.css</code>.
-    הטקסט בעברית ובכיוון RTL, כפי שהוא במוצר.
+    שלושה קולות בממשק, וכל אחד נראה אחרת: המראיין (כרטיס לבן, מסגרת כתומה),
+    המשתמש (מילוי כהה, טקסט בהיר), והבודק (תכלת, מקווקו — הערה, לא רשומה).
   </p>
 
   <p class="gallery-title">‏1 · פתיחה — לפני התשובה הראשונה</p>
@@ -1274,7 +1344,13 @@ body.gallery { overflow: auto; height: auto; background: #e8eaee; }
     <div class="app" dir="rtl">
       <div class="main">
       <header class="header">
-        <div class="brand"><span class="brand-mark"><svg width="15" height="40" viewBox="105 15 73 191" fill="none" stroke="var(--logo-orange)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Think Twice"><path d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203"/></svg></span><span class="brand-name">Think Twice</span></div>
+        <div class="brand"><svg viewBox="0 0 300 60" role="img" aria-label="Think Twice" focusable="false">
+          <g fill="none" stroke="var(--logo-orange)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+            <path transform="translate(15.3,10) scale(-0.2094,0.2094) translate(-105,-15)" d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203"></path>
+            <path transform="translate(284.7,10) scale(0.2094,0.2094) translate(-105,-15)" d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203"></path>
+          </g>
+          <text x="150" y="31" text-anchor="middle" dominant-baseline="central" font-family="Spectral, Georgia, 'Times New Roman', serif" font-size="28" fill="var(--logo-ink)">Think Twice</text>
+        </svg></div>
         <div class="header-spacer"></div>
         <div class="header-actions">
           <button class="btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="btn-label">ראיון חדש</span></button>
@@ -1291,8 +1367,8 @@ body.gallery { overflow: auto; height: auto; background: #e8eaee; }
             <div class="msg assistant is-opening">
               <div class="avatar" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg></div>
               <div class="bubble-wrap">
-                <div class="bubble">אם קרה משהו שהסעיר אותך והוא עדיין רץ לך בראש — כאן המקום לעבור עליו לאט. נתחיל ממה שקרה בפועל, נמשיך להבין למה זה תפס אותך ככה, ונגיע לתגובה שהכי נכונה לך. אני מוביל, שואל שאלה אחת בכל פעם, וההחלטה בסוף שלך.<br><br>אז ספר לי — מה קרה?</div>
-                              </div>
+                <div class="bubble">אם קרה משהו שהסעיר אותך והוא עדיין רץ לך בראש — כאן המקום לעבור עליו לאט. נתחיל ממה שקרה בפועל, נמשיך להבין למה זה תפס אותך ככה, ונתקדם יחד אל הנקודה שתוכל/י לבחור את התגובה הכי נכונה עבורך. אני מוביל, שואל שאלה אחת בכל פעם, ובסוף הראיון תוכל/י לקבל החלטה מושכלת.<br><br>אז ספר לי — מה קרה?</div>
+              </div>
             </div>
                 </div>
               </div>
@@ -1300,7 +1376,7 @@ body.gallery { overflow: auto; height: auto; background: #e8eaee; }
           <div class="composer">
             <div class="composer-inner">
               <textarea rows="1" aria-label="הודעה" placeholder="כתוב כאן…"></textarea>
-              <button class="send" disabled aria-label="שלח" title="שלח"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H7m0 0 5-5m-5 5 5 5"/></svg></button>
+              <button class="send" disabled aria-label="שלח"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H7m0 0 5-5m-5 5 5 5"/></svg></button>
             </div>
             <div class="hint">Enter לשליחה · Shift+Enter לשורה חדשה</div>
             <p class="intro-note">אפשר לעצור בכל רגע. מה שנכתב כאן נשאר בדפדפן שלך ולא נשמר בשום מקום.</p>
@@ -1348,7 +1424,13 @@ body.gallery { overflow: auto; height: auto; background: #e8eaee; }
     <div class="app" dir="rtl">
       <div class="main">
       <header class="header">
-        <div class="brand"><span class="brand-mark"><svg width="15" height="40" viewBox="105 15 73 191" fill="none" stroke="var(--logo-orange)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Think Twice"><path d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203"/></svg></span><span class="brand-name">Think Twice</span></div>
+        <div class="brand"><svg viewBox="0 0 300 60" role="img" aria-label="Think Twice" focusable="false">
+          <g fill="none" stroke="var(--logo-orange)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+            <path transform="translate(15.3,10) scale(-0.2094,0.2094) translate(-105,-15)" d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203"></path>
+            <path transform="translate(284.7,10) scale(0.2094,0.2094) translate(-105,-15)" d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203"></path>
+          </g>
+          <text x="150" y="31" text-anchor="middle" dominant-baseline="central" font-family="Spectral, Georgia, 'Times New Roman', serif" font-size="28" fill="var(--logo-ink)">Think Twice</text>
+        </svg></div>
         <div class="header-spacer"></div>
         <div class="header-actions">
           <button class="btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="btn-label">ראיון חדש</span></button>
@@ -1370,27 +1452,27 @@ body.gallery { overflow: auto; height: auto; background: #e8eaee; }
             </div>
             <div class="msg user">
               <div class="bubble-wrap">
-                <div class="bubble">הלכתי לקנות בשר לארוחה, ובסוף קניתי משהו לא איכותי. כל הערב הרגשתי מטומטם.</div>
+                <div class="bubble">ישבנו לארוחת ערב ואמרי, הבן הצעיר, התחיל לעשות בלאגן בצלחת.</div>
                 <div class="stamp">09:15</div>
               </div>
             </div>
             <div class="msg assistant">
               <div class="avatar" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg></div>
               <div class="bubble-wrap">
-                <div class="bubble">כשאתה אומר "מטומטם" — מה עבר לך בראש באותו רגע מול הדוכן?</div>
+                <div class="bubble">מי עוד ישב איתכם בארוחה?</div>
                 <div class="stamp">09:15</div>
               </div>
             </div>
             <div class="msg user">
               <div class="bubble-wrap">
-                <div class="bubble">שאני לא מסוגל להחליט. שכולם יודעים לבחור ואני סתם עומד שם.</div>
+                <div class="bubble">אשתי ושני הילדים הגדולים.</div>
                 <div class="stamp">09:17</div>
               </div>
             </div>
             <div class="msg assistant">
               <div class="avatar" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg></div>
               <div class="bubble-wrap">
-                <div class="bubble">ומה הרגשת בגוף כשעמדת שם — לפני שהחלטת בכלל מה לקחת?</div>
+                <div class="bubble">ומה עשית ברגע שראית את זה?</div>
                 <div class="stamp">09:17</div>
               </div>
             </div>
@@ -1399,8 +1481,8 @@ body.gallery { overflow: auto; height: auto; background: #e8eaee; }
             </div>
           <div class="composer">
             <div class="composer-inner">
-              <textarea rows="1" aria-label="הודעה">כן, הרגשתי שהלב דופק חזק</textarea>
-              <button class="send" aria-label="שלח" title="שלח"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H7m0 0 5-5m-5 5 5 5"/></svg></button>
+              <textarea rows="1" aria-label="הודעה">הרמתי את הקול</textarea>
+              <button class="send" aria-label="שלח"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H7m0 0 5-5m-5 5 5 5"/></svg></button>
             </div>
             <div class="hint">Enter לשליחה · Shift+Enter לשורה חדשה</div>
             <p class="intro-note">אפשר לעצור בכל רגע. מה שנכתב כאן נשאר בדפדפן שלך ולא נשמר בשום מקום.</p>
@@ -1417,6 +1499,112 @@ body.gallery { overflow: auto; height: auto; background: #e8eaee; }
             <span class="rail-label">איך הבנת את זה</span>
           </li>
           <li class="rail-step is-current" aria-current="step">
+            <span class="rail-dot" aria-hidden="true"></span>
+            <span class="rail-label">מה הרגשת</span>
+          </li>
+          <li class="rail-step is-upcoming">
+            <span class="rail-dot" aria-hidden="true"></span>
+            <span class="rail-label">איך הגבת</span>
+          </li>
+          <li class="rail-step is-upcoming">
+            <span class="rail-dot" aria-hidden="true"></span>
+            <span class="rail-label">זווית אחרת</span>
+          </li>
+          <li class="rail-step is-upcoming">
+            <span class="rail-dot" aria-hidden="true"></span>
+            <span class="rail-label">מה אפשר לעשות</span>
+          </li>
+          <li class="rail-step is-upcoming">
+            <span class="rail-dot" aria-hidden="true"></span>
+            <span class="rail-label">מה תבחר</span>
+          </li>
+        </ol>
+      </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p class="gallery-title">‏3 · מצב מדריך — טופס המשוב פתוח</p>
+  <div class="frame">
+    <div class="app" dir="rtl">
+      <div class="main">
+      <header class="header">
+        <div class="brand"><svg viewBox="0 0 300 60" role="img" aria-label="Think Twice" focusable="false">
+          <g fill="none" stroke="var(--logo-orange)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+            <path transform="translate(15.3,10) scale(-0.2094,0.2094) translate(-105,-15)" d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203"></path>
+            <path transform="translate(284.7,10) scale(0.2094,0.2094) translate(-105,-15)" d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203"></path>
+          </g>
+          <text x="150" y="31" text-anchor="middle" dominant-baseline="central" font-family="Spectral, Georgia, 'Times New Roman', serif" font-size="28" fill="var(--logo-ink)">Think Twice</text>
+        </svg></div>
+        <div class="header-spacer"></div>
+        <div class="header-actions">
+          <button class="btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="btn-label">ראיון חדש</span></button>
+          <button class="btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg><span class="btn-label">ייצוא</span></button>
+          <button class="btn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21V9m0 0 4 4m-4-4-4 4"/><path d="M4 7V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/></svg><span class="btn-label">ייבוא</span></button>
+          <button class="btn is-on"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21a9 9 0 1 0-9-9"/><path d="M3 12h3M12 3v3M18.4 5.6l-2.1 2.1"/><path d="m12 12 4-2"/></svg><span class="btn-label">מדריך</span></button>
+        </div>
+      </header>
+        <div class="main-body">
+          <div class="chat">
+            <div class="stream">
+              <div class="scroller">
+                <div class="column" role="log">
+            <div class="msg assistant is-opening">
+              <div class="avatar" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg></div>
+              <div class="bubble-wrap">
+                <div class="bubble">אז ספר לי — מה קרה?</div>
+              </div>
+              <button class="note-btn" aria-label="השאר הערת בודק"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2Z"/><path d="M8 9h9M8 12.5h6" stroke-width="1.5"/></svg></button>
+            </div>
+            <div class="msg user">
+              <div class="bubble-wrap">
+                <div class="bubble">ישבנו לארוחת ערב ואמרי, הבן הצעיר, התחיל לעשות בלאגן בצלחת.</div>
+                <div class="stamp">09:15</div>
+              </div>
+            </div>
+            <div class="msg assistant">
+              <div class="avatar" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="12" r="6"/><circle cx="15" cy="12" r="6"/></svg></div>
+              <div class="bubble-wrap">
+                <div class="bubble">ומה הרגשת אז?</div>
+                <div class="stamp">09:15</div>
+                <div class="note-edit">
+                  <div class="note-head"><span>הערת בודק</span></div>
+                  <textarea aria-label="הערת בודק">השאלה נכונה, אבל מוקדמת — הוא עוד לא סיפר מי היה שם.</textarea>
+                  <textarea class="note-rewrite" aria-label="השאלה שציפית לה">מי עוד ישב איתכם בארוחה?</textarea>
+                  <p class="note-edit-hint">הראיון ימשך מהשאלה שהזנת בטופס המשוב.</p>
+                  <p class="note-edit-hint is-warn">2 התורות שאחרי השאלה הזו יימחקו. אין ביטול.</p>
+                  <div class="note-edit-actions">
+                    <button class="btn btn-primary">שמור</button>
+                    <button class="btn">ביטול</button>
+                  </div>
+                </div>
+              </div>
+              <button class="note-btn" aria-label="השאר הערת בודק"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H8l-4 4V6a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2Z"/><path d="M8 9h9M8 12.5h6" stroke-width="1.5"/></svg></button>
+            </div>
+                </div>
+              </div>
+            </div>
+          <div class="composer">
+            <div class="composer-inner">
+              <textarea rows="1" aria-label="הודעה" placeholder="כתוב כאן…"></textarea>
+              <button class="send" disabled aria-label="שלח"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12H7m0 0 5-5m-5 5 5 5"/></svg></button>
+            </div>
+            <div class="hint">Enter לשליחה · Shift+Enter לשורה חדשה</div>
+            <p class="intro-note">אפשר לעצור בכל רגע. מה שנכתב כאן נשאר בדפדפן שלך ולא נשמר בשום מקום.</p>
+          </div>
+          </div>
+      <nav class="rail" aria-label="מיקום בתהליך">
+        <ol class="rail-list">
+          <li class="rail-step is-current" aria-current="step">
+            <span class="rail-dot" aria-hidden="true"></span>
+            <span class="rail-label">מה קרה</span>
+          </li>
+          <li class="rail-step is-upcoming">
+            <span class="rail-dot" aria-hidden="true"></span>
+            <span class="rail-label">איך הבנת את זה</span>
+          </li>
+          <li class="rail-step is-upcoming">
             <span class="rail-dot" aria-hidden="true"></span>
             <span class="rail-label">מה הרגשת</span>
           </li>
