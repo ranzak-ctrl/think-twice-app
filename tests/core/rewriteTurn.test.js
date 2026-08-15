@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rewriteTurn } from '../../src/ui/rewriteTurn.js';
+import { rewriteTurn, buildRevision } from '../../src/ui/rewriteTurn.js';
 
 const transcript = () => [
   { role: 'assistant', content: 'אז ספר לי — מה קרה?', at: 1 },
@@ -55,5 +55,45 @@ describe('rewriteTurn', () => {
   it('returns the transcript unchanged for an index that is not there', () => {
     const before = transcript();
     expect(rewriteTurn(before, 99, 'שאלה')).toBe(before);
+  });
+});
+
+describe('buildRevision', () => {
+  it('keeps the turns the rewrite is about to discard', () => {
+    const rev = buildRevision(transcript(), 0, 'שאלה חדשה', 'למה', 1);
+    expect(rev.discarded).toHaveLength(3);
+    expect(rev.discarded[0].content).toBe('קניתי בשר לא איכותי.');
+  });
+
+  it('records what was asked, what replaced it, and why', () => {
+    const rev = buildRevision(transcript(), 2, 'שאלה חדשה', 'כללי מדי', 3);
+    expect(rev.original).toBe('ומה הרגשת אז?');
+    expect(rev.replaced).toBe('ומה הרגשת אז?');
+    expect(rev.rewrite).toBe('שאלה חדשה');
+    expect(rev.note).toBe('כללי מדי');
+    expect(rev.stage).toBe(3);
+    expect(rev.index).toBe(2);
+  });
+
+  it('distinguishes the original from what a second rewrite replaced', () => {
+    const once = rewriteTurn(transcript(), 2, 'ניסוח ראשון', 'הערה');
+    const rev = buildRevision(once, 2, 'ניסוח שני', 'עוד הערה', 3);
+    expect(rev.original).toBe('ומה הרגשת אז?');
+    expect(rev.replaced).toBe('ניסוח ראשון');
+  });
+
+  it('discards nothing when the last turn is rewritten', () => {
+    expect(buildRevision(transcript(), 3, 'טקסט', 'הערה', 1).discarded).toEqual([]);
+  });
+
+  it('returns null for an index that is not there', () => {
+    expect(buildRevision(transcript(), 99, 'שאלה', 'הערה', 1)).toBeNull();
+  });
+
+  it('survives the truncation it describes', () => {
+    const before = transcript();
+    const rev = buildRevision(before, 1, 'שאלה', 'הערה', 1);
+    rewriteTurn(before, 1, 'שאלה', 'הערה');
+    expect(rev.discarded).toHaveLength(2);
   });
 });

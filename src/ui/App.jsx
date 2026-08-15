@@ -7,7 +7,7 @@ import { Logo, Plus, Download, Upload, Gauge } from './icons.jsx';
 import { createState, importState } from '../core/state.js';
 import { confirmAndAdvance, rejectConfirmation } from '../core/router.js';
 import { runTurn, generateStageOpener } from '../core/session.js';
-import { rewriteTurn } from './rewriteTurn.js';
+import { rewriteTurn, buildRevision } from './rewriteTurn.js';
 
 // Opening turn. Ran's wording, revised 15.8.2026: the arc now ends on the
 // person choosing rather than on a response being arrived at, and the close
@@ -40,6 +40,9 @@ export default function App() {
   const [guideWidth, setGuideWidth] = useState(340); // resizable via the divider
   const [loading, setLoading] = useState(false);
   const [confirmNew, setConfirmNew] = useState(false);
+  // Append-only log of every tester rewrite, including the turns each one
+  // discarded. Separate from `history` precisely because history gets cut.
+  const [revisions, setRevisions] = useState([]);
   const fileRef = useRef(null);
 
   // Nothing is persisted anywhere (no server, no storage — see CLAUDE.md), so
@@ -100,9 +103,19 @@ export default function App() {
   // for probing phrasing, not a time machine — but it is why the editor warns
   // before discarding, and why exports of a rewritten session should be read
   // with the rewrite in mind.
-  const handleRewrite = useCallback((index, question, note) => {
-    setHistory((h) => rewriteTurn(h, index, question, note));
-  }, []);
+  const handleRewrite = useCallback(
+    (index, question, note) => {
+      // Record before cutting — buildRevision needs the turns that are about to
+      // stop existing. Built out here rather than inside a setState updater: a
+      // side effect in an updater double-fires under StrictMode, which would
+      // log every rewrite twice.
+      const revision = buildRevision(history, index, question, note, state.meta.currentStage);
+      if (!revision) return;
+      setRevisions((r) => [...r, revision]);
+      setHistory((h) => rewriteTurn(h, index, question, note));
+    },
+    [history, state]
+  );
 
   // Escape closes the guide — it is an overlay drawer on narrow screens.
   useEffect(() => {
@@ -175,7 +188,11 @@ export default function App() {
   const handleExport = () => {
     // Full session: the transcript (history) + the StateDocument. The
     // /export-conversation command turns this file into a Drive .docx.
-    const payload = { exportedAt: new Date().toISOString(), history, state };
+    // history + state is the interview; revisions is what the tester wanted
+    // changed and what that cost. The second half is the point of a guide-mode
+    // run, so it ships in the same file rather than in a parallel one nobody
+    // remembers to save.
+    const payload = { exportedAt: new Date().toISOString(), history, state, revisions };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -195,6 +212,7 @@ export default function App() {
         setState(importState(raw));
         // Restore the transcript too, if the export carried it (faithful re-entry).
         const parsed = JSON.parse(raw);
+        setRevisions(Array.isArray(parsed.revisions) ? parsed.revisions : []);
         if (Array.isArray(parsed.history) && parsed.history.length) {
           setHistory(parsed.history);
         } else {
@@ -211,6 +229,7 @@ export default function App() {
   const startNewSession = () => {
     setState(createState());
     setHistory([openingMessage()]);
+    setRevisions([]);
     setConfirmNew(false);
   };
 
@@ -307,6 +326,7 @@ export default function App() {
           <GuidePanel
             state={state}
             width={guideWidth}
+            revisions={revisions}
             notes={history
               .map((m, i) => (m.feedback ? { i, question: m.content, ...m.feedback } : null))
               .filter(Boolean)}

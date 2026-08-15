@@ -128,7 +128,7 @@ function formatCacheSaving(usage) {
   return `$${saved.toFixed(4)} (${Math.round((saved / uncachedUsd) * 100)}%)`;
 }
 
-export default function GuidePanel({ state, width = 320, notes = [], onClose }) {
+export default function GuidePanel({ state, width = 320, notes = [], revisions = [], onClose }) {
   const { coverage, meta, facts, thoughts, feelings, reactions } = state;
   const gaps = state.gaps ?? { byTarget: {}, log: [] };
   const findings = state.findings ?? {};
@@ -176,6 +176,26 @@ export default function GuidePanel({ state, width = 320, notes = [], onClose }) 
               <div className="g-note-q">{n.original ?? n.question}</div>
               {n.rewrite && <div className="g-note-q">← {n.rewrite}</div>}
               <div className="g-note-t">{n.text}</div>
+            </div>
+          ))
+        )}
+      </Section>
+
+      {/* Tester rewrites. Shown so a tester can see their corrections are being
+          recorded — including the turns each one dropped, which are the part
+          the transcript itself no longer holds. All of this rides in the
+          export; nothing here is sent to the model. */}
+      <Section title={`תיקוני בודק (${revisions.length})`}>
+        {revisions.length === 0 ? (
+          <Row label="—" value="" />
+        ) : (
+          revisions.map((r, i) => (
+            <div key={i} className="g-note">
+              <div className="g-note-q">שלב {r.stage} · {r.original}</div>
+              <div className="g-note-t">← {r.rewrite}</div>
+              {r.discarded?.length > 0 && (
+                <div className="g-note-q">{r.discarded.length} תורות נמחקו</div>
+              )}
             </div>
           ))
         )}
