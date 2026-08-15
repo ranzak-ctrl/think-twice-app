@@ -9,17 +9,17 @@ import { confirmAndAdvance, rejectConfirmation } from '../core/router.js';
 import { runTurn, generateStageOpener } from '../core/session.js';
 import { rewriteTurn } from './rewriteTurn.js';
 
-// Opening turn. Rewritten 15.8.2026 (Ran): the previous version described the
-// mechanics ("שלב-שלב", "התפקיד שלך") without saying what to bring or why it is
-// worth it. This one names the invitation — an event that stirred you — sketches
-// the arc in plain words, and lowers the cost of answering.
+// Opening turn. Ran's wording, revised 15.8.2026: the arc now ends on the
+// person choosing rather than on a response being arrived at, and the close
+// promises an informed decision instead of just locating ownership. Gendered
+// verbs toward the user carry both forms (תוכל/י).
 //
 // Still turn-lint compliant: three sentences, then exactly one directed
 // question. The arc is described without stage numbers, which are jargon toward
 // the user; the fuller roadmap lives in the intro card, which is interface, not
 // a turn, and so is not bound by the lint.
 const OPENING_TEXT =
-  'אם קרה משהו שהסעיר אותך והוא עדיין רץ לך בראש — כאן המקום לעבור עליו לאט. נתחיל ממה שקרה בפועל, נמשיך להבין למה זה תפס אותך ככה, ונגיע לתגובה שהכי נכונה לך. אני מוביל, שואל שאלה אחת בכל פעם, וההחלטה בסוף שלך.\n\nאז ספר לי — מה קרה?';
+  'אם קרה משהו שהסעיר אותך והוא עדיין רץ לך בראש — כאן המקום לעבור עליו לאט. נתחיל ממה שקרה בפועל, נמשיך להבין למה זה תפס אותך ככה, ונתקדם יחד אל הנקודה שתוכל/י לבחור את התגובה הכי נכונה עבורך. אני מוביל, שואל שאלה אחת בכל פעם, ובסוף הראיון תוכל/י לקבל החלטה מושכלת.\n\nאז ספר לי — מה קרה?';
 
 // Messages carry a timestamp so the chat can show one; `at` is additive and
 // ignored by the core (formatHistory maps role/content only), so older exports
