@@ -158,6 +158,13 @@ button {
   gap: 0.227em;
   font-size: 22px;
   white-space: nowrap;
+  /* The lockup is a fixed composition and must not mirror with the page. The
+     app is RTL, which reverses a flex row: the first mark — the mirrored one,
+     which belongs on the left — was landing on the right, so both profiles
+     faced inward instead of out. Pinning the row to LTR makes DOM order match
+     the board's regardless of page direction, rather than swapping the two
+     marks and leaving a trap for the next person who reads the board. */
+  direction: ltr;
 }
 
 .brand-mark {
