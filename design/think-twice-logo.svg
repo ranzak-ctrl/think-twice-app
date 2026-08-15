@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 60" width="300" height="60" role="img" aria-label="Think Twice">
+  <title>Think Twice</title>
+  <g fill="none" stroke="#D2691E" stroke-width="9" stroke-linecap="round" stroke-linejoin="round">
+    
+    <path transform="translate(15.3,10) scale(-0.2094,0.2094) translate(-105,-15)" d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203"></path>
+    
+    <path transform="translate(284.7,10) scale(0.2094,0.2094) translate(-105,-15)" d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203"></path>
+  </g>
+  <text x="150" y="31" text-anchor="middle" dominant-baseline="central" font-family="Spectral, Georgia, &#39;Times New Roman&#39;, serif" font-size="28" fill="#1E293B">Think Twice</text>
+</svg>

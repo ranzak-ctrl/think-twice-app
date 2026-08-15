@@ -15,31 +15,61 @@ const base = (size) => ({
   focusable: false,
 });
 
-// The brand mark, from the logo asset sheet. Its own orange (--logo-orange),
-// not --accent: the accent is a UI decision that has already been retuned more
-// than once, and the mark must not move with it.
+// The brand lockup, transcribed from design/think-twice-logo.svg: two profiles
+// facing the wordmark from either side — the two readings of the same event
+// that the whole tool is built around.
 //
-// aria-hidden, unlike the source file it was ported from: the wordmark beside
-// it is real text, so labelling the glyph too would announce "Think Twice"
-// twice to a screen reader.
+// Geometry is the asset's, not re-derived: same viewBox, same 0.2094 scale,
+// same 9-unit stroke. The left profile is the right one mirrored (negative x
+// scale), which is why both share one path.
 //
-// Not interchangeable with Mark below — this is ~1:2.7 and only works at the
-// header's size. The avatars keep Mark.
-export function Logo({ height = 40 }) {
+// The wordmark stays SVG text rather than an HTML span so the lockup keeps the
+// asset's own spacing and never drifts from it. Spectral is loaded in
+// index.html; Georgia carries it if that request fails.
+//
+// aria-label on the <svg> with aria-hidden off: the wordmark is the accessible
+// name of the app here, so it must reach the accessibility tree once — hence
+// no separate visible text beside it.
+//
+// Sized by height; width follows the asset's 5:1 ratio.
+export function Logo({ height = 36 }) {
+  const mark = (x, flip) => (
+    <path
+      transform={`translate(${x},10) scale(${flip ? '-0.2094' : '0.2094'},0.2094) translate(-105,-15)`}
+      d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203"
+    />
+  );
+
   return (
     <svg
-      width={Math.round((height * 15) / 40)}
+      width={height * 5}
       height={height}
-      viewBox="105 15 73 191"
-      fill="none"
-      stroke="var(--logo-orange)"
-      strokeWidth={9}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
+      viewBox="0 0 300 60"
+      role="img"
+      aria-label="Think Twice"
       focusable="false"
     >
-      <path d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203" />
+      <g
+        fill="none"
+        stroke="var(--logo-orange)"
+        strokeWidth={9}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {mark(15.3, true)}
+        {mark(284.7, false)}
+      </g>
+      <text
+        x="150"
+        y="31"
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontFamily="Spectral, Georgia, 'Times New Roman', serif"
+        fontSize="28"
+        fill="var(--logo-ink)"
+      >
+        Think Twice
+      </text>
     </svg>
   );
 }

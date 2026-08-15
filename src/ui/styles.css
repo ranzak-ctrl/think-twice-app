@@ -44,6 +44,7 @@
      the logo is fixed brand identity, the accent is a UI decision that has
      already changed twice. Retuning the interface must not restyle the mark. */
   --logo-orange: #d2691e;
+  --logo-ink: #1e293b; /* the wordmark's own ink, per the asset */
 
   --accent: #ffa500;
   --accent-deep: #cc8400; /* hover only */
@@ -147,19 +148,13 @@ button {
   white-space: nowrap;
 }
 
-.brand-mark {
-  display: flex;
-  flex-shrink: 0;
-}
-
-/* Spectral, as the lockup specifies — the wordmark is type, not an image.
-   Georgia is the fallback: also a serif, so a slow font load shifts the
-   weight of the wordmark rather than its shape. */
-.brand-name {
-  font-family: 'Spectral', Georgia, serif;
-  font-weight: 400;
-  font-size: 19px;
-  letter-spacing: 0;
+/* The lockup is one SVG — mark, wordmark and their spacing all come from the
+   asset, so there is nothing to align here. It shrinks on narrow screens rather
+   than wrapping or pushing the buttons off the row. */
+.brand svg {
+  display: block;
+  height: 36px;
+  width: auto;
 }
 
 .header-spacer {
@@ -1269,6 +1264,10 @@ button {
   .header {
     padding-inline: 10px;
     gap: 6px;
+  }
+
+  .brand svg {
+    height: 28px;
   }
 
   .btn-label {

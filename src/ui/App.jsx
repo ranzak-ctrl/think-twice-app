@@ -225,10 +225,7 @@ export default function App() {
       <div className="main">
         <header className="header">
           <div className="brand">
-            <span className="brand-mark">
-              <Logo />
-            </span>
-            <span className="brand-name">Think Twice</span>
+            <Logo />
           </div>
 
           <div className="header-spacer" />
