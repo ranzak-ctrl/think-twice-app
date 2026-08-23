@@ -24,9 +24,9 @@
 
   /* The guide layer — a third voice, and the reason it needs its own colour.
      The interview has exactly two speakers: the interviewer (white card, accent
-     outline) and the person (dark fill, light text). Tester instrumentation is
-     neither, and must never be mistaken for either, so it gets a channel of its
-     own: blue, tinted, and dashed. Dashed is the load-bearing part — a broken
+     outline) and the person (plain text on the page, no frame). Tester
+     instrumentation is neither, and must never be mistaken for either, so it
+     gets a channel of its own: blue, tinted, and dashed. Dashed is the load-bearing part — a broken
      edge reads as "annotation, not record" before any colour is processed, and
      it survives greyscale and colour-blindness where hue alone would not. */
   --guide: #2563eb;
@@ -43,16 +43,19 @@
   /* The mark's orange, from the logo asset sheet. Deliberately NOT --accent:
      the logo is fixed brand identity, the accent is a UI decision that has
      already changed twice. Retuning the interface must not restyle the mark. */
-  --logo-orange: #d2691e;
+  --logo-orange: #d2691e; /* the artwork's own orange — kept for reference only.
+     The mark files ship flat #ff8a00 (--accent) at Ran's request, so the
+     silhouettes and the send button read as one colour. Retuning --accent now
+     means re-exporting the three PNGs; they are pixels, not currentColor. */
   --logo-ink: #1e293b; /* the wordmark's own ink, per the board */
   /* The board also specifies an on-dark pair — mark #e8834a, wordmark #f8fafc.
      Recorded here rather than defined, since there is no dark theme yet and a
      token nothing reads is just clutter. Do not substitute --accent for either:
      the logo is fixed identity, the interface palette is not. */
 
-  --accent: #ffa500;
-  --accent-deep: #cc8400; /* hover only */
-  --accent-line: rgba(255, 165, 0, 0.55);
+  --accent: #ff8a00; /* the mark files are baked to this exact value */
+  --accent-deep: #e07600; /* hover only */
+  --accent-line: rgba(255, 138, 0, 0.6);
   --ok: #15803d;
   --warn: #b45309;
   --danger: #b91c1c;
@@ -142,49 +145,65 @@ button {
   padding-top: env(safe-area-inset-top);
 }
 
-/* The logo lockup. Ratios are the board's top variant — 44px wordmark, 26x66
-   marks, 10px gap — re-expressed against the wordmark so one font-size scales
-   the whole thing and the proportions cannot drift apart:
-     mark width  26/44 = 0.591em
-     mark height 66/44 = 1.5em
-     gap         10/44 = 0.227em
-   The board's own header rendition is 19px, but it shrinks the marks harder
-   than the top lockup does; Ran asked for the top version, so the header is
-   that lockup at half scale (22px) — which lands at the same 33px height a
-   56px header wants. */
+/* The logo lockup — board variant 12A: the pair mark over the name, no rule,
+   no tagline, name in Archivo Medium. The board's proportions are the contract:
+   mark 300px wide (so 250px tall at the artwork's 1.198 ratio) with a 40px
+   name and a 26px gap — that is name = 0.16 of the mark's height and gap =
+   0.104. Everything derives from --lockup (the mark's height) so the ratios
+   hold at any size.
+   The stack only works where the mark can be large: at 0.16, a legible 13px
+   name needs an 80px mark, which a 56px header bar cannot hold. The header
+   therefore sets the same two parts side by side — same artwork, same face,
+   same ratio between them — and the gate carries the stack. */
 .brand {
+  --lockup: 34px;
   display: flex;
   align-items: center;
-  gap: 0.227em;
-  font-size: 22px;
-  white-space: nowrap;
-  /* The lockup is a fixed composition and must not mirror with the page. The
-     app is RTL, which reverses a flex row: the first mark — the mirrored one,
-     which belongs on the left — was landing on the right, so both profiles
-     faced inward instead of out. Pinning the row to LTR makes DOM order match
-     the board's regardless of page direction, rather than swapping the two
-     marks and leaving a trap for the next person who reads the board. */
+  gap: calc(var(--lockup) * 0.22);
+  flex-shrink: 0;
+  /* The lockup is a fixed composition and must not mirror with the RTL page,
+     which would swap the two profiles and turn them inward. */
   direction: ltr;
 }
 
 .brand-mark {
   display: block;
-  flex-shrink: 0;
-  width: 0.591em;
-  height: 1.5em;
-}
-
-.brand-mark.is-flipped {
-  transform: scaleX(-1);
+  width: calc(var(--lockup) * 1.198);
+  height: var(--lockup);
 }
 
 .brand-name {
-  font-family: 'Spectral', Georgia, serif;
-  font-weight: 400;
-  font-size: 1em;
+  font-family: 'Archivo', system-ui, sans-serif;
+  font-weight: 500;
+  font-size: calc(var(--lockup) * 0.44);
   line-height: 1;
-  letter-spacing: 0;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
   color: var(--logo-ink);
+}
+
+/* The board composition itself: stacked. 12A's own ratios (name 0.16 of the
+   mark's height, gap 0.104) hold from the gate size up; at header scale that
+   name would be 10px, so the header raises the ratio rather than shrinking the
+   type — the stack stays, the words stay readable. */
+.brand.is-stacked {
+  flex-direction: column;
+  gap: calc(var(--lockup) * 0.104);
+}
+
+.brand.is-stacked .brand-name {
+  font-size: calc(var(--lockup) * 0.16);
+}
+
+/* The header carries the mark alone. The name is already in the tab title and
+   on the gate the person just came through, so repeating it costs the bar its
+   height for nothing — and the mark at 36px is unmistakable. */
+.header .brand {
+  --lockup: 36px;
+}
+
+.header .brand-name {
+  display: none;
 }
 
 .header-spacer {
@@ -208,7 +227,11 @@ button {
   padding-inline: 10px;
   border: 1px solid var(--accent-line);
   border-radius: var(--radius-sm);
-  background: var(--surface);
+  /* Grey fill, not white: the header sits on a near-white page, so a white
+     button and its background were the same value and only the hairline border
+     said a button was there. The orange edge stays — it is what ties the
+     controls to the brand; the grey is only there to give them a body. */
+  background: #e7e8ea;
   color: var(--text);
   font-size: 13px;
   cursor: pointer;
@@ -217,7 +240,7 @@ button {
 }
 
 .btn:hover:not(:disabled) {
-  background: var(--surface-sunken);
+  background: #dcdee1;
   border-color: var(--accent);
 }
 
@@ -279,23 +302,6 @@ button {
   min-height: 0;
 }
 
-/* ------------------------------------------------------- intro note -- */
-/* Was a five-step card; the stage rail made it redundant. What remains is the
-   one claim neither the rail nor the opening turn makes. Quiet by mandate
-   (design/brief.md): no border, no heading, no icon. */
-
-.intro-note {
-  font-size: 11.5px;
-  line-height: 1.6;
-  color: var(--text-faint);
-  /* Sits under the composer now, so it aligns to the same track and needs no
-     bottom margin — the composer's own padding closes the gap. */
-  margin: 4px auto 0;
-  max-width: var(--column-content);
-  text-align: center;
-  text-wrap: pretty;
-}
-
 /* ------------------------------------------------------- stage rail -- */
 /* Read-only orientation strip. Never interactive — see StageRail.jsx and
    design/brief.md §61. No pointer cursor, no hover affordance, no focus
@@ -304,27 +310,41 @@ button {
 .rail {
   flex: none;
   width: var(--rail-w);
-  padding: 26px 16px 26px 20px;
-  /* The divider stays where it was; the rail moved to its inner side. The
-     margin reserves the old rail track as empty gutter against the window
-     edge, so the line lands at the same x and the labels now sit between it
-     and the conversation. Both use --rail-w, so they cannot drift apart. */
+  padding: 18px 16px 18px 20px;
+  /* An empty gutter of the rail's own width sits outside it, so the divider
+     lands at the same x it did before the rail moved to its inner side. It is
+     only there to hold the guide panel's place: with the panel closed there is
+     nothing to reserve, and the chat and rail take the whole window instead of
+     leaving a blank strip at the edge. */
   margin-inline-end: var(--rail-w);
   border-inline-end: 1px solid var(--border);
   overflow-y: auto;
   user-select: none;
-  /* Centred against the conversation rather than hugging the header — the rail
-     is orientation, and orientation belongs at eye level. */
   display: flex;
   flex-direction: column;
-  justify-content: center;
 }
 
+/* Guide closed: no panel to reserve room for, so the gutter collapses and the
+   two columns fill the page. Anchored on .app, not .main-body: the guide panel
+   is a sibling of .main, so .main-body never contains it and the design's own
+   selector would collapse the gutter unconditionally. */
+.app:not(:has(.guide)) .rail {
+  margin-inline-end: 0;
+}
+
+/* The seven steps form one compact group centred on the rail's height, rather
+   than stretched from top to bottom: at full height the gaps were wide enough
+   that the steps stopped reading as a single sequence. A fixed gap keeps them
+   grouped, and centring keeps the group at eye level whatever the window's
+   height. */
 .rail-list {
   list-style: none;
-  margin: 0;
+  margin: auto 0;
   padding: 0;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 /* Connecting spine, drawn behind the dots on the inline-start edge. */
@@ -343,7 +363,7 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 0;
+  padding: 4px 0;
   font-size: 14px;
   line-height: 1.4;
   color: var(--text-faint);
@@ -410,19 +430,17 @@ button {
   min-height: 0;
 }
 
-/* State 0 — nothing has been answered yet. The opener and the composer sit
-   together in the middle of the screen instead of at opposite ends of an empty
-   page; the composer returns to the bottom edge on the first reply. */
-.chat.is-start {
-  justify-content: center;
-}
+/* State 0 — nothing has been answered yet. Reading order top to bottom is the
+   order the person meets them in: the instructions pinned under the header,
+   the first question straight after so it is the first thing asked of them,
+   and the composer floating in the free space below — centred by its own auto
+   margins rather than by the column, so it reads as an invitation on an open
+   page. On the first reply the composer returns to the bottom edge. */
+/* The composer is docked at the bottom edge from the first screen on, like it
+   is for the rest of the session: one place to type, in the same place
+   throughout, so nothing moves under the person between the opening question
+   and their answer. */
 
-.chat.is-start .stream {
-  flex: 0 1 auto; /* shrink to the opener rather than filling the page */
-}
-
-/* The bottom border belongs to a composer docked at the edge; centred, it would
-   read as a rule across the middle of the screen. */
 .chat.is-start .composer {
   border-top-color: transparent;
   background: transparent;
@@ -455,23 +473,49 @@ button {
   margin-bottom: 6px;
 }
 
+/* The person's answer is not a card. Pushing it to the far side made the page
+   read as two strangers messaging: in an RTL page the left is the other party's
+   side, and the person is not the other party here — they are the one the page
+   belongs to. So the answer stays on the start edge, unframed, directly under
+   the question it answers, and the contrast between the voices is carried by
+   card-versus-no-card instead of by which wall each one is pinned to. */
 .msg.user {
-  flex-direction: row-reverse; /* pushes the bubble to the inline end */
+  flex-direction: row;
+  margin-top: -8px; /* the answer belongs to the question above it */
+  margin-bottom: 26px; /* ...and is separated from the next question, not it */
 }
 
-/* No disc behind it any more: the mark is a closed, self-contained shape, and
-   the board shows it unbacked. A filled circle would also have forced the
-   on-dark orange (#e8834a) for contrast, splitting the mark into two colours
-   depending on where it sits. */
+/* One profile, facing the bubble, on a white disc with no ring around it. The
+   pair is the logo and belongs in the header; at 28px it turns to noise, and
+   the board's own rule is that a single profile is what survives small sizes.
+   The disc is a grey ring on the page itself, not a white fill: the fill only
+   showed up as a lighter patch against the background, so the ring is doing
+   the whole job of it. Its neck runs off the bottom, so the cut in the artwork
+   reads as a crop, not a broken stroke. */
 .avatar {
   width: 28px;
   height: 28px;
   flex-shrink: 0;
-  color: var(--logo-orange);
+  /* No disc at all: the mark stands on the page. Every container tried here —
+     white fill, grey ring, tinted circle — read as a badge around it. */
+  background: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
   margin-top: 2px;
+}
+
+/* Its own export, not the header's file scaled down. Stroke weight does not
+   survive a 70x reduction — the lockup's line lands under a pixel here — so the
+   avatar mark is drawn heavier at source to arrive at the same visual weight
+   the interface reads as "the logo". Re-export both together if the line
+   weight ever changes. */
+.avatar-mark {
+  display: block;
+  height: 28px;
+  width: auto;
+  margin-top: 3px; /* drops the head to optical centre; the neck bleeds out */
 }
 
 .avatar.ghost {
@@ -483,17 +527,37 @@ button {
   display: none;
 }
 
-/* The opening turn spans the column so its box lines up with the composer
-   below it — it frames the process rather than answering, so the bubble
-   rhythm (78%, indented past an avatar) does not apply. The avatar goes with
-   it: an interviewer mark on a preamble reads as a reply to something. */
-.msg.is-opening .avatar {
-  display: none;
-}
-
-.msg.is-opening .bubble-wrap {
-  max-width: 100%;
-  flex: 1;
+/* Operating instructions, not a turn — so it sits outside the scroller
+   entirely, directly under the header: it is true before anyone speaks, and a
+   block that scrolled up the column with the first answers would read as
+   something that was said. Card, mark and stamp all mean "someone said this";
+   none of them applies here. It is on screen only until the first answer
+   (Ran, 23.8): the design's own DOM carries it on the opening screen alone,
+   and at this size it would otherwise hold a third of the window for the whole
+   session. Accent-coloured and set larger than
+   the conversation, which is what makes it read as the frame around the
+   session rather than the quietest line in it. Holds the column's own track so
+   the conversation starts under it, not beside it. */
+.preamble {
+  width: 100%;
+  /* Sits on the column's content track, not its outer track, so its start wall
+     lands on the same line as the interviewer's mark below it. */
+  max-width: var(--column-content);
+  /* The block is the text itself, inset in the reading column rather than a
+     band across the window: it belongs to the conversation's track, and a
+     full-bleed strip would read as a second header. Grey fill, one step darker
+     than the page, with an orange edge — the cream tint it replaced was too
+     close to white to register as a block at all. The interviewer's card is
+     white, so grey keeps the two apart even though both are outlined. */
+  margin: 16px auto 4px;
+  padding: 18px 22px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-lg);
+  background: #eceded;
+  font-size: 17px;
+  line-height: 1.8;
+  color: var(--text);
+  text-wrap: pretty;
 }
 
 .bubble-wrap {
@@ -504,7 +568,13 @@ button {
 }
 
 .msg.user .bubble-wrap {
-  align-items: flex-end;
+  align-items: flex-start;
+  max-width: 100%;
+  flex: 1;
+  /* Clears the interviewer's mark column (28px + the row's 10px gap) and then
+     steps one notch further in, so an unframed answer still reads as answering
+     the card above it rather than starting a new one. */
+  margin-inline-start: 58px;
 }
 
 .bubble {
@@ -523,9 +593,10 @@ button {
 }
 
 .msg.user .bubble {
-  background: var(--ink);
-  color: var(--on-ink);
-  border-start-end-radius: 6px;
+  background: none;
+  color: var(--text);
+  border-radius: 0;
+  padding: 2px 0 0;
 }
 
 .msg.grouped .bubble {
@@ -533,20 +604,13 @@ button {
   border-start-end-radius: var(--radius-lg);
 }
 
-/* The opener keeps the same start-corner notch as every other interviewer
-   turn, so the column reads as one voice rather than a banner followed by a
-   conversation. Only the end corner stays full: there is no avatar beside the
-   opener to point a tail at. */
-.msg.is-opening .bubble {
-  border-start-start-radius: 6px;
-  border-start-end-radius: var(--radius-lg);
-}
-
+/* Only the person's turns are stamped. A time beside every interviewer line
+   turned the column into a log; the answers are what anyone scanning back is
+   actually looking for, and stamping only those makes them findable. */
 .stamp {
   font-size: 11px;
   color: var(--text-faint);
   margin-top: 4px;
-  padding-inline: 6px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -691,6 +755,12 @@ button {
   margin: 6px 0 0;
 }
 
+/* Kept through the 23.8 redesign, which dropped it: nothing in the design
+   replaces the "N turns will be deleted, no undo" line, and the guide screen
+   there simply never renders one (the annotated question is the last turn, so
+   nothing is at stake). The markup still emits it, and without this rule an
+   irreversible warning would come out the same faint grey as the sentence
+   telling the tester what happens next. */
 .note-edit-hint.is-warn {
   color: var(--warn);
 }
@@ -944,14 +1014,6 @@ button {
   cursor: not-allowed;
 }
 
-.hint {
-  max-width: var(--column-content);
-  margin: 6px auto 0;
-  font-size: 11px;
-  color: var(--text-faint);
-  text-align: center;
-}
-
 /* --------------------------------------------------------------- boards -- */
 
 /* Rendered inline as the last card in the thread, so the conversation column
@@ -1149,9 +1211,11 @@ button {
   background: var(--bg);
 }
 
+/* Carries the interviewer's edge — white card, accent outline — because that
+   is the voice waiting on the other side of it. */
 .gate form {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid var(--accent-line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   padding: 28px 26px;
@@ -1160,13 +1224,18 @@ button {
   text-align: center;
 }
 
+/* The gate is the first thing anyone sees, so it carries the whole lockup
+   rather than a heading that happens to say the product's name — same
+   composition as the header, one size up. The h1 is only a wrapper: the marks
+   and the wordmark are .brand, so the two screens cannot drift apart. */
 .gate h1 {
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 8px;
-  font-size: 20px;
-  margin: 0 0 6px;
+  margin: 0 0 8px;
+}
+
+.gate .brand {
+  --lockup: 190px;
 }
 
 .gate p {
@@ -1189,9 +1258,10 @@ button {
   outline: none;
 }
 
+/* Deepens the edge, like the composer. The blue glow this replaced was the
+   guide layer's colour on a control the tester never touches. */
 .gate input:focus {
-  border-color: var(--brand);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  border-color: var(--accent);
 }
 
 .gate .btn {
@@ -1308,10 +1378,6 @@ button {
 
   .btn {
     padding-inline: 8px;
-  }
-
-  .hint {
-    display: none; /* no physical keyboard to hint about */
   }
 }
 

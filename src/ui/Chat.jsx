@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import ConfirmButtons from './ConfirmButtons.jsx';
 import DecisionBoard from './DecisionBoard.jsx';
-import IntroCard from './IntroCard.jsx';
+import Preamble from './Preamble.jsx';
 import { Mark, Send, ArrowDown, Note, Trash } from './icons.jsx';
 
 // Treat the reader as "at the bottom" within this many pixels — the standard
@@ -88,17 +88,24 @@ export default function Chat({
     }
   };
 
-  // State 0 — the opening turn is on screen and the person hasn't answered yet.
-  // Until they do, the composer sits directly under the opener in the middle of
-  // the screen rather than pinned to the bottom edge: the first answer is the
-  // only thing being asked for, so it shouldn't be at the far end of an empty
-  // page. It drops to the normal position the moment they reply.
+  // State 0 — the opening question is on screen and the person hasn't answered
+  // yet. The composer stays docked at the bottom edge as it is for the rest of
+  // the session; all this state changes is that its top border goes
+  // transparent, since a rule across an otherwise empty page reads as a divider
+  // rather than as the frame of a control. It comes back on the first reply.
   // Keyed on "no user turn yet" rather than history.length, so it survives an
   // opener that spans more than one message.
   const atStart = !history.some((m) => m.role === 'user');
 
   return (
     <div className={`chat${atStart ? ' is-start' : ''}`}>
+      {/* Outside the scroller on purpose: instructions are not a turn, and a
+          block that scrolls up the column with the first answers reads as
+          something that was said. It shows only while nobody has answered yet
+          (Ran, 23.8) — once the interview is running, the person has read it,
+          and it would hold a third of the window for the rest of the session. */}
+      {atStart && <Preamble />}
+
       <div className="stream">
         <div className="scroller" ref={scrollerRef} onScroll={handleScroll}>
           <div
@@ -126,7 +133,7 @@ export default function Chat({
             {loading && (
               <div className="msg assistant">
                 <div className="avatar" aria-hidden="true">
-                  <Mark size={26} />
+                  <Mark />
                 </div>
                 <div className="bubble-wrap">
                   <div className="bubble" aria-label="מנסח תשובה">
@@ -194,12 +201,6 @@ export default function Chat({
               <Send />
             </button>
           </div>
-          <div className="hint">Enter לשליחה · Shift+Enter לשורה חדשה</div>
-          {/* Under the composer, not above the opener: the reassurance that
-              nothing is stored is most wanted at the moment of typing, and
-              there it stays on screen instead of scrolling away after the
-              first answer. */}
-          <IntroCard />
         </div>
       )}
     </div>
@@ -219,10 +220,6 @@ function Message({
   trailing = 0,
 }) {
   const isAssistant = role === 'assistant';
-  // The opener is framing, not a reply — it answers nothing and was not "sent"
-  // at a moment worth marking. Stamping it invites reading the interview as a
-  // clock, which is the pressure design/brief.md rules out.
-  const isOpening = index === 0 && isAssistant;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [rewriteDraft, setRewriteDraft] = useState('');
@@ -264,24 +261,24 @@ function Message({
   };
 
   return (
-    // The opening turn is framing, not a conversational reply: it introduces the
-    // process rather than answering anything. So it spans the full column and
-    // lines up with the composer beneath it, instead of sitting in a 78% bubble
-    // indented past an avatar. Every later turn keeps the normal bubble rhythm.
-    <div
-      className={`msg ${isAssistant ? 'assistant' : 'user'}${grouped ? ' grouped' : ''}${
-        isOpening ? ' is-opening' : ''
-      }`}
-    >
+    // Two voices, told apart by card-versus-no-card rather than by which wall
+    // each is pinned to: the interviewer speaks from a white card behind its
+    // mark, the person's answer is plain text on the page directly under the
+    // question it answers.
+    <div className={`msg ${isAssistant ? 'assistant' : 'user'}${grouped ? ' grouped' : ''}`}>
       {isAssistant && (
         <div className={`avatar${grouped ? ' ghost' : ''}`} aria-hidden="true">
-          <Mark size={26} />
+          <Mark />
         </div>
       )}
 
       <div className="bubble-wrap">
         <div className="bubble">{content}</div>
-        {at && !isOpening ? <div className="stamp">{TIME_FMT.format(at)}</div> : null}
+        {/* Only the person's turns are stamped. A time beside every interviewer
+            line turned the column into a log; the answers are what anyone
+            scanning back is looking for, and stamping only those makes them
+            findable. */}
+        {at && !isAssistant ? <div className="stamp">{TIME_FMT.format(at)}</div> : null}
 
         {canAnnotate && editing && (
           <div className="note-edit">

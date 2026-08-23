@@ -11,22 +11,25 @@ import { rewriteTurn, buildRevision } from './rewriteTurn.js';
 
 // Opening turn. Ran's wording, revised 15.8.2026: the arc now ends on the
 // person choosing rather than on a response being arrived at, and the close
-// promises an informed decision instead of just locating ownership. Gendered
-// verbs toward the user carry both forms (תוכל/י).
+// promises an informed decision instead of just locating ownership.
 //
-// Still turn-lint compliant: three sentences, then exactly one directed
-// question. The arc is described without stage numbers, which are jargon toward
-// the user; the fuller roadmap lives in the intro card, which is interface, not
-// a turn, and so is not bound by the lint.
-const OPENING_TEXT =
-  'אם קרה משהו שהסעיר אותך והוא עדיין רץ לך בראש — כאן המקום לעבור עליו לאט. נתחיל ממה שקרה בפועל, נמשיך להבין למה זה תפס אותך ככה, ונתקדם יחד אל הנקודה שתוכל/י לבחור את התגובה הכי נכונה עבורך. אני מוביל, שואל שאלה אחת בכל פעם, ובסוף הראיון תוכל/י לקבל החלטה מושכלת.\n\nאז ספר לי — מה קרה?';
+// Split with the redesign: the three framing sentences that used to precede
+// the question were never a reply — they introduced the process rather than
+// answering anything — so they left the transcript and became the preamble
+// (Preamble.jsx), pinned under the header as interface. Not a word of Ran's
+// changed; only the frame moved out of the conversation.
+//
+// What is left is what the interviewer actually says first: exactly one
+// directed question, which is what the turn-lint asks of every system turn.
+// The roadmap the preamble carries is interface copy and not bound by it.
+const OPENING_QUESTION = 'אז ספר לי — מה קרה?';
 
 // Messages carry a timestamp so the chat can show one; `at` is additive and
 // ignored by the core (formatHistory maps role/content only), so older exports
 // import cleanly without it.
 const openingMessage = () => ({
   role: 'assistant',
-  content: OPENING_TEXT,
+  content: OPENING_QUESTION,
   at: Date.now(),
 });
 

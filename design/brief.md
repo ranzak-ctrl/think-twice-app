@@ -103,7 +103,7 @@ protocol's response to each:
 - Colour, and specifically **whether this palette feels containing or clinical**.
 - Typography, Hebrew type choice, line length, line height at 15px.
 - Density and breathing room — how much air a flooded reader needs.
-- Bubble treatment: the assistant's weight vs. the user's, and whether the current dark user bubble feels like *their own voice* or like being quoted back at them.
+- ~~Bubble treatment: the assistant's weight vs. the user's, and whether the current dark user bubble feels like *their own voice* or like being quoted back at them.~~ **Answered 23.8.2026:** the dark bubble is gone. The person's answer is unframed text on the page, on the start edge, directly under the question it answers — the two voices are told apart by card-versus-no-card, not by which wall each is pinned to. Pushing the answer to the far side made the page read as two strangers messaging, and in an RTL page the left is the *other* party's side; the person is not the other party here.
 - Motion: currently minimal by design. Does anything need to be *softer*, not busier?
 - The felt quality of the two decision moments — they should feel like being handed the pen, not like a form to submit.
 - The decision board: how to show options with genuinely equal visual weight.

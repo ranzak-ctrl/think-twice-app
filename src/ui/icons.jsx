@@ -1,3 +1,6 @@
+import brandLockup from '../assets/brand-lockup.png';
+import avatarMark from '../assets/avatar-mark.png';
+
 // Inline SVG icons — no icon font, no network request, no emoji rendering
 // differences across platforms. All icons inherit `currentColor` and size 16
 // unless told otherwise.
@@ -15,80 +18,46 @@ const base = (size) => ({
   focusable: false,
 });
 
-// The brand lockup, from the top variant on the logo board
-// (design/Think Twice Logo.html): two profiles facing the wordmark from either
-// side — the two readings of the same event the tool is built around.
+// The brand lockup — board variant 12A: the pair mark above the name, no rule
+// and no tagline, the name in Archivo Medium.
 //
-// Composed the way the board composes it: two SVG marks flanking real HTML
-// text, not one SVG with <text> inside. That keeps the wordmark selectable and
-// hinted by the OS, and it is what the board's own markup does.
+// The mark ships as artwork, not as geometry. It was two SVG paths built from
+// the board's own coordinates; the exported PNG is the board's drawing itself,
+// which is the thing being approved. That trade is deliberate and has one
+// consequence worth stating: the file is baked flat #ff8a00 (--accent), so it
+// is pixels rather than currentColor. Retuning --accent means re-exporting the
+// artwork.
 //
-// Only the mark geometry is fixed here (viewBox and stroke-width straight from
-// the board). Every dimension — mark size, wordmark size, the gap between them
-// — is expressed in em and driven by one font-size in CSS, so the lockup scales
-// as a unit and holds the board's proportions exactly at any size.
+// Only the composition is expressed in code. Every dimension — mark size, name
+// size, the gap between them — derives from --lockup in CSS, so the lockup
+// scales as a unit and holds the board's proportions at any size. `is-stacked`
+// is the board's own composition; the header lays the same two parts in a row.
+// Renders into .brand, which is the flex container itself — no extra wrapper,
+// so the gap the board specifies is the gap that applies.
 //
-// The left profile is the right one mirrored, so both share a single path.
-const Profile = ({ flip }) => (
-  <svg
-    className={`brand-mark${flip ? ' is-flipped' : ''}`}
-    viewBox="100 10 83 201"
-    fill="none"
-    stroke="var(--logo-orange)"
-    strokeWidth={17}
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    aria-hidden="true"
-    focusable="false"
-  >
-    <path d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203" />
-  </svg>
-);
-
-// Renders into .brand, which is the flex row itself — no extra wrapper, so the
-// gap the board specifies is the gap that applies.
-export function Logo() {
+// The name is in the markup either way, but only one of the two carries it to a
+// screen reader: the header hides .brand-name (`display: none`), so there the
+// mark's alt text is the only thing left saying what this is, while the gate
+// shows the wordmark and the same alt would read the name out twice.
+export function Logo({ named = false }) {
   return (
     <>
-      <Profile flip />
+      <img className="brand-mark" src={brandLockup} alt={named ? '' : 'Think Twice'} />
       <span className="brand-name">Think Twice</span>
-      <Profile />
     </>
   );
 }
 
-// Conversation avatar — the "mark only" variant from the logo board: the two
-// profiles back to back, reading as one head split down the middle.
+// Conversation avatar — a single profile, facing the card it belongs to. The
+// pair is the logo and belongs in the header; at 28px it turns to noise, and
+// the board's own rule is that one profile is what survives small sizes.
 //
-// Replaces the two overlapping circles. Those were a stand-in from before there
-// was a real mark; keeping them meant the interviewer's avatar was the one
-// place in the app not wearing the brand.
-//
-// Drawn as a single SVG rather than the board's two side-by-side elements so it
-// drops into a fixed avatar box as one glyph. The geometry is still the
-// board's: source viewBox 100 10 83 201 at 0.398 scale (201 -> 80), stroke 17,
-// and the same 8-unit gap between the halves, which is what makes it read as a
-// split rather than a silhouette.
-export function Mark({ size = 20 }) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 74 80"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={17}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      focusable="false"
-    >
-      {/* left half, mirrored */}
-      <path transform="translate(33,0) scale(-0.398,0.398) translate(-100,-10)" d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203" />
-      {/* right half */}
-      <path transform="translate(41,0) scale(0.398,0.398) translate(-100,-10)" d="M95,18C132,18 152,46 152,84C152,96 145,100 144,108L156,132C159,136 158,140 152,141L144,143C148,150 148,154 142,158C149,166 147,178 138,185C127,195 113,201 99,203" />
-    </svg>
-  );
+// Its own export, not the header's file scaled down: stroke weight does not
+// survive a 70x reduction, so the avatar mark is drawn heavier at source to
+// arrive at the same visual weight the interface reads as "the logo". Re-export
+// both together if the line weight ever changes.
+export function Mark() {
+  return <img className="avatar-mark" src={avatarMark} alt="" />;
 }
 
 export function Plus({ size = 16 }) {
