@@ -341,10 +341,8 @@ button {
 }
 
 /* Guide closed: no panel to reserve room for, so the gutter collapses and the
-   two columns fill the page. Anchored on .app, not .main-body: the guide panel
-   is a sibling of .main, so .main-body never contains it and the design's own
-   selector would collapse the gutter unconditionally. */
-.app:not(:has(.guide)) .rail {
+   two columns fill the page. */
+.main-body:not(:has(.guide)) .rail {
   margin-inline-end: 0;
 }
 
@@ -544,13 +542,10 @@ button {
 }
 
 /* Operating instructions, not a turn — so it sits outside the scroller
-   entirely, directly under the header: it is true before anyone speaks, and a
-   block that scrolled up the column with the first answers would read as
-   something that was said. Card, mark and stamp all mean "someone said this";
-   none of them applies here. It is on screen only until the first answer
-   (Ran, 23.8): the design's own DOM carries it on the opening screen alone,
-   and at this size it would otherwise hold a third of the window for the whole
-   session. Accent-coloured and set larger than
+   entirely, directly under the header: it is true before anyone speaks and
+   stays true throughout, and scrolling away with the first answers would make
+   it look like something that was said. Card, mark and stamp all mean "someone
+   said this"; none of them applies here. Accent-coloured and set larger than
    the conversation, which is what makes it read as the frame around the
    session rather than the quietest line in it. Holds the column's own track so
    the conversation starts under it, not beside it. */
@@ -772,16 +767,6 @@ button {
   line-height: 1.5;
   color: var(--text-faint);
   margin: 6px 0 0;
-}
-
-/* Kept through the 23.8 redesign, which dropped it: nothing in the design
-   replaces the "N turns will be deleted, no undo" line, and the guide screen
-   there simply never renders one (the annotated question is the last turn, so
-   nothing is at stake). The markup still emits it, and without this rule an
-   irreversible warning would come out the same faint grey as the sentence
-   telling the tester what happens next. */
-.note-edit-hint.is-warn {
-  color: var(--warn);
 }
 
 /* What the interviewer actually asked, kept beside the tester's replacement so
