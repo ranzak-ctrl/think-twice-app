@@ -1,4 +1,5 @@
 import brandLockup from '../assets/brand-lockup.png';
+import brandLockupHeavy from '../assets/brand-lockup-heavy.png';
 import avatarMark from '../assets/avatar-mark.png';
 
 // Inline SVG icons — no icon font, no network request, no emoji rendering
@@ -35,14 +36,28 @@ const base = (size) => ({
 // Renders into .brand, which is the flex container itself — no extra wrapper,
 // so the gap the board specifies is the gap that applies.
 //
-// The name is in the markup either way, but only one of the two carries it to a
-// screen reader: the header hides .brand-name (`display: none`), so there the
-// mark's alt text is the only thing left saying what this is, while the gate
-// shows the wordmark and the same alt would read the name out twice.
-export function Logo({ named = false }) {
+// Two placements, and everything else follows from which one this is:
+//
+// `stacked` is the gate — the board's own composition, mark over name at 190px,
+// where the fine-line export holds and the wordmark is on screen. The default is
+// the header, where the mark stands alone at 42px; a stroke that reads at 190px
+// disappears at that size, so the header carries its own heavier export rather
+// than the gate's file scaled down. The width ratio differs with it — a heavier
+// stroke widens the frame — and CSS carries that as --pair-ratio, set on
+// `.header .brand`, so the two never look stretched against each other.
+//
+// The alt text follows the same split: the header hides .brand-name
+// (`display: none`), so there the mark's alt is the only thing left saying what
+// this is; the gate shows the wordmark, where the same alt would read the name
+// out twice.
+export function Logo({ stacked = false }) {
   return (
     <>
-      <img className="brand-mark" src={brandLockup} alt={named ? '' : 'Think Twice'} />
+      <img
+        className="brand-mark"
+        src={stacked ? brandLockup : brandLockupHeavy}
+        alt={stacked ? '' : 'Think Twice'}
+      />
       <span className="brand-name">Think Twice</span>
     </>
   );

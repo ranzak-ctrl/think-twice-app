@@ -133,16 +133,16 @@ button {
 
 /* --------------------------------------------------------------- header -- */
 
+/* No bar: no fill, no rule under it, no fixed height. The logo and the
+   controls sit straight on the page, which lets the mark be as large as it
+   wants instead of as large as a 56px strip allows. */
 .header {
-  height: var(--header-h);
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 10px;
-  padding-inline: 16px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding-top: env(safe-area-inset-top);
+  padding: 14px 16px;
+  padding-top: calc(14px + env(safe-area-inset-top));
 }
 
 /* The logo lockup — board variant 12A: the pair mark over the name, no rule,
@@ -168,7 +168,11 @@ button {
 
 .brand-mark {
   display: block;
-  width: calc(var(--lockup) * 1.198);
+  /* The ratio travels with the file: each export has its own line weight, and a
+     heavier stroke widens the frame. Both files carry the same drawing at the
+     same scale — only the stroke differs — so the mark never looks stretched
+     between the two places it appears. */
+  width: calc(var(--lockup) * var(--pair-ratio, 1.198));
   height: var(--lockup);
 }
 
@@ -198,8 +202,11 @@ button {
 /* The header carries the mark alone. The name is already in the tab title and
    on the gate the person just came through, so repeating it costs the bar its
    height for nothing — and the mark at 36px is unmistakable. */
+/* A stroke that reads at 190px disappears at 36px, so the header gets its own
+   export drawn with a heavier line rather than the gate's file scaled down. */
 .header .brand {
-  --lockup: 36px;
+  --lockup: 42px;
+  --pair-ratio: 1.209;
 }
 
 .header .brand-name {
@@ -549,7 +556,10 @@ button {
      than the page, with an orange edge — the cream tint it replaced was too
      close to white to register as a block at all. The interviewer's card is
      white, so grey keeps the two apart even though both are outlined. */
-  margin: 16px auto 4px;
+  /* Sits outside the scroller, so it has to reproduce .column's own 20px top
+     padding itself — that is what puts its top edge on the same line as the
+     first bubble on every other screen. */
+  margin: 20px auto 4px;
   padding: 18px 22px;
   border: 1px solid var(--accent-line);
   border-radius: var(--radius-lg);

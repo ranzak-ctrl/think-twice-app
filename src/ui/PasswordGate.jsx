@@ -28,7 +28,7 @@ export default function PasswordGate({ children }) {
             renders, so the two screens cannot drift apart. */}
         <h1>
           <span className="brand is-stacked">
-            <Logo named />
+            <Logo stacked />
           </span>
         </h1>
         <input
