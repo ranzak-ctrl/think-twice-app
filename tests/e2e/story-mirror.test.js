@@ -51,8 +51,8 @@ describe('story mirror — across a full interview', () => {
     // And the mirror never carried them, on any turn.
     for (const story of snapshots) {
       const shown = [
-        ...story.scenes.flatMap((sc) => [sc.title, ...sc.lines]),
-        ...story.cast.flatMap((a) => [a.label, a.role, ...a.actions]),
+        ...story.nodes.map((n) => n.text),
+        ...story.cast.map((a) => a.label),
       ].join(' | ');
       for (const line of barred) expect(shown).not.toContain(line);
     }
@@ -76,24 +76,24 @@ describe('story mirror — across a full interview', () => {
       ];
       state = nextState;
       const story = buildStory(state);
-      counts.push(story.scenes.flatMap((sc) => sc.lines).length);
+      counts.push(story.nodes.length);
     }
 
-    // Monotonic: a line that was mirrored is never taken back off the screen.
-    // Someone who saw a detail of their own story appear and then vanish would
-    // reasonably conclude the system had lost it.
+    // Monotonic: a shape that was drawn is never rubbed out. Someone who saw a
+    // detail of their own story appear and then vanish would reasonably conclude
+    // the system had lost it. (A slot's TEXT can change when a later finding
+    // corrects it — that is the eraser working — but the node stays.)
     for (let i = 1; i < counts.length; i++) expect(counts[i]).toBeGreaterThanOrEqual(counts[i - 1]);
 
-    // By the close, every scene the projection defines has content: the chain
-    // event → thought → feeling → action → plan → other-side is complete.
+    // By the close the whole chain is drawn, in story order, every kind present.
     const final = buildStory(state);
-    expect(final.scenes.map((sc) => sc.key)).toEqual([
-      'event',
-      'thought',
-      'feeling',
-      'action',
+    expect(final.nodes.map((n) => n.kind)).toEqual([
+      'fact', 'fact', 'fact',
+      'thought', 'thought',
+      'feeling', 'feeling',
+      'action', 'action',
       'plan',
-      'angle',
+      'other', 'other', 'other',
     ]);
     expect(final.cast.length).toBeGreaterThan(0);
   });

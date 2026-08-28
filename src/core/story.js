@@ -1,172 +1,213 @@
-// Story projection — the StateDocument rendered as a story the person can look at.
+// Story projection — the case as a drawing, not as a summary.
 //
-// Purpose (Ran, 28.8.2026): while the interview runs, show the case taking shape
-// beside the chat. Two values, both stated in the request:
+// Purpose (Ran, 28.8.2026): while the interview runs, the case is sketched beside
+// the chat — lines, boxes and arrows that fill in slowly as the story is told.
+// Two values, both stated in the request:
 //
 //   Clinical — it stops being a pile of details and becomes a story with a
-//   beginning, a middle and an end. Cause and effect become visible, and the
-//   person can look at their own case from the outside. design/brief.md:46 names
-//   "order in the story" and "a clear mirror" as two of the four things this tool
-//   gives, against the ruling/advice the person actually asks for.
-//   design/brief.md:36 names בלבול נרטיבי — the story is not a story yet — as one
-//   of the five states to assume on arrival. This is the answer to that state.
+//   beginning, a middle and an end, one the person can look at from the outside
+//   with cause and effect visible in it. design/brief.md:46 names "order in the
+//   story" and "a clear mirror" as two of the four things this tool gives, and
+//   :36 names בלבול נרטיבי — the story is not a story yet, it is a pile of
+//   moments with no timeline — as a state to assume on arrival.
 //
 //   UX — it is proof the system understood correctly, early enough to be worth
-//   correcting. The person reads the mirror, sees a detail that is off, and says
-//   so in their next sentence. That is how ordinary conversation repairs itself.
+//   correcting. The person looks at the drawing, sees a detail that is wrong, and
+//   says so in their next sentence. That is how conversation repairs itself.
 //
-// This module is the projection only: StateDocument in, display model out. Pure,
-// no UI and no platform imports, so it stays inside CLAUDE.md principle 4 and is
-// testable without a DOM. StoryPanel.jsx renders what comes out and adds nothing.
+// WHY THE FIRST VERSION WAS REJECTED, so it is not rebuilt by accident: it printed
+// every finding as a bullet under a stage heading, which made it "a summary of the
+// story taking shape in words" (Ran, 28.8) rather than a picture. The lesson is in
+// the shape of this module's output, not only in the CSS: it emits NODES — one
+// short label each, typed by what kind of thing it is — because a projection that
+// hands the UI paragraphs will always be rendered as paragraphs.
+//
+// This module is the projection only: StateDocument in, node list out. Pure, no UI
+// and no platform imports, so it stays inside CLAUDE.md principle 4 and is testable
+// without a DOM. StoryPanel.jsx draws what comes out and decides nothing.
 //
 // ── THE ORDER IS THE ARGUMENT ──
-// Scenes are not in stage order, they are in the order the story happened:
-// event → thought → feeling → action. That is the chain the whole interview is
-// built to expose, so the arrow between two boxes reads as "led to" — which is
-// the cause and effect Ran asked to make visible. A person who never separated
-// the interpretation from the event sees them as separate boxes here.
-// Consequence: a scene appears the moment it has content, wherever it belongs in
-// the chain, so the story REORGANISES as understanding deepens. During stage 1
-// it reads מה קרה → מה עשית; when stage 2 lands, the interpretation slots in
-// between them and the reaction stops looking like it followed the event
-// directly. That re-ordering is the clinical point, not a side effect.
+// Nodes are not in stage order, they are in the order the story happened:
+// fact → thought → feeling → action. That is the chain the whole interview exists
+// to expose, so an arrow between two nodes reads as "led to" — the cause and
+// effect Ran asked to make visible. Consequence: a node appears the moment it has
+// content, wherever it belongs in the chain, so the drawing REORGANISES as
+// understanding deepens. During stage 1 it reads fact → action; when stage 2
+// lands, the interpretation slots in between them and the reaction stops looking
+// like it followed the event directly. That re-ordering is the clinical point.
 //
 // ── FOUR HARD RULES, each from a written source. Read before editing. ──
 //
-// 1. Reflect CONTENT, never ASSESSMENT. design/brief.md:64 forbids evaluating
-//    the person's input; :63 forbids completion meters; :65 forbids progress
-//    pressure. So this reads `findings` (state.js calls it "Observability ONLY")
-//    and `actorMap`, and NEVER `coverage`, `gaps` or saturation counters.
-//    Corollary, and the reason empty scenes are dropped rather than greyed: a
-//    column of empty boxes labelled with what is coming IS a completion meter —
-//    it shows how much of them is still missing. The story only ever grows.
+// 1. Reflect CONTENT, never ASSESSMENT. design/brief.md:64 forbids evaluating the
+//    person's input; :63 forbids completion meters; :65 forbids progress pressure.
+//    Nothing is drawn as an empty placeholder waiting to be filled: an outline of
+//    the parts still missing is a completion meter with a pencil sketch over it.
+//    `gaps` and the saturation counters are never read at all.
+//    `coverage` MAY GATE, and may NEVER BE DISPLAYED — see CERTAINTY below. The
+//    ban is on showing the person a verdict about what they said, not on the code
+//    consulting its own confidence before it commits ink. A score that decides
+//    whether a node is drawn yet shows nobody anything: the person cannot tell a
+//    detail is being held back, only that what is on the paper is right.
 //
-// 2. The wound is never mirrored. CLAUDE.md forbids formulating `wound` for the
+// 2. The wound is never drawn. CLAUDE.md forbids formulating `wound` for the
 //    person or reflecting it back as our interpretation — Natali's ruling of
 //    14.8: he arrives at it himself, through directed questions. `adhd_pattern`
 //    is likewise barred from appearing as a diagnosis. Both are excluded by
 //    construction (NEVER_MIRROR, asserted in tests), not by whoever writes the
-//    next scene list.
+//    next entry in LAYERS.
 //
 // 3. The cast is shown, its clarity is not. `actorMap` carries `clear:false` for
 //    a character the interviewer is still disambiguating. That flag is the
-//    stage-1 gate (state.js deriveActorsScore) and it is an assessment of what
-//    the person said, so it stops here: the mirror shows who is in the story and
-//    never marks one of them as a problem. Same reason `gaps` never appears —
+//    stage-1 gate (state.js deriveActorsScore) and an assessment of what the
+//    person said, so it stops here. Same reason `gaps` never appears —
 //    gap-management.md §1 requires it stay invisible.
 //
 // 4. No new decision point. design/brief.md:68-73 allows exactly two in the whole
-//    interview — summary confirmations and the stage-7 decision — and says that
-//    if a new control appears anywhere it is a bug. So the projection carries no
-//    actions and the panel has no buttons, no edit affordance, no dismiss. A
-//    correction is made the way everything else is: the person says so, the next
-//    evaluation updates findings, the mirror re-renders. The mirror is the
-//    prompt; the chat is the only interface.
+//    interview and says that if a new control appears anywhere it is a bug. The
+//    projection carries no actions; the drawing has no buttons and nothing to
+//    click. A correction is made by saying so in the chat.
 
-// Slots withheld from the mirror under rule 2. Enforced in linesFor, below the
-// scene list, so adding a scene cannot re-admit them by accident.
+// Slots withheld from the drawing under rule 2. Enforced in the collector below,
+// not in LAYERS, so it holds for every layer that will ever be added.
 export const NEVER_MIRROR = new Set(['wound', 'adhd_pattern']);
 
-// The story, in the order it happened rather than the order it was collected.
-// Each scene pulls findings from one or more [stage, slot] pairs; `auto_reaction`
-// is collected in both stage 1 (as a fact) and stage 4 (in its own right), so the
-// scene reads both and de-duplicates.
+// The story's chain, in the order it happened. `kind` is what the UI draws the
+// node AS — the shapes differ because the things differ, and seeing that the
+// interpretation is a different KIND of object from the event is most of the
+// clinical work this picture does. A fact is a box; a thought is not.
 //
-// Scope stops at stage 5. Stage 6 alternatives and the stage-7 decision are the
-// decision board's, which has rules of its own (design/brief.md:62 — nothing may
-// rank, star or pre-select an option). Mirroring the basket here would put the
-// options on screen a second time, in a surface not built to hold them equally.
-// The mirror is the case; the board is the choice.
-//
-// Titles are NOUNS, and must stay nouns. The stage rail is on the same screen and
-// labels the process in questions — 'מה קרה', 'מה הרגשת', 'איך הגבת' (StageRail.jsx).
-// The first draft of this list used the same phrasing and put 'מה קרה' on screen
-// twice, once as where-you-are and once as a box of facts. A noun names a part of
-// the story, a question names a step of the process; keeping the two apart is what
-// stops the mirror from reading as a second progress indicator.
-export const SCENES = [
-  { key: 'event', title: 'האירוע', slots: [['stage1', 'trigger'], ['stage1', 'timeline'], ['stage1', 'status']] },
-  { key: 'thought', title: 'המחשבה', slots: [['stage2', 'causal'], ['stage2', 'meaning']] },
-  { key: 'feeling', title: 'הרגש', slots: [['stage3', 'emotion'], ['stage3', 'past_echo']] },
-  { key: 'action', title: 'התגובה', slots: [['stage1', 'auto_reaction'], ['stage4', 'auto_reaction']] },
-  { key: 'plan', title: 'מה שקלת לעשות', slots: [['stage4', 'planned_reaction']] },
+// Scope stops at stage 5. Stage 6 alternatives and the stage-7 decision belong to
+// the decision board, which has rules of its own (design/brief.md:62 — nothing may
+// rank, star or pre-select an option). The drawing is the case; the board is the
+// choice.
+export const LAYERS = [
+  { kind: 'fact', slots: [['stage1', 'trigger'], ['stage1', 'timeline'], ['stage1', 'status']] },
+  { kind: 'thought', slots: [['stage2', 'causal'], ['stage2', 'meaning']] },
+  { kind: 'feeling', slots: [['stage3', 'emotion'], ['stage3', 'past_echo']] },
+  { kind: 'action', slots: [['stage1', 'auto_reaction'], ['stage4', 'auto_reaction']] },
+  { kind: 'plan', slots: [['stage4', 'planned_reaction']] },
   {
-    key: 'angle',
-    title: 'הצד השני',
+    kind: 'other',
     slots: [['stage5', 'perspective'], ['stage5', 'intention'], ['stage5', 'alt_formulation']],
   },
 ];
 
-// Collect one scene's lines, de-duplicated, preserving first-seen order.
-// Rule 2 is applied here rather than at the scene list so it holds for every
-// scene that will ever exist.
-function linesFor(findings, slots) {
-  const out = [];
+// ── CERTAINTY (Ran, 28.8): "before adding an item, weigh how certain it is —
+// maybe another question is needed first." ──
+// The interview already grades exactly this, and the code does not have to invent
+// a second opinion: the slot scale is 0 untouched / 1 partial or vague / 2 clear
+// and corroborated / U legitimately unknown (transition-protocol §Slot). A finding
+// is drawn only once ITS OWN slot stands at 2. So a detail mentioned in passing
+// sits in `findings` unpublished while the interviewer keeps asking, and appears
+// on the paper at the moment the interview itself calls it solid. Nothing about
+// the score reaches the screen — the person sees fewer, firmer things.
+//
+// U is deliberately not enough. "He doesn't remember" is a legitimate final answer
+// for the ROUTER, and a thing you cannot draw.
+const CONFIRMED = 2;
+
+// ── SIGNIFICANCE (Ran, 28.8): "is it structural, or a secondary detail?" ──
+// ONE NODE PER SLOT. The slot list is not an arbitrary schema — it is the
+// Transition Protocol's clinical answer to what a case is made of (trigger,
+// timeline, status, causal, meaning, emotion, past echo, reaction...). So the
+// structural elements of the story are exactly the confirmed slots, one shape
+// each, and everything else the person said is detail that supports a shape
+// without being one.
+//
+// This is what separates a drawing from the list it replaced. Drawing every
+// finding put five boxes in a row for stage 1 alone, two of which were the same
+// moment timestamped twice, and a column of twelve boxes is a list that has been
+// given corners. The chain carries the sequence; a slot contributes one link.
+//
+// The node shows the LATEST finding in its slot, not the first. Findings only ever
+// append (state.js addFindings), so the last one is the most recently confirmed
+// wording — which means a correction, arriving later, replaces what is drawn
+// instead of piling up beside it. That is the nearest thing to erasing a line that
+// an append-only record allows.
+//
+// What the code still cannot do is rank two findings inside one slot on merit;
+// "latest" is recency, not importance. Real significance has to come from the
+// model saying so, which is a change to evaluator.md — prompt-editor's file, and
+// Natali's wording. Filed as questions-for-natali.md §9.
+
+// A node carries a label, not a sentence. Findings arrive as free text up to 140
+// characters (state.js FINDING_MAX_LEN); at that length a node stops being a shape
+// with a name on it and becomes a paragraph in a box, which is the failure mode
+// this rebuild exists to fix. Long findings are trimmed at a word boundary.
+const LABEL_MAX = 58;
+
+function toLabel(raw) {
+  const text = raw.replace(/\s+/g, ' ').trim();
+  if (text.length <= LABEL_MAX) return text;
+  const cut = text.slice(0, LABEL_MAX);
+  const lastSpace = cut.lastIndexOf(' ');
+  return `${(lastSpace > LABEL_MAX * 0.6 ? cut.slice(0, lastSpace) : cut).trim()}…`;
+}
+
+// The person is addressed, never described. Models label the interviewee from the
+// system's vocabulary — 'המשתמש' — and a drawing shown TO that person calling them
+// "the user" is the system talking about them in the third person, over their
+// shoulder, about the worst evening they have had this month. design/brief.md:66
+// bars anything the cynic reads as condescension. Matched on the whole trimmed
+// label so a real character named in one of these words is untouched.
+const SELF_LABELS = new Set(['המשתמש', 'משתמש', 'המרואיין', 'אני', 'עצמי', 'user']);
+const SELF_ADDRESS = 'אתה';
+
+// The cast is NAMES ONLY — who is in this story, nothing else.
+//
+// The first version drew each character as a card carrying role, relation and a
+// list of their actions, and a live run turned it into the densest block on the
+// screen: five cards for four people, 'אתה — מספר הסיפור', and every action
+// printed twice because the model fills `role` with a thing the character did and
+// then lists that same thing under `actions`. What a character DID belongs to the
+// beat where it happened, on the chain; up here it is noise competing with the
+// drawing. Roles and relations exist so the INTERVIEWER can tell two characters
+// apart — the person reading this already knows who these people are to him.
+function buildCast(actorMap) {
   const seen = new Set();
-  for (const [stageKey, slot] of slots) {
-    if (NEVER_MIRROR.has(slot)) continue;
-    for (const item of findings?.[stageKey]?.[slot] ?? []) {
-      if (typeof item !== 'string') continue;
-      const line = item.trim();
-      if (!line || seen.has(line)) continue;
-      seen.add(line);
-      out.push(line);
-    }
+  const out = [];
+  for (const [id, a] of Object.entries(actorMap ?? {})) {
+    const raw = (a?.label ?? '').trim();
+    if (!raw) continue;
+    const label = SELF_LABELS.has(raw) ? SELF_ADDRESS : raw;
+    if (seen.has(label)) continue; // two ids, one name — draw the person once
+    seen.add(label);
+    out.push({ id, label });
   }
   return out;
 }
 
-// The person is addressed, never described. Models label the interviewee from the
-// system's vocabulary — 'המשתמש' — and a mirror shown TO that person calling them
-// "the user" is the system talking about them in the third person, over their
-// shoulder, about the worst evening they have had this month. design/brief.md:66
-// bars anything the cynic reads as condescension and this clears that bar easily.
-// Matched on the whole trimmed label so a real character named in one of these
-// words is untouched.
-const SELF_LABELS = new Set(['המשתמש', 'משתמש', 'המרואיין', 'אני', 'עצמי', 'user']);
-const SELF_ADDRESS = 'אתה';
-
-// The cast, as characters rather than as a scorecard: no clarity badge, no count,
-// no ordering by importance — that would be ranking the people in someone else's
-// story (design/brief.md:62). Insertion order is the order they entered the telling.
+// StateDocument → { cast, nodes, isEmpty }.
 //
-// `relation` is deliberately not carried through. It exists so the INTERVIEWER can
-// tell two characters apart ("אבא" the father vs. the person as a father — the
-// stage-1 gate), and the person reading the mirror already knows who these people
-// are to him; it is his story. Label and role are the whole cast entry.
-//
-// A character's `role` is often word-for-word one of their `actions` — the model
-// fills 'role' with the thing they did ("אמר שהבשר לא איכותי") and then lists that
-// same act. Printing both puts the sentence on screen twice and makes the mirror
-// look like it is padding, which is the opposite of "this system understood me".
-function buildCast(actorMap) {
-  return Object.entries(actorMap ?? {})
-    .map(([id, a]) => {
-      const label = (a?.label ?? '').trim();
-      const role = (a?.role ?? '').trim();
-      return {
-        id,
-        label: SELF_LABELS.has(label) ? SELF_ADDRESS : label,
-        role,
-        actions: (a?.actions ?? [])
-          .map((act) => (typeof act === 'string' ? act.trim() : ''))
-          .filter((act) => act && act !== role),
-      };
-    })
-    .filter((a) => a.label);
-}
-
-// StateDocument → { cast, scenes, isEmpty }. Only scenes that already have
-// content are returned (rule 1), so the caller renders a story that grows and
-// never a form with blanks in it.
+// One node per finding, de-duplicated across the whole chain: the drawing fills in
+// as understanding does, one shape per thing understood, which is what Ran asked
+// for. De-duplication is global rather than per layer because the same fact is
+// genuinely reported twice — stage 4 revisits the reaction stage 1 already
+// recorded — and drawing it twice would say the person did it twice.
 export function buildStory(state) {
   const findings = state?.findings ?? {};
+  const coverage = state?.coverage ?? {};
   const cast = buildCast(state?.actorMap);
-  const scenes = SCENES.map(({ key, title, slots }) => ({
-    key,
-    title,
-    lines: linesFor(findings, slots),
-  })).filter((scene) => scene.lines.length > 0);
+  const nodes = [];
+  const seen = new Set();
 
-  return { cast, scenes, isEmpty: cast.length === 0 && scenes.length === 0 };
+  for (const { kind, slots } of LAYERS) {
+    for (const [stageKey, slot] of slots) {
+      if (NEVER_MIRROR.has(slot)) continue;
+      if (coverage?.[stageKey]?.[slot] !== CONFIRMED) continue; // not solid yet
+      const items = findings?.[stageKey]?.[slot] ?? [];
+      let label = '';
+      for (let i = items.length - 1; i >= 0 && !label; i--) {
+        if (typeof items[i] === 'string') label = toLabel(items[i]);
+      }
+      if (!label || seen.has(label)) continue;
+      seen.add(label);
+      // The id is the slot itself, never the node's index in the finished chain:
+      // a node that keeps its identity when an earlier layer lands in front of it
+      // is a node that does not get redrawn and re-animated.
+      nodes.push({ id: `${stageKey}.${slot}`, kind, text: label });
+    }
+  }
+
+  return { cast, nodes, isEmpty: cast.length === 0 && nodes.length === 0 };
 }

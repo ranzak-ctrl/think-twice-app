@@ -1,116 +1,58 @@
 import { describe, it, expect } from 'vitest';
-import { buildStory, SCENES, NEVER_MIRROR } from '../../src/core/story.js';
-import { createState, addFindings, mergeActorMap } from '../../src/core/state.js';
-import { readFile } from 'node:fs/promises';
+import { buildStory, LAYERS, NEVER_MIRROR } from '../../src/core/story.js';
+import { createState, addFindings, mergeActorMap, setSlot } from '../../src/core/state.js';
 
-// The story mirror (src/core/story.js). These tests guard the four hard rules in
-// that file's header — each one is a written clinical constraint, not a
-// preference, so a change that trips one of these should fail the build rather
-// than reach a tester.
+// The story mirror (src/core/story.js). These guard the rules in that file's
+// header — each is a written clinical constraint, not a preference, so a change
+// that trips one should fail the build rather than reach a tester.
 
-describe('story projection — the clinical exclusions', () => {
-  it('never mirrors the wound, even when findings carry it', () => {
-    // CLAUDE.md: the person reaches the wound himself. Reflecting it back as our
+// Findings are only drawn once their slot is confirmed (=2), so every fixture has
+// to say so explicitly. That is the certainty gate, not test scaffolding.
+function withFinding(state, stageKey, slot, items, score = 2) {
+  return setSlot(addFindings(state, stageKey, slot, items), stageKey, slot, score);
+}
+
+const textsOf = (state) => buildStory(state).nodes.map((n) => n.text);
+
+describe('story mirror — the clinical exclusions', () => {
+  it('never draws the wound, even when it is confirmed and on record', () => {
+    // CLAUDE.md: the person reaches the מוגלה himself. Reflecting it back as our
     // interpretation is forbidden — Natali, 14.8.2026.
-    let s = addFindings(createState(), 'stage2', 'wound', ['אני לא שווה כלום']);
-    s = addFindings(s, 'stage2', 'causal', ['חשבתי שהיא מזלזלת בי']);
-    const story = buildStory(s);
-    const all = story.scenes.flatMap((sc) => sc.lines).join(' ');
-    expect(all).not.toContain('אני לא שווה כלום');
-    expect(all).toContain('חשבתי שהיא מזלזלת בי');
+    let s = withFinding(createState(), 'stage2', 'wound', ['אני לא שווה כלום']);
+    s = withFinding(s, 'stage2', 'causal', ['חשבתי שהיא מזלזלת בי']);
+    expect(textsOf(s)).toEqual(['חשבתי שהיא מזלזלת בי']);
   });
 
-  it('never mirrors the ADHD pattern', () => {
-    // CLAUDE.md: adhd_pattern is a normalising hypothesis the interviewer SAYS,
-    // never a label displayed back at the person.
-    const s = addFindings(createState(), 'stage2', 'adhd_pattern', ['דפוס של קשב']);
-    expect(buildStory(s).scenes).toHaveLength(0);
+  it('never draws the ADHD pattern', () => {
+    const s = withFinding(createState(), 'stage2', 'adhd_pattern', ['דפוס של קשב']);
+    expect(buildStory(s).nodes).toEqual([]);
   });
 
-  it('excludes the barred slots by construction, not by scene list', () => {
-    // Rule 2 is enforced inside linesFor, so a future scene cannot re-admit them.
-    for (const scene of SCENES) {
-      for (const [, slot] of scene.slots) expect(NEVER_MIRROR.has(slot)).toBe(false);
+  it('excludes the barred slots by construction, not by the layer list', () => {
+    for (const layer of LAYERS) {
+      for (const [, slot] of layer.slots) expect(NEVER_MIRROR.has(slot)).toBe(false);
     }
-    expect(NEVER_MIRROR.has('wound')).toBe(true);
-    expect(NEVER_MIRROR.has('adhd_pattern')).toBe(true);
+    expect([...NEVER_MIRROR]).toEqual(['wound', 'adhd_pattern']);
   });
 
-  it('shows the cast but never a character clarity flag', () => {
-    // `clear:false` is the stage-1 gate and an assessment of what the person
-    // said. It drives the Router; it must not reach the mirror (rule 3).
+  it('draws the cast as names, never a clarity flag or a role', () => {
+    // `clear:false` is the stage-1 gate and an assessment of what the person said.
+    // Roles and actions were what turned the first build's cast into a wall.
     const s = mergeActorMap(createState(), [
       { id: 'dad', label: 'אבא', role: 'התקשר', clear: false, actions: ['התקשר בערב'] },
     ]);
-    const { cast } = buildStory(s);
-    expect(cast).toHaveLength(1);
-    expect(cast[0]).toMatchObject({ label: 'אבא', role: 'התקשר', actions: ['התקשר בערב'] });
-    expect(cast[0]).not.toHaveProperty('clear');
-    expect(JSON.stringify(cast)).not.toContain('false');
+    expect(buildStory(s).cast).toEqual([{ id: 'dad', label: 'אבא' }]);
   });
 
-  it('reads nothing from coverage, gaps or the saturation counters', () => {
-    // Rule 1: content, never assessment. A state carrying only scores and gap
-    // records — no findings, no cast — must project to an empty story.
-    let s = createState();
-    s.coverage.stage1 = { trigger: 2, timeline: 2, actors: 2, status: 2, auto_reaction: 2 };
-    s.gaps = { byTarget: { 'stage1.timeline': { level: 1, status: 'starred' } }, log: [] };
-    s.meta.saturationCount = 2;
-    const story = buildStory(s);
-    expect(story.isEmpty).toBe(true);
-    expect(story.scenes).toEqual([]);
-  });
-});
-
-describe('story projection — the story that grows', () => {
-  it('is empty on a fresh state, so nothing renders before the first answer', () => {
-    expect(buildStory(createState()).isEmpty).toBe(true);
-  });
-
-  it('drops empty scenes rather than showing them as blanks', () => {
-    // A column of labelled empty boxes is a completion meter (brief.md:63-65).
-    const s = addFindings(createState(), 'stage1', 'trigger', ['קניתי בשר לא איכותי']);
-    const story = buildStory(s);
-    expect(story.scenes.map((sc) => sc.key)).toEqual(['event']);
-  });
-
-  it('orders scenes as the story happened, not as the stages ran', () => {
-    // event → thought → feeling → action is the chain the arrows have to mean.
-    // The interpretation is collected in stage 2, AFTER the reaction was recorded
-    // as a stage-1 fact, and still lands between them.
-    let s = addFindings(createState(), 'stage1', 'trigger', ['הודעה מהמורה']);
-    s = addFindings(s, 'stage1', 'auto_reaction', ['צעקתי עליה']);
-    s = addFindings(s, 'stage3', 'emotion', ['בושה']);
-    s = addFindings(s, 'stage2', 'meaning', ['שאני אבא גרוע']);
-    expect(buildStory(s).scenes.map((sc) => sc.key)).toEqual([
-      'event',
-      'thought',
-      'feeling',
-      'action',
+  it('draws one person once when the model files them under two ids', () => {
+    const s = mergeActorMap(createState(), [
+      { id: 'wife', label: 'אשתך', actions: ['הודיעה'] },
+      { id: 'partner', label: 'אשתך', actions: ['נשארה בים'] },
     ]);
+    expect(buildStory(s).cast).toHaveLength(1);
   });
 
-  it('merges the reaction reported in stage 1 and stage 4 without repeating it', () => {
-    let s = addFindings(createState(), 'stage1', 'auto_reaction', ['צעקתי עליה']);
-    s = addFindings(s, 'stage4', 'auto_reaction', ['צעקתי עליה', 'יצאתי מהחדר']);
-    const action = buildStory(s).scenes.find((sc) => sc.key === 'action');
-    expect(action.lines).toEqual(['צעקתי עליה', 'יצאתי מהחדר']);
-  });
-
-  it('survives a partial or malformed state without throwing', () => {
-    expect(buildStory(undefined).isEmpty).toBe(true);
-    expect(buildStory({}).isEmpty).toBe(true);
-    expect(buildStory({ findings: { stage1: { trigger: [null, '  ', 'טוב'] } } }).scenes[0].lines)
-      .toEqual(['טוב']);
-    expect(buildStory({ actorMap: { a: { label: '' }, b: { label: 'רומי' } } }).cast)
-      .toHaveLength(1);
-  });
-});
-
-describe('story projection — the cast as people', () => {
   it("addresses the person instead of calling them 'המשתמש'", () => {
-    // The mirror is shown TO this person. A card labelled "the user" is the
-    // system discussing them in the third person (design/brief.md:66).
     const s = mergeActorMap(createState(), [{ id: 'user', label: 'המשתמש', role: 'הטבח' }]);
     expect(buildStory(s).cast[0].label).toBe('אתה');
   });
@@ -120,30 +62,113 @@ describe('story projection — the cast as people', () => {
     expect(buildStory(s).cast[0].label).toBe('המשתמש בחנות');
   });
 
-  it('does not print the role again as one of that character\'s actions', () => {
-    const s = mergeActorMap(createState(), [
-      {
-        id: 'boss',
-        label: 'הממונה',
-        role: 'אמר שהבשר לא איכותי',
-        actions: ['אמר שהבשר לא איכותי', 'הלך למטבח'],
-      },
-    ]);
-    expect(buildStory(s).cast[0].actions).toEqual(['הלך למטבח']);
+  it('reads nothing from gaps or the saturation counters', () => {
+    let s = createState();
+    s.gaps = { byTarget: { 'stage1.timeline': { level: 1, status: 'starred' } }, log: [] };
+    s.meta.saturationCount = 2;
+    expect(buildStory(s).isEmpty).toBe(true);
   });
 });
 
-describe('story projection — scene titles', () => {
-  it('never reuses a stage-rail label', async () => {
-    // Both are on screen at once. The rail names the process in questions; the
-    // mirror names parts of the story in nouns. The same words in both places
-    // put one label on screen twice meaning two different things.
-    const railSource = await readFile(
-      new URL('../../src/ui/StageRail.jsx', import.meta.url),
-      'utf8',
-    );
-    const railLabels = [...railSource.matchAll(/label:\s*'([^']+)'/g)].map((m) => m[1]);
-    expect(railLabels.length).toBe(7); // guard: the regex still finds them
-    for (const scene of SCENES) expect(railLabels).not.toContain(scene.title);
+describe('story mirror — certainty gate', () => {
+  it('holds a finding back while its slot is still partial', () => {
+    // Ran, 28.8: "how certain is the item — maybe another question is needed."
+    // Score 1 = partial/vague; the interviewer is still working on it.
+    const s = withFinding(createState(), 'stage1', 'trigger', ['אולי זה היה ביום שני'], 1);
+    expect(buildStory(s).nodes).toEqual([]);
+  });
+
+  it('draws it once the same slot reaches 2', () => {
+    let s = withFinding(createState(), 'stage1', 'trigger', ['הבשר הגיע למטבח'], 1);
+    expect(buildStory(s).nodes).toEqual([]);
+    s = setSlot(s, 'stage1', 'trigger', 2);
+    expect(textsOf(s)).toEqual(['הבשר הגיע למטבח']);
+  });
+
+  it('does not draw a legitimately unknown slot', () => {
+    // 'U' is a valid final answer for the Router and not a thing you can draw.
+    const s = withFinding(createState(), 'stage1', 'timeline', ['הוא לא זוכר מתי'], 'U');
+    expect(buildStory(s).nodes).toEqual([]);
+  });
+});
+
+describe('story mirror — significance: one node per slot', () => {
+  it('contributes one shape per confirmed slot, not one per finding', () => {
+    // Drawing every finding is what made the first build a list with corners.
+    const s = withFinding(createState(), 'stage1', 'timeline', [
+      'בתחילת המשמרת',
+      'כשהמשלוח הגיע',
+      'אחרי שנאמר שהבשר לא איכותי',
+    ]);
+    expect(buildStory(s).nodes).toHaveLength(1);
+  });
+
+  it('shows the latest finding, so a correction replaces what is drawn', () => {
+    // Findings only ever append, so recency is the nearest thing to an eraser.
+    const s = withFinding(createState(), 'stage1', 'timeline', [
+      'זה קרה ביום שני',
+      'בעצם זה היה ביום שלישי',
+    ]);
+    expect(textsOf(s)).toEqual(['בעצם זה היה ביום שלישי']);
+  });
+
+  it('trims a long finding to a label at a word boundary', () => {
+    const long = 'הוא אמר לי מול כל המטבח שהבשר שהזמנתי לא איכותי ושאני לא יודע לעשות את העבודה שלי';
+    const [text] = textsOf(withFinding(createState(), 'stage1', 'trigger', [long]));
+    expect(text.length).toBeLessThanOrEqual(60);
+    expect(text.endsWith('…')).toBe(true);
+    expect(text).not.toMatch(/\s…$/); // trimmed at a word, not mid-space
+  });
+});
+
+describe('story mirror — the chain', () => {
+  it('is empty on a fresh state, so nothing is drawn before the first answer', () => {
+    expect(buildStory(createState()).isEmpty).toBe(true);
+  });
+
+  it('orders nodes as the story happened, not as the stages ran', () => {
+    // fact → thought → feeling → action is the chain the arrows have to mean. The
+    // reaction is recorded in stage 1, BEFORE the interpretation exists, and the
+    // interpretation still lands in front of it.
+    let s = withFinding(createState(), 'stage1', 'auto_reaction', ['צעקתי עליה']);
+    s = withFinding(s, 'stage1', 'trigger', ['הודעה מהמורה']);
+    s = withFinding(s, 'stage3', 'emotion', ['בושה']);
+    s = withFinding(s, 'stage2', 'meaning', ['שאני אבא גרוע']);
+    expect(buildStory(s).nodes.map((n) => n.kind)).toEqual([
+      'fact',
+      'thought',
+      'feeling',
+      'action',
+    ]);
+  });
+
+  it('types every node so the UI can draw it as the right shape', () => {
+    const kinds = new Set(LAYERS.map((l) => l.kind));
+    expect(kinds).toEqual(new Set(['fact', 'thought', 'feeling', 'action', 'plan', 'other']));
+  });
+
+  it('gives a node an id that survives an earlier layer landing in front of it', () => {
+    // A node that changes identity gets remounted, and re-animates. Stage 2
+    // arriving must not make the stage-1 nodes redraw themselves.
+    let s = withFinding(createState(), 'stage1', 'trigger', ['הודעה מהמורה']);
+    const before = buildStory(s).nodes[0].id;
+    s = withFinding(s, 'stage2', 'meaning', ['שאני אבא גרוע']);
+    const after = buildStory(s).nodes.find((n) => n.kind === 'fact').id;
+    expect(after).toBe(before);
+  });
+
+  it('draws the same fact once when two slots both carry it', () => {
+    // Stage 4 revisits the reaction stage 1 already recorded; drawing it twice
+    // would say the person did it twice.
+    let s = withFinding(createState(), 'stage1', 'auto_reaction', ['יצאת בלי לומר מילה']);
+    s = withFinding(s, 'stage4', 'auto_reaction', ['יצאת בלי לומר מילה']);
+    expect(textsOf(s)).toEqual(['יצאת בלי לומר מילה']);
+  });
+
+  it('survives a partial or malformed state without throwing', () => {
+    expect(buildStory(undefined).isEmpty).toBe(true);
+    expect(buildStory({}).isEmpty).toBe(true);
+    expect(buildStory({ findings: { stage1: { trigger: ['x'] } } }).nodes).toEqual([]); // no coverage
+    expect(buildStory({ actorMap: { a: { label: '' }, b: { label: 'רומי' } } }).cast).toHaveLength(1);
   });
 });

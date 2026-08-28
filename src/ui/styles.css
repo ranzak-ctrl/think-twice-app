@@ -430,27 +430,32 @@ button {
 
 
 /* ------------------------------------------------------ story mirror -- */
-/* The case as it takes shape, beside the chat. Rules for what may appear here
-   are in src/core/story.js; these are the rules for how it looks.
+/* The case, sketched. Rules for WHAT may be drawn are in src/core/story.js; these
+   are the rules for how it looks.
 
    The governing constraint is design/brief.md:36 and :84 — the person arrives
-   flooded, and that is the default state rather than an edge case. A second
-   column beside the conversation is the largest thing added to this screen since
-   it was designed, so it is built to sit still: no fill of its own, hairline
-   boxes, one type size down from the chat, and nothing that moves after it has
-   arrived. It should read as the page quietly keeping notes, not as a second
-   thing asking to be looked at. */
+   flooded, and that is the default state rather than an edge case. So the drawing
+   is quiet: pencil weight, no fills that shout, one type size below the chat, and
+   nothing that moves once it has landed.
+
+   Hand-drawn is load-bearing, not styling. A crisp flowchart of somebody's worst
+   evening reads as a case file being built about them, which :39 (RSD — anything
+   that smells of assessment) says is the sharpest risk on this screen. Irregular
+   radii and a half-degree tilt read as someone thinking alongside you. Every
+   wobble is deterministic per node (StoryPanel.jsx `pick`), so the sketch is
+   stable across renders — it is drawn once, not redrawn. */
 
 .story {
   flex: none;
   width: var(--story-w);
-  padding: 18px 18px 28px;
+  padding: 18px 16px 28px;
   overflow-y: auto;
   border-inline-start: 1px solid var(--border);
+  --ink-line: #8d95a0; /* pencil, not UI chrome — deliberately not --border */
 }
 
 .story-head {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .story-title {
@@ -467,180 +472,167 @@ button {
   color: var(--text-muted);
 }
 
-/* The cast. Characters, not a roster with a status column: no clarity badge, no
-   count, no ordering by importance — that would be ranking the people in someone
-   else's story (design/brief.md:62). Insertion order is the order they entered
-   the telling. */
-.story-cast {
+/* The cast: names only. Who is in this story — nothing about them, no roles, no
+   actions, no clarity badge. What a character DID belongs to the beat where it
+   happened, down on the chain. The first build drew cards here and a live run
+   turned them into the densest block on screen. */
+.sk-cast {
   list-style: none;
-  margin: 0 0 16px;
+  margin: 0 0 20px;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 7px 8px;
 }
 
-.story-actor {
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 7px 10px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  animation: story-in 0.28s ease both;
-}
-
-.story-actor-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 6px;
-}
-
-.story-actor-name {
+.sk-chip {
   font-size: 12px;
-  font-weight: 700;
+  line-height: 1.3;
   color: var(--text);
-}
-
-.story-actor-role {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.story-actor-acts {
-  list-style: none;
-  margin: 4px 0 0;
-  padding: 0;
-}
-
-.story-actor-acts li {
-  font-size: 11px;
-  line-height: 1.6;
-  color: var(--text-muted);
-  padding-inline-start: 9px;
-  position: relative;
-}
-
-.story-actor-acts li::before {
-  content: '';
-  position: absolute;
-  inset-inline-start: 0;
-  top: 0.62em;
-  width: 3px;
-  height: 3px;
-  border-radius: 50%;
-  background: var(--border-strong);
-}
-
-/* The chain. Ordered list because the order is load-bearing — event, thought,
-   feeling, action — and a screen reader should read it as a sequence. The
-   numbers are suppressed: they would count the story's parts, and a person
-   watching "3 of 6" fill in is reading a progress meter (design/brief.md:65). */
-.story-flow {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.story-box {
-  padding: 9px 11px;
+  padding: 5px 11px;
+  border: 1.4px solid var(--ink-line);
   background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  animation: story-in 0.28s ease both;
+  border-radius: 26px 22px 24px 20px / 20px 24px 21px 25px;
+  animation: sk-in 0.3s ease both;
 }
 
-.story-box-title {
-  margin: 0 0 4px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  color: var(--text-muted);
-}
-
-.story-lines {
+/* The chain. An ordered list because the order is the argument, but the numbers
+   are suppressed: they would count the story's parts, and watching "3 of 9" fill
+   in is reading a progress meter (design/brief.md:65). */
+.sk-flow {
   list-style: none;
   margin: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.story-lines li {
+.sk-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+/* A node is a shape with a name on it, never a paragraph in a box — it sizes to
+   its text instead of stretching to the column, which is half of what makes a row
+   of these read as a diagram rather than as a list. */
+.sk-node {
+  max-width: 100%;
+  padding: 9px 13px;
   font-size: 12.5px;
-  line-height: 1.65;
+  line-height: 1.5;
+  text-align: center;
   color: var(--text);
-  padding-inline-start: 10px;
-  position: relative;
+  background: var(--surface);
+  border: 1.5px solid var(--ink-line);
+  animation: sk-in 0.32s ease both;
 }
 
-.story-lines li::before {
-  content: '';
-  position: absolute;
-  inset-inline-start: 0;
-  top: 0.68em;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--accent-line);
+/* Three hands, picked per node id. Enough that no two neighbours match, few
+   enough to stay a style rather than a mess. */
+.sk-w0 { transform: rotate(-0.8deg); }
+.sk-w1 { transform: rotate(0.65deg); }
+.sk-w2 { transform: rotate(-0.25deg); }
+
+/* Shape carries meaning — this is the encoding, not decoration.
+   fact: a drawn box, the camera-test record.
+   thought: dashed, soft-cornered — an interpretation, not an event. This is the
+     person's OWN reading handed back, so it must not look as solid as what
+     happened; telling those two apart is what stage 2 teaches.
+   feeling: a lozenge, no corners at all, accent ink.
+   action: heavy and squarer — something actually done.
+   plan: the same square, dashed — considered, not yet done.
+   other: dotted and lightest — the other side's view, held loosely.
+
+   Every radius here is in PIXELS. The first pass used percentages, which make a
+   true ellipse: fine on 'עלבון', and on a full sentence it stretched into a flat
+   lens with the text bursting out of both ends. A px radius rounds the corners it
+   is given and leaves the shape alone at any width. */
+.sk-node.is-fact {
+  border-radius: 20px 6px 16px 8px / 7px 18px 6px 20px;
 }
 
-/* The connector between two boxes, and the one piece of this panel that carries
-   an argument: the scenes are in the order the story happened, so this reads as
-   "led to". A spine indented from the start edge, echoing .rail-list::before,
-   with a direction-neutral triangle rather than a rotated corner so it points
-   down under both writing directions. */
-.story-arrow {
-  height: 16px;
-  margin-inline-start: 16px;
-  border-inline-start: 1px solid var(--border-strong);
-  position: relative;
+.sk-node.is-thought {
+  border-style: dashed;
+  border-radius: 30px 22px 34px 20px / 22px 32px 20px 30px;
+  padding: 10px 16px;
+  color: var(--text-muted);
 }
 
-.story-arrow::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  inset-inline-start: -3.5px;
-  border: 4px solid transparent;
-  border-bottom: 0;
-  border-top-color: var(--border-strong);
+.sk-node.is-feeling {
+  border-radius: 999px;
+  padding: 9px 20px;
+  border-color: var(--accent-line);
 }
 
-/* How to correct the mirror. A statement, never a question — the interviewer's
-   turn is already the one question on screen (design/brief.md:99). */
+.sk-node.is-action {
+  border-width: 2px;
+  border-color: var(--ink);
+  border-radius: 14px 5px 12px 6px / 6px 13px 5px 15px;
+  font-weight: 600;
+}
+
+.sk-node.is-plan {
+  border-style: dashed;
+  border-radius: 14px 5px 12px 6px / 6px 13px 5px 15px;
+}
+
+.sk-node.is-other {
+  border-style: dotted;
+  border-radius: 30px 22px 34px 20px / 22px 32px 20px 30px;
+  border-color: var(--border-strong);
+  color: var(--text-muted);
+  padding: 10px 16px;
+}
+
+/* The connector, and the one piece of this panel carrying an argument: nodes are
+   in the order the story happened, so this reads "led to". */
+.sk-arrow {
+  width: 14px;
+  height: 24px;
+  display: block;
+  margin: 2px 0;
+  fill: none;
+  stroke: var(--ink-line);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  animation: sk-in 0.32s ease both;
+}
+
+/* How to correct the drawing. A statement, never a question — the interviewer's
+   turn is already the one ask on screen (design/brief.md:99). */
 .story-foot {
-  margin: 16px 0 0;
+  margin: 20px 0 0;
   font-size: 11px;
   line-height: 1.6;
   color: var(--text-faint);
+  text-align: center;
 }
 
-/* Arriving, once. Everything that is already on screen stays put: a box that
-   re-animated whenever a sibling appeared would make the panel twitch in the
-   corner of the eye of someone who has no attention to spare
-   (design/brief.md:39). React keys are stable per scene and per character, so
-   only genuinely new elements run this. Reduced-motion is handled globally at
-   the foot of this sheet. */
-@keyframes story-in {
+/* Arriving, once. Everything already drawn stays exactly where it is: a shape
+   that re-animated whenever a sibling appeared would make the panel twitch in the
+   corner of the eye of someone with no attention to spare (design/brief.md:39).
+   Node ids are stable per finding, so only genuinely new shapes run this.
+   Reduced-motion is handled globally at the foot of this sheet. */
+@keyframes sk-in {
   from {
     opacity: 0;
-    transform: translateY(-3px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
+    transform: translateY(-3px) scale(0.98);
   }
 }
 
-/* Below three columns' worth of room the mirror costs the conversation more than
-   it gives it: squeezing the chat to fit a sidebar puts the pressure on the one
-   surface that must stay comfortable. It goes before the rail does, because the
-   rail is 34px of orientation and this is a 320px column. */
+/* Below three columns' worth of room the drawing costs the conversation more than
+   it gives it. It goes before the rail does: the rail is 34px of orientation and
+   this is a whole column. */
 @media (max-width: 1024px) {
   .story {
     display: none;
   }
 }
+
 /* Positioning context for the jump pill. It must be the scrolling area alone —
    anchoring to .chat would float the pill on top of the composer. */
 .stream {
