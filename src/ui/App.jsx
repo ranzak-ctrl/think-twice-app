@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import Chat from './Chat.jsx';
 import GuidePanel from './GuidePanel.jsx';
 import StageRail from './StageRail.jsx';
+import StoryPanel from './StoryPanel.jsx';
 import ConfirmDialog from './ConfirmDialog.jsx';
 import { Logo, Plus, Download, Upload, Gauge } from './icons.jsx';
 import { createState, importState } from '../core/state.js';
@@ -287,8 +288,12 @@ export default function App() {
           </div>
         </header>
 
-        {/* Chat first, rail second: in RTL the second child lands on the left,
-            which is where the rail belongs — beside the chat, not over it. */}
+        {/* Chat, then the mirror, then the rail: in RTL the first child takes the
+            right, so the conversation keeps the side the eye starts on and the
+            story grows next to it rather than in front of it. StoryPanel renders
+            null until there is something understood to show, so this is a two-
+            column screen for the whole of the first answer and only widens once
+            the mirror has content — see src/core/story.js. */}
         <div className="main-body">
           <Chat
             history={history}
@@ -303,6 +308,7 @@ export default function App() {
             onConfirm={handleConfirm}
             onReject={handleReject}
           />
+          <StoryPanel state={state} />
           <StageRail
             stage={state.meta.currentStage}
             sessionComplete={state.meta.sessionComplete}

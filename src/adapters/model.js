@@ -91,25 +91,56 @@ export const MOCK_RESPONSES = {
   // Stage 2 — Interpretation
   '2:0': {
     message: 'למה לדעתך הוא עשה את זה?',
-    evaluation: { slots: { causal: 1 }, new_info: true, exhausted: false },
+    evaluation: {
+      slots: { causal: 1 },
+      slot_findings: { causal: ['הוא רצה להראות שהוא מבין באוכל'] },
+      new_info: true,
+      exhausted: false,
+    },
   },
   '2:1': {
     message: 'ואיך אתה מבין את זה — מה זה אומר עליך, בעיניך?',
-    evaluation: { slots: { causal: 2, meaning: 1 }, new_info: true, exhausted: false },
+    evaluation: {
+      slots: { causal: 2, meaning: 1 },
+      slot_findings: { meaning: ['שאני לא מקצועי מספיק'] },
+      new_info: true,
+      exhausted: false,
+    },
   },
   '2:2': {
     message: 'נסה לנסח את זה במשפט שמתחיל ב"אני..."',
-    evaluation: { slots: { meaning: 2, wound: 1 }, new_info: true, exhausted: false },
+    evaluation: {
+      slots: { meaning: 2, wound: 1 },
+      // `wound` is seeded here ON PURPOSE. It must show in the guide panel and must
+      // NEVER show in the story mirror — CLAUDE.md and Natali's 14.8 ruling: the
+      // person reaches the מוגלה himself and it is never reflected back at him as
+      // our reading of him. Keeping it in the mock means a dev running the app in
+      // mock mode would SEE the leak if src/core/story.js ever stopped excluding it,
+      // instead of trusting the unit test alone. Same for adhd_pattern below.
+      slot_findings: { wound: ['אני לא שווה כלום'] },
+      new_info: true,
+      exhausted: false,
+    },
   },
   '2:3': {
     message: 'זה מזכיר לך דפוס מוכר?',
-    evaluation: { slots: { wound: 2, adhd_pattern: 2 }, new_info: false, exhausted: true },
+    evaluation: {
+      slots: { wound: 2, adhd_pattern: 2 },
+      slot_findings: { adhd_pattern: ['קושי בוויסות בסערת רגע — מוכר לך מזמן'] },
+      new_info: false,
+      exhausted: true,
+    },
   },
 
   // Stage 3 — Feel
   '3:0': {
     message: 'כשאתה מסתכל על התמונה הזו — איזה רגש זה מעורר?',
-    evaluation: { slots: { emotion: 1 }, new_info: true, exhausted: false },
+    evaluation: {
+      slots: { emotion: 1 },
+      slot_findings: { emotion: ['עלבון'] },
+      new_info: true,
+      exhausted: false,
+    },
   },
   '3:1': {
     message: 'כמה חזק, מ-1 עד 10?',
@@ -122,31 +153,65 @@ export const MOCK_RESPONSES = {
   },
   '3:2': {
     message: 'מזכיר לך משהו מהעבר?',
-    evaluation: { slots: { past_echo: 2 }, new_info: false, exhausted: true },
+    evaluation: {
+      slots: { past_echo: 2 },
+      slot_findings: { past_echo: ['ככה הרגשת כשהמורה העיר לך מול הכיתה'] },
+      new_info: false,
+      exhausted: true,
+    },
   },
 
   // Stage 4 — React
   '4:0': {
     message: 'באותו רגע — מה עשית, לפני שהספקת לחשוב?',
-    evaluation: { slots: { auto_reaction: 2 }, new_info: true, exhausted: false },
+    evaluation: {
+      slots: { auto_reaction: 2 },
+      // The first line repeats stage 1's auto_reaction verbatim — the same fact,
+      // collected twice, which is what actually happens when stage 4 revisits the
+      // reaction stage 1 recorded. The mirror folds the two slots into one scene
+      // and de-duplicates, so this exercises that live rather than only in a test.
+      slot_findings: { auto_reaction: ['יצאת בלי לומר מילה', 'לא חזרת עד סוף המשמרת'] },
+      new_info: true,
+      exhausted: false,
+    },
   },
   '4:1': {
     message: 'ומה אתה שוקל לעשות עכשיו?',
-    evaluation: { slots: { planned_reaction: 2 }, new_info: false, exhausted: true },
+    evaluation: {
+      slots: { planned_reaction: 2 },
+      slot_findings: { planned_reaction: ['לדבר איתו על מה שקרה'] },
+      new_info: false,
+      exhausted: true,
+    },
   },
 
   // Stage 5 — Transform
   '5:0': {
     message: 'מה הוא ראה מהצד שלו באותו רגע?',
-    evaluation: { slots: { perspective: 1 }, new_info: true, exhausted: false },
+    evaluation: {
+      slots: { perspective: 1 },
+      slot_findings: { perspective: ['הוא היה בלחץ של שירות ערב'] },
+      new_info: true,
+      exhausted: false,
+    },
   },
   '5:1': {
     message: 'מה לדעתך הוא ניסה להשיג?',
-    evaluation: { slots: { perspective: 2, intention: 1 }, new_info: true, exhausted: false },
+    evaluation: {
+      slots: { perspective: 2, intention: 1 },
+      slot_findings: { intention: ['שהמנה תצא כמו שצריך'] },
+      new_info: true,
+      exhausted: false,
+    },
   },
   '5:2': {
     message: 'נסה לנסח את זה במשפט שמתחיל ב"הוא..."',
-    evaluation: { slots: { intention: 2, alt_formulation: 1 }, new_info: true, exhausted: false },
+    evaluation: {
+      slots: { intention: 2, alt_formulation: 1 },
+      slot_findings: { alt_formulation: ['הוא ניסה להציל את השירות, לא להעליב אותך'] },
+      new_info: true,
+      exhausted: false,
+    },
   },
   '5:3': {
     message: 'כשאתה מסתכל על זה ככה — כמה חזק הרגש עכשיו, מ-1 עד 10?',

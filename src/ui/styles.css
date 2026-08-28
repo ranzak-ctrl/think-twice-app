@@ -78,6 +78,8 @@
      this, not --column, or it sits 40px wider. */
   --column-content: calc(var(--column) - var(--column-pad) * 2);
   --rail-w: 186px; /* stage rail: both its width and its outer gutter */
+  --story-w: 320px; /* story mirror: wide enough for a line of Hebrew to breathe,
+     narrow enough that the conversation keeps the larger half of the window */
   --send-size: 34px; /* send button; the composer row matches it exactly */
 
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue',
@@ -426,6 +428,219 @@ button {
   }
 }
 
+
+/* ------------------------------------------------------ story mirror -- */
+/* The case as it takes shape, beside the chat. Rules for what may appear here
+   are in src/core/story.js; these are the rules for how it looks.
+
+   The governing constraint is design/brief.md:36 and :84 — the person arrives
+   flooded, and that is the default state rather than an edge case. A second
+   column beside the conversation is the largest thing added to this screen since
+   it was designed, so it is built to sit still: no fill of its own, hairline
+   boxes, one type size down from the chat, and nothing that moves after it has
+   arrived. It should read as the page quietly keeping notes, not as a second
+   thing asking to be looked at. */
+
+.story {
+  flex: none;
+  width: var(--story-w);
+  padding: 18px 18px 28px;
+  overflow-y: auto;
+  border-inline-start: 1px solid var(--border);
+}
+
+.story-head {
+  margin-bottom: 14px;
+}
+
+.story-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.story-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+/* The cast. Characters, not a roster with a status column: no clarity badge, no
+   count, no ordering by importance — that would be ranking the people in someone
+   else's story (design/brief.md:62). Insertion order is the order they entered
+   the telling. */
+.story-cast {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.story-actor {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 7px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  animation: story-in 0.28s ease both;
+}
+
+.story-actor-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.story-actor-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.story-actor-role {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.story-actor-acts {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+}
+
+.story-actor-acts li {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  padding-inline-start: 9px;
+  position: relative;
+}
+
+.story-actor-acts li::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.62em;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--border-strong);
+}
+
+/* The chain. Ordered list because the order is load-bearing — event, thought,
+   feeling, action — and a screen reader should read it as a sequence. The
+   numbers are suppressed: they would count the story's parts, and a person
+   watching "3 of 6" fill in is reading a progress meter (design/brief.md:65). */
+.story-flow {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.story-box {
+  padding: 9px 11px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  animation: story-in 0.28s ease both;
+}
+
+.story-box-title {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--text-muted);
+}
+
+.story-lines {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.story-lines li {
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--text);
+  padding-inline-start: 10px;
+  position: relative;
+}
+
+.story-lines li::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0.68em;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent-line);
+}
+
+/* The connector between two boxes, and the one piece of this panel that carries
+   an argument: the scenes are in the order the story happened, so this reads as
+   "led to". A spine indented from the start edge, echoing .rail-list::before,
+   with a direction-neutral triangle rather than a rotated corner so it points
+   down under both writing directions. */
+.story-arrow {
+  height: 16px;
+  margin-inline-start: 16px;
+  border-inline-start: 1px solid var(--border-strong);
+  position: relative;
+}
+
+.story-arrow::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  inset-inline-start: -3.5px;
+  border: 4px solid transparent;
+  border-bottom: 0;
+  border-top-color: var(--border-strong);
+}
+
+/* How to correct the mirror. A statement, never a question — the interviewer's
+   turn is already the one question on screen (design/brief.md:99). */
+.story-foot {
+  margin: 16px 0 0;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-faint);
+}
+
+/* Arriving, once. Everything that is already on screen stays put: a box that
+   re-animated whenever a sibling appeared would make the panel twitch in the
+   corner of the eye of someone who has no attention to spare
+   (design/brief.md:39). React keys are stable per scene and per character, so
+   only genuinely new elements run this. Reduced-motion is handled globally at
+   the foot of this sheet. */
+@keyframes story-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Below three columns' worth of room the mirror costs the conversation more than
+   it gives it: squeezing the chat to fit a sidebar puts the pressure on the one
+   surface that must stay comfortable. It goes before the rail does, because the
+   rail is 34px of orientation and this is a 320px column. */
+@media (max-width: 1024px) {
+  .story {
+    display: none;
+  }
+}
 /* Positioning context for the jump pill. It must be the scrolling area alone —
    anchoring to .chat would float the pill on top of the composer. */
 .stream {
