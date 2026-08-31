@@ -141,12 +141,21 @@ function summarizeState(state) {
   const actorMap = Object.keys(state.actorMap ?? {}).length
     ? `\nactor_map: ${JSON.stringify(state.actorMap)}`
     : '';
+  // Open forks must ride along for the same reason the actor map does: the model
+  // reports DELTAS keyed by a stable id, and it can only reuse an id it can see.
+  // Without this the model mints a fresh id for the same unresolved question every
+  // turn, mergeOpenForks stores each as a new fork, and the person is drawn the
+  // same open question three times over. (Caught by prompt-editor, 29.8.2026,
+  // while writing the delta rule this line is what makes honourable.)
+  const openForks = Object.keys(state.openForks ?? {}).length
+    ? `\nopen_forks: ${JSON.stringify(state.openForks)}`
+    : '';
   return `## STATE SUMMARY (hidden from user)
 stage: ${meta.currentStage}
 questions_this_stage: ${meta.questionCount}
 saturation: ${meta.saturationCount}
 question_aperture: ${meta.questionAperture}
-resistance: ${meta.resistanceFlag || 'none'}${threads}${actorMap}
+resistance: ${meta.resistanceFlag || 'none'}${threads}${actorMap}${openForks}
 facts: ${JSON.stringify(facts)}
 thoughts: ${JSON.stringify(thoughts)}
 feelings: ${JSON.stringify(feelings)}

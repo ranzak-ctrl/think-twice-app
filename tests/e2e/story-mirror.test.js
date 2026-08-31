@@ -89,6 +89,7 @@ describe('story mirror — across a full interview', () => {
     const final = buildStory(state);
     expect(final.nodes.map((n) => n.kind)).toEqual([
       'fact', 'fact', 'fact',
+      'fork', // what the story left undecided, drawn among the facts
       'thought', 'thought',
       'feeling', 'feeling',
       'action', 'action',

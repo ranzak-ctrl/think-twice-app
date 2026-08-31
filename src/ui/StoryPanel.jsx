@@ -91,6 +91,24 @@ export default function StoryPanel({ state }) {
           <li className="sk-step" key={node.id}>
             {i > 0 && <Arrow seed={node.id} />}
             <div className={`sk-node is-${node.kind} sk-w${pick(node.id, 3)}`}>{node.text}</div>
+            {node.kind === 'fork' && (
+              // The branches of something the story never settled. Drawn as a tree
+              // hanging off the question, dashed: the question is a solid fact —
+              // it really was undecided — and the branches are what was open. That
+              // split is the encoding, straight from Natali's ruling of 29.8.
+              //
+              // It is NOT a menu. design/brief.md:59 forbids offering the person
+              // things to pick, and nothing here is pickable: no control, no
+              // handler, no focus target. It says "this was open", not "choose".
+              <>
+                <span className="sk-fork-drop" aria-hidden="true" />
+                <ul className="sk-branches">
+                  {node.options.map((opt, k) => (
+                    <li key={k}>{opt}</li>
+                  ))}
+                </ul>
+              </>
+            )}
           </li>
         ))}
       </ol>

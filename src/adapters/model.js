@@ -79,6 +79,19 @@ export const MOCK_RESPONSES = {
         status: ['מאז לא חזרתם לדבר על זה'],
         auto_reaction: ['עזבת את מקום העבודה'],
       },
+      // An open fork (פיצול לא-מוכרע) — Natali, 29.8.2026. He walked out mid-shift
+      // and nobody has spoken since, so whether he still has the job is genuinely
+      // undecided IN THE STORY. That is a fact of the case, not the model hedging,
+      // and it is exactly the shape the ruling says must be drawable: the question
+      // is settled (it really is open), the branches are not.
+      open_forks: [
+        {
+          id: 'job_status',
+          question: 'לא סוכם אם אתה חוזר למשמרת',
+          options: ['אתה חוזר כרגיל', 'הוא כבר חיפש מחליף'],
+          settled: false,
+        },
+      ],
       new_info: true,
       exhausted: false,
     },

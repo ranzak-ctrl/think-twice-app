@@ -52,6 +52,7 @@ export function parseResponse(raw) {
       decision:
         evaluation.decision && typeof evaluation.decision === 'object' ? evaluation.decision : null,
       gapObservations: parseGapObservations(evaluation),
+      openForks: parseOpenForks(evaluation),
     },
   };
 }
@@ -104,6 +105,33 @@ function parseSlotFindings(evaluation) {
     if (items.length) out[key] = items;
   }
   return out;
+}
+
+// Parse the model's open forks — questions the STORY leaves undecided. Each entry:
+// { id, question, options[], settled }. Deltas, keyed by a stable id, merged by the
+// code (state.mergeOpenForks). Distinct from gap_observations in the one way that
+// matters: a gap is an inconsistency in the telling and is never surfaced, a fork is
+// a fact about the world and is drawn for the person. Natali, 29.8.2026.
+// Shape only here; the two-branch minimum is the store's rule, not the parser's, so
+// a delta carrying one new option can still reach a fork that already has others.
+function parseOpenForks(evaluation) {
+  const raw = evaluation.open_forks;
+  if (!Array.isArray(raw)) return null; // absent → nothing to merge (back-compat)
+  const out = [];
+  for (const f of raw) {
+    const question = typeof f?.question === 'string' ? f.question.trim() : '';
+    const id = typeof f?.id === 'string' && f.id.trim() ? f.id.trim() : question;
+    if (!id) continue;
+    out.push({
+      id,
+      question,
+      options: Array.isArray(f?.options)
+        ? f.options.map((o) => (typeof o === 'string' ? o.trim() : '')).filter(Boolean)
+        : [],
+      settled: typeof f?.settled === 'boolean' ? f.settled : null,
+    });
+  }
+  return out.length ? out : null;
 }
 
 // Parse the model's gap observations (consistency measure). Each entry:

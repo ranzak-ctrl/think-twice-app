@@ -104,6 +104,13 @@ export const LAYERS = [
 //
 // U is deliberately not enough. "He doesn't remember" is a legitimate final answer
 // for the ROUTER, and a thing you cannot draw.
+//
+// An open fork is NOT an exception to this gate, though it looks like one. Natali,
+// 29.8.2026: the EXISTENCE of the fork is itself a certain fact — the situation
+// really was undecided — even though its branches are not. What is uncertain is
+// which branch is true, and the drawing never claims one. So a fork is gated on
+// having been reported with two or more branches, not on a slot score, because it
+// does not come from a slot at all.
 const CONFIRMED = 2;
 
 // ── SIGNIFICANCE (Ran, 28.8): "is it structural, or a secondary detail?" ──
@@ -207,6 +214,29 @@ export function buildStory(state) {
       // is a node that does not get redrawn and re-animated.
       nodes.push({ id: `${stageKey}.${slot}`, kind, text: label });
     }
+  }
+
+  // Open forks sit at the end of the facts, before the interpretation: they ARE
+  // facts, and the chain then reads "this was still undecided → and this is what
+  // was done while it was" — which, in the run this came from, is the injury.
+  //
+  // A settled fork leaves the drawing rather than staying with a tick. Once the
+  // world decided it, it is not a fork; what was decided arrives as an ordinary
+  // finding in its slot. Drawing a resolved question next to the resolved answer
+  // would be the system showing its own working, which is what `gaps` is for and
+  // what `gaps` is forbidden to do.
+  const forks = Object.values(state?.openForks ?? {})
+    .filter((f) => f && !f.settled && f.question && (f.options?.length ?? 0) >= 2)
+    .map((f) => ({
+      id: `fork.${f.id}`,
+      kind: 'fork',
+      text: f.question,
+      options: [...f.options],
+    }));
+
+  if (forks.length) {
+    const afterFacts = nodes.findIndex((n) => n.kind !== 'fact');
+    nodes.splice(afterFacts === -1 ? nodes.length : afterFacts, 0, ...forks);
   }
 
   return { cast, nodes, isEmpty: cast.length === 0 && nodes.length === 0 };

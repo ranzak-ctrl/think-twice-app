@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { buildStory, LAYERS, NEVER_MIRROR } from '../../src/core/story.js';
-import { createState, addFindings, mergeActorMap, setSlot } from '../../src/core/state.js';
+import {
+  createState,
+  addFindings,
+  mergeActorMap,
+  mergeOpenForks,
+  setSlot,
+} from '../../src/core/state.js';
 
 // The story mirror (src/core/story.js). These guard the rules in that file's
 // header — each is a written clinical constraint, not a preference, so a change
@@ -170,5 +176,102 @@ describe('story mirror — the chain', () => {
     expect(buildStory({}).isEmpty).toBe(true);
     expect(buildStory({ findings: { stage1: { trigger: ['x'] } } }).nodes).toEqual([]); // no coverage
     expect(buildStory({ actorMap: { a: { label: '' }, b: { label: 'רומי' } } }).cast).toHaveLength(1);
+  });
+});
+
+describe('story mirror — open forks (פיצולים לא-מוכרעים)', () => {
+  // Natali, 29.8.2026: a question the STORY leaves open is a fact of the case, not
+  // a gap in what the system knows. It is drawn; `gaps` never is.
+  const withFork = (state, fork) => mergeOpenForks(state, [fork]);
+  const FORK = {
+    id: 'lead',
+    question: 'לא הוכרע מי מנהל את הצוות',
+    options: ['שניכם מנהלי מוצר במקביל', 'אתה מנהל הצוות', 'הוא מנהל את הצוות'],
+  };
+
+  it('draws the fork with its branches', () => {
+    const node = buildStory(withFork(createState(), FORK)).nodes[0];
+    expect(node.kind).toBe('fork');
+    expect(node.text).toBe('לא הוכרע מי מנהל את הצוות');
+    expect(node.options).toEqual(FORK.options);
+  });
+
+  it('does not wait for a slot score — the fork itself is the certain fact', () => {
+    // The certainty gate holds findings back until their slot reaches 2. A fork has
+    // no slot: what is certain is THAT it was undecided, not which branch is true.
+    const s = withFork(createState(), FORK);
+    expect(s.coverage.stage1.trigger).toBe(0);
+    expect(buildStory(s).nodes).toHaveLength(1);
+  });
+
+  it('places the fork among the facts, before the interpretation', () => {
+    // "this was still open → and this is what was done while it was" is the chain
+    // the ruling came from; the fork has to sit before thought/feeling/action.
+    let s = withFinding(createState(), 'stage1', 'trigger', ['מודעת דרושים פורסמה']);
+    s = withFinding(s, 'stage2', 'meaning', ['שאני לא נחשב']);
+    s = withFinding(s, 'stage1', 'auto_reaction', ['לא אמרת כלום']);
+    s = withFork(s, FORK);
+    expect(buildStory(s).nodes.map((n) => n.kind)).toEqual([
+      'fact',
+      'fork',
+      'thought',
+      'action',
+    ]);
+  });
+
+  it('drops a fork the story went on to settle', () => {
+    // Once the world decided it, it is not a fork; what was decided arrives as an
+    // ordinary finding. Drawing a resolved question beside its answer would be the
+    // system showing its working, which is what gaps is forbidden to do.
+    let s = withFork(createState(), FORK);
+    expect(buildStory(s).nodes).toHaveLength(1);
+    s = mergeOpenForks(s, [{ id: 'lead', settled: true }]);
+    expect(buildStory(s).nodes).toHaveLength(0);
+    expect(s.openForks.lead.settled).toBe(true); // still on record for the export
+  });
+
+  it('refuses a one-branch fork — that is a fact, not a fork', () => {
+    const s = withFork(createState(), { id: 'x', question: 'לא ברור', options: ['רק זה'] });
+    expect(s.openForks).toEqual({});
+    expect(buildStory(s).nodes).toHaveLength(0);
+  });
+
+  it('unions branches reported across turns without losing the question', () => {
+    let s = withFork(createState(), { id: 'lead', question: 'מי מנהל', options: ['א', 'ב'] });
+    s = mergeOpenForks(s, [{ id: 'lead', options: ['ב', 'ג'] }]); // delta, no question
+    expect(s.openForks.lead.question).toBe('מי מנהל');
+    expect(s.openForks.lead.options).toEqual(['א', 'ב', 'ג']);
+  });
+
+  it('never reads gaps as a fork — they are opposite things', () => {
+    // A gap is an inconsistency in the telling and stays invisible forever
+    // (gap-management.md §1). Only openForks reaches the drawing.
+    let s = createState();
+    s.gaps = { byTarget: { 'stage1.timeline': { level: 1, status: 'starred' } }, log: [] };
+    expect(buildStory(s).nodes).toEqual([]);
+    expect(buildStory(s).isEmpty).toBe(true);
+  });
+});
+
+describe('open forks — the delta contract', () => {
+  it('puts existing forks in the STATE SUMMARY so the model can reuse their id', async () => {
+    // The prompt tells the model to omit an unchanged fork and to reuse its id.
+    // It can only do that for a fork it can SEE. Without this the same open
+    // question comes back under a new id every turn and is drawn again and again.
+    const { buildSystemPrompt } = await import('../../src/core/promptBuilder.js');
+    const s = mergeOpenForks(createState(), [
+      { id: 'lead', question: 'לא הוכרע מי מנהל את הצוות', options: ['אתה', 'הוא'] },
+    ]);
+    const prompt = buildSystemPrompt({ stage: 1, state: s });
+    // Assert on the STATE SUMMARY line, not the bare word: evaluator.md documents
+    // the `open_forks` contract, so the name is in every prompt whether or not any
+    // fork exists. The summary field is what the model reads its own state from.
+    expect(prompt).toContain('\nopen_forks: ');
+    expect(prompt).toContain('לא הוכרע מי מנהל את הצוות');
+  });
+
+  it('omits the key entirely when there are no forks', async () => {
+    const { buildSystemPrompt } = await import('../../src/core/promptBuilder.js');
+    expect(buildSystemPrompt({ stage: 1, state: createState() })).not.toContain('\nopen_forks: ');
   });
 });

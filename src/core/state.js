@@ -42,6 +42,12 @@ export function createState() {
     // שחקנים — לכל דמות תפקיד ברור"). See setActorMap / deriveActorsScore below.
     actorMap: {},
 
+    // Open forks (פיצולים לא-מוכרעים) — questions the STORY leaves open, keyed by id.
+    // Each: { id, question, options[], settled }. Natali, 29.8.2026: a question the
+    // story itself never resolved is a FACT OF THE CASE and not a gap in what we
+    // know, so unlike `gaps` this IS shown to the person. See mergeOpenForks.
+    openForks: {},
+
     meta: {
       currentStage: 1,
       questionCount: 0,        // questions asked in current stage
@@ -223,6 +229,64 @@ export function hasUnclearActor(actorMap) {
   return Object.values(actorMap ?? {}).some((a) => a && a.clear === false);
 }
 
+// ── Open forks (פיצולים לא-מוכרעים) ──
+// Natali's ruling, 29.8.2026, from a live run: a question the STORY ITSELF leaves
+// open is a fact of the case, not a gap in the system's knowledge. Three role
+// configurations were live and undecided when a job ad went out; there is no single
+// right answer, and the unresolvedness is the story — probably the injury in it.
+//
+// THE DISTINCTION THIS TYPE EXISTS TO HOLD, and the reason it is not folded into
+// `gaps`, which is structurally similar and would have been the lazy home for it:
+//
+//   gaps      an inconsistency in the TELLING — the person contradicted themselves
+//             or was vague. System-side intelligence. NEVER surfaced to them
+//             (gap-management.md §1). Closed by the interviewer asking.
+//
+//   openForks a fact about the WORLD — the situation genuinely was not settled.
+//             The person's own material, and it is DRAWN for them. Closed only by
+//             something happening in their life; sometimes never.
+//
+// The model reports DELTAS keyed by a stable id, like actorMap; the CODE merges,
+// unions the options, and owns `settled`. A fork needs two or more branches — one
+// possibility is not a fork, it is a fact — so single-option reports are dropped.
+export const FORK_OPTIONS_MAX = 6;
+const FORK_TEXT_MAX = 90;
+
+const forkText = (v) => {
+  const t = typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : '';
+  return t.length > FORK_TEXT_MAX ? t.slice(0, FORK_TEXT_MAX).trim() : t;
+};
+
+export function mergeOpenForks(state, reported) {
+  const byId = { ...(state.openForks ?? {}) };
+  for (const f of Array.isArray(reported) ? reported : []) {
+    const question = forkText(f?.question);
+    const id = typeof f?.id === 'string' && f.id.trim() ? f.id.trim() : question;
+    if (!id) continue;
+    const prev = byId[id] ?? { id, question: '', options: [], settled: false };
+
+    const options = [...prev.options];
+    for (const raw of Array.isArray(f?.options) ? f.options : []) {
+      const opt = forkText(raw);
+      if (opt && !options.includes(opt)) options.push(opt);
+    }
+    const merged = {
+      id,
+      question: question || prev.question,
+      options: options.slice(0, FORK_OPTIONS_MAX),
+      // Only an explicit boolean moves it; an omitted field on a delta keeps
+      // whatever the fork already carried.
+      settled: typeof f?.settled === 'boolean' ? f.settled : prev.settled,
+    };
+    // A fork must have a question and at least two branches to mean anything.
+    // Reports that never reach that are not stored at all, so a half-formed one
+    // cannot sit in state waiting to be drawn the moment a second option lands.
+    if (!merged.question || merged.options.length < 2) continue;
+    byId[id] = merged;
+  }
+  return { ...state, openForks: byId };
+}
+
 // ── Gap-management (Build 1): consistency measure + asterisk (כוכבית) ──
 // The model reports a point observation { target, dimension, level, note }; the
 // CODE owns the record (status, counters, history). Build 1 scope = record + star
@@ -330,5 +394,6 @@ export function importState(json) {
     gaps: state.gaps ?? { byTarget: {}, log: [] },
     findings: state.findings ?? {},
     actorMap: state.actorMap ?? {},
+    openForks: state.openForks ?? {},
   };
 }

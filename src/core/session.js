@@ -22,6 +22,7 @@ import {
   recordGapObservation,
   addFindings,
   mergeActorMap,
+  mergeOpenForks,
   deriveActorsScore,
 } from './state.js';
 import { preCheck } from '../safety/index.js';
@@ -152,6 +153,12 @@ export async function runTurn(state, history, userText) {
       },
     };
   }
+
+  // Open forks (פיצולים לא-מוכרעים): what the STORY left undecided. Merged in at any
+  // stage — unlike the actor map this is not stage-1 only, because a story can leave
+  // something open anywhere in it. Observability + display; the Router never reads
+  // these, so a fork can never stall or advance a stage. Natali, 29.8.2026.
+  if (ev.openForks) nextState = mergeOpenForks(nextState, ev.openForks);
 
   // Counters + per-turn signals. Saturation tracks real coverage progress, not the
   // model's "new_info" self-report (which over-reports — Ran, live testing: saturation
