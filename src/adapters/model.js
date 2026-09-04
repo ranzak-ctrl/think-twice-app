@@ -24,6 +24,9 @@ export const MOCK_RESPONSES = {
         trigger: ['הבשר שהזמנת הגיע למטבח'],
         timeline: ['בתחילת המשמרת, כשהמשלוח הגיע'],
       },
+      // The name of each cube on the story map — a word or two, the THING that
+      // happened rather than a prefix of the finding. Ran, 4.9.2026.
+      map_labels: { trigger: 'הבשר הגיע', timeline: 'תחילת המשמרת' },
       new_info: true,
       exhausted: false,
     },
@@ -35,6 +38,7 @@ export const MOCK_RESPONSES = {
       slot_findings: {
         status: ['יצאת מהמשמרת באמצע'],
       },
+      map_labels: { status: 'יצאת באמצע' },
       // Resolved cast (מפת שחקנים) — every character clear → code derives actors=2.
       // Each actor carries their own actions (attribution keeps the user's slot clean).
       actor_map: [
@@ -67,6 +71,7 @@ export const MOCK_RESPONSES = {
         timeline: ['אחרי שנאמר שהבשר לא איכותי'],
         auto_reaction: ['יצאת בלי לומר מילה'],
       },
+      map_labels: { timeline: 'אחרי ההערה', auto_reaction: 'יצאת בשתיקה' },
       new_info: true,
       exhausted: false,
     },
@@ -79,6 +84,7 @@ export const MOCK_RESPONSES = {
         status: ['מאז לא חזרתם לדבר על זה'],
         auto_reaction: ['עזבת את מקום העבודה'],
       },
+      map_labels: { status: 'לא דיברתם', auto_reaction: 'עזבת' },
       // An open fork (פיצול לא-מוכרע) — Natali, 29.8.2026. He walked out mid-shift
       // and nobody has spoken since, so whether he still has the job is genuinely
       // undecided IN THE STORY. That is a fact of the case, not the model hedging,
@@ -107,6 +113,7 @@ export const MOCK_RESPONSES = {
     evaluation: {
       slots: { causal: 1 },
       slot_findings: { causal: ['הוא רצה להראות שהוא מבין באוכל'] },
+      map_labels: { causal: 'רצה להראות' },
       new_info: true,
       exhausted: false,
     },
@@ -116,6 +123,7 @@ export const MOCK_RESPONSES = {
     evaluation: {
       slots: { causal: 2, meaning: 1 },
       slot_findings: { meaning: ['שאני לא מקצועי מספיק'] },
+      map_labels: { meaning: 'לא מקצועי' },
       new_info: true,
       exhausted: false,
     },
@@ -151,6 +159,7 @@ export const MOCK_RESPONSES = {
     evaluation: {
       slots: { emotion: 1 },
       slot_findings: { emotion: ['עלבון'] },
+      map_labels: { emotion: 'עלבון' },
       new_info: true,
       exhausted: false,
     },
@@ -169,6 +178,7 @@ export const MOCK_RESPONSES = {
     evaluation: {
       slots: { past_echo: 2 },
       slot_findings: { past_echo: ['ככה הרגשת כשהמורה העיר לך מול הכיתה'] },
+      map_labels: { past_echo: 'המורה מול הכיתה' },
       new_info: false,
       exhausted: true,
     },
@@ -184,6 +194,7 @@ export const MOCK_RESPONSES = {
       // reaction stage 1 recorded. The mirror folds the two slots into one scene
       // and de-duplicates, so this exercises that live rather than only in a test.
       slot_findings: { auto_reaction: ['יצאת בלי לומר מילה', 'לא חזרת עד סוף המשמרת'] },
+      map_labels: { auto_reaction: 'לא חזרת' },
       new_info: true,
       exhausted: false,
     },
@@ -193,6 +204,7 @@ export const MOCK_RESPONSES = {
     evaluation: {
       slots: { planned_reaction: 2 },
       slot_findings: { planned_reaction: ['לדבר איתו על מה שקרה'] },
+      map_labels: { planned_reaction: 'לדבר איתו' },
       new_info: false,
       exhausted: true,
     },
@@ -204,6 +216,7 @@ export const MOCK_RESPONSES = {
     evaluation: {
       slots: { perspective: 1 },
       slot_findings: { perspective: ['הוא היה בלחץ של שירות ערב'] },
+      map_labels: { perspective: 'לחץ של ערב' },
       new_info: true,
       exhausted: false,
     },
@@ -213,6 +226,7 @@ export const MOCK_RESPONSES = {
     evaluation: {
       slots: { perspective: 2, intention: 1 },
       slot_findings: { intention: ['שהמנה תצא כמו שצריך'] },
+      map_labels: { intention: 'שהמנה תצא' },
       new_info: true,
       exhausted: false,
     },
@@ -222,6 +236,7 @@ export const MOCK_RESPONSES = {
     evaluation: {
       slots: { intention: 2, alt_formulation: 1 },
       slot_findings: { alt_formulation: ['הוא ניסה להציל את השירות, לא להעליב אותך'] },
+      map_labels: { alt_formulation: 'להציל את השירות' },
       new_info: true,
       exhausted: false,
     },

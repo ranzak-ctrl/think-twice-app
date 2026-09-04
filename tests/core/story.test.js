@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { buildStory, LAYERS, NEVER_MIRROR } from '../../src/core/story.js';
+import { buildMap } from '../../src/core/storyMap.js';
 import {
   createState,
   addFindings,
   mergeActorMap,
   mergeOpenForks,
+  setMapLabel,
   setSlot,
 } from '../../src/core/state.js';
 
@@ -273,5 +275,43 @@ describe('open forks — the delta contract', () => {
   it('omits the key entirely when there are no forks', async () => {
     const { buildSystemPrompt } = await import('../../src/core/promptBuilder.js');
     expect(buildSystemPrompt({ stage: 1, state: createState() })).not.toContain('\nopen_forks: ');
+  });
+});
+
+describe('story map — cube labels', () => {
+  // Ran, 4.9.2026: "cubes, a word or two in each". Naming what a cube stands for
+  // is a judgement, so the name comes from the model; truncation is the fallback.
+  const long = 'המנהלת כבר פרסמה מודעת דרושים לתפקיד מנהל הצוות';
+  const withTrigger = () =>
+    setSlot(addFindings(createState(), 'stage1', 'trigger', [long]), 'stage1', 'trigger', 2);
+
+  it("uses the model's label when it named the slot", () => {
+    const s = setMapLabel(withTrigger(), 'stage1', 'trigger', 'מודעה פורסמה');
+    expect(buildMap(s).stations[0].label).toBe('מודעה פורסמה');
+  });
+
+  it('falls back to trimming the finding when no label was given', () => {
+    const label = buildMap(withTrigger()).stations[0].label;
+    expect(label.length).toBeLessThan(long.length);
+    expect(long.startsWith(label)).toBe(true); // visibly a prefix, not a name
+  });
+
+  it('replaces the label when a later turn renames the slot', () => {
+    let s = setMapLabel(withTrigger(), 'stage1', 'trigger', 'מודעה פורסמה');
+    s = setMapLabel(s, 'stage1', 'trigger', 'מודעה לתפקיד שלך');
+    expect(buildMap(s).stations[0].label).toBe('מודעה לתפקיד שלך');
+  });
+
+  it('refuses a label that is really a sentence rather than trimming it', () => {
+    // Trimming would put the sentence back in the cube this field exists to
+    // keep out, and would do it silently.
+    const s = setMapLabel(withTrigger(), 'stage1', 'trigger', long);
+    expect(s.mapLabels?.stage1?.trigger).toBeUndefined();
+  });
+
+  it('never labels a barred slot onto the map', () => {
+    let s = setSlot(addFindings(createState(), 'stage2', 'wound', ['אני לא שווה']), 'stage2', 'wound', 2);
+    s = setMapLabel(s, 'stage2', 'wound', 'לא שווה');
+    expect(buildMap(s).stations).toEqual([]);
   });
 });

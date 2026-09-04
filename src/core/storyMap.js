@@ -28,20 +28,19 @@
 // a character's clarity flag, never `gaps`. See story.js for the full reasoning;
 // this module imports them rather than restating them.
 //
-// ⚠️ LABELS ARE THE OPEN PROBLEM. Ran asked for "cubes, a word or two in each".
-// The model reports findings as sentences (up to 140 chars — state.js), and no
-// amount of code turns "המנהלת כבר פרסמה מודעת דרושים לתפקיד מנהל הצוות" into
-// "מודעה פורסמה": choosing WHAT the cube stands for is a judgement, not a
-// truncation. `shorten` below is a placeholder good enough to judge the drawing by
-// and not good enough to ship. The real fix is a short label reported alongside
-// each finding — evaluator.md, prompt-editor's file.
+// LABELS. Ran asked for "cubes, a word or two in each" (4.9.2026). A cube's name
+// comes from the model, as `mapLabels` — because choosing WHAT a cube stands for
+// ("מודעה פורסמה") is a judgement, and no amount of code turns a sentence into one.
+// `shorten` is the fallback for a slot the model has not named yet: it truncates,
+// which is visibly not the same thing, and is there so a cube is never empty rather
+// than because it is good.
 
 import { NEVER_MIRROR, buildCast } from './story.js';
 
 const CONFIRMED = 2;
 
-// Placeholder compression — see the warning above. Takes the first words up to a
-// budget, preferring a clean word boundary.
+// Fallback only — see LABELS above. Takes the first words up to a budget,
+// preferring a clean word boundary.
 const LABEL_BUDGET = 20;
 export function shorten(raw) {
   const text = String(raw ?? '').replace(/\s+/g, ' ').trim();
@@ -75,6 +74,14 @@ const STATIONS = [
 function confirmedLabel(state, stageKey, slot) {
   if (NEVER_MIRROR.has(slot)) return '';
   if (state?.coverage?.[stageKey]?.[slot] !== CONFIRMED) return '';
+
+  // The model's name for this cube, when it gave one. Preferred over anything
+  // derived from the finding: the label is what the map is FOR.
+  const named = state?.mapLabels?.[stageKey]?.[slot];
+  if (typeof named === 'string' && named.trim()) return named.trim();
+
+  // Otherwise fall back to trimming the latest finding, so the cube is not empty.
+  // Latest rather than first, so a correction replaces what is drawn.
   const items = state?.findings?.[stageKey]?.[slot] ?? [];
   for (let i = items.length - 1; i >= 0; i--) {
     if (typeof items[i] === 'string' && items[i].trim()) return shorten(items[i]);

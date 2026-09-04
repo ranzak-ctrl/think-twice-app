@@ -53,6 +53,7 @@ export function parseResponse(raw) {
         evaluation.decision && typeof evaluation.decision === 'object' ? evaluation.decision : null,
       gapObservations: parseGapObservations(evaluation),
       openForks: parseOpenForks(evaluation),
+      mapLabels: parseMapLabels(evaluation),
     },
   };
 }
@@ -103,6 +104,21 @@ function parseSlotFindings(evaluation) {
     if (!Array.isArray(val)) continue;
     const items = val.map((s) => (typeof s === 'string' ? s.trim() : '')).filter(Boolean);
     if (items.length) out[key] = items;
+  }
+  return out;
+}
+
+// Parse the model's map labels — the one or two words that name a slot's cube on
+// the story map. Map of slotKey → string, routed by the session exactly like
+// slot_findings. Non-strings and blanks dropped; the length rule is the store's.
+function parseMapLabels(evaluation) {
+  const raw = evaluation.map_labels;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const out = {};
+  for (const [key, val] of Object.entries(raw)) {
+    if (typeof val !== 'string') continue;
+    const label = val.trim();
+    if (label) out[key] = label;
   }
   return out;
 }

@@ -21,6 +21,7 @@ import {
   appendDecisionLog,
   recordGapObservation,
   addFindings,
+  setMapLabel,
   mergeActorMap,
   mergeOpenForks,
   deriveActorsScore,
@@ -135,6 +136,20 @@ export async function runTurn(state, history, userText) {
       const slot = m ? m[2] : rawKey;
       if (!nextState.coverage[stageKey] || !(slot in nextState.coverage[stageKey])) continue;
       nextState = addFindings(nextState, stageKey, slot, items);
+    }
+  }
+
+  // Map labels: the short name for each slot's cube on the story map. Routed the
+  // same way as findings — bare names to the current stage, "stageN.slot" to that
+  // stage — and guarded to known slots. Display only; the Router never reads them.
+  if (ev.mapLabels && Object.keys(ev.mapLabels).length) {
+    const currentKey = `stage${stage}`;
+    for (const [rawKey, label] of Object.entries(ev.mapLabels)) {
+      const m = /^stage([1-7])\.(.+)$/.exec(rawKey);
+      const stageKey = m ? `stage${m[1]}` : currentKey;
+      const slot = m ? m[2] : rawKey;
+      if (!nextState.coverage[stageKey] || !(slot in nextState.coverage[stageKey])) continue;
+      nextState = setMapLabel(nextState, stageKey, slot, label);
     }
   }
 

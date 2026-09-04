@@ -48,6 +48,13 @@ export function createState() {
     // know, so unlike `gaps` this IS shown to the person. See mergeOpenForks.
     openForks: {},
 
+    // Map labels — the one- or two-word name the model gives a slot for the cube it
+    // fills on the story map, keyed stageN.slot like `findings`. Sparse; a slot has
+    // one, and the newest reported wins so a correction replaces what is drawn.
+    // Naming the thing a cube stands for is a judgement, which is why it comes from
+    // the model and not from truncating a finding. See setMapLabel.
+    mapLabels: {},
+
     meta: {
       currentStage: 1,
       questionCount: 0,        // questions asked in current stage
@@ -178,6 +185,24 @@ export function addFindings(state, stageKey, slotKey, items) {
       ...findings,
       [stageKey]: { ...stageFindings, [slotKey]: merged.slice(-FINDINGS_PER_SLOT_MAX) },
     },
+  };
+}
+
+// ── Map labels ──
+// One short label per slot, replaced rather than accumulated: the map draws one
+// cube per slot, so there is one name for it, and the latest is the current
+// understanding. Over-long values are refused rather than trimmed — a label that
+// needs cutting is not a label, and silently trimming it would put the sentence
+// back in the cube this field exists to keep out.
+export const MAP_LABEL_MAX = 24;
+
+export function setMapLabel(state, stageKey, slot, raw) {
+  const label = typeof raw === 'string' ? raw.replace(/\s+/g, ' ').trim() : '';
+  if (!label || label.length > MAP_LABEL_MAX) return state;
+  const byStage = state.mapLabels ?? {};
+  return {
+    ...state,
+    mapLabels: { ...byStage, [stageKey]: { ...(byStage[stageKey] ?? {}), [slot]: label } },
   };
 }
 
@@ -395,5 +420,6 @@ export function importState(json) {
     findings: state.findings ?? {},
     actorMap: state.actorMap ?? {},
     openForks: state.openForks ?? {},
+    mapLabels: state.mapLabels ?? {},
   };
 }
