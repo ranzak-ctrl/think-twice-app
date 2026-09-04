@@ -78,8 +78,6 @@
      this, not --column, or it sits 40px wider. */
   --column-content: calc(var(--column) - var(--column-pad) * 2);
   --rail-w: 186px; /* stage rail: both its width and its outer gutter */
-  --story-w: 320px; /* story mirror: wide enough for a line of Hebrew to breathe,
-     narrow enough that the conversation keeps the larger half of the window */
   --send-size: 34px; /* send button; the composer row matches it exactly */
 
   --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue',
@@ -305,7 +303,7 @@ button {
 }
 
 .chat {
-  flex: 1;
+  flex: 2 1 0;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -445,31 +443,16 @@ button {
    wobble is deterministic per node (StoryPanel.jsx `pick`), so the sketch is
    stable across renders — it is drawn once, not redrawn. */
 
+/* The drawing gets half the conversation's width (Ran, 4.9.2026), so the two are
+   sized in proportion rather than the map living in a fixed strip: `.chat` is
+   flex 2 and this is flex 1, which holds the ratio at every window size. */
 .story {
-  flex: none;
-  width: var(--story-w);
-  padding: 18px 16px 28px;
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 22px 18px 28px;
   overflow-y: auto;
   border-inline-start: 1px solid var(--border);
   --ink-line: #8d95a0; /* pencil, not UI chrome — deliberately not --border */
-}
-
-.story-head {
-  margin-bottom: 16px;
-}
-
-.story-title {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.story-sub {
-  margin: 2px 0 0;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--text-muted);
 }
 
 /* ------------- the map itself: one drawing, redrawn whole every turn -------- */
@@ -495,6 +478,11 @@ button {
 /* The route. Dashed because it is a path travelled, not a border. */
 .mp-route {
   stroke-dasharray: 5 6;
+  stroke-width: 1.6;
+  opacity: 0.85;
+}
+
+.mp-head {
   stroke-width: 1.6;
   opacity: 0.85;
 }
@@ -550,16 +538,6 @@ button {
 .mp-branch-label {
   font-size: 10px;
   fill: var(--text-muted);
-}
-
-.mp-compass,
-.mp-x {
-  font-size: 9px;
-  fill: var(--text-faint);
-}
-
-.mp-x {
-  font-size: 13px;
 }
 
 /* How to correct the drawing. A statement, never a question — the interviewer's
