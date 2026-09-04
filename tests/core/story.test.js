@@ -315,3 +315,20 @@ describe('story map — cube labels', () => {
     expect(buildMap(s).stations).toEqual([]);
   });
 });
+
+describe('barred slots — refused at the store, not only at the drawing', () => {
+  // prompt-editor, 4.9.2026: evaluator.md has no rule against naming a barred slot,
+  // so the model WILL report a two-word naming of the מוגלה once stage 2 lands.
+  // A single guard in a single consumer was all that stood between that and the
+  // person's screen. The store refuses the write, so nothing downstream can slip.
+  it('never stores a map label for the wound or the ADHD pattern', () => {
+    let s = setMapLabel(createState(), 'stage2', 'wound', 'לא שווה');
+    s = setMapLabel(s, 'stage2', 'adhd_pattern', 'קושי בוויסות');
+    expect(s.mapLabels).toEqual({});
+  });
+
+  it('still stores a label for an ordinary stage-2 slot', () => {
+    const s = setMapLabel(createState(), 'stage2', 'meaning', 'לא מקצועי');
+    expect(s.mapLabels.stage2.meaning).toBe('לא מקצועי');
+  });
+});

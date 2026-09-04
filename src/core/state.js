@@ -196,7 +196,21 @@ export function addFindings(state, stageKey, slotKey, items) {
 // back in the cube this field exists to keep out.
 export const MAP_LABEL_MAX = 24;
 
+// Slots that may never be shown to the person: the wound (מוגלה) and the ADHD
+// pattern. CLAUDE.md and Natali's ruling of 14.8 — he reaches the wound himself,
+// and it is never reflected back at him as our reading of him.
+//
+// This lives HERE, at the bottom of the stack, and refuses the WRITE. It used to be
+// enforced only in the projection that draws the map, which prompt-editor flagged
+// on 4.9.2026 while adding `map_labels`: the prompt has no rule against naming a
+// barred slot, so the model will report a two-word naming of the מוגלה as soon as
+// stage 2 lands, and a single guard in a single consumer was the only thing between
+// that and the person's own screen. A label that is never stored cannot be drawn by
+// a consumer that forgets to check. story.js re-exports this as NEVER_MIRROR.
+export const NEVER_SHOW_SLOTS = new Set(['wound', 'adhd_pattern']);
+
 export function setMapLabel(state, stageKey, slot, raw) {
+  if (NEVER_SHOW_SLOTS.has(slot)) return state;
   const label = typeof raw === 'string' ? raw.replace(/\s+/g, ' ').trim() : '';
   if (!label || label.length > MAP_LABEL_MAX) return state;
   const byStage = state.mapLabels ?? {};

@@ -67,9 +67,13 @@
 //    projection carries no actions; the drawing has no buttons and nothing to
 //    click. A correction is made by saying so in the chat.
 
-// Slots withheld from the drawing under rule 2. Enforced in the collector below,
-// not in LAYERS, so it holds for every layer that will ever be added.
-export const NEVER_MIRROR = new Set(['wound', 'adhd_pattern']);
+import { NEVER_SHOW_SLOTS as NEVER_MIRROR } from './state.js';
+
+// Slots withheld from the drawing under rule 2. The set is defined in state.js so
+// that the STORE can refuse a barred slot as well — a value that is never stored
+// cannot be drawn by a consumer that forgets to check. Re-exported here under the
+// name this projection and its tests already use.
+export { NEVER_MIRROR };
 
 // The story's chain, in the order it happened. `kind` is what the UI draws the
 // node AS — the shapes differ because the things differ, and seeing that the
