@@ -170,7 +170,7 @@ const SELF_ADDRESS = 'אתה';
 // beat where it happened, on the chain; up here it is noise competing with the
 // drawing. Roles and relations exist so the INTERVIEWER can tell two characters
 // apart — the person reading this already knows who these people are to him.
-function buildCast(actorMap) {
+export function buildCast(actorMap) {
   const seen = new Set();
   const out = [];
   for (const [id, a] of Object.entries(actorMap ?? {})) {

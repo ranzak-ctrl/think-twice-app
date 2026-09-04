@@ -1,0 +1,120 @@
+// The story as a MAP — redrawn whole on every new piece of information.
+//
+// Ran, 4.9.2026, replacing the growing-chain model: "I don't want a developing
+// diagram of the story. It's a MAP of the story, and the map is re-created with
+// every new item the interviewee gives. The new map absorbs the new detail into
+// itself." His example is the specification:
+//
+//   At first the map holds an event, a place and characters. Then TIMING arrives
+//   and another character — so the map is RE-CREATED in a form that represents the
+//   time dimension, with the new character added to it.
+//
+// So the map's FORM is not fixed. What changes when new information lands is not
+// only the contents but the shape of the drawing: before a timeline exists there is
+// nothing to lay a path along, and the map is a place with people at it; once the
+// order of events is known the same material re-forms as a route. That re-forming
+// IS the feature — a person watching their own case acquire a shape is the point,
+// per design/brief.md:36 (בלבול נרטיבי — "a pile of moments with no timeline").
+//
+// This module decides the form and the contents. StoryMap.jsx draws them and
+// decides nothing, so a new form is a change in one place.
+//
+// THE GATES ARE UNCHANGED, and still come from Ran's two rules of 28.8:
+//   certainty     — a slot's material reaches the map only at score 2, so the map
+//                   never draws something the interview has not settled.
+//   significance  — one map element per slot. The Transition Protocol's slot list
+//                   is the clinical answer to what a case is made of.
+// And the exclusions are unchanged: never the wound, never the ADHD pattern, never
+// a character's clarity flag, never `gaps`. See story.js for the full reasoning;
+// this module imports them rather than restating them.
+//
+// ⚠️ LABELS ARE THE OPEN PROBLEM. Ran asked for "cubes, a word or two in each".
+// The model reports findings as sentences (up to 140 chars — state.js), and no
+// amount of code turns "המנהלת כבר פרסמה מודעת דרושים לתפקיד מנהל הצוות" into
+// "מודעה פורסמה": choosing WHAT the cube stands for is a judgement, not a
+// truncation. `shorten` below is a placeholder good enough to judge the drawing by
+// and not good enough to ship. The real fix is a short label reported alongside
+// each finding — evaluator.md, prompt-editor's file.
+
+import { NEVER_MIRROR, buildCast } from './story.js';
+
+const CONFIRMED = 2;
+
+// Placeholder compression — see the warning above. Takes the first words up to a
+// budget, preferring a clean word boundary.
+const LABEL_BUDGET = 20;
+export function shorten(raw) {
+  const text = String(raw ?? '').replace(/\s+/g, ' ').trim();
+  if (text.length <= LABEL_BUDGET) return text;
+  const words = text.split(' ');
+  let out = '';
+  for (const w of words) {
+    if (out && (out + ' ' + w).length > LABEL_BUDGET) break;
+    out = out ? `${out} ${w}` : w;
+  }
+  return out || text.slice(0, LABEL_BUDGET);
+}
+
+// The stations of the route, in the order the story happened. Same chain as before
+// — event, interpretation, feeling, what was done — because that is what the
+// interview exists to expose and what makes a route out of a pile of moments.
+const STATIONS = [
+  { kind: 'fact', slots: [['stage1', 'trigger'], ['stage1', 'timeline'], ['stage1', 'status']] },
+  { kind: 'thought', slots: [['stage2', 'causal'], ['stage2', 'meaning']] },
+  { kind: 'feeling', slots: [['stage3', 'emotion'], ['stage3', 'past_echo']] },
+  { kind: 'action', slots: [['stage1', 'auto_reaction'], ['stage4', 'auto_reaction']] },
+  { kind: 'plan', slots: [['stage4', 'planned_reaction']] },
+  {
+    kind: 'other',
+    slots: [['stage5', 'perspective'], ['stage5', 'intention'], ['stage5', 'alt_formulation']],
+  },
+];
+
+// The latest finding in a slot, gated on that slot being confirmed. Latest rather
+// than first so a correction replaces what is drawn instead of piling up beside it.
+function confirmedLabel(state, stageKey, slot) {
+  if (NEVER_MIRROR.has(slot)) return '';
+  if (state?.coverage?.[stageKey]?.[slot] !== CONFIRMED) return '';
+  const items = state?.findings?.[stageKey]?.[slot] ?? [];
+  for (let i = items.length - 1; i >= 0; i--) {
+    if (typeof items[i] === 'string' && items[i].trim()) return shorten(items[i]);
+  }
+  return '';
+}
+
+// StateDocument → a map spec.
+//
+// `form` is the whole point of this module. 'scene' has no time in it: a place with
+// people at it, which is all a story is before its order is known. 'journey' lays
+// the same material along a route. The switch is the timeline slot being confirmed
+// — literally Ran's "then timing arrives, so the map is re-created with a time
+// dimension in it" — and when it flips, every element is placed again from scratch.
+export function buildMap(state) {
+  const cast = buildCast(state?.actorMap).map((a) => ({ ...a, label: shorten(a.label) }));
+
+  const stations = [];
+  const seen = new Set();
+  for (const { kind, slots } of STATIONS) {
+    for (const [stageKey, slot] of slots) {
+      const label = confirmedLabel(state, stageKey, slot);
+      if (!label || seen.has(label)) continue;
+      seen.add(label);
+      stations.push({ id: `${stageKey}.${slot}`, kind, label });
+    }
+  }
+
+  // Unresolved forks — a fact of the case (Natali, 29.8), drawn as the route
+  // splitting rather than as a station on it.
+  const forks = Object.values(state?.openForks ?? {})
+    .filter((f) => f && !f.settled && f.question && (f.options?.length ?? 0) >= 2)
+    .map((f) => ({
+      id: `fork.${f.id}`,
+      label: shorten(f.question),
+      options: f.options.map(shorten),
+    }));
+
+  const hasTime = state?.coverage?.stage1?.timeline === CONFIRMED;
+  const form = hasTime && stations.length >= 2 ? 'journey' : 'scene';
+
+  return { form, cast, stations, forks, isEmpty: cast.length === 0 && stations.length === 0 };
+}

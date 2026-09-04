@@ -472,189 +472,94 @@ button {
   color: var(--text-muted);
 }
 
-/* The cast: names only. Who is in this story — nothing about them, no roles, no
-   actions, no clarity badge. What a character DID belongs to the beat where it
-   happened, down on the chain. The first build drew cards here and a live run
-   turned them into the densest block on screen. */
-.sk-cast {
-  list-style: none;
-  margin: 0 0 20px;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 7px 8px;
-}
-
-.sk-chip {
-  font-size: 12px;
-  line-height: 1.3;
-  color: var(--text);
-  padding: 5px 11px;
-  border: 1.4px solid var(--ink-line);
-  background: var(--surface);
-  border-radius: 26px 22px 24px 20px / 20px 24px 21px 25px;
-  animation: sk-in 0.3s ease both;
-}
-
-/* The chain. An ordered list because the order is the argument, but the numbers
-   are suppressed: they would count the story's parts, and watching "3 of 9" fill
-   in is reading a progress meter (design/brief.md:65). */
-.sk-flow {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.sk-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* ------------- the map itself: one drawing, redrawn whole every turn -------- */
+/* Ink weights, not UI colours. Everything here is one pen on paper — the only
+   distinctions are line weight and whether a stroke is broken, because a sketch
+   that starts using colour to mean things stops being a sketch. */
+.mp {
+  display: block;
   width: 100%;
+  height: auto;
+  overflow: visible;
 }
 
-/* A node is a shape with a name on it, never a paragraph in a box — it sizes to
-   its text instead of stretching to the column, which is half of what makes a row
-   of these read as a diagram rather than as a list. */
-.sk-node {
-  max-width: 100%;
-  padding: 9px 13px;
-  font-size: 12.5px;
-  line-height: 1.5;
-  text-align: center;
-  color: var(--text);
-  background: var(--surface);
-  border: 1.5px solid var(--ink-line);
-  animation: sk-in 0.32s ease both;
+.mp path,
+.mp circle {
+  fill: none;
+  stroke: var(--ink-line);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
-/* Three hands, picked per node id. Enough that no two neighbours match, few
-   enough to stay a style rather than a mess. */
-.sk-w0 { transform: rotate(-0.8deg); }
-.sk-w1 { transform: rotate(0.65deg); }
-.sk-w2 { transform: rotate(-0.25deg); }
-
-/* Shape carries meaning — this is the encoding, not decoration.
-   fact: a drawn box, the camera-test record.
-   thought: dashed, soft-cornered — an interpretation, not an event. This is the
-     person's OWN reading handed back, so it must not look as solid as what
-     happened; telling those two apart is what stage 2 teaches.
-   feeling: a lozenge, no corners at all, accent ink.
-   action: heavy and squarer — something actually done.
-   plan: the same square, dashed — considered, not yet done.
-   other: dotted and lightest — the other side's view, held loosely.
-
-   Every radius here is in PIXELS. The first pass used percentages, which make a
-   true ellipse: fine on 'עלבון', and on a full sentence it stretched into a flat
-   lens with the text bursting out of both ends. A px radius rounds the corners it
-   is given and leaves the shape alone at any width. */
-.sk-node.is-fact {
-  border-radius: 20px 6px 16px 8px / 7px 18px 6px 20px;
+/* The route. Dashed because it is a path travelled, not a border. */
+.mp-route {
+  stroke-dasharray: 5 6;
+  stroke-width: 1.6;
+  opacity: 0.85;
 }
 
-.sk-node.is-thought {
-  border-style: dashed;
-  border-radius: 30px 22px 34px 20px / 22px 32px 20px 30px;
-  padding: 10px 16px;
-  color: var(--text-muted);
+.mp-cube {
+  fill: var(--surface);
+  stroke: var(--text-muted);
+  stroke-width: 1.6;
 }
 
-.sk-node.is-feeling {
-  border-radius: 999px;
-  padding: 9px 20px;
-  border-color: var(--accent-line);
+/* What was actually DONE carries the heaviest line on the map — the one place a
+   weight difference is allowed to mean something. */
+.mp-cube.is-strong {
+  stroke: var(--ink);
+  stroke-width: 2.1;
 }
 
-.sk-node.is-action {
-  border-width: 2px;
-  border-color: var(--ink);
-  border-radius: 14px 5px 12px 6px / 6px 13px 5px 15px;
+.mp-deco {
+  stroke-width: 1.3;
+  opacity: 0.5;
+}
+
+.mp-deco-fill {
+  fill: var(--ink-line);
+  stroke: none;
+  opacity: 0.6;
+}
+
+/* A branch of an unresolved fork — broken line, because it was never taken. */
+.mp-branch {
+  stroke-dasharray: 3 4;
+  stroke-width: 1.3;
+  opacity: 0.65;
+}
+
+.mp text {
+  fill: var(--text);
+  font-family: var(--font);
+  text-anchor: middle;
+  direction: rtl;
+}
+
+.mp-label {
+  font-size: 11.5px;
   font-weight: 600;
 }
 
-.sk-node.is-plan {
-  border-style: dashed;
-  border-radius: 14px 5px 12px 6px / 6px 13px 5px 15px;
+.mp-name {
+  font-size: 10.5px;
+  fill: var(--text-muted);
 }
 
-.sk-node.is-other {
-  border-style: dotted;
-  border-radius: 30px 22px 34px 20px / 22px 32px 20px 30px;
-  border-color: var(--border-strong);
-  color: var(--text-muted);
-  padding: 10px 16px;
+.mp-branch-label {
+  font-size: 10px;
+  fill: var(--text-muted);
 }
 
-/* An open fork — a question the STORY left undecided, which Natali's ruling of
-   29.8.2026 makes a fact of the case rather than a gap in what we know. The
-   question is a plain drawn box because the not-deciding really happened; the
-   possibilities under it are dashed because they are what stayed open. Dashed
-   already means "not settled" everywhere else in this panel, so the fork needs no
-   new vocabulary — it is the existing one, applied to branches.
-
-   Not a menu (design/brief.md:59): no control, no hover, no focus target, nothing
-   pickable. It states that the situation was unresolved. It does not ask.
-
-   Stacked and centred rather than drawn as a branching tree. The tree version put
-   its trunk at the panel edge while the question sat centred, so the two never met
-   and the branches read as an unrelated aside; three Hebrew options across a 320px
-   column is not available either. A short dashed drop from the question into a
-   column of dashed chips says the same thing and actually lines up. */
-.sk-node.is-fork {
-  border-radius: 16px 6px 14px 7px / 7px 15px 6px 16px;
-  border-color: var(--text-muted);
+.mp-compass,
+.mp-x {
+  font-size: 9px;
+  fill: var(--text-faint);
 }
 
-/* The drop from the question into its possibilities. Dashed, and shorter than a
-   chain arrow with no head: this does not advance the story, it opens out of one
-   point in it. */
-.sk-fork-drop {
-  display: block;
-  width: 0;
-  height: 11px;
-  margin: 3px 0 6px;
-  border-inline-start: 1.4px dashed var(--text-faint);
-}
-
-.sk-branches {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  max-width: 100%;
-}
-
-.sk-branches li {
-  max-width: 100%;
-  padding: 5px 13px;
-  font-size: 11.5px;
-  line-height: 1.45;
-  text-align: center;
-  color: var(--text-muted);
-  background: var(--surface);
-  border: 1.3px dashed var(--text-faint);
-  border-radius: 999px;
-  animation: sk-in 0.32s ease both;
-}
-
-/* The connector, and the one piece of this panel carrying an argument: nodes are
-   in the order the story happened, so this reads "led to". */
-.sk-arrow {
-  width: 14px;
-  height: 24px;
-  display: block;
-  margin: 2px 0;
-  fill: none;
-  stroke: var(--ink-line);
-  stroke-width: 1.4;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  animation: sk-in 0.32s ease both;
+.mp-x {
+  font-size: 13px;
 }
 
 /* How to correct the drawing. A statement, never a question — the interviewer's
