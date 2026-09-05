@@ -54,6 +54,7 @@ export function parseResponse(raw) {
       gapObservations: parseGapObservations(evaluation),
       openForks: parseOpenForks(evaluation),
       mapLabels: parseMapLabels(evaluation),
+      nodes: parseNodes(evaluation),
       edges: parseEdges(evaluation),
       groups: parseGroups(evaluation),
     },
@@ -130,6 +131,28 @@ function parseGroups(evaluation) {
       members: Array.isArray(g?.members)
         ? g.members.map((m) => (typeof m === 'string' ? m.trim() : '')).filter(Boolean)
         : [],
+    });
+  }
+  return out.length ? out : null;
+}
+
+// Parse the model's story nodes — the things the map draws. Each: { id, label,
+// slot, scale }. Everything else about them (the slot must exist, the barred slots,
+// the label length, the per-slot budget) is the store's rule, enforced in
+// mergeNodes; this only gets the shapes right. Absent → null, so a model that has
+// not been updated to report nodes leaves the store alone rather than clearing it.
+function parseNodes(evaluation) {
+  const raw = evaluation.nodes;
+  if (!Array.isArray(raw)) return null;
+  const out = [];
+  for (const n of raw) {
+    const id = typeof n?.id === 'string' ? n.id.trim() : '';
+    if (!id) continue;
+    out.push({
+      id,
+      label: typeof n?.label === 'string' ? n.label.trim() : '',
+      slot: typeof n?.slot === 'string' ? n.slot.trim() : '',
+      scale: typeof n?.scale === 'string' ? n.scale.trim() : '',
     });
   }
   return out.length ? out : null;

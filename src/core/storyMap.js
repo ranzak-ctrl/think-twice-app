@@ -59,14 +59,24 @@
 //                   as settled, which is what the original rule was protecting. U
 //                   stays out: "he doesn't remember" is a valid final answer for
 //                   the Router and still not a thing you can draw.
-//   significance  — one map element per slot. The Transition Protocol's slot list
-//                   is the clinical answer to what a case is made of.
+//   significance  — a BUDGET, not one-cube-per-slot. It was the latter until
+//                   5.9.2026, when Ran read a live map and said: "it started well
+//                   but at some point you stopped creating cubes and only updated
+//                   the existing ones." Nine separate things he had said about
+//                   causality were one box whose name kept being overwritten,
+//                   because the slot was standing in for the node — the same
+//                   inversion as the ordering, in the one place it had not been
+//                   corrected yet. The slot is what the ROUTER counts; a node is
+//                   what the map draws, and a slot holds several. Which of the
+//                   things he said earn one is the model's judgement, capped by
+//                   NODES_PER_SLOT_MAX so the drawing stays readable.
 // And the exclusions are unchanged: never the wound, never the ADHD pattern, never
 // a character's clarity flag, never `gaps`. See story.js for the full reasoning;
 // this module imports them rather than restating them.
 //
 // LABELS. Ran asked for "cubes, a word or two in each" (4.9.2026). A cube's name
-// comes from the model, as `mapLabels` — because choosing WHAT a cube stands for
+// comes from the model, as `nodes` (or `mapLabels` for a slot's own cube) — because
+// choosing WHAT a cube stands for
 // ("מודעה פורסמה") is a judgement, and no amount of code turns a sentence into one.
 // `shorten` is the fallback for a slot the model has not named yet: it truncates,
 // which is visibly not the same thing, and is there so a cube is never empty rather
@@ -134,6 +144,83 @@ function slotCube(state, stageKey, slot) {
   return null;
 }
 
+// Whether a slot is drawable at all, and how firmly. The certainty rule, in one
+// place, so the slot's own cube and the extra nodes hanging off that slot cannot
+// disagree about it.
+function certaintyOf(state, slotId) {
+  const m = /^stage([1-7])\.(.+)$/.exec(slotId ?? '');
+  if (!m) return null;
+  const [, digit, slot] = m;
+  if (NEVER_MIRROR.has(slot)) return null;
+  const level = state?.coverage?.[`stage${digit}`]?.[slot];
+  if (level !== CONFIRMED && level !== PROVISIONAL) return null;
+  return { provisional: level === PROVISIONAL };
+}
+
+// The narrative kind of a slot — what colour of thing it is (a fact, a thought, a
+// feeling…) — and its default position, for as long as he has not said what led to
+// what. Falls back to 'other' and to the end of the line for a slot NARRATIVE does
+// not list, which is not an error: NARRATIVE is a default ordering, not the slot
+// registry.
+const SLOT_META = new Map(
+  NARRATIVE.flatMap(({ kind, slots }) => slots.map(([st, sl]) => [`${st}.${sl}`, kind])).map(
+    ([id, kind], rank) => [id, { kind, rank }],
+  ),
+);
+
+const kindOf = (slotId) => SLOT_META.get(slotId)?.kind ?? 'other';
+const rankOf = (slotId) => SLOT_META.get(slotId)?.rank ?? Number.MAX_SAFE_INTEGER;
+
+// Every node the map will draw, in narrative order, before the graph re-orders them.
+//
+// Two sources, one list. On its own a slot contributes ONE cube, named by
+// `mapLabels` or by a trimmed finding, under the id "stageN.slot" — the id the
+// edges have always used, so nothing that already resolves stops resolving. But
+// once the model reports nodes for that slot, THOSE are the slot's contents and the
+// single fallback cube steps aside: nine things he said about causality are nine
+// things, not one box whose name kept getting overwritten (Ran, 5.9.2026).
+//
+// A reported node whose id IS "stageN.slot" is the ordinary case of that — it
+// simply names and scales the slot's own cube.
+function nodesOf(state) {
+  const reported = Object.values(state?.nodes ?? {})
+    .filter((n) => certaintyOf(state, n.slot))
+    .sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0));
+  const claimed = new Set(reported.map((n) => n.slot));
+
+  const items = [];
+  for (const { kind, slots } of NARRATIVE) {
+    for (const [stageKey, slot] of slots) {
+      const id = `${stageKey}.${slot}`;
+      if (claimed.has(id)) continue; // the model named this slot's contents itself
+      const cube = slotCube(state, stageKey, slot);
+      if (cube) items.push({ id, kind, slot: id, scale: 'episode', seq: -1, ...cube });
+    }
+  }
+  for (const n of reported) {
+    items.push({
+      id: n.id,
+      kind: kindOf(n.slot),
+      slot: n.slot,
+      scale: n.scale === 'ongoing' ? 'ongoing' : 'episode',
+      label: n.label,
+      seq: n.seq ?? 0,
+      ...certaintyOf(state, n.slot),
+    });
+  }
+
+  // Narrative order across slots, and within one slot the order he said them in.
+  items.sort((a, b) => rankOf(a.slot) - rankOf(b.slot) || a.seq - b.seq);
+
+  // Two cubes reading the same words are one thing said twice, not two things.
+  const labels = new Set();
+  return items.filter((n) => {
+    if (!n.label || labels.has(n.label)) return false;
+    labels.add(n.label);
+    return true;
+  });
+}
+
 // StateDocument → a map spec.
 //
 // `form` is the whole point of this module. 'scene' has no time in it: a place with
@@ -141,19 +228,21 @@ function slotCube(state, stageKey, slot) {
 // the same material along a route. The switch is the timeline slot being confirmed
 // — literally Ran's "then timing arrives, so the map is re-created with a time
 // dimension in it" — and when it flips, every element is placed again from scratch.
+//
+// TWO CLOCKS, TWO LANES. Ran, 5.9.2026: "there is the order of events of the
+// incident I am describing, and there is a description of something more ongoing in
+// the relationship with my wife. We need to find a way to represent that
+// complexity." So `stations` is the incident — beats in sequence, on the route —
+// and `ground` is what stands underneath it and does not move: how things are, and
+// have been. Nothing on the ground lane is ever given a position in the sequence,
+// because it does not have one, and the arrows BETWEEN the lanes are the
+// interesting part: "she has been trying to talk to me for a long time" is why she
+// answered the way she did in that minute.
 export function buildMap(state) {
   const cast = buildCast(state?.actorMap).map((a) => ({ ...a, label: shorten(a.label) }));
-
-  let stations = [];
-  const seen = new Set();
-  for (const { kind, slots } of NARRATIVE) {
-    for (const [stageKey, slot] of slots) {
-      const cube = slotCube(state, stageKey, slot);
-      if (!cube || seen.has(cube.label)) continue;
-      seen.add(cube.label);
-      stations.push({ id: `${stageKey}.${slot}`, kind, ...cube });
-    }
-  }
+  const all = nodesOf(state);
+  let stations = all.filter((n) => n.scale !== 'ongoing');
+  const ground = all.filter((n) => n.scale === 'ongoing');
 
   // Unresolved forks — a fact of the case (Natali, 29.8), drawn as the route
   // splitting rather than as a station on it.
@@ -174,6 +263,9 @@ export function buildMap(state) {
   // related reads in HIS order, a story he has not still reads sensibly, and the
   // two mix without the drawing ever claiming a relation he did not state.
   //
+  // Only the episode lane is ordered. An ongoing state has no place in a sequence,
+  // so sorting it would be answering a question nobody asked.
+  //
   // A cycle cannot deadlock this: whatever is still constrained when nothing is
   // free is emitted in narrative order. People do describe circular causes, and a
   // drawing that vanished because of one would be worse than a drawing that lays
@@ -188,7 +280,6 @@ export function buildMap(state) {
     out.get(e.from).push(e.to);
     indeg.set(e.to, indeg.get(e.to) + 1);
   }
-  const byId = new Map(stations.map((n) => [n.id, n]));
   const ordered = [];
   const placed = new Set();
   while (ordered.length < stations.length) {
@@ -205,54 +296,70 @@ export function buildMap(state) {
   //
   // Ran's ruling of 5.9.2026 — the edges are the interviewee's — makes this the
   // honest part of the drawing. A link he actually stated is `sourced`; a link with
-  // nothing behind it is the fixed STATIONS order asserting "led to" on its own
+  // nothing behind it is the fixed NARRATIVE order asserting "led to" on its own
   // authority, which is what the ruling is against. Both are drawn for now, because
   // dropping the unsourced ones would leave a row of disconnected boxes until the
   // model starts reporting edges, but they are told apart: his arrows are drawn
-  // firmly, ours tentatively. What SHOULD happen to an unconfirmed relation —
-  // whether it blocks a stage the way an unclear character does — is the open
-  // implementation question in questions-for-natali.md §10.
+  // firmly, ours tentatively.
   const edges = Object.values(state?.edges ?? {});
   const links = [];
+  const drawnAsLink = new Set();
   for (let i = 0; i < stations.length - 1; i++) {
     const a = stations[i].id;
     const b = stations[i + 1].id;
     const edge = edges.find(
       (e) => e.confirmed && ((e.from === a && e.to === b) || (e.from === b && e.to === a)),
     );
+    if (edge) drawnAsLink.add(edge.id);
     links.push({ from: i, to: i + 1, kind: edge?.kind ?? 'then', sourced: Boolean(edge) });
   }
 
-  // A provisional timeline is still a time dimension — enough to lay a route along.
-  // Relations he stated between stations that did NOT end up adjacent. The chain
-  // can only express a link between neighbours, so without these an edge he
-  // actually said — "I left because of what he said", four boxes apart — was
-  // stored, ordered on, and then silently not drawn. They render as an arc out to
-  // the margin rather than as a chain link, because that is what they are: a
-  // relation across the story, not the next step in it.
+  // ── Every other relation he stated, addressed BY ID ──
+  //
+  // This was three separate code paths — one for beats that ended up neighbours,
+  // one for beats that did not, one for `agent` edges out of a character — and an
+  // edge that fit none of the three was stored, sorted on, and drawn nowhere. Ran,
+  // 5.9.2026, reading a live map: "relations are missing too. For example the
+  // relation between my wife and the description of her character traits and the
+  // description of her deeds." The state from that run held exactly one such edge,
+  // `stage2.causal→actor:wife`, confirmed — a beat pointing AT a character, which
+  // every one of the three paths dropped, because only beats had positions and only
+  // a character could be the `from` of an agent edge.
+  //
+  // So there is one path now and an endpoint is any id the map places: a station, a
+  // node on the ground lane, a character, an open fork. Whether a thing can be
+  // pointed at is no longer a function of which array it happens to live in.
+  const placedIds = new Set([
+    ...stations.map((n) => n.id),
+    ...ground.map((n) => n.id),
+    ...cast.map((a) => `actor:${a.id}`),
+    ...forks.map((f) => f.id),
+  ]);
   const arcs = [];
-  for (const e of Object.values(state?.edges ?? {})) {
+  for (const e of edges) {
     // `echo` is drawn but deliberately absent from the ordering above: "this felt
     // like that" relates two beats without putting either first.
-    if (!e.confirmed || !['then', 'because', 'echo'].includes(e.kind)) continue;
-    const a = stations.findIndex((n) => n.id === e.from);
-    const b = stations.findIndex((n) => n.id === e.to);
-    if (a < 0 || b < 0 || Math.abs(a - b) <= 1) continue; // adjacent → it is a link
-    arcs.push({ from: a, to: b, kind: e.kind });
+    if (!e.confirmed || !['then', 'because', 'agent', 'echo'].includes(e.kind)) continue;
+    if (drawnAsLink.has(e.id)) continue; // already the chain link between two neighbours
+    if (!placedIds.has(e.from) || !placedIds.has(e.to)) continue;
+    arcs.push({ from: e.from, to: e.to, kind: e.kind });
   }
 
-  // Who did what: `agent` edges, resolved to the stations each character acts in.
-  // Until now these were stored and drawn nowhere, because only beats had
-  // positions — the map knew the manager made the remark and showed a cast box
-  // floating in the corner with no line to anything.
-  const agents = [];
-  for (const a of cast) {
-    const beats = Object.values(state?.edges ?? {})
-      .filter((e) => e.confirmed && e.kind === 'agent' && e.from === `actor:${a.id}`)
-      .map((e) => stations.findIndex((n) => n.id === e.to))
-      .filter((i) => i >= 0);
-    agents.push({ ...a, beats: [...new Set(beats)].sort((x, y) => x - y) });
-  }
+  // Where a character stands is decided by what he is joined to, so the cast list
+  // carries the ids and the renderer does the geometry. `anchors` is every placed
+  // thing this character has a confirmed relation to, whichever way the arrow runs
+  // — being the object of a relation ("that is because of her") locates her on the
+  // map exactly as much as being its subject does.
+  const agents = cast.map((a) => {
+    const self = `actor:${a.id}`;
+    const anchors = new Set();
+    for (const e of edges) {
+      if (!e.confirmed) continue;
+      if (e.from === self && placedIds.has(e.to) && e.to !== self) anchors.add(e.to);
+      if (e.to === self && placedIds.has(e.from) && e.from !== self) anchors.add(e.from);
+    }
+    return { ...a, anchors: [...anchors] };
+  });
 
   // Containers, resolved to the things they actually hold on this map. A group
   // whose members are all off the map contributes nothing rather than an empty box.
@@ -261,29 +368,24 @@ export function buildMap(state) {
     // Only what he confirmed. A box is a claim, and an unconfirmed one is a
     // clarification waiting to happen, not a thing to draw at him.
     if (!g.confirmed) continue;
-    const inStations = g.members
-      .map((m) => stations.findIndex((n) => n.id === m))
-      .filter((i) => i >= 0);
-    const inCast = g.members
-      .filter((m) => m.startsWith('actor:'))
-      .map((m) => m.slice(6))
-      .filter((id) => cast.some((a) => a.id === id));
-    if (inStations.length + inCast.length < 2) continue;
-    containers.push({ ...g, stations: inStations, actors: inCast });
+    const members = g.members.filter((m) => placedIds.has(m));
+    if (members.length < 2) continue;
+    containers.push({ ...g, members });
   }
 
   const hasTime = [CONFIRMED, PROVISIONAL].includes(state?.coverage?.stage1?.timeline);
-  const form = hasTime && stations.length >= 2 ? 'journey' : 'scene';
+  const form = hasTime && stations.length + ground.length >= 2 ? 'journey' : 'scene';
 
   return {
     form,
     cast,
     stations,
+    ground,
     agents,
     containers,
     links,
     arcs,
     forks,
-    isEmpty: cast.length === 0 && stations.length === 0,
+    isEmpty: cast.length === 0 && stations.length === 0 && ground.length === 0,
   };
 }

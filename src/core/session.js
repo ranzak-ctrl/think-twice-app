@@ -26,6 +26,7 @@ import {
   mergeOpenForks,
   mergeEdges,
   mergeGroups,
+  mergeNodes,
   deriveActorsScore,
 } from './state.js';
 import { preCheck } from '../safety/index.js';
@@ -183,6 +184,12 @@ export async function runTurn(state, history, userText) {
       },
     };
   }
+
+  // Story nodes: the things the map draws. Merged at any stage and NOT routed to
+  // the current stage the way findings are — each node names its own slot, because
+  // material belonging to stage 3 routinely surfaces in stage 1 and the map draws
+  // it where it belongs rather than where the interview happens to be standing.
+  if (ev.nodes) nextState = mergeNodes(nextState, ev.nodes);
 
   // Story edges: the relations between the case's entities. Merged at any stage —
   // an edge routinely joins a beat in one stage to a beat in another, which is also

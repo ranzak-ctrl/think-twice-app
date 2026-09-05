@@ -8,6 +8,8 @@ import {
   mergeOpenForks,
   mergeEdges,
   mergeGroups,
+  mergeNodes,
+  NODES_PER_SLOT_MAX,
   setMapLabel,
   setSlot,
   exportState,
@@ -480,7 +482,11 @@ describe('story map — a relation he stated across the story, not just next doo
     const a = m.stations.findIndex((n) => n.id === 'stage1.timeline');
     const b = m.stations.findIndex((n) => n.id === 'stage1.auto_reaction');
     expect(Math.abs(a - b)).toBeGreaterThan(1); // genuinely not neighbours
-    expect(m.arcs).toEqual([{ from: a, to: b, kind: 'because' }]);
+    // Addressed by id, not by index: an endpoint may be a beat, a standing state,
+    // a character or a fork, and only ids can name all four.
+    expect(m.arcs).toEqual([
+      { from: 'stage1.timeline', to: 'stage1.auto_reaction', kind: 'because' },
+    ]);
   });
 
   it('does not arc an edge that is already a chain link', () => {
@@ -532,7 +538,7 @@ describe('story map — containers', () => {
     ]);
     const c = buildMap(s).containers[0];
     expect(c).toMatchObject({ label: 'המשמרת', kind: 'process' });
-    expect(c.stations).toHaveLength(2);
+    expect(c.members).toEqual(['stage1.trigger', 'stage1.timeline']);
   });
 
   it('resolves a community container to the characters it holds', () => {
@@ -545,7 +551,7 @@ describe('story map — containers', () => {
         confirmed: true,
       },
     ]);
-    expect(buildMap(s).containers[0].actors).toEqual(['user', 'mgr']);
+    expect(buildMap(s).containers[0].members).toEqual(['actor:user', 'actor:mgr']);
   });
 
   it('refuses a container round the self — that ruling is not made', () => {
@@ -636,7 +642,204 @@ describe('story map — perspectives', () => {
       view('his', 'actor:manager', ['stage1.trigger', 'stage5.intention']),
     ]);
     const cs = buildMap(s).containers;
-    expect(cs[0].stations).toContain(0);
-    expect(cs[1].stations).toContain(0); // shared ground, not a collision
+    expect(cs[0].members).toContain('stage1.trigger');
+    expect(cs[1].members).toContain('stage1.trigger'); // shared ground, not a collision
+  });
+});
+
+// ── The three faults Ran found reading a live map, 5.9.2026 ──
+// He ran the app against the real model, exported the session and named three
+// things. Each one is reproducible from that export, and each gets a test here so
+// it fails the build rather than reaching him again.
+
+describe('story map — a slot holds as many things as he said (Ran, 5.9: "you stopped creating cubes")', () => {
+  // From the run: stage2.causal held NINE findings — "you are both in system
+  // overload", "she gains from us not talking", "she is not rational", "so she
+  // manoeuvres", "you bring money but with no control over spending" — and the map
+  // showed ONE box, whose name had been overwritten down to "כסף בלי שליטה".
+  const causal = () => {
+    let s = createState();
+    s = addFindings(s, 'stage2', 'causal', ['שניכם בטירוף מערכות']);
+    return setSlot(s, 'stage2', 'causal', 2);
+  };
+
+  it('draws a cube per reported node, not one per slot', () => {
+    const s = mergeNodes(causal(), [
+      { id: 'overload', label: 'שניכם עמוסים', slot: 'stage2.causal' },
+      { id: 'not_rational', label: 'לא רציונלית בכסף', slot: 'stage2.causal' },
+      { id: 'manoeuvres', label: 'לכן היא מתמרנת', slot: 'stage2.causal' },
+    ]);
+    expect(buildMap(s).stations.map((n) => n.label)).toEqual([
+      'שניכם עמוסים',
+      'לא רציונלית בכסף',
+      'לכן היא מתמרנת',
+    ]);
+  });
+
+  it('adds rather than overwrites when the next turn brings another node', () => {
+    let s = mergeNodes(causal(), [{ id: 'a', label: 'שניכם עמוסים', slot: 'stage2.causal' }]);
+    s = mergeNodes(s, [{ id: 'b', label: 'לכן היא מתמרנת', slot: 'stage2.causal' }]);
+    expect(buildMap(s).stations).toHaveLength(2);
+  });
+
+  it('still lets the model correct a node — same id, new name', () => {
+    let s = mergeNodes(causal(), [{ id: 'a', label: 'היא לא מדברת', slot: 'stage2.causal' }]);
+    s = mergeNodes(s, [{ id: 'a', label: 'היא לא רציונלית', slot: 'stage2.causal' }]);
+    const st = buildMap(s).stations;
+    expect(st).toHaveLength(1);
+    expect(st[0].label).toBe('היא לא רציונלית');
+  });
+
+  it('a node whose id is the slot renames that slot’s own cube instead of doubling it', () => {
+    let s = setMapLabel(causal(), 'stage2', 'causal', 'כסף בלי שליטה');
+    s = mergeNodes(s, [{ id: 'stage2.causal', label: 'טירוף מערכות', slot: 'stage2.causal' }]);
+    const st = buildMap(s).stations;
+    expect(st).toHaveLength(1);
+    expect(st[0].label).toBe('טירוף מערכות');
+  });
+
+  it('keeps the wound off the map even as a node', () => {
+    let s = setSlot(createState(), 'stage2', 'wound', 2);
+    s = mergeNodes(s, [{ id: 'pus', label: 'אני לא שווה', slot: 'stage2.wound' }]);
+    expect(s.nodes).toEqual({});
+    expect(buildMap(s).stations).toEqual([]);
+  });
+
+  it('caps a slot so the drawing stays readable, and keeps what he said first', () => {
+    let s = causal();
+    for (let i = 0; i < NODES_PER_SLOT_MAX + 3; i++) {
+      s = mergeNodes(s, [{ id: `n${i}`, label: `סיבה ${i}`, slot: 'stage2.causal' }]);
+    }
+    expect(Object.keys(s.nodes)).toHaveLength(NODES_PER_SLOT_MAX);
+    expect(s.nodes.n0.label).toBe('סיבה 0'); // first in, not last in
+    // At the cap an EXISTING node can still be corrected.
+    s = mergeNodes(s, [{ id: 'n0', label: 'בעצם אחרת', slot: 'stage2.causal' }]);
+    expect(s.nodes.n0.label).toBe('בעצם אחרת');
+  });
+
+  it('refuses a node with no slot, and one that would shadow an actor', () => {
+    let s = mergeNodes(causal(), [{ id: 'loose', label: 'משהו', slot: '' }]);
+    expect(s.nodes).toEqual({});
+    s = mergeNodes(causal(), [{ id: 'actor:wife', label: 'אשתך', slot: 'stage2.causal' }]);
+    expect(s.nodes).toEqual({});
+  });
+});
+
+describe('story map — a character can be pointed at (Ran, 5.9: "relations are missing")', () => {
+  // From the run: `stage2.causal→actor:wife`, kind `because`, confirmed — he said
+  // his reading of the causality was about HER. It was stored and drawn nowhere,
+  // because an endpoint only counted if it was a beat, and the one path that knew
+  // about characters needed the character to be the `from`.
+  const withWife = () => {
+    let s = createState();
+    const put = (k, sl, t) => { s = setSlot(addFindings(s, k, sl, [t]), k, sl, 2); };
+    put('stage1', 'trigger', 'שמעת במקרה');
+    put('stage2', 'causal', 'היא מתמרנת');
+    return mergeActorMap(s, [{ id: 'wife', label: 'אשתך' }]);
+  };
+
+  it('draws an edge from a beat to a character', () => {
+    const s = mergeEdges(withWife(), [
+      { from: 'stage2.causal', to: 'actor:wife', kind: 'because', confirmed: true },
+    ]);
+    expect(buildMap(s).arcs).toEqual([
+      { from: 'stage2.causal', to: 'actor:wife', kind: 'because' },
+    ]);
+  });
+
+  it('draws an edge from a character to a beat, and anchors her to it', () => {
+    const s = mergeEdges(withWife(), [
+      { from: 'actor:wife', to: 'stage1.trigger', kind: 'agent', confirmed: true },
+    ]);
+    const m = buildMap(s);
+    expect(m.arcs).toEqual([{ from: 'actor:wife', to: 'stage1.trigger', kind: 'agent' }]);
+    expect(m.agents.find((a) => a.id === 'wife').anchors).toEqual(['stage1.trigger']);
+  });
+
+  it('joins her traits to her deeds — the example he gave', () => {
+    // "the relation between my wife and the description of her character traits
+    // and the description of her deeds." The traits are a node in stage2, the deed
+    // is a beat in stage1, and she is the thing that holds them together.
+    let s = mergeNodes(withWife(), [
+      { id: 'not_rational', label: 'לא רציונלית', slot: 'stage2.causal', scale: 'ongoing' },
+    ]);
+    s = mergeEdges(s, [
+      { from: 'actor:wife', to: 'stage1.trigger', kind: 'agent', confirmed: true },
+      { from: 'not_rational', to: 'actor:wife', kind: 'because', confirmed: true },
+    ]);
+    const wife = buildMap(s).agents.find((a) => a.id === 'wife');
+    expect(wife.anchors.sort()).toEqual(['not_rational', 'stage1.trigger']);
+  });
+
+  it('still drops an edge to a character nobody introduced', () => {
+    const s = mergeEdges(withWife(), [
+      { from: 'stage2.causal', to: 'actor:ghost', kind: 'because', confirmed: true },
+    ]);
+    expect(buildMap(s).arcs).toEqual([]);
+  });
+});
+
+describe('story map — two clocks (Ran, 5.9: "the time axis is represented wrongly")', () => {
+  // "There is the order of events of the incident I am describing, and there is a
+  // description of something more ongoing in the relationship with my wife."
+  // The incident took a minute; "there is no real partnership" has been true for
+  // years. One spine drew the second as the next beat of the first.
+  const run = () => {
+    let s = createState();
+    const put = (k, sl, t) => { s = setSlot(addFindings(s, k, sl, [t]), k, sl, 2); };
+    put('stage1', 'trigger', 'שמעת במקרה');
+    put('stage1', 'timeline', 'שבוע לפני ראש השנה');
+    put('stage1', 'auto_reaction', 'שאלת ממתי הוחלט');
+    put('stage2', 'meaning', 'אין שותפות');
+    return s;
+  };
+
+  it('keeps a standing state off the route', () => {
+    const s = mergeNodes(run(), [
+      { id: 'stage2.meaning', label: 'אין שותפות', slot: 'stage2.meaning', scale: 'ongoing' },
+    ]);
+    const m = buildMap(s);
+    expect(m.ground.map((n) => n.label)).toEqual(['אין שותפות']);
+    expect(m.stations.map((n) => n.id)).not.toContain('stage2.meaning');
+    // and no chain link was invented to it
+    expect(m.links.every((l) => l.to < m.stations.length)).toBe(true);
+  });
+
+  it('does not let a standing state re-order the incident', () => {
+    let s = mergeNodes(run(), [
+      { id: 'long_try', label: 'מנסה כבר הרבה זמן', slot: 'stage1.status', scale: 'ongoing' },
+    ]);
+    s = setSlot(s, 'stage1', 'status', 2);
+    s = mergeEdges(s, [
+      { from: 'long_try', to: 'stage1.trigger', kind: 'because', confirmed: true },
+    ]);
+    const m = buildMap(s);
+    expect(m.stations[0].id).toBe('stage1.trigger'); // the route is unmoved
+    expect(m.ground.map((n) => n.id)).toContain('long_try');
+  });
+
+  it('draws the arrow between the clocks — that is the whole point of two lanes', () => {
+    let s = mergeNodes(run(), [
+      { id: 'stage2.meaning', label: 'אין שותפות', slot: 'stage2.meaning', scale: 'ongoing' },
+    ]);
+    s = mergeEdges(s, [
+      { from: 'stage2.meaning', to: 'stage1.auto_reaction', kind: 'because', confirmed: true },
+    ]);
+    expect(buildMap(s).arcs).toEqual([
+      { from: 'stage2.meaning', to: 'stage1.auto_reaction', kind: 'because' },
+    ]);
+  });
+
+  it('a map that is only standing states is still a map', () => {
+    let s = setSlot(addFindings(createState(), 'stage2', 'meaning', ['אין שותפות']), 'stage2', 'meaning', 2);
+    s = setSlot(addFindings(s, 'stage1', 'timeline', ['מזמן']), 'stage1', 'timeline', 2);
+    s = mergeNodes(s, [
+      { id: 'stage2.meaning', label: 'אין שותפות', slot: 'stage2.meaning', scale: 'ongoing' },
+      { id: 'stage1.timeline', label: 'מזמן', slot: 'stage1.timeline', scale: 'ongoing' },
+    ]);
+    const m = buildMap(s);
+    expect(m.isEmpty).toBe(false);
+    expect(m.stations).toEqual([]);
+    expect(m.ground).toHaveLength(2);
   });
 });

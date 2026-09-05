@@ -137,7 +137,17 @@ export const MOCK_RESPONSES = {
     evaluation: {
       slots: { causal: 1 },
       slot_findings: { causal: ['הוא רצה להראות שהוא מבין באוכל'] },
-      map_labels: { causal: 'רצה להראות' },
+      // Several cubes out of ONE slot, which is the point of `nodes` (Ran,
+      // 5.9.2026: "you stopped creating cubes and only updated the existing
+      // ones"). `map_labels` could only ever name one, so a second reading of the
+      // same causality overwrote the first instead of standing beside it.
+      nodes: [
+        { id: 'show_off', label: 'רצה להראות', slot: 'stage2.causal', scale: 'episode' },
+        // And the two clocks. This one is not a beat of that evening — it is how
+        // the kitchen has been for a while, so it belongs on the ground lane and
+        // never on the route.
+        { id: 'kitchen_pressure', label: 'המטבח תמיד בלחץ', slot: 'stage2.causal', scale: 'ongoing' },
+      ],
       new_info: true,
       exhausted: false,
     },
@@ -148,9 +158,22 @@ export const MOCK_RESPONSES = {
       slots: { causal: 2, meaning: 1 },
       slot_findings: { meaning: ['שאני לא מקצועי מספיק'] },
       map_labels: { meaning: 'לא מקצועי' },
-      // Suspected but not stated by him, so unconfirmed: it does not redraw the
-      // map, it queues the clarification.
-      edges: [{ from: 'stage2.meaning', to: 'stage3.emotion', kind: 'because' }],
+      nodes: [
+        { id: 'not_pro', label: 'לא מקצועי מספיק', slot: 'stage2.meaning', scale: 'ongoing' },
+      ],
+      edges: [
+        // Suspected but not stated by him, so unconfirmed: it does not redraw the
+        // map, it queues the clarification.
+        { from: 'stage2.meaning', to: 'stage3.emotion', kind: 'because' },
+        // A beat pointing AT a character — the shape that used to be stored and
+        // drawn nowhere (Ran, 5.9.2026: "the relation between my wife and the
+        // description of her character traits"). He said the remark was about the
+        // manager's own standard, so it is confirmed.
+        { from: 'show_off', to: 'actor:manager', kind: 'because', confirmed: true },
+        // And the arrow between the two clocks: the standing pressure is why he
+        // read the remark the way he did in that moment.
+        { from: 'kitchen_pressure', to: 'stage1.timeline', kind: 'because', confirmed: true },
+      ],
       new_info: true,
       exhausted: false,
     },

@@ -595,8 +595,47 @@ button {
    Solid like every other arrow of his, and thinner than the chain so the route
    still reads as the spine of the story. */
 .mp-arc {
+  stroke-width: 1.1;
+  opacity: 0.55;
+}
+
+/* Resemblance, not sequence — "that felt like this". Broken, so the eye does not
+   read it as one thing leading to another. */
+.mp-rel.is-echo .mp-arc {
+  stroke-dasharray: 2 5;
+  opacity: 0.6;
+}
+
+/* ── The ground lane ──
+   What has been true for a while, under the minute the story is about. Ran,
+   5.9.2026: "there is the order of events of the incident I am describing, and
+   there is a description of something more ongoing in the relationship with my
+   wife." Both were being drawn on one spine, so the map asserted that the standing
+   state was the next thing that happened.
+
+   It is a held region rather than more stations: no route runs through it, because
+   nothing in it is before or after anything else in it. Faint, wide and low, so it
+   reads as ground and not as another step. */
+.mp-ground-line {
+  fill: none;
+  stroke: var(--text-faint);
+  stroke-width: 1.1;
+  stroke-dasharray: 1 5;
+  opacity: 0.55;
+}
+
+.mp-ground-label {
+  font-size: 10px;
+  fill: var(--text-faint);
+  text-anchor: end;
+}
+
+/* A standing state carries a lighter outline than a beat on the route. It is no
+   less certain — the certainty rule still governs that — it simply is not an
+   event, and the difference has to be visible without a legend. */
+.mp-station.is-standing .mp-cube {
+  stroke: var(--text-faint);
   stroke-width: 1.3;
-  opacity: 0.75;
 }
 
 .mp-deco {

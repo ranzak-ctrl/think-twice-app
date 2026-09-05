@@ -116,6 +116,11 @@ function lines(text) {
 }
 
 const CUBE_MAX = 200; // leaves both margins clear for arcs
+// A station's own ceiling, lower than CUBE_MAX. At 200 a cube on the inner column
+// (x = 210) spans 110–310, and a character's box in the left margin reaches 112 —
+// two pixels of overlap, which on a hand-drawn outline reads as a collision. 180
+// keeps eight pixels of daylight between the widest cube and the widest name.
+const STATION_MAX = 180;
 const cubeW = (text, min = 96, max = CUBE_MAX) =>
   Math.min(max, Math.max(min, Math.max(...lines(text).map((l) => l.length)) * PER_CHAR + 26));
 
@@ -138,65 +143,199 @@ function Label({ x, y, text, cls = 'mp-label' }) {
 // rendered as a line through the words of the beats it was not about.
 // Wide enough for two working margins: characters stand in one, and relations
 // across the story arc through the other. Neither may run over a cube.
+// THREE BANDS, and two of them are kept empty on purpose. A relation that is not
+// the route itself has to get from one box to another without crossing a third, and
+// the only way to guarantee that is to reserve lanes nothing is ever drawn in:
+//
+//   0–14    the left channel  — where a character's relations run
+//   18–122  the cast          — the characters themselves
+//   130–470 the story         — the route and the ground beneath it
+//   490–520 the right channel — where relations across the story run
+//
+// The first render of the two-lane map had arcs bowing through the middle, and a
+// relation from the ground up to a beat drew a long curve straight across two other
+// cubes — the same fault as the arc that cut through two boxes on 5.9, in a new
+// place. Bowing harder only moves which box it crosses; an empty lane removes the
+// question.
 const W = 520;
+const CH = 36;      // a cube on the route
+const GAP = 12;     // between two cubes in a row
+const CHANNEL_L = 10;
+const CHANNEL_R = 494;
+const CAST_X = 18;
+const CAST_MAX = 100;
 
-// No time in the story yet: a place, with the people who are at it. There is
-// nothing to lay a route along, so the map does not pretend there is.
-function Scene({ cast, stations }) {
-  const cx = W / 2;
-  const here = stations[0];
-  const eh = here && lines(here.label).length > 1 ? 50 : 40;
-  const top = (here ? eh + 46 : 26) + 16;
+// Pack labelled items into rows that fit a width. Used for everything that has no
+// place in a sequence — the cast before there is a route, and the ground lane,
+// which by definition has no order to lay out along.
+function packRows(items, maxW, minCube) {
   const rows = [];
-  for (let i = 0; i < cast.length; i += 2) rows.push(cast.slice(i, i + 2));
-  const H = top + rows.length * 50 + 6;
+  let row = [];
+  let used = 0;
+  for (const it of items) {
+    const w = cubeW(it.label, minCube);
+    if (row.length && used + w + GAP > maxW) {
+      rows.push(row);
+      row = [];
+      used = 0;
+    }
+    row.push({ ...it, w });
+    used += w + GAP;
+  }
+  if (row.length) rows.push(row);
+  return rows;
+}
 
+// Row → x for each item, centred on cx.
+function layRow(row, cx) {
+  const total = row.reduce((sum, it) => sum + it.w, 0) + GAP * (row.length - 1);
+  let x = cx - total / 2;
+  return row.map((it) => {
+    const at = x + it.w / 2;
+    x += it.w + GAP;
+    return { ...it, x: at };
+  });
+}
+
+// A relation drawn between two placed things. One routine for all of them now:
+// beats that are neighbours are the route itself, and everything else — a beat to a
+// character, a moment to the standing state underneath it, two beats four boxes
+// apart — is an arc, and every arc is a polyline through reserved space.
+//
+// Journey computes the route because only it knows where the bands are; this just
+// draws it and puts the head on the last segment.
+function Arc({ points, kind, seed, className }) {
+  const enter = points[points.length - 2];
+  const end = points[points.length - 1];
   return (
-    <svg className="mp" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="מפת הסיפור">
-      {here && (
-        <>
-          <Cube
-            x={cx}
-            y={eh / 2 + 8}
-            w={cubeW(here.label, 150)}
-            h={eh}
-            seed={here.id}
-            strong={!here.provisional}
-            provisional={here.provisional}
-          />
-          <Label x={cx} y={eh / 2 + 8} text={here.label} />
-        </>
-      )}
-      {rows.map((row, r) =>
-        row.map((a, c) => {
-          const w = cubeW(a.label, 84);
-          // A lone card on the last row centres instead of hanging off to one side.
-          const px = row.length === 1 ? cx : c === 0 ? cx - (w / 2 + 8) : cx + (w / 2 + 8);
-          const py = top + r * 50;
-          return (
-            <g key={a.id}>
-              {here && (
-                <Leg points={[[cx, eh + 10], [px, py - 18]]} seed={`c${a.id}`} className="mp-route" />
-              )}
-              <Cube x={px} y={py} w={w} h={30} seed={a.id} />
-              <Label x={px} y={py} text={a.label} cls="mp-name" />
-            </g>
-          );
-        })
-      )}
-    </svg>
+    <g className={`mp-rel is-${kind}`}>
+      <Leg points={points} seed={seed} className={className} />
+      <Head x0={enter[0]} y0={enter[1]} x1={end[0]} y1={end[1]} seed={`${seed}h`} className={className} />
+    </g>
   );
 }
 
-// The order of events is known, so the same material becomes a route: a winding
-// path from where it started to where it stands, a cube at every station.
-function Journey({ cast, stations, agents, containers, links, arcs, forks }) {
+// Where the characters stand: the left margin, each at the average height of
+// everything he is joined to.
+//
+// Pushed apart afterwards. Two characters with no relations yet both fell to the
+// same default y and their boxes printed on top of each other — "הבתאשתנה" in Ran's
+// screenshot of 5.9.2026, two names in one pile of letters. A map that garbles the
+// cast is worse than one that omits it.
+const ACTOR_GAP = 32;
+export function placeActors(agents, posOf, fallbackY) {
+  const placed = agents.map((a, i) => {
+    const w = Math.min(CAST_MAX, Math.max(64, a.label.length * PER_CHAR + 20));
+    const anchors = a.anchors.map(posOf).filter(Boolean);
+    const y = anchors.length
+      ? anchors.reduce((sum, p) => sum + p.y, 0) / anchors.length
+      : fallbackY + i * ACTOR_GAP;
+    return { ...a, w, h: 26, x: CAST_X + w / 2, y };
+  });
+  placed.sort((p, q) => p.y - q.y);
+  for (let i = 1; i < placed.length; i++) {
+    placed[i].y = Math.max(placed[i].y, placed[i - 1].y + ACTOR_GAP);
+  }
+  return placed;
+}
+
+// The route, the ground it runs on, and everyone standing beside it.
+//
+// TWO CLOCKS. Ran, 5.9.2026: "there is the order of events of the incident I am
+// describing, and there is a description of something more ongoing in the
+// relationship with my wife. We need to find a way to represent that complexity."
+// The route is the incident — beats in the order he put them in. The band under it
+// is what does not move: how things are, and have been. Nothing crosses from one to
+// the other except an arrow he actually stated, and those arrows are the point —
+// "she has been trying to talk to me for a long time" is why she answered as she
+// did in that minute, and on one spine that read as the next thing that happened.
+function Journey({ stations, ground, agents, containers, links, arcs, forks }) {
   const top = 74;
   const step = 92;
-  const CH = 36;
-  const H = top + stations.length * step + (forks.length ? 92 : 48);
-  const at = (i) => [i % 2 === 0 ? 315 : 210, top + i * step];
+  // The two columns of the route, placed so the widest cube on either of them
+  // clears the cast on one side and the right channel on the other.
+  const at = (i) => [i % 2 === 0 ? 312 : 216, top + i * step];
   const pts = stations.map((_, i) => at(i));
+
+  // ── the ground lane ──
+  // The band sits clear of the characters' margin on one side and the canvas edge
+  // on the other, and its rows are packed narrower than the band so a full row is
+  // never wider than the box drawn around it.
+  const GROUND_X = 130;
+  const GROUND_W = 340;
+  const GROUND_CX = GROUND_X + GROUND_W / 2;
+  const groundRows = packRows(ground, GROUND_W - 16, 100).map((r) => layRow(r, GROUND_CX));
+  const routeEnd = stations.length ? top + (stations.length - 1) * step + CH / 2 : top - 40;
+  const groundTop = routeEnd + 62;
+  // A row is as tall as its tallest label needs. A two-line name in a 30px box put
+  // its second line outside the box, which is the cube growing into a paragraph
+  // from the other direction.
+  const rowH = (row) => (row.some((g) => lines(g.label).length > 1) ? 42 : 30);
+  const rowY = [];
+  let gy = groundTop;
+  for (const row of groundRows) {
+    rowY.push(gy + rowH(row) / 2);
+    gy += rowH(row) + 12;
+  }
+  const groundH = Math.max(0, gy - 12 - groundTop);
+
+  const forkY = (groundRows.length ? groundTop + groundH + 20 : routeEnd + 44) + 18;
+  // Room for the lane under the band, where relations into the ground run — plus
+  // the overshoot of a drawn curve, which rounds past its own last waypoint.
+  const H = (forks.length ? forkY + 56 : (groundRows.length ? groundTop + groundH + 52 : routeEnd + 44));
+
+  // ── one address book for every placed thing ──
+  // Anything with an id has a box here, so an edge is drawn if its two endpoints
+  // exist and is dropped only if they do not. Before this, whether a relation could
+  // be drawn depended on which array its endpoints happened to live in.
+  const pos = new Map();
+  stations.forEach((s, i) => {
+    const [x, y] = at(i);
+    pos.set(s.id, { x, y, w: cubeW(s.label, 120, STATION_MAX), h: CH });
+  });
+  const groundIds = new Set(ground.map((g) => g.id));
+  groundRows.forEach((row, r) =>
+    row.forEach((g) => pos.set(g.id, { x: g.x, y: rowY[r], w: g.w, h: rowH(row) })),
+  );
+  forks.forEach((f, k) => pos.set(f.id, { x: 216, y: forkY - 18 + k * 6, w: 60, h: 20 }));
+  const posOf = (id) => pos.get(id) ?? null;
+
+  const cast = placeActors(agents ?? [], posOf, top - 34);
+  for (const a of cast) pos.set(`actor:${a.id}`, { x: a.x, y: a.y, w: a.w, h: a.h });
+
+  // ── routing a relation through reserved space ──
+  //
+  // Every arc leaves a box, runs along a lane nothing else is drawn in, and enters
+  // another box. Which lane depends on where the ends are, and each choice is
+  // forced by the layout rather than chosen: the characters live on the left, so
+  // their relations run down the left channel; everything on the route has only its
+  // right side free.
+  //
+  // A cube on the ground lane is the one case a side channel cannot serve. Two of
+  // them can sit in the same row, so an arc entering the left one from the right
+  // would cross the right one — which is how the previous build drew a line through
+  // the middle of "אין מי שיגבה אותי" on the way to its neighbour. So the ground is
+  // entered from BELOW, through a lane under the band, where nothing is ever drawn.
+  const isGround = (id) => groundIds.has(id);
+  const bandFloor = groundRows.length ? groundTop + groundH + 22 : 0;
+  const route = (from, to, side) => {
+    const a = posOf(from);
+    const b = posOf(to);
+    const x = side === 'left' ? CHANNEL_L : CHANNEL_R;
+    const sideEdge = (p) => [side === 'left' ? p.x - p.w / 2 - 3 : p.x + p.w / 2 + 3, p.y];
+    // Corners of its own, so the line turns into the channel and runs along it.
+    // rough.js draws a curve THROUGH its waypoints rather than bounded by them, so
+    // three points let the middle one bulge the curve clean off the canvas.
+    const turn = (p, q) => Math.min(18, Math.abs(p.y - q.y) / 3) * (q.y > p.y ? 1 : -1);
+
+    if (isGround(to)) {
+      return [sideEdge(a), [x, a.y + turn(a, { y: bandFloor })], [x, bandFloor], [b.x, bandFloor], [b.x, b.y + b.h / 2 + 3]];
+    }
+    if (isGround(from)) {
+      return [[a.x, a.y + a.h / 2 + 3], [a.x, bandFloor], [x, bandFloor], [x, b.y - turn(b, { y: bandFloor })], sideEdge(b)];
+    }
+    return [sideEdge(a), [x, a.y + turn(a, b)], [x, b.y - turn(a, b)], sideEdge(b)];
+  };
 
   // The route runs BETWEEN the cubes, never through them: each leg leaves the
   // bottom edge of one and arrives at the top edge of the next, bowing out to the
@@ -204,54 +343,42 @@ function Journey({ cast, stations, agents, containers, links, arcs, forks }) {
   // across the words — a map's path threads past its landmarks, it does not
   // cross them out.
   const legs = [];
-  legs.push([[315, top - 40], [315, top - CH / 2 - 4]]);
-  for (let i = 0; i < pts.length - 1; i++) {
-    const [x0, y0] = pts[i];
-    const [x1, y1] = pts[i + 1];
-    const bow = x0 > x1 ? -30 : 30;
-    legs.push([
-      [x0, y0 + CH / 2 + 4],
-      [(x0 + x1) / 2 + bow, (y0 + y1) / 2],
-      [x1, y1 - CH / 2 - 4],
-    ]);
+  if (stations.length) {
+    legs.push([[312, top - 40], [312, top - CH / 2 - 4]]);
+    for (let i = 0; i < pts.length - 1; i++) {
+      const [x0, y0] = pts[i];
+      const [x1, y1] = pts[i + 1];
+      const bow = x0 > x1 ? -30 : 30;
+      legs.push([
+        [x0, y0 + CH / 2 + 4],
+        [(x0 + x1) / 2 + bow, (y0 + y1) / 2],
+        [x1, y1 - CH / 2 - 4],
+      ]);
+    }
+    const last = pts[pts.length - 1];
+    legs.push([[last[0], last[1] + CH / 2 + 4], [last[0], last[1] + 40]]);
   }
-  const last = pts[pts.length - 1] ?? [315, top];
-  legs.push([[last[0], last[1] + CH / 2 + 4], [last[0], last[1] + 40]]);
 
-  // Where each character stands. Computed once so the container boxes and the
-  // characters themselves cannot disagree about it.
-  const actorAt = (a) => {
-    const i = (agents ?? []).indexOf(a);
-    const w = Math.min(104, Math.max(64, a.label.length * PER_CHAR + 20));
-    const y = a.beats.length
-      ? a.beats.reduce((sum, b) => sum + at(b)[1], 0) / a.beats.length
-      : top - 34 + i * 34;
-    return { x: 8 + w / 2, y, w };
-  };
-
-  // A container's bounding box over whatever it actually holds here.
+  // A container's bounding box over whatever it actually holds here. Members are
+  // ids and every id has a box, so a container can hold a beat, a standing state
+  // and a character in the same box — which is what a community or a point of view
+  // usually is.
   //
   // Perspectives are inset differently per owner, so two of them over overlapping
-  // beats read as two vantage points rather than one box swallowing the other.
+  // members read as two vantage points rather than one box swallowing the other.
   // His sits tight; the other's sits wider, around it. Both may hold the same
   // beat — two people did see the same thing happen — and that shared ground is
   // legible as the overlap instead of being a collision.
-  const boxOf = (c, i = 0) => {
-    const pts = [];
-    for (const i of c.stations) {
-      const [x, y] = at(i);
-      const w = cubeW(stations[i].label, 120) / 2;
-      pts.push([x - w, y - CH / 2], [x + w, y + CH / 2]);
+  const boxOf = (c) => {
+    const corners = [];
+    for (const id of c.members) {
+      const p = posOf(id);
+      if (!p) continue;
+      corners.push([p.x - p.w / 2, p.y - p.h / 2], [p.x + p.w / 2, p.y + p.h / 2]);
     }
-    for (const id of c.actors) {
-      const a = (agents ?? []).find((n) => n.id === id);
-      if (!a) continue;
-      const { x, y, w } = actorAt(a);
-      pts.push([x - w / 2, y - 13], [x + w / 2, y + 13]);
-    }
-    if (!pts.length) return null;
-    const xs = pts.map((p) => p[0]);
-    const ys = pts.map((p) => p[1]);
+    if (corners.length < 4) return null;
+    const xs = corners.map((p) => p[0]);
+    const ys = corners.map((p) => p[1]);
     const pad = c.kind === 'perspective' ? (c.owner === 'self' ? 10 : 22) : 14;
     // Clamped to the canvas: a container round the cast starts near x=0 and its
     // padding pushed the left wall off the viewBox, so the box read as open.
@@ -272,8 +399,8 @@ function Journey({ cast, stations, agents, containers, links, arcs, forks }) {
           community is who someone belongs to; a process is what a stretch of the
           story contains. Both describe the WORLD — a container around the SELF is
           a different claim entirely and is not built (questions-for-natali §11). */}
-      {(containers ?? []).map((c, ci) => {
-        const b = boxOf(c, ci);
+      {(containers ?? []).map((c) => {
+        const b = boxOf(c);
         if (!b) return null;
         const own = c.kind === 'perspective' ? ` is-${c.owner === 'self' ? 'mine' : 'theirs'}` : '';
         return (
@@ -294,6 +421,27 @@ function Journey({ cast, stations, agents, containers, links, arcs, forks }) {
         );
       })}
 
+      {/* The ground: what has been true for a while, under the minute the story is
+          about. Drawn as a held region rather than as more stations, because it has
+          no order — putting it on the route would say one of these followed
+          another. */}
+      {groundRows.length > 0 && (
+        <g className="mp-ground">
+          <Sketch
+            drawable={gen.rectangle(GROUND_X, groundTop - 16, GROUND_W, groundH + 26, {
+              ...ROUGH,
+              seed: seedOf('ground'),
+              roughness: 1.6,
+            })}
+            className="mp-ground-line"
+            fillClassName="mp-ground-line"
+          />
+          <text className="mp-ground-label" x={GROUND_X + GROUND_W - 8} y={groundTop - 4}>
+            ברקע, לאורך זמן
+          </text>
+        </g>
+      )}
+
       {legs.map((leg, i) => {
         const [ax, ay] = leg[leg.length - 2];
         const [bx, by] = leg[leg.length - 1];
@@ -308,32 +456,24 @@ function Journey({ cast, stations, agents, containers, links, arcs, forks }) {
           </g>
         );
       })}
-      {/* Relations across the story, out in the margin so they never cross a cube.
-          These are edges he stated between beats that are not neighbours — without
-          them the map stored his relation, sorted on it, and drew nothing. */}
-      {(arcs ?? []).map((arc, i) => {
-        const [x0, y0] = at(arc.from);
-        const [x1, y1] = at(arc.to);
-        // Out through whichever margin is farther from both endpoints.
-        // Arcs always take the right margin; the left one belongs to the cast.
-        const side = W - 26;
-        const mid = [side, (y0 + y1) / 2];
+
+      {/* Every relation he stated that is not the route itself: across the story,
+          down to the ground, or out to the person who did it. All of them come
+          through one path and one address book, so an edge is drawn whenever both
+          of its ends are on the map. */}
+      {(arcs ?? []).map((arc) => {
+        const a = posOf(arc.from);
+        const b = posOf(arc.to);
+        if (!a || !b) return null;
+        const touchesCast = arc.from.startsWith('actor:') || arc.to.startsWith('actor:');
         return (
-          <g key={`arc${i}`}>
-            <Leg
-              points={[[x0, y0 + CH / 2], mid, [x1, y1 - CH / 2]]}
-              seed={`arc${arc.from}-${arc.to}`}
-              className="mp-arc"
-            />
-            <Head
-              x0={mid[0]}
-              y0={mid[1]}
-              x1={x1}
-              y1={y1 - CH / 2}
-              seed={`arch${arc.from}-${arc.to}`}
-              className="mp-arc"
-            />
-          </g>
+          <Arc
+            key={`${arc.from}→${arc.to}`}
+            points={route(arc.from, arc.to, touchesCast ? 'left' : 'right')}
+            kind={arc.kind}
+            seed={`arc${arc.from}${arc.to}`}
+            className={arc.kind === 'agent' ? 'mp-agent' : 'mp-arc'}
+          />
         );
       })}
 
@@ -344,7 +484,7 @@ function Journey({ cast, stations, agents, containers, links, arcs, forks }) {
             <Cube
               x={x}
               y={y}
-              w={cubeW(s.label, 120)}
+              w={cubeW(s.label, 120, STATION_MAX)}
               h={CH}
               seed={s.id}
               strong={s.kind === 'action' && !s.provisional}
@@ -355,51 +495,87 @@ function Journey({ cast, stations, agents, containers, links, arcs, forks }) {
         );
       })}
 
+      {groundRows.map((row, r) =>
+        row.map((g) => {
+          const y = rowY[r];
+          return (
+            <g key={g.id} className={`mp-station is-standing is-${g.kind}`}>
+              <Cube x={g.x} y={y} w={g.w} h={rowH(row)} seed={g.id} provisional={g.provisional} />
+              <Label x={g.x} y={y} text={g.label} cls={g.provisional ? 'mp-label is-provisional' : 'mp-label'} />
+            </g>
+          );
+        }),
+      )}
+
       {/* An unresolved fork: the route splits and neither branch is taken. */}
-      {forks.map((f) => {
-        const y = top + stations.length * step - 6;
-        return (
-          <g key={f.id} className="mp-fork">
-            {f.options.slice(0, 3).map((o, k) => {
-              const x = 60 + k * ((W - 120) / Math.max(1, f.options.slice(0, 3).length - 1 || 1));
-              return (
-                <g key={k}>
-                  <Leg points={[[150, y - 18], [x, y + 26]]} seed={`${f.id}${k}`} className="mp-branch" />
-                  <text className="mp-branch-label" x={x} y={y + 40}>{o}</text>
-                </g>
-              );
-            })}
-          </g>
-        );
-      })}
+      {forks.map((f) => (
+        <g key={f.id} className="mp-fork">
+          {f.options.slice(0, 3).map((o, k) => {
+            const shown = f.options.slice(0, 3).length;
+            const x = GROUND_X + 30 + k * ((GROUND_W - 60) / Math.max(1, shown - 1 || 1));
+            return (
+              <g key={k}>
+                <Leg points={[[216, forkY - 18], [x, forkY + 26]]} seed={`${f.id}${k}`} className="mp-branch" />
+                <text className="mp-branch-label" x={x} y={forkY + 40}>{o}</text>
+              </g>
+            );
+          })}
+        </g>
+      ))}
 
-      {/* The cast, standing in the left margin beside the beats they act in.
-          A character with `agent` edges sits at the average height of those beats
-          and is joined to each; one with none stays at the top, present in the
-          story without a claim about what he did. Ran, 5.9.2026: draw the agent
-          edges — until now the map held "the manager made the remark" and drew a
-          box in the corner joined to nothing. */}
-      {(agents ?? []).map((a) => {
-        const { x: ax, y: ay, w } = actorAt(a);
-        return (
-          <g key={a.id}>
-            {a.beats.map((b) => {
-              const [bx, by] = at(b);
-              return (
-                <Leg
-                  key={b}
-                  points={[[ax + w / 2, ay], [(ax + bx) / 2, (ay + by) / 2], [bx - cubeW(stations[b].label, 120) / 2, by]]}
-                  seed={`ag${a.id}${b}`}
-                  className="mp-agent"
-                />
-              );
-            })}
-            <Cube x={ax} y={ay} w={w} h={26} seed={a.id} />
-            <text className="mp-name" x={ax} y={ay + 4}>{a.label}</text>
-          </g>
-        );
-      })}
+      {/* The cast, standing in the left margin. Their arrows are drawn with all the
+          others above — a character is a node like any other now, which is what let
+          "that is because of her" become a line instead of being stored and
+          forgotten. */}
+      {cast.map((a) => (
+        <g key={a.id}>
+          <Cube x={a.x} y={a.y} w={a.w} h={a.h} seed={a.id} />
+          <text className="mp-name" x={a.x} y={a.y + 4}>{a.label}</text>
+        </g>
+      ))}
+    </svg>
+  );
+}
 
+// No time in the story yet: a place, the things that are true at it, and the people
+// who are there. There is nothing to lay a route along, so the map does not pretend
+// there is — no arrows, no order, just what is known so far.
+//
+// Every node is drawn, not only the first. It used to render stations[0] and drop
+// the rest, which is the same fault Ran named on the route ("you stopped creating
+// cubes"): the map held things he had said and showed one of them.
+function Scene({ stations, ground, agents }) {
+  const cx = W / 2;
+  const rows = packRows([...stations, ...ground], W - 40, 110).map((r) => layRow(r, cx));
+  const top = 30;
+  const castRows = packRows(agents ?? [], W - 40, 84).map((r) => layRow(r, cx));
+  const castTop = top + rows.length * 52 + 14;
+  const H = castTop + castRows.length * 44;
+
+  return (
+    <svg className="mp" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="מפת הסיפור">
+      {rows.map((row, r) =>
+        row.map((n) => {
+          const y = top + r * 52;
+          return (
+            <g key={n.id} className={`mp-station is-${n.kind}`}>
+              <Cube x={n.x} y={y} w={n.w} h={CH} seed={n.id} provisional={n.provisional} />
+              <Label x={n.x} y={y} text={n.label} cls={n.provisional ? 'mp-label is-provisional' : 'mp-label'} />
+            </g>
+          );
+        }),
+      )}
+      {castRows.map((row, r) =>
+        row.map((a) => {
+          const y = castTop + r * 44;
+          return (
+            <g key={a.id}>
+              <Cube x={a.x} y={y} w={a.w} h={26} seed={a.id} />
+              <text className="mp-name" x={a.x} y={y + 4}>{a.label}</text>
+            </g>
+          );
+        }),
+      )}
     </svg>
   );
 }

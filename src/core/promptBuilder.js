@@ -156,12 +156,26 @@ function summarizeState(state) {
   const edges = Object.keys(state.edges ?? {}).length
     ? `\nedges: ${JSON.stringify(Object.values(state.edges))}`
     : '';
+  // And the nodes, for the same delta reason again — plus one of its own. A node is
+  // corrected by re-reporting its id, so a model that cannot see the ids it minted
+  // last turn cannot correct anything: it can only add a near-duplicate cube beside
+  // the one it meant to fix. That is the failure Ran read off a live map on
+  // 5.9.2026 from the other direction ("you stopped creating cubes and only updated
+  // the existing ones"), and it would come straight back as its mirror image.
+  const nodes = Object.keys(state.nodes ?? {}).length
+    ? `\nnodes: ${JSON.stringify(Object.values(state.nodes).map(({ seq, ...n }) => n))}`
+    : '';
+  // Containers likewise: a group is raised to confirmed by re-reporting its id once
+  // he has said so, which needs the unconfirmed one to be visible in the meantime.
+  const groups = Object.keys(state.groups ?? {}).length
+    ? `\ngroups: ${JSON.stringify(Object.values(state.groups))}`
+    : '';
   return `## STATE SUMMARY (hidden from user)
 stage: ${meta.currentStage}
 questions_this_stage: ${meta.questionCount}
 saturation: ${meta.saturationCount}
 question_aperture: ${meta.questionAperture}
-resistance: ${meta.resistanceFlag || 'none'}${threads}${actorMap}${openForks}${edges}
+resistance: ${meta.resistanceFlag || 'none'}${threads}${actorMap}${openForks}${nodes}${edges}${groups}
 facts: ${JSON.stringify(facts)}
 thoughts: ${JSON.stringify(thoughts)}
 feelings: ${JSON.stringify(feelings)}

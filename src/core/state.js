@@ -60,6 +60,25 @@ export function createState() {
     // { id, from, to, kind, confirmed }. See mergeEdges.
     edges: {},
 
+    // Story nodes (היישויות) — the things the map draws, keyed by a stable id the
+    // model chooses. Each: { id, label, slot, scale, seq }.
+    //
+    // Ran, 5.9.2026, on a live run: "it started well but at some point you stopped
+    // creating cubes and only updated the existing ones." He was reading the map
+    // exactly right. Until this store existed a slot WAS a node — one cube per
+    // slot, named by `mapLabels`, latest name winning — so stage 1 looked alive
+    // (each answer landed in a different slot: trigger, timeline, auto_reaction,
+    // status) and stage 2 looked frozen (every answer landed in `causal`, and each
+    // new name overwrote the last). That run ended with nine distinct things he
+    // said about causality collapsed into a single box reading "כסף בלי שליטה".
+    //
+    // The slot is the ROUTER's unit — "do I know enough about causality to move
+    // on?" — and it was doing the graph's job again, the same inversion he already
+    // corrected for the ordering. A slot holds as many nodes as he gave it; the
+    // node is what the map draws, the slot is what the Router counts. See
+    // mergeNodes.
+    nodes: {},
+
     // Containers (מכלים) — a group of nodes drawn as a box around them. Two kinds
     // only, both describing the WORLD: a community someone belongs to, and a
     // process that contains its own beats. See mergeGroups.
@@ -228,6 +247,90 @@ export function setMapLabel(state, stageKey, slot, raw) {
     ...state,
     mapLabels: { ...byStage, [stageKey]: { ...(byStage[stageKey] ?? {}), [slot]: label } },
   };
+}
+
+// ── Story nodes (היישויות) ──
+// The unit the map draws. See the `nodes` field in createState for why a slot
+// stopped being one.
+//
+// SCALE. Ran, 5.9.2026, on the same run: "the time axis is represented wrongly.
+// There is the order of events of the incident I am describing, and there is a
+// description of something more ongoing in the relationship with my wife. We need
+// to find a way to represent that complexity."
+//
+// Two different clocks were being drawn on one line. "I passed through the living
+// room → I heard them → I asked when it was decided → she answered" is a sequence
+// that took a minute. "She has been trying to talk to me for a long time and not
+// managing", "there is no real partnership" — those are not later beats of that
+// minute, they are the standing state the minute happened INSIDE of. Laying them
+// on the same spine made the map assert that one followed the other, which is a
+// claim about his life that he never made.
+//
+//   episode — a beat of the incident. It has a place in the sequence.
+//   ongoing — how things ARE, and have been. It has no place in a sequence, so it
+//             is never a station on the route; it is the ground the route runs on.
+//
+// The scale comes from the MODEL, never from the code, for the same reason the
+// label and the edges do: deciding that "there is no real partnership" describes a
+// standing state rather than a moment is a reading of what he said. Code that
+// guessed it would be asserting the shape of his story again. Unreported defaults
+// to `episode`, which is the drawing we already had.
+export const NODE_SCALES = new Set(['episode', 'ongoing']);
+
+// How many nodes one slot may put on the map. The significance rule from Ran's
+// gate of 28.8 ("how significant is the item") survives here as a budget rather
+// than as the one-per-slot rule his live run broke: the model decides which of the
+// things he said are worth a cube, and the map stays readable whatever it decides.
+//
+// At the cap a NEW id for that slot is refused and existing ones still update.
+// First-in-wins rather than newest-wins, deliberately: the first thing he said
+// about a subject is not less true than the fifth, and a map that reshuffled every
+// turn would be unreadable to someone design/brief.md:39 says has no attention to
+// spare. A correction is not a new node — the model re-reports the same id.
+export const NODES_PER_SLOT_MAX = 4;
+export const NODES_MAX = 24;
+
+export function mergeNodes(state, reported) {
+  const byId = { ...(state.nodes ?? {}) };
+  let seq = Math.max(0, ...Object.values(byId).map((n) => n.seq ?? 0));
+
+  const perSlot = () => {
+    const counts = {};
+    for (const n of Object.values(byId)) counts[n.slot] = (counts[n.slot] ?? 0) + 1;
+    return counts;
+  };
+
+  for (const n of Array.isArray(reported) ? reported : []) {
+    const id = typeof n?.id === 'string' ? n.id.trim() : '';
+    // The edge store addresses nodes by id, and `actor:` / `fork:` / "a→b" are
+    // already spoken for there. A node that could be mistaken for one of those
+    // would silently steal its edges.
+    if (!id || id.includes('→') || /^(actor|fork):/.test(id)) continue;
+
+    // Every node belongs to a slot: the slot is where its certainty comes from and
+    // what the barred-slot guard checks. A node with no slot has no way to be
+    // either drawn honestly or refused, so it is not stored.
+    const slot = typeof n?.slot === 'string' ? n.slot.trim() : '';
+    const m = /^stage([1-7])\.(.+)$/.exec(slot);
+    if (!m) continue;
+    const [, digit, slotKey] = m;
+    if (NEVER_SHOW_SLOTS.has(slotKey)) continue;
+    const stageKey = `stage${digit}`;
+    if (!state.coverage?.[stageKey] || !(slotKey in state.coverage[stageKey])) continue;
+
+    const label = typeof n?.label === 'string' ? n.label.replace(/\s+/g, ' ').trim() : '';
+    if (label.length > MAP_LABEL_MAX) continue; // refused, not trimmed — see MAP_LABEL_MAX
+    const prev = byId[id];
+    if (!prev) {
+      if (!label) continue;                                   // a new node needs a name
+      if (Object.keys(byId).length >= NODES_MAX) continue;
+      if ((perSlot()[slot] ?? 0) >= NODES_PER_SLOT_MAX) continue;
+    }
+
+    const scale = NODE_SCALES.has(n?.scale) ? n.scale : (prev?.scale ?? 'episode');
+    byId[id] = { id, label: label || prev.label, slot, scale, seq: prev?.seq ?? ++seq };
+  }
+  return { ...state, nodes: byId };
 }
 
 // ── Story edges (הקשתות) ──
@@ -591,6 +694,7 @@ export function importState(json) {
     actorMap: state.actorMap ?? {},
     openForks: state.openForks ?? {},
     mapLabels: state.mapLabels ?? {},
+    nodes: state.nodes ?? {},
     edges: state.edges ?? {},
     groups: state.groups ?? {},
   };
