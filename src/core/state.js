@@ -250,6 +250,15 @@ export const EDGE_KINDS = new Set([
   'then',    // temporal succession — and then
   'because', // causal — that is why
   'agent',   // an actor did this beat
+  // resemblance — this felt like that. Added 5.9.2026 after prompt-editor found a
+  // relation the first three could not carry: "that is how I felt when teachers
+  // said I do not try" relates the feeling to its past echo, and it is a relation
+  // he STATED. `because` was the only near fit and it would have asserted that the
+  // past CAUSED the feeling — a causal claim he never made, in the one dimension
+  // (`ownership`) the judge exists to catch. A kind that says only "these resemble
+  // each other" keeps the edge without inventing the cause. It never re-orders the
+  // map: resemblance is not precedence.
+  'echo',
 ]);
 
 const edgeNode = (v) => (typeof v === 'string' ? v.trim() : '');

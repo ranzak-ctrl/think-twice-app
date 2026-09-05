@@ -160,7 +160,9 @@ export function buildMap(state) {
   const forks = Object.values(state?.openForks ?? {})
     .filter((f) => f && !f.settled && f.question && (f.options?.length ?? 0) >= 2)
     .map((f) => ({
-      id: `fork.${f.id}`,
+      // Colon, matching the edge namespace state.js documents. It was a dot, so an
+      // edge to a fork could never match its node and was dropped in silence.
+      id: `fork:${f.id}`,
       label: shorten(f.question),
       options: f.options.map(shorten),
     }));
@@ -230,7 +232,9 @@ export function buildMap(state) {
   // relation across the story, not the next step in it.
   const arcs = [];
   for (const e of Object.values(state?.edges ?? {})) {
-    if (!e.confirmed || (e.kind !== 'then' && e.kind !== 'because')) continue;
+    // `echo` is drawn but deliberately absent from the ordering above: "this felt
+    // like that" relates two beats without putting either first.
+    if (!e.confirmed || !['then', 'because', 'echo'].includes(e.kind)) continue;
     const a = stations.findIndex((n) => n.id === e.from);
     const b = stations.findIndex((n) => n.id === e.to);
     if (a < 0 || b < 0 || Math.abs(a - b) <= 1) continue; // adjacent → it is a link
