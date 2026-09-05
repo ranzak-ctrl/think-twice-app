@@ -60,6 +60,11 @@ export function createState() {
     // { id, from, to, kind, confirmed }. See mergeEdges.
     edges: {},
 
+    // Containers (מכלים) — a group of nodes drawn as a box around them. Two kinds
+    // only, both describing the WORLD: a community someone belongs to, and a
+    // process that contains its own beats. See mergeGroups.
+    groups: {},
+
     meta: {
       currentStage: 1,
       questionCount: 0,        // questions asked in current stage
@@ -300,6 +305,53 @@ export function mergeEdges(state, reported) {
   return { ...state, edges: byId };
 }
 
+// ── Containers (מכלים) ──
+// Ran, 5.9.2026: represent hierarchy between entities or processes as nested
+// boxes, not only boxes and arrows. Two uses are implemented and a third is not.
+//
+//   community — a group someone belongs to. "העבודה" holding the manager, the new
+//               product manager and the team, with the person inside it or outside.
+//               In the run this came from that is not decoration: whether he is in
+//               or out IS the story.
+//   process   — a stretch that contains its own beats. The shift holding what
+//               happened inside it, which separates "during the event" from
+//               "after it".
+//
+// NOT IMPLEMENTED, and deliberately: a container around the SELF — what is inside
+// his point of view and what is outside it, for stage 5 (יציאה מעצמי). It is the
+// strongest of the three and the only one that describes his MIND rather than the
+// world, so drawing a boundary around someone's self is a claim the system should
+// not make on its own. Filed as questions-for-natali.md §11. GROUP_KINDS is the
+// enforcement: a third kind cannot be reported into existence without that ruling.
+export const GROUP_KINDS = new Set(['community', 'process']);
+export const GROUP_MEMBERS_MAX = 12;
+
+export function mergeGroups(state, reported) {
+  const byId = { ...(state.groups ?? {}) };
+  for (const g of Array.isArray(reported) ? reported : []) {
+    const label = typeof g?.label === 'string' ? g.label.replace(/\s+/g, ' ').trim() : '';
+    const id = typeof g?.id === 'string' && g.id.trim() ? g.id.trim() : label;
+    const kind = typeof g?.kind === 'string' ? g.kind.trim() : '';
+    if (!id || !GROUP_KINDS.has(kind)) continue;
+
+    const prev = byId[id] ?? { id, label: '', kind, members: [] };
+    const members = [...prev.members];
+    for (const raw of Array.isArray(g?.members) ? g.members : []) {
+      const m = typeof raw === 'string' ? raw.trim() : '';
+      // A barred slot cannot be a member for the same reason it cannot be an edge
+      // endpoint: a box drawn around the wound still puts the wound on the paper.
+      if (!m || members.includes(m)) continue;
+      const slot = /^stage[1-7]\.(.+)$/.exec(m)?.[1] ?? '';
+      if (NEVER_SHOW_SLOTS.has(slot)) continue;
+      members.push(m);
+    }
+    // A container of one contains nothing — it is just that node with a box on it.
+    if (members.length < 2) continue;
+    byId[id] = { id, label: label || prev.label, kind, members: members.slice(0, GROUP_MEMBERS_MAX) };
+  }
+  return { ...state, groups: byId };
+}
+
 // ── Actor map (מפת שחקנים) — stage-1 resolved cast ──
 // The model reports DELTAS (new/changed characters this turn), not the full cast —
 // re-emitting the whole cast every turn was the main latency cost. The CODE MERGES
@@ -516,5 +568,6 @@ export function importState(json) {
     openForks: state.openForks ?? {},
     mapLabels: state.mapLabels ?? {},
     edges: state.edges ?? {},
+    groups: state.groups ?? {},
   };
 }

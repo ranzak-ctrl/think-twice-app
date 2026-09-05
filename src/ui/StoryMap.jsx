@@ -190,7 +190,7 @@ function Scene({ cast, stations }) {
 
 // The order of events is known, so the same material becomes a route: a winding
 // path from where it started to where it stands, a cube at every station.
-function Journey({ cast, stations, agents, links, arcs, forks }) {
+function Journey({ cast, stations, agents, containers, links, arcs, forks }) {
   const top = 74;
   const step = 92;
   const CH = 36;
@@ -218,8 +218,75 @@ function Journey({ cast, stations, agents, links, arcs, forks }) {
   const last = pts[pts.length - 1] ?? [315, top];
   legs.push([[last[0], last[1] + CH / 2 + 4], [last[0], last[1] + 40]]);
 
+  // Where each character stands. Computed once so the container boxes and the
+  // characters themselves cannot disagree about it.
+  const actorAt = (a) => {
+    const i = (agents ?? []).indexOf(a);
+    const w = Math.min(104, Math.max(64, a.label.length * PER_CHAR + 20));
+    const y = a.beats.length
+      ? a.beats.reduce((sum, b) => sum + at(b)[1], 0) / a.beats.length
+      : top - 34 + i * 34;
+    return { x: 8 + w / 2, y, w };
+  };
+
+  // A container's bounding box over whatever it actually holds here.
+  const boxOf = (c) => {
+    const pts = [];
+    for (const i of c.stations) {
+      const [x, y] = at(i);
+      const w = cubeW(stations[i].label, 120) / 2;
+      pts.push([x - w, y - CH / 2], [x + w, y + CH / 2]);
+    }
+    for (const id of c.actors) {
+      const a = (agents ?? []).find((n) => n.id === id);
+      if (!a) continue;
+      const { x, y, w } = actorAt(a);
+      pts.push([x - w / 2, y - 13], [x + w / 2, y + 13]);
+    }
+    if (!pts.length) return null;
+    const xs = pts.map((p) => p[0]);
+    const ys = pts.map((p) => p[1]);
+    const pad = 14;
+    // Clamped to the canvas: a container round the cast starts near x=0 and its
+    // padding pushed the left wall off the viewBox, so the box read as open.
+    const x = Math.max(2, Math.min(...xs) - pad);
+    const y = Math.min(...ys) - pad - 8; // extra room at the top for the label
+    return {
+      x,
+      y,
+      w: Math.min(W - 2, Math.max(...xs) + pad) - x,
+      h: Math.max(...ys) - Math.min(...ys) + pad * 2 + 8,
+    };
+  };
+
   return (
     <svg className="mp" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="מפת הסיפור">
+      {/* Containers first, so everything they hold is drawn on top of them. Ran,
+          5.9.2026: hierarchy between entities or processes as nested boxes. A
+          community is who someone belongs to; a process is what a stretch of the
+          story contains. Both describe the WORLD — a container around the SELF is
+          a different claim entirely and is not built (questions-for-natali §11). */}
+      {(containers ?? []).map((c) => {
+        const b = boxOf(c);
+        if (!b) return null;
+        return (
+          <g key={c.id} className={`mp-group is-${c.kind}`}>
+            <Sketch
+              drawable={gen.rectangle(b.x, b.y, b.w, b.h, {
+                ...ROUGH,
+                seed: seedOf(`g${c.id}`),
+                roughness: 1.5,
+              })}
+              className="mp-group-line"
+              fillClassName="mp-group-line"
+            />
+            <text className="mp-group-label" x={b.x + b.w - 8} y={b.y + 13}>
+              {c.label}
+            </text>
+          </g>
+        );
+      })}
+
       {legs.map((leg, i) => {
         const [ax, ay] = leg[leg.length - 2];
         const [bx, by] = leg[leg.length - 1];
@@ -305,12 +372,8 @@ function Journey({ cast, stations, agents, links, arcs, forks }) {
           story without a claim about what he did. Ran, 5.9.2026: draw the agent
           edges — until now the map held "the manager made the remark" and drew a
           box in the corner joined to nothing. */}
-      {(agents ?? []).map((a, i) => {
-        const w = Math.min(104, Math.max(64, a.label.length * PER_CHAR + 20));
-        const ax = 8 + w / 2;
-        const ay = a.beats.length
-          ? a.beats.reduce((sum, b) => sum + at(b)[1], 0) / a.beats.length
-          : top - 34 + i * 34;
+      {(agents ?? []).map((a) => {
+        const { x: ax, y: ay, w } = actorAt(a);
         return (
           <g key={a.id}>
             {a.beats.map((b) => {

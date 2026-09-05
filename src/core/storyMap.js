@@ -254,6 +254,21 @@ export function buildMap(state) {
     agents.push({ ...a, beats: [...new Set(beats)].sort((x, y) => x - y) });
   }
 
+  // Containers, resolved to the things they actually hold on this map. A group
+  // whose members are all off the map contributes nothing rather than an empty box.
+  const containers = [];
+  for (const g of Object.values(state?.groups ?? {})) {
+    const inStations = g.members
+      .map((m) => stations.findIndex((n) => n.id === m))
+      .filter((i) => i >= 0);
+    const inCast = g.members
+      .filter((m) => m.startsWith('actor:'))
+      .map((m) => m.slice(6))
+      .filter((id) => cast.some((a) => a.id === id));
+    if (inStations.length + inCast.length < 2) continue;
+    containers.push({ ...g, stations: inStations, actors: inCast });
+  }
+
   const hasTime = [CONFIRMED, PROVISIONAL].includes(state?.coverage?.stage1?.timeline);
   const form = hasTime && stations.length >= 2 ? 'journey' : 'scene';
 
@@ -262,6 +277,7 @@ export function buildMap(state) {
     cast,
     stations,
     agents,
+    containers,
     links,
     arcs,
     forks,

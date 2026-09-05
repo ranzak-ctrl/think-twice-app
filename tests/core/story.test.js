@@ -7,6 +7,7 @@ import {
   mergeActorMap,
   mergeOpenForks,
   mergeEdges,
+  mergeGroups,
   setMapLabel,
   setSlot,
   exportState,
@@ -503,5 +504,61 @@ describe('story map — a relation he stated across the story, not just next doo
     put('stage1', 'auto_reaction', 'עזבת');
     s = mergeEdges(s, [{ from: 'stage1.trigger', to: 'stage1.auto_reaction', kind: 'because' }]);
     expect(buildMap(s).arcs).toEqual([]);
+  });
+});
+
+describe('story map — containers', () => {
+  // Ran, 5.9.2026: hierarchy between entities or processes as nested boxes. Two
+  // kinds describe the WORLD; a container round the SELF is a different claim and
+  // is not built — questions-for-natali §11.
+  const base = () => {
+    let s = createState();
+    const put = (k, sl, t) => { s = setSlot(addFindings(s, k, sl, [t]), k, sl, 2); };
+    put('stage1', 'trigger', 'הבשר הגיע');
+    put('stage1', 'timeline', 'אחרי ההערה');
+    s = mergeActorMap(s, [{ id: 'user', label: 'המשתמש' }, { id: 'mgr', label: 'הממונה' }]);
+    return s;
+  };
+
+  it('resolves a process container to the stations it holds', () => {
+    const s = mergeGroups(base(), [
+      { id: 'shift', label: 'המשמרת', kind: 'process', members: ['stage1.trigger', 'stage1.timeline'] },
+    ]);
+    const c = buildMap(s).containers[0];
+    expect(c).toMatchObject({ label: 'המשמרת', kind: 'process' });
+    expect(c.stations).toHaveLength(2);
+  });
+
+  it('resolves a community container to the characters it holds', () => {
+    const s = mergeGroups(base(), [
+      { id: 'work', label: 'המטבח', kind: 'community', members: ['actor:user', 'actor:mgr'] },
+    ]);
+    expect(buildMap(s).containers[0].actors).toEqual(['user', 'mgr']);
+  });
+
+  it('refuses a container round the self — that ruling is not made', () => {
+    const s = mergeGroups(base(), [
+      { id: 'me', label: 'העצמי', kind: 'self', members: ['stage1.trigger', 'stage1.timeline'] },
+    ]);
+    expect(s.groups).toEqual({});
+    expect(buildMap(s).containers).toEqual([]);
+  });
+
+  it('refuses a container of one, and one holding a barred slot', () => {
+    let s = mergeGroups(base(), [
+      { id: 'solo', label: 'יחיד', kind: 'process', members: ['stage1.trigger'] },
+    ]);
+    expect(s.groups).toEqual({});
+    s = mergeGroups(base(), [
+      { id: 'w', label: 'x', kind: 'process', members: ['stage2.wound', 'stage1.trigger'] },
+    ]);
+    expect(s.groups).toEqual({}); // only one member survived the filter
+  });
+
+  it('drops a container whose members are not on the map', () => {
+    const s = mergeGroups(base(), [
+      { id: 'ghost', label: 'רחוק', kind: 'process', members: ['stage7.goal', 'stage6.alternatives'] },
+    ]);
+    expect(buildMap(s).containers).toEqual([]);
   });
 });

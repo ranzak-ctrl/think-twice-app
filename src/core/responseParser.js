@@ -55,6 +55,7 @@ export function parseResponse(raw) {
       openForks: parseOpenForks(evaluation),
       mapLabels: parseMapLabels(evaluation),
       edges: parseEdges(evaluation),
+      groups: parseGroups(evaluation),
     },
   };
 }
@@ -107,6 +108,29 @@ function parseSlotFindings(evaluation) {
     if (items.length) out[key] = items;
   }
   return out;
+}
+
+// Parse the model's containers — a group of nodes drawn as a box around them.
+// Shape only; the kind whitelist, the two-member minimum and the barred-slot
+// refusal are the store's rules (state.mergeGroups).
+function parseGroups(evaluation) {
+  const raw = evaluation.groups;
+  if (!Array.isArray(raw)) return null;
+  const out = [];
+  for (const g of raw) {
+    const label = typeof g?.label === 'string' ? g.label.trim() : '';
+    const id = typeof g?.id === 'string' && g.id.trim() ? g.id.trim() : label;
+    if (!id) continue;
+    out.push({
+      id,
+      label,
+      kind: typeof g?.kind === 'string' ? g.kind.trim() : '',
+      members: Array.isArray(g?.members)
+        ? g.members.map((m) => (typeof m === 'string' ? m.trim() : '')).filter(Boolean)
+        : [],
+    });
+  }
+  return out.length ? out : null;
 }
 
 // Parse the model's story edges — the relations between the case's entities, which

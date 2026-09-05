@@ -25,6 +25,7 @@ import {
   mergeActorMap,
   mergeOpenForks,
   mergeEdges,
+  mergeGroups,
   deriveActorsScore,
 } from './state.js';
 import { preCheck } from '../safety/index.js';
@@ -175,6 +176,10 @@ export async function runTurn(state, history, userText) {
   // why gating on them is not the same problem as gating on the actor map
   // (questions-for-natali §10). Display only; the Router never reads them.
   if (ev.edges) nextState = mergeEdges(nextState, ev.edges);
+
+  // Containers: groups of nodes drawn as a box around them. Display only, like
+  // the edges — the Router never reads them.
+  if (ev.groups) nextState = mergeGroups(nextState, ev.groups);
 
   // Open forks (פיצולים לא-מוכרעים): what the STORY left undecided. Merged in at any
   // stage — unlike the actor map this is not stage-1 only, because a story can leave

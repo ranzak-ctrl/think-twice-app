@@ -79,6 +79,17 @@ export const MOCK_RESPONSES = {
         { from: 'actor:manager', to: 'stage1.timeline', kind: 'agent', confirmed: true },
         { from: 'stage1.timeline', to: 'stage1.auto_reaction', kind: 'because', confirmed: true },
       ],
+      // Containers (Ran, 5.9.2026): a community he belongs to, and the process that
+      // holds the beats inside it. Both describe the world, not his mind.
+      groups: [
+        { id: 'kitchen', label: 'המטבח', kind: 'community', members: ['actor:user', 'actor:manager'] },
+        {
+          id: 'shift',
+          label: 'המשמרת',
+          kind: 'process',
+          members: ['stage1.trigger', 'stage1.timeline'],
+        },
+      ],
       new_info: true,
       exhausted: false,
     },

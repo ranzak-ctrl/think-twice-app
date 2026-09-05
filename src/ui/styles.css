@@ -536,6 +536,27 @@ button {
   stroke-width: 2.1;
 }
 
+/* A container. Drawn behind everything it holds, in a lighter hand than the beats
+   themselves — it is the ground the story stands on, not a step in it. A community
+   is dashed (a boundary you can be inside or outside of); a process is solid (it
+   either contains the beat or it does not). */
+.mp-group-line {
+  fill: none;
+  stroke: var(--text-faint);
+  stroke-width: 1.2;
+  opacity: 0.6;
+}
+
+.mp-group.is-community .mp-group-line {
+  stroke-dasharray: 7 5;
+}
+
+.mp-group-label {
+  font-size: 10px;
+  fill: var(--text-faint);
+  text-anchor: end;
+}
+
 /* Who did it. Solid — he said so — and lighter than the spine, because the map's
    subject is what happened, not who is standing next to it. */
 .mp-agent {
