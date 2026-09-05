@@ -461,3 +461,47 @@ describe('story map — the graph orders the diagram, the stages only break ties
     expect(new Set(out).size).toBe(4);
   });
 });
+
+describe('story map — a relation he stated across the story, not just next door', () => {
+  it('draws a confirmed edge between non-adjacent beats as an arc', () => {
+    // The chain can only link neighbours. Without arcs an edge he actually stated
+    // was stored, sorted on, and then silently not drawn.
+    let s = createState();
+    const put = (k, sl, t) => { s = setSlot(addFindings(s, k, sl, [t]), k, sl, 2); };
+    put('stage1', 'trigger', 'הבשר הגיע');
+    put('stage1', 'timeline', 'אחרי ההערה');
+    put('stage2', 'meaning', 'לא מקצועי');
+    put('stage1', 'auto_reaction', 'עזבת');
+    s = mergeEdges(s, [
+      { from: 'stage1.timeline', to: 'stage1.auto_reaction', kind: 'because', confirmed: true },
+    ]);
+    const m = buildMap(s);
+    const a = m.stations.findIndex((n) => n.id === 'stage1.timeline');
+    const b = m.stations.findIndex((n) => n.id === 'stage1.auto_reaction');
+    expect(Math.abs(a - b)).toBeGreaterThan(1); // genuinely not neighbours
+    expect(m.arcs).toEqual([{ from: a, to: b, kind: 'because' }]);
+  });
+
+  it('does not arc an edge that is already a chain link', () => {
+    let s = createState();
+    const put = (k, sl, t) => { s = setSlot(addFindings(s, k, sl, [t]), k, sl, 2); };
+    put('stage2', 'meaning', 'לא מקצועי');
+    put('stage3', 'emotion', 'עלבון');
+    s = mergeEdges(s, [
+      { from: 'stage2.meaning', to: 'stage3.emotion', kind: 'because', confirmed: true },
+    ]);
+    const m = buildMap(s);
+    expect(m.arcs).toEqual([]);
+    expect(m.links[0].sourced).toBe(true);
+  });
+
+  it('never arcs an unconfirmed edge', () => {
+    let s = createState();
+    const put = (k, sl, t) => { s = setSlot(addFindings(s, k, sl, [t]), k, sl, 2); };
+    put('stage1', 'trigger', 'הבשר');
+    put('stage1', 'timeline', 'אחרי');
+    put('stage1', 'auto_reaction', 'עזבת');
+    s = mergeEdges(s, [{ from: 'stage1.trigger', to: 'stage1.auto_reaction', kind: 'because' }]);
+    expect(buildMap(s).arcs).toEqual([]);
+  });
+});

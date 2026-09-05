@@ -72,6 +72,13 @@ export const MOCK_RESPONSES = {
         auto_reaction: ['יצאת בלי לומר מילה'],
       },
       map_labels: { timeline: 'אחרי ההערה', auto_reaction: 'יצאת בשתיקה' },
+      // Edges he stated (Ran, 5.9.2026): the manager made the remark, and he left
+      // BECAUSE of it — he said so, so both are confirmed. An edge nobody stated is
+      // reported unconfirmed instead, and becomes the next clarification.
+      edges: [
+        { from: 'actor:manager', to: 'stage1.timeline', kind: 'agent', confirmed: true },
+        { from: 'stage1.timeline', to: 'stage1.auto_reaction', kind: 'because', confirmed: true },
+      ],
       new_info: true,
       exhausted: false,
     },
@@ -124,6 +131,9 @@ export const MOCK_RESPONSES = {
       slots: { causal: 2, meaning: 1 },
       slot_findings: { meaning: ['שאני לא מקצועי מספיק'] },
       map_labels: { meaning: 'לא מקצועי' },
+      // Suspected but not stated by him, so unconfirmed: it does not redraw the
+      // map, it queues the clarification.
+      edges: [{ from: 'stage2.meaning', to: 'stage3.emotion', kind: 'because' }],
       new_info: true,
       exhausted: false,
     },
@@ -160,6 +170,8 @@ export const MOCK_RESPONSES = {
       slots: { emotion: 1 },
       slot_findings: { emotion: ['עלבון'] },
       map_labels: { emotion: 'עלבון' },
+      // He confirmed it this turn — the same edge, raised. Reported as a delta.
+      edges: [{ from: 'stage2.meaning', to: 'stage3.emotion', kind: 'because', confirmed: true }],
       new_info: true,
       exhausted: false,
     },

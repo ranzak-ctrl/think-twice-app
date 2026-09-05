@@ -150,12 +150,18 @@ function summarizeState(state) {
   const openForks = Object.keys(state.openForks ?? {}).length
     ? `\nopen_forks: ${JSON.stringify(state.openForks)}`
     : '';
+  // Edges ride along for the same reason the actor map and the forks do: the model
+  // reports DELTAS, and it can only leave an edge alone, or raise one to confirmed,
+  // if it can see the edge already on record.
+  const edges = Object.keys(state.edges ?? {}).length
+    ? `\nedges: ${JSON.stringify(Object.values(state.edges))}`
+    : '';
   return `## STATE SUMMARY (hidden from user)
 stage: ${meta.currentStage}
 questions_this_stage: ${meta.questionCount}
 saturation: ${meta.saturationCount}
 question_aperture: ${meta.questionAperture}
-resistance: ${meta.resistanceFlag || 'none'}${threads}${actorMap}${openForks}
+resistance: ${meta.resistanceFlag || 'none'}${threads}${actorMap}${openForks}${edges}
 facts: ${JSON.stringify(facts)}
 thoughts: ${JSON.stringify(thoughts)}
 feelings: ${JSON.stringify(feelings)}

@@ -222,6 +222,21 @@ export function buildMap(state) {
   }
 
   // A provisional timeline is still a time dimension — enough to lay a route along.
+  // Relations he stated between stations that did NOT end up adjacent. The chain
+  // can only express a link between neighbours, so without these an edge he
+  // actually said — "I left because of what he said", four boxes apart — was
+  // stored, ordered on, and then silently not drawn. They render as an arc out to
+  // the margin rather than as a chain link, because that is what they are: a
+  // relation across the story, not the next step in it.
+  const arcs = [];
+  for (const e of Object.values(state?.edges ?? {})) {
+    if (!e.confirmed || (e.kind !== 'then' && e.kind !== 'because')) continue;
+    const a = stations.findIndex((n) => n.id === e.from);
+    const b = stations.findIndex((n) => n.id === e.to);
+    if (a < 0 || b < 0 || Math.abs(a - b) <= 1) continue; // adjacent → it is a link
+    arcs.push({ from: a, to: b, kind: e.kind });
+  }
+
   const hasTime = [CONFIRMED, PROVISIONAL].includes(state?.coverage?.stage1?.timeline);
   const form = hasTime && stations.length >= 2 ? 'journey' : 'scene';
 
@@ -230,6 +245,7 @@ export function buildMap(state) {
     cast,
     stations,
     links,
+    arcs,
     forks,
     isEmpty: cast.length === 0 && stations.length === 0,
   };

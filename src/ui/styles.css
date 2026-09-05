@@ -536,6 +536,14 @@ button {
   stroke-width: 2.1;
 }
 
+/* An arc: a relation he stated between beats that are not next to each other.
+   Solid like every other arrow of his, and thinner than the chain so the route
+   still reads as the spine of the story. */
+.mp-arc {
+  stroke-width: 1.3;
+  opacity: 0.75;
+}
+
 .mp-deco {
   stroke-width: 1.3;
   opacity: 0.5;

@@ -115,7 +115,8 @@ function lines(text) {
   return b ? [a, b] : [a];
 }
 
-const cubeW = (text, min = 96, max = W - 28) =>
+const CUBE_MAX = 210; // leaves both margins clear for arcs
+const cubeW = (text, min = 96, max = CUBE_MAX) =>
   Math.min(max, Math.max(min, Math.max(...lines(text).map((l) => l.length)) * PER_CHAR + 26));
 
 function Label({ x, y, text, cls = 'mp-label' }) {
@@ -131,7 +132,11 @@ function Label({ x, y, text, cls = 'mp-label' }) {
 
 /* -------------------------------------------------------------------- forms -- */
 
-const W = 360;
+// Wide enough that the two margins are REAL. An arc across the story routes out
+// through one of them, and at 360 there was barely 50px of clearance, so the first
+// arc drawn cut straight through two cubes on its way past — a relation he stated,
+// rendered as a line through the words of the beats it was not about.
+const W = 430;
 
 // No time in the story yet: a place, with the people who are at it. There is
 // nothing to lay a route along, so the map does not pretend there is.
@@ -183,12 +188,12 @@ function Scene({ cast, stations }) {
 
 // The order of events is known, so the same material becomes a route: a winding
 // path from where it started to where it stands, a cube at every station.
-function Journey({ cast, stations, links, forks }) {
+function Journey({ cast, stations, links, arcs, forks }) {
   const top = 74;
   const step = 92;
   const CH = 36;
   const H = top + stations.length * step + (forks.length ? 92 : 48);
-  const at = (i) => [i % 2 === 0 ? 232 : 128, top + i * step];
+  const at = (i) => [i % 2 === 0 ? 255 : 150, top + i * step];
   const pts = stations.map((_, i) => at(i));
 
   // The route runs BETWEEN the cubes, never through them: each leg leaves the
@@ -197,7 +202,7 @@ function Journey({ cast, stations, links, forks }) {
   // across the words — a map's path threads past its landmarks, it does not
   // cross them out.
   const legs = [];
-  legs.push([[232, top - 40], [232, top - CH / 2 - 4]]);
+  legs.push([[255, top - 40], [255, top - CH / 2 - 4]]);
   for (let i = 0; i < pts.length - 1; i++) {
     const [x0, y0] = pts[i];
     const [x1, y1] = pts[i + 1];
@@ -208,7 +213,7 @@ function Journey({ cast, stations, links, forks }) {
       [x1, y1 - CH / 2 - 4],
     ]);
   }
-  const last = pts[pts.length - 1] ?? [232, top];
+  const last = pts[pts.length - 1] ?? [255, top];
   legs.push([[last[0], last[1] + CH / 2 + 4], [last[0], last[1] + 40]]);
 
   return (
@@ -227,6 +232,34 @@ function Journey({ cast, stations, links, forks }) {
           </g>
         );
       })}
+      {/* Relations across the story, out in the margin so they never cross a cube.
+          These are edges he stated between beats that are not neighbours — without
+          them the map stored his relation, sorted on it, and drew nothing. */}
+      {(arcs ?? []).map((arc, i) => {
+        const [x0, y0] = at(arc.from);
+        const [x1, y1] = at(arc.to);
+        // Out through whichever margin is farther from both endpoints.
+        const side = (x0 + x1) / 2 > W / 2 ? 22 : W - 22;
+        const mid = [side, (y0 + y1) / 2];
+        return (
+          <g key={`arc${i}`}>
+            <Leg
+              points={[[x0, y0 + CH / 2], mid, [x1, y1 - CH / 2]]}
+              seed={`arc${arc.from}-${arc.to}`}
+              className="mp-arc"
+            />
+            <Head
+              x0={mid[0]}
+              y0={mid[1]}
+              x1={x1}
+              y1={y1 - CH / 2}
+              seed={`arch${arc.from}-${arc.to}`}
+              className="mp-arc"
+            />
+          </g>
+        );
+      })}
+
       {stations.map((s, i) => {
         const [x, y] = at(i);
         return (
