@@ -125,6 +125,8 @@ function parseGroups(evaluation) {
       id,
       label,
       kind: typeof g?.kind === 'string' ? g.kind.trim() : '',
+      owner: typeof g?.owner === 'string' ? g.owner.trim() : '',
+      confirmed: typeof g?.confirmed === 'boolean' ? g.confirmed : null,
       members: Array.isArray(g?.members)
         ? g.members.map((m) => (typeof m === 'string' ? m.trim() : '')).filter(Boolean)
         : [],

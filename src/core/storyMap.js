@@ -258,6 +258,9 @@ export function buildMap(state) {
   // whose members are all off the map contributes nothing rather than an empty box.
   const containers = [];
   for (const g of Object.values(state?.groups ?? {})) {
+    // Only what he confirmed. A box is a claim, and an unconfirmed one is a
+    // clarification waiting to happen, not a thing to draw at him.
+    if (!g.confirmed) continue;
     const inStations = g.members
       .map((m) => stations.findIndex((n) => n.id === m))
       .filter((i) => i >= 0);

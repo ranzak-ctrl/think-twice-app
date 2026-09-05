@@ -317,13 +317,23 @@ export function mergeEdges(state, reported) {
 //               happened inside it, which separates "during the event" from
 //               "after it".
 //
-// NOT IMPLEMENTED, and deliberately: a container around the SELF — what is inside
-// his point of view and what is outside it, for stage 5 (יציאה מעצמי). It is the
-// strongest of the three and the only one that describes his MIND rather than the
-// world, so drawing a boundary around someone's self is a claim the system should
-// not make on its own. Filed as questions-for-natali.md §11. GROUP_KINDS is the
-// enforcement: a third kind cannot be reported into existence without that ruling.
-export const GROUP_KINDS = new Set(['community', 'process']);
+//   perspective — what is inside someone's point of view. Ruled in by Ran on
+//               5.9.2026, and in a better shape than the one I proposed: TWO
+//               boxes, not one. "My point of view sits in my container, the
+//               other's in his." That symmetry is what answers the objection that
+//               stopped me — a box around HIM with everything else outside can be
+//               read as "look how narrow your world is", and two boxes side by
+//               side cannot. Stage 5 is יציאה מעצמי, and its move is not adding
+//               information but CROSSING A LINE; until now the map drew the other
+//               side as more boxes in the chain and the line was invisible.
+//
+// EVERY GROUP MUST BE CONFIRMED BEFORE IT IS DRAWN. Ran, same ruling: "the edges
+// have to be clarified with the user, especially the ones touching point of view…
+// I would be very careful about what I include inside it — checking with the
+// interviewee." A box is a claim in every case, so `confirmed` gates all three
+// kinds, not only perspective. It is the same contract the edges already run:
+// report it unconfirmed, ask, and draw only once he has said so.
+export const GROUP_KINDS = new Set(['community', 'process', 'perspective']);
 export const GROUP_MEMBERS_MAX = 12;
 
 export function mergeGroups(state, reported) {
@@ -334,7 +344,12 @@ export function mergeGroups(state, reported) {
     const kind = typeof g?.kind === 'string' ? g.kind.trim() : '';
     if (!id || !GROUP_KINDS.has(kind)) continue;
 
-    const prev = byId[id] ?? { id, label: '', kind, members: [] };
+    // A perspective belongs to someone: 'self', or an actor. Without an owner
+    // there is no whose-view to draw, so it is not a perspective.
+    const owner = typeof g?.owner === 'string' ? g.owner.trim() : '';
+    if (kind === 'perspective' && !owner) continue;
+
+    const prev = byId[id] ?? { id, label: '', kind, owner, members: [], confirmed: false };
     const members = [...prev.members];
     for (const raw of Array.isArray(g?.members) ? g.members : []) {
       const m = typeof raw === 'string' ? raw.trim() : '';
@@ -347,7 +362,16 @@ export function mergeGroups(state, reported) {
     }
     // A container of one contains nothing — it is just that node with a box on it.
     if (members.length < 2) continue;
-    byId[id] = { id, label: label || prev.label, kind, members: members.slice(0, GROUP_MEMBERS_MAX) };
+    byId[id] = {
+      id,
+      label: label || prev.label,
+      kind,
+      owner: owner || prev.owner,
+      members: members.slice(0, GROUP_MEMBERS_MAX),
+      // Never true by default. A container the system decided on is the system
+      // drawing a boundary around someone's story on its own authority.
+      confirmed: typeof g?.confirmed === 'boolean' ? g.confirmed : prev.confirmed,
+    };
   }
   return { ...state, groups: byId };
 }

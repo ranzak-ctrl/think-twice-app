@@ -551,6 +551,33 @@ button {
   stroke-dasharray: 7 5;
 }
 
+/* A perspective: what someone could see from where they stood. Ran, 5.9.2026 —
+   two boxes, never one. A single box around HIM with everything else outside can
+   be read as "look how narrow your world is"; his beside the other's cannot, and
+   that symmetry is what made the idea safe enough to build.
+
+   Stage 5 is יציאה מעצמי, and its move is crossing a line rather than adding a
+   fact. Until now the map drew the other side as more boxes in the chain, so the
+   line the whole stage turns on was the one thing not on the paper. */
+.mp-group.is-perspective .mp-group-line {
+  stroke-dasharray: 2 4;
+  opacity: 0.75;
+}
+
+/* His own vantage point carries the accent — it is the one he is standing in. */
+.mp-group.is-mine .mp-group-line {
+  stroke: var(--accent-line);
+}
+
+.mp-group.is-theirs .mp-group-line {
+  stroke: var(--text-muted);
+  stroke-dasharray: 6 4;
+}
+
+.mp-group.is-mine .mp-group-label {
+  fill: var(--accent-deep);
+}
+
 .mp-group-label {
   font-size: 10px;
   fill: var(--text-faint);

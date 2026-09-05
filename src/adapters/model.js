@@ -82,7 +82,13 @@ export const MOCK_RESPONSES = {
       // Containers (Ran, 5.9.2026): a community he belongs to, and the process that
       // holds the beats inside it. Both describe the world, not his mind.
       groups: [
-        { id: 'kitchen', label: 'המטבח', kind: 'community', members: ['actor:user', 'actor:manager'] },
+        {
+          id: 'kitchen',
+          label: 'המטבח',
+          kind: 'community',
+          members: ['actor:user', 'actor:manager'],
+          confirmed: true,
+        },
         {
           id: 'shift',
           label: 'המשמרת',
@@ -260,6 +266,27 @@ export const MOCK_RESPONSES = {
       slots: { intention: 2, alt_formulation: 1 },
       slot_findings: { alt_formulation: ['הוא ניסה להציל את השירות, לא להעליב אותך'] },
       map_labels: { alt_formulation: 'להציל את השירות' },
+      // Two perspectives, confirmed with him (Ran, 5.9.2026). Stage 5 is the move
+      // out of his own view, and this is what makes the line visible: what he
+      // could see from the kitchen floor, and what the manager was dealing with.
+      groups: [
+        {
+          id: 'view-mine',
+          label: 'מה שראית',
+          kind: 'perspective',
+          owner: 'self',
+          members: ['stage1.trigger', 'stage1.timeline'],
+          confirmed: true,
+        },
+        {
+          id: 'view-his',
+          label: 'מה שהוא ראה',
+          kind: 'perspective',
+          owner: 'actor:manager',
+          members: ['stage5.perspective', 'stage5.intention'],
+          confirmed: true,
+        },
+      ],
       new_info: true,
       exhausted: false,
     },

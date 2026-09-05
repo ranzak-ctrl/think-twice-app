@@ -230,7 +230,13 @@ function Journey({ cast, stations, agents, containers, links, arcs, forks }) {
   };
 
   // A container's bounding box over whatever it actually holds here.
-  const boxOf = (c) => {
+  //
+  // Perspectives are inset differently per owner, so two of them over overlapping
+  // beats read as two vantage points rather than one box swallowing the other.
+  // His sits tight; the other's sits wider, around it. Both may hold the same
+  // beat — two people did see the same thing happen — and that shared ground is
+  // legible as the overlap instead of being a collision.
+  const boxOf = (c, i = 0) => {
     const pts = [];
     for (const i of c.stations) {
       const [x, y] = at(i);
@@ -246,7 +252,7 @@ function Journey({ cast, stations, agents, containers, links, arcs, forks }) {
     if (!pts.length) return null;
     const xs = pts.map((p) => p[0]);
     const ys = pts.map((p) => p[1]);
-    const pad = 14;
+    const pad = c.kind === 'perspective' ? (c.owner === 'self' ? 10 : 22) : 14;
     // Clamped to the canvas: a container round the cast starts near x=0 and its
     // padding pushed the left wall off the viewBox, so the box read as open.
     const x = Math.max(2, Math.min(...xs) - pad);
@@ -266,11 +272,12 @@ function Journey({ cast, stations, agents, containers, links, arcs, forks }) {
           community is who someone belongs to; a process is what a stretch of the
           story contains. Both describe the WORLD — a container around the SELF is
           a different claim entirely and is not built (questions-for-natali §11). */}
-      {(containers ?? []).map((c) => {
-        const b = boxOf(c);
+      {(containers ?? []).map((c, ci) => {
+        const b = boxOf(c, ci);
         if (!b) return null;
+        const own = c.kind === 'perspective' ? ` is-${c.owner === 'self' ? 'mine' : 'theirs'}` : '';
         return (
-          <g key={c.id} className={`mp-group is-${c.kind}`}>
+          <g key={c.id} className={`mp-group is-${c.kind}${own}`}>
             <Sketch
               drawable={gen.rectangle(b.x, b.y, b.w, b.h, {
                 ...ROUGH,

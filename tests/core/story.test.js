@@ -522,7 +522,13 @@ describe('story map — containers', () => {
 
   it('resolves a process container to the stations it holds', () => {
     const s = mergeGroups(base(), [
-      { id: 'shift', label: 'המשמרת', kind: 'process', members: ['stage1.trigger', 'stage1.timeline'] },
+      {
+        id: 'shift',
+        label: 'המשמרת',
+        kind: 'process',
+        members: ['stage1.trigger', 'stage1.timeline'],
+        confirmed: true,
+      },
     ]);
     const c = buildMap(s).containers[0];
     expect(c).toMatchObject({ label: 'המשמרת', kind: 'process' });
@@ -531,14 +537,20 @@ describe('story map — containers', () => {
 
   it('resolves a community container to the characters it holds', () => {
     const s = mergeGroups(base(), [
-      { id: 'work', label: 'המטבח', kind: 'community', members: ['actor:user', 'actor:mgr'] },
+      {
+        id: 'work',
+        label: 'המטבח',
+        kind: 'community',
+        members: ['actor:user', 'actor:mgr'],
+        confirmed: true,
+      },
     ]);
     expect(buildMap(s).containers[0].actors).toEqual(['user', 'mgr']);
   });
 
   it('refuses a container round the self — that ruling is not made', () => {
     const s = mergeGroups(base(), [
-      { id: 'me', label: 'העצמי', kind: 'self', members: ['stage1.trigger', 'stage1.timeline'] },
+      { id: 'me', label: 'העצמי', kind: 'self', members: ['stage1.trigger', 'stage1.timeline'], confirmed: true },
     ]);
     expect(s.groups).toEqual({});
     expect(buildMap(s).containers).toEqual([]);
@@ -557,8 +569,74 @@ describe('story map — containers', () => {
 
   it('drops a container whose members are not on the map', () => {
     const s = mergeGroups(base(), [
-      { id: 'ghost', label: 'רחוק', kind: 'process', members: ['stage7.goal', 'stage6.alternatives'] },
+      {
+        id: 'ghost',
+        label: 'רחוק',
+        kind: 'process',
+        members: ['stage7.goal', 'stage6.alternatives'],
+        confirmed: true,
+      },
     ]);
     expect(buildMap(s).containers).toEqual([]);
+  });
+});
+
+describe('story map — perspectives', () => {
+  // Ran, 5.9.2026: "my point of view sits in my container, the other's in his",
+  // and "I would be very careful about what I include inside it — checking with
+  // the interviewee." Two boxes, and nothing drawn until he confirms it.
+  const base = () => {
+    let s = createState();
+    const put = (k, sl, t) => { s = setSlot(addFindings(s, k, sl, [t]), k, sl, 2); };
+    put('stage1', 'trigger', 'הבשר הגיע');
+    put('stage1', 'timeline', 'אחרי ההערה');
+    put('stage5', 'perspective', 'לחץ של ערב');
+    put('stage5', 'intention', 'שהמנה תצא');
+    return s;
+  };
+  const view = (id, owner, members, confirmed = true) => ({
+    id, label: id, kind: 'perspective', owner, members, confirmed,
+  });
+
+  it('holds his view and the other’s as two separate containers', () => {
+    const s = mergeGroups(base(), [
+      view('mine', 'self', ['stage1.trigger', 'stage1.timeline']),
+      view('his', 'actor:manager', ['stage5.perspective', 'stage5.intention']),
+    ]);
+    const cs = buildMap(s).containers;
+    expect(cs).toHaveLength(2);
+    expect(cs.map((c) => c.owner)).toEqual(['self', 'actor:manager']);
+  });
+
+  it('draws nothing until he has confirmed it', () => {
+    const s = mergeGroups(base(), [
+      view('mine', 'self', ['stage1.trigger', 'stage1.timeline'], false),
+    ]);
+    expect(s.groups.mine.confirmed).toBe(false); // on record, awaiting clarification
+    expect(buildMap(s).containers).toEqual([]);  // and not on the paper
+  });
+
+  it('never confirms a container by default', () => {
+    const s = mergeGroups(base(), [
+      { id: 'x', label: 'x', kind: 'community', members: ['actor:a', 'stage1.trigger'] },
+    ]);
+    expect(s.groups.x.confirmed).toBe(false);
+  });
+
+  it('refuses a perspective with nobody to own it', () => {
+    const s = mergeGroups(base(), [
+      { id: 'nobody', label: 'x', kind: 'perspective', members: ['stage1.trigger', 'stage1.timeline'], confirmed: true },
+    ]);
+    expect(s.groups).toEqual({});
+  });
+
+  it('lets both views hold the same beat — they did both see it', () => {
+    const s = mergeGroups(base(), [
+      view('mine', 'self', ['stage1.trigger', 'stage1.timeline']),
+      view('his', 'actor:manager', ['stage1.trigger', 'stage5.intention']),
+    ]);
+    const cs = buildMap(s).containers;
+    expect(cs[0].stations).toContain(0);
+    expect(cs[1].stations).toContain(0); // shared ground, not a collision
   });
 });
