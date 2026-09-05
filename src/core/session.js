@@ -98,6 +98,19 @@ export async function runTurn(state, history, userText) {
   });
   usage = addUsage(usage, result.usage);
 
+  // The proxy rejected the shared access password. Nothing about the interview
+  // happened, so nothing in the StateDocument moves — no counters, no saturation,
+  // no question count. The turn is handed back for the UI to ask for the password
+  // and retry, and the person's own message is not consumed by a locked door.
+  if (result.unauthorized) {
+    return {
+      nextState: { ...state, meta: { ...state.meta, usage: usage ?? state.meta.usage } },
+      reply: result.message,
+      unauthorized: true,
+      decision: null,
+    };
+  }
+
   let nextState = { ...state };
   const ev = result.evaluation ?? {};
 

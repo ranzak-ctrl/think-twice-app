@@ -5,7 +5,7 @@
 // This is the ONLY file that touches the network.
 
 import { parseResponse } from '../core/responseParser.js';
-import { getAppPassword } from './appAuth.js';
+import { getAppPassword, clearAppPassword } from './appAuth.js';
 
 // Scripted mock responses keyed by stage:turn — used in dev (no key) and Vitest.
 export const MOCK_RESPONSES = {
@@ -610,6 +610,21 @@ export async function complete({ stage, systemPrompt, messages, mode }) {
     } catch (err) {
       console.error('Network error:', err);
       return { ok: false, error: err.message, message: 'בעיית תקשורת. בדוק חיבור לאינטרנט.', evaluation: null, usage };
+    }
+
+    // 401 is the proxy rejecting the shared access password, not the model
+    // failing. It gets its own outcome so the UI can ask for the password
+    // instead of showing "model error" over a door that is simply locked.
+    if (res.status === 401) {
+      clearAppPassword();
+      return {
+        ok: false,
+        error: 'unauthorized',
+        unauthorized: true,
+        message: 'צריך סיסמת גישה כדי להמשיך.',
+        evaluation: null,
+        usage,
+      };
     }
 
     if (!res.ok) {

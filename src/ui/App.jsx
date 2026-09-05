@@ -37,7 +37,7 @@ const openingMessage = () => ({
 const GUIDE_MIN = 260;
 const CHAT_MIN = 360;
 
-export default function App() {
+export default function App({ onUnauthorized }) {
   const [state, setState] = useState(() => createState());
   const [history, setHistory] = useState(() => [openingMessage()]);
   const [guideOpen, setGuideOpen] = useState(false);
@@ -157,8 +157,16 @@ export default function App() {
       setHistory((h) => [...h, { role: 'user', content: text, at: Date.now() }]);
       setLoading(true);
       try {
-        const { nextState, reply } = await runTurn(state, history, text);
+        const { nextState, reply, unauthorized } = await runTurn(state, history, text);
         setState(nextState);
+        if (unauthorized) {
+          // A locked door, not a failed turn. Take the person's message back out
+          // of the transcript so they can send it again once they are through,
+          // rather than leaving it answered by an error.
+          setHistory((h) => h.slice(0, -1));
+          onUnauthorized?.();
+          return;
+        }
         addMessage('assistant', reply);
       } finally {
         setLoading(false);
