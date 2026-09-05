@@ -21,53 +21,78 @@
 import { buildMap } from '../core/storyMap.js';
 
 /* ---------------------------------------------------------------- sketching -- */
+/* rough.js draws every line here. It replaced a hand-rolled jitter that nudged
+   points off true and joined them with a curve — serviceable, but a fake: a real
+   hand-drawn stroke is drawn TWICE along slightly different paths, and that
+   doubling is most of what the eye reads as "sketch". rough.js is the library
+   Excalidraw and mermaid's handDrawn mode both use underneath: 8.9KB gzipped,
+   MIT, four micro-dependencies by the same author.
 
-// Deterministic pseudo-random in [-1, 1] from a string + index.
-function jit(seed, i) {
+   THE SEED IS LOAD-BEARING. Left alone rough.js randomises on every call, so the
+   map would redraw differently on every React render and shimmer in the corner of
+   the eye of someone design/brief.md:39 says has no attention to spare. Every
+   shape is seeded from its own stable id, so the drawing is identical unless its
+   contents actually changed. */
+
+import { RoughGenerator } from 'roughjs/bin/generator.js';
+
+const gen = new RoughGenerator();
+
+// A stable numeric seed from an element's id — rough.js wants a number.
+function seedOf(id) {
   let h = 2166136261;
-  const s = `${seed}:${i}`;
-  for (let k = 0; k < s.length; k++) h = Math.imul(h ^ s.charCodeAt(k), 16777619);
-  return (((h >>> 0) % 2000) / 1000) - 1;
+  const str = String(id);
+  for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+  return (h >>> 0) % 2 ** 31;
 }
 
-// A hand-drawn line through points: the points are nudged off true and joined with
-// a smooth curve, so nothing in the drawing is quite straight.
-function inked(points, seed, amt = 2.2) {
-  const p = points.map(([x, y], i) => [x + jit(seed, i * 2) * amt, y + jit(seed, i * 2 + 1) * amt]);
-  if (p.length < 2) return '';
-  let d = `M${p[0][0].toFixed(1)} ${p[0][1].toFixed(1)}`;
-  for (let i = 1; i < p.length; i++) {
-    const [x0, y0] = p[i - 1];
-    const [x1, y1] = p[i];
-    const mx = (x0 + x1) / 2 + jit(seed, i + 90) * amt * 2;
-    d += ` Q${mx.toFixed(1)} ${y0.toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}`;
-  }
-  return d;
+const ROUGH = { roughness: 1.15, bowing: 1.4, strokeWidth: 1.5 };
+
+// rough.js writes stroke and fill as presentation ATTRIBUTES, which any CSS rule
+// beats, so the stylesheet still owns every colour. rough emits the fill and the
+// outline as separate paths; the class tells them apart.
+function Sketch({ drawable, className, fillClassName }) {
+  return gen.toPaths(drawable).map((p, i) => (
+    <path key={i} d={p.d} className={p.fill && p.fill !== 'none' ? fillClassName : className} />
+  ));
 }
 
-// A drawn rectangle — four inked sides rather than a rect, so the corners do not
-// close perfectly, the way a hand does not close them.
+// A drawn rectangle: two overlapping outlines the way a hand draws one, over a
+// solid fill pass so the route behind it does not show through the box.
 function Cube({ x, y, w, h, seed, strong, provisional }) {
-  const l = x - w / 2;
-  const t = y - h / 2;
+  const drawable = gen.rectangle(x - w / 2, y - h / 2, w, h, {
+    ...ROUGH,
+    seed: seedOf(seed),
+    fill: '#fff',
+    fillStyle: 'solid',
+  });
   return (
-    <path
+    <Sketch
+      drawable={drawable}
+      fillClassName="mp-cube-fill"
       className={`mp-cube${strong ? ' is-strong' : ''}${provisional ? ' is-provisional' : ''}`}
-      d={inked([[l, t], [l + w, t], [l + w, t + h], [l, t + h], [l - 0.5, t]], seed, 1.5)}
     />
   );
 }
 
-// An arrowhead on the end of a leg. Ran, 4.9.2026: "cubes and arrows" — a line
-// with no head states adjacency, an arrow states direction, and direction is the
-// whole claim this drawing makes about the story.
-function head(x0, y0, x1, y1, seed) {
+// An arrowhead. Ran, 4.9.2026: "cubes and arrows" — a line with no head states
+// adjacency, an arrow states direction, and direction is the whole claim this
+// drawing makes about the story.
+function Head({ x0, y0, x1, y1, seed, className }) {
   const a = Math.atan2(y1 - y0, x1 - x0);
-  const L = 7.5;
+  const L = 8;
   const w = 0.42;
   const p = (t) => [x1 - L * Math.cos(a + t), y1 - L * Math.sin(a + t)];
-  return inked([p(w), [x1, y1], p(-w)], seed, 0.7);
+  const drawable = gen.linearPath([p(w), [x1, y1], p(-w)], { ...ROUGH, seed: seedOf(seed) });
+  return <Sketch drawable={drawable} className={className} fillClassName={className} />;
 }
+
+// A leg of the route: a drawn curve through its waypoints.
+function Leg({ points, seed, className }) {
+  const drawable = gen.curve(points, { ...ROUGH, seed: seedOf(seed), bowing: 1 });
+  return <Sketch drawable={drawable} className={className} fillClassName={className} />;
+}
+
 
 // How a label breaks, and therefore how wide its cube has to be. Both answers come
 // from here so they cannot disagree — the first build fixed the cube width and let
@@ -144,7 +169,7 @@ function Scene({ cast, stations }) {
           return (
             <g key={a.id}>
               {here && (
-                <path className="mp-route" d={inked([[cx, eh + 10], [px, py - 18]], `c${a.id}`, 2)} />
+                <Leg points={[[cx, eh + 10], [px, py - 18]]} seed={`c${a.id}`} className="mp-route" />
               )}
               <Cube x={px} y={py} w={w} h={30} seed={a.id} />
               <Label x={px} y={py} text={a.label} cls="mp-name" />
@@ -197,8 +222,8 @@ function Journey({ cast, stations, links, forks }) {
         const cls = link?.sourced ? ' is-sourced' : '';
         return (
           <g key={i}>
-            <path className={`mp-route${cls}`} d={inked(leg, `leg${i}`, 2.6)} />
-            <path className={`mp-head${cls}`} d={head(ax, ay, bx, by, `h${i}`)} />
+            <Leg points={leg} seed={`leg${i}`} className={`mp-route${cls}`} />
+            <Head x0={ax} y0={ay} x1={bx} y1={by} seed={`h${i}`} className={`mp-head${cls}`} />
           </g>
         );
       })}
@@ -229,7 +254,7 @@ function Journey({ cast, stations, links, forks }) {
               const x = 60 + k * ((W - 120) / Math.max(1, f.options.slice(0, 3).length - 1 || 1));
               return (
                 <g key={k}>
-                  <path className="mp-branch" d={inked([[150, y - 18], [x, y + 26]], `${f.id}${k}`, 2)} />
+                  <Leg points={[[150, y - 18], [x, y + 26]]} seed={`${f.id}${k}`} className="mp-branch" />
                   <text className="mp-branch-label" x={x} y={y + 40}>{o}</text>
                 </g>
               );
