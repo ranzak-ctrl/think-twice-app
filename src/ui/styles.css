@@ -606,22 +606,32 @@ button {
   opacity: 0.6;
 }
 
-/* ── The ground lane ──
-   What has been true for a while, under the minute the story is about. Ran,
+/* ── The backdrop ──
+   What has been true for a while, over the minute the story is about. Ran,
    5.9.2026: "there is the order of events of the incident I am describing, and
    there is a description of something more ongoing in the relationship with my
    wife." Both were being drawn on one spine, so the map asserted that the standing
    state was the next thing that happened.
 
    It is a held region rather than more stations: no route runs through it, because
-   nothing in it is before or after anything else in it. Faint, wide and low, so it
-   reads as ground and not as another step. */
+   nothing in it is before or after anything else in it. Faint and wide, across the
+   top, so it reads as the condition everything below happened inside. */
 .mp-ground-line {
   fill: none;
   stroke: var(--text-faint);
   stroke-width: 1.1;
   stroke-dasharray: 1 5;
   opacity: 0.55;
+}
+
+/* The three columns are named once, faintly — דמויות · פעולות · משמעות (Ran,
+   5.9.2026). Three unlabelled stacks are a puzzle, and the words cost one line of
+   the lightest ink on the sheet. */
+.mp-col-label {
+  font-size: 10px;
+  fill: var(--text-faint);
+  text-anchor: middle;
+  letter-spacing: 0.04em;
 }
 
 .mp-ground-label {

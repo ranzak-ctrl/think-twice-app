@@ -56,8 +56,9 @@
 
 ## מבנה
 - src/ui — React, RTL, צ'אט, כפתורי אישור, לוח הכרעה (נבנה מה-state בקוד!), מצב מדריך
-- src/core — router.js (מכונת מצבים), state.js (StateDocument: coverage · `findings` ממצאים-לסלוט · `actorMap` קאסט-פתור · `gaps` עקביות · meta), promptBuilder.js, responseParser.js, session.js (לולאת התור + `generateStageOpener`)
-- דיווח המודל (evaluation): `evaluation` **לפני** `message` ("חלץ, אז שאל"); כולל `slot_findings` · `actor_map` (דלתא) · `gap_observations`
+- src/core — router.js (מכונת מצבים), state.js (StateDocument: coverage · `findings` ממצאים-לסלוט · `actorMap` קאסט-פתור · `gaps` עקביות · `nodes` קוביות המפה · `edges` קשתות · `groups` מכלים · `openForks` פיצולים · `mapLabels` · meta), promptBuilder.js, responseParser.js, session.js (לולאת התור + `generateStageOpener`), storyMap.js (היטל המפה)
+- דיווח המודל (evaluation): `evaluation` **לפני** `message` ("חלץ, אז שאל"); כולל `slot_findings` · `actor_map` · `nodes` · `edges` · `groups` · `open_forks` · `map_labels` · `gap_observations`. כל אלה **דלתא** — רק מה שהשתנה, לפי `id` יציב
+- **שכבת המפה (visualization):** `nodes` · `edges` · `groups` הם **תצוגה בלבד** — ה-Router לא קורא אותם לעולם. קובייה אינה slot: ה-slot הוא יחידת ה-Router, הקובייה היא מה שהאיור מצייר, ו-slot מחזיק כמה. לכל קובייה `scale`: `episode` (פעימה של האירוע) או `ongoing` (מצב עומד — מצויר ברצועת רקע, לא על ציר הזמן). האיור: שלוש עמודות — דמויות · פעולות · משמעות — מתחת לרצועת הרקע (רן, 5.9.2026). מה שאינו מאושר (`confirmed:false`) אינו מצויר; הוא נכנס לתור הבירור
 - src/content — prompts/ (דמות גלובלית, 7 סוכנים, מעריך), forbidden.js (רשימה שחורה)
 - src/adapters — model.js (ממשק complete() יחיד; קורא ל-`/api/anthropic/v1/messages` **בלי מפתח** — ה-proxy מזריק אותו. חי/מדומה נקבע ע"י `VITE_USE_MOCK`), appAuth.js (סיסמת הגישה, ב-sessionStorage לכל טאב)
 - api/ — `anthropic/v1/messages.js` (ה-proxy: מזריק `ANTHROPIC_API_KEY`, בודק `APP_PASSWORD`), `ping.js` (בדיקת חיים)

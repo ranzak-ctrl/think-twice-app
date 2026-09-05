@@ -288,17 +288,29 @@ export const NODE_SCALES = new Set(['episode', 'ongoing']);
 // turn would be unreadable to someone design/brief.md:39 says has no attention to
 // spare. A correction is not a new node — the model re-reports the same id.
 export const NODES_PER_SLOT_MAX = 4;
-export const NODES_MAX = 24;
+
+// And a budget per STAGE, not one global pot. A single global cap was the first
+// shape of this and router-guard proved it reinstated the very fault the store
+// exists to fix: 23 drawable slots against 24 nodes, allocated first-come, so
+// stage 1 took fifteen of them and stages 4 through 7 got none at all — degrading
+// silently back to one cube per slot with its name overwritten, for every stage
+// after the second. A per-stage budget cannot starve a later stage, whatever an
+// earlier one does.
+export const NODES_PER_STAGE_MAX = 8;
+
+// An absolute backstop, the way the load guard is: it should never be what stops
+// anything, and it is here so a runaway report cannot grow the store without limit.
+export const NODES_MAX = 48;
 
 export function mergeNodes(state, reported) {
   const byId = { ...(state.nodes ?? {}) };
   let seq = Math.max(0, ...Object.values(byId).map((n) => n.seq ?? 0));
 
-  const perSlot = () => {
-    const counts = {};
-    for (const n of Object.values(byId)) counts[n.slot] = (counts[n.slot] ?? 0) + 1;
-    return counts;
-  };
+  // Counted from `byId`, which is written inside the loop, so several nodes
+  // reported in one turn are counted against each other and not only against what
+  // was already stored.
+  const countWhere = (pred) => Object.values(byId).filter(pred).length;
+  const stageOf = (slot) => slot.split('.')[0];
 
   for (const n of Array.isArray(reported) ? reported : []) {
     const id = typeof n?.id === 'string' ? n.id.trim() : '';
@@ -307,10 +319,20 @@ export function mergeNodes(state, reported) {
     // would silently steal its edges.
     if (!id || id.includes('→') || /^(actor|fork):/.test(id)) continue;
 
+    const prev = byId[id];
+
     // Every node belongs to a slot: the slot is where its certainty comes from and
     // what the barred-slot guard checks. A node with no slot has no way to be
     // either drawn honestly or refused, so it is not stored.
-    const slot = typeof n?.slot === 'string' ? n.slot.trim() : '';
+    //
+    // On a re-report an omitted `slot` keeps the one the node already has. That is
+    // the contract every other store here runs — mergeEdges keeps `confirmed`,
+    // mergeActorMap keeps `role`, mergeGroups keeps `owner` — and this was the one
+    // that did not: a correction that sent only a new label was thrown away whole,
+    // silently, which is the worst possible failure for a field whose entire job is
+    // to let the model fix a cube it named badly.
+    const reportedSlot = typeof n?.slot === 'string' ? n.slot.trim() : '';
+    const slot = reportedSlot || prev?.slot || '';
     const m = /^stage([1-7])\.(.+)$/.exec(slot);
     if (!m) continue;
     const [, digit, slotKey] = m;
@@ -318,13 +340,38 @@ export function mergeNodes(state, reported) {
     const stageKey = `stage${digit}`;
     if (!state.coverage?.[stageKey] || !(slotKey in state.coverage[stageKey])) continue;
 
-    const label = typeof n?.label === 'string' ? n.label.replace(/\s+/g, ' ').trim() : '';
-    if (label.length > MAP_LABEL_MAX) continue; // refused, not trimmed — see MAP_LABEL_MAX
-    const prev = byId[id];
-    if (!prev) {
-      if (!label) continue;                                   // a new node needs a name
-      if (Object.keys(byId).length >= NODES_MAX) continue;
-      if ((perSlot()[slot] ?? 0) >= NODES_PER_SLOT_MAX) continue;
+    // The fourth reserved id shape, and the one that used to be missing. A cube's
+    // own fallback id is "stageN.slot", and a model-chosen id in that namespace
+    // pointing at a DIFFERENT slot produced two map items under one id: the topo
+    // sort then placed both in one pass, found nothing free and nothing unplaced,
+    // and threw. There is no error boundary above the map (StoryMap sits beside the
+    // chat in App.jsx), so React unmounted the tree and the interview — which lives
+    // only in browser memory — was gone. An id in this namespace has to be its own
+    // slot, which is exactly what the prompt means by it: a way to rename the
+    // slot's own cube. Only a real slot key collides — an id like
+    // "stage2.causal#2" names nothing the map already draws, and refusing the whole
+    // prefix would have taken a natural id shape away from the model for nothing.
+    const idAsSlot = /^stage([1-7])\.(.+)$/.exec(id);
+    if (idAsSlot && state.coverage?.[`stage${idAsSlot[1]}`]?.[idAsSlot[2]] !== undefined && id !== slot) {
+      continue;
+    }
+
+    const raw = typeof n?.label === 'string' ? n.label.replace(/\s+/g, ' ').trim() : '';
+    // Refused, not trimmed — see MAP_LABEL_MAX. On a re-report an unusable label
+    // leaves the name it already had and the rest of the delta still lands, rather
+    // than discarding an unrelated `scale` change along with it.
+    const label = raw.length > MAP_LABEL_MAX ? '' : raw;
+    if (!label && !prev) continue; // a new node needs a name
+
+    // The budgets. Checked on a MOVE as well as on a new node: both checks used to
+    // sit behind `if (!prev)`, so re-reporting an existing id with a different slot
+    // walked it into a slot that was already full — eight nodes in a slot capped at
+    // four, by sending the same eight ids twice.
+    const moving = !prev || prev.slot !== slot;
+    if (moving) {
+      if (!prev && Object.keys(byId).length >= NODES_MAX) continue;
+      if (countWhere((x) => x.slot === slot) >= NODES_PER_SLOT_MAX) continue;
+      if (countWhere((x) => stageOf(x.slot) === stageKey) >= NODES_PER_STAGE_MAX) continue;
     }
 
     const scale = NODE_SCALES.has(n?.scale) ? n.scale : (prev?.scale ?? 'episode');

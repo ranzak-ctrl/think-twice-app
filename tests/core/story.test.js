@@ -843,3 +843,93 @@ describe('story map — two clocks (Ran, 5.9: "the time axis is represented wron
     expect(m.ground).toHaveLength(2);
   });
 });
+
+// ── What router-guard found in the first cut of `nodes`, 5.9.2026 ──
+// Four faults in the store, one of which crashed the app. They are here as tests
+// rather than as fixes alone because each is a contract every OTHER store in this
+// file already runs correctly, and the next store added will be tempted by the same
+// four shortcuts.
+describe('story nodes — the store contracts', () => {
+  const ready = (s, k, sl) => setSlot(s, k, sl, 2);
+
+  it('refuses an id that would collide with another slot’s own cube', () => {
+    // A model-chosen id of "stage2.causal" on a node whose slot is stage1.trigger
+    // put two map items under one id. The topological sort placed both in one pass,
+    // then found nothing free and nothing unplaced, and threw — and with no error
+    // boundary above the map, React unmounted the tree and the interview, which
+    // lives only in browser memory, was gone.
+    let s = ready(ready(createState(), 'stage1', 'trigger'), 'stage2', 'causal');
+    s = mergeNodes(s, [{ id: 'stage2.causal', label: 'שמעת', slot: 'stage1.trigger' }]);
+    expect(s.nodes).toEqual({});
+    expect(() => buildMap(s)).not.toThrow();
+  });
+
+  it('still allows an id that merely looks like a slot', () => {
+    // "stage2.causal#2" names nothing the map already draws. Refusing the whole
+    // prefix would take a natural id shape away from the model for nothing.
+    const s = mergeNodes(ready(createState(), 'stage2', 'causal'), [
+      { id: 'stage2.causal#2', label: 'לכן מתמרנת', slot: 'stage2.causal' },
+    ]);
+    expect(Object.keys(s.nodes)).toEqual(['stage2.causal#2']);
+  });
+
+  it('keeps the slot a node already had when a correction omits it', () => {
+    // Every other store here keeps an omitted field. This one dropped the whole
+    // update — the worst possible failure for the field whose entire job is to let
+    // the model fix a cube it named badly.
+    let s = ready(createState(), 'stage2', 'causal');
+    s = mergeNodes(s, [{ id: 'n1', label: 'ישן', slot: 'stage2.causal' }]);
+    s = mergeNodes(s, [{ id: 'n1', label: 'מתוקן', scale: 'ongoing' }]);
+    expect(s.nodes.n1).toMatchObject({ label: 'מתוקן', slot: 'stage2.causal', scale: 'ongoing' });
+  });
+
+  it('applies the rest of a correction when only the label is unusable', () => {
+    let s = ready(createState(), 'stage2', 'causal');
+    s = mergeNodes(s, [{ id: 'n1', label: 'שם טוב', slot: 'stage2.causal' }]);
+    s = mergeNodes(s, [{ id: 'n1', label: 'א'.repeat(40), scale: 'ongoing' }]);
+    expect(s.nodes.n1).toMatchObject({ label: 'שם טוב', scale: 'ongoing' });
+  });
+
+  it('does not let a node walk into a slot that is already full', () => {
+    // Both cap checks used to sit behind `if (!prev)`, so re-reporting existing ids
+    // with a new slot put eight nodes in a slot capped at four.
+    let s = ready(ready(createState(), 'stage2', 'causal'), 'stage2', 'meaning');
+    for (let i = 0; i < NODES_PER_SLOT_MAX; i++) {
+      s = mergeNodes(s, [{ id: `c${i}`, label: `סיבה ${i}`, slot: 'stage2.causal' }]);
+      s = mergeNodes(s, [{ id: `m${i}`, label: `פשר ${i}`, slot: 'stage2.meaning' }]);
+    }
+    for (let i = 0; i < NODES_PER_SLOT_MAX; i++) {
+      s = mergeNodes(s, [{ id: `m${i}`, label: `פשר ${i}`, slot: 'stage2.causal' }]);
+    }
+    const inCausal = Object.values(s.nodes).filter((n) => n.slot === 'stage2.causal');
+    expect(inCausal).toHaveLength(NODES_PER_SLOT_MAX);
+  });
+
+  it('never lets an early stage spend a later stage’s budget', () => {
+    // A single global cap of 24 against 23 drawable slots meant stage 1 took
+    // fifteen and stages 4 to 7 got none — every stage after the second degrading
+    // silently back to one cube per slot with its name overwritten, which is the
+    // exact fault this store exists to fix.
+    let s = createState();
+    const slots = [];
+    for (const [stageKey, slotsOfStage] of Object.entries(s.coverage)) {
+      for (const slot of Object.keys(slotsOfStage)) {
+        s = setSlot(s, stageKey, slot, 2);
+        slots.push(`${stageKey}.${slot}`);
+      }
+    }
+    for (const slot of slots) {
+      for (let i = 0; i < 3; i++) {
+        s = mergeNodes(s, [{ id: `${slot}#${i}`, label: `x${i}`, slot }]);
+      }
+    }
+    const byStage = {};
+    for (const n of Object.values(s.nodes)) {
+      const stage = n.slot.split('.')[0];
+      byStage[stage] = (byStage[stage] ?? 0) + 1;
+    }
+    for (const stage of ['stage4', 'stage5', 'stage6', 'stage7']) {
+      expect(byStage[stage] ?? 0).toBeGreaterThan(0);
+    }
+  });
+});
