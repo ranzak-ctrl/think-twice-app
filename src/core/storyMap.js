@@ -1,3 +1,26 @@
+// The case as a GRAPH, and the map as a rendering of it.
+//
+// Ran, 5.9.2026, naming the dynamic this module had backwards: "with new
+// information the GRAPH develops or updates, and the diagram follows. The stages
+// are the narrative by which the Router steers the interview and makes sure no
+// stage is left unanswered."
+//
+// Two things are separated by that sentence, and they were fused here:
+//
+//   the GRAPH   — nodes and the edges between them. The model of the case. It is
+//                 what grows when the person says something, and the drawing is a
+//                 rendering of it, nothing more.
+//   the STAGES  — the Router's business. A checklist over the same material that
+//                 guarantees no part of the interview goes unanswered. They are
+//                 how the interview is STEERED, not how the story is SHAPED.
+//
+// This module used to derive the drawing's structure from the stage list, so the
+// stages were silently doing the graph's job: the order of the boxes was the order
+// of the protocol, and an arrow between two of them asserted "led to" on the
+// authority of a hardcoded array. Now the order comes from the edges the person
+// stated, and the stage order survives only as the FALLBACK for material he has
+// not related yet — which is also why it is renamed NARRATIVE below.
+//
 // The story as a MAP — redrawn whole on every new piece of information.
 //
 // Ran, 4.9.2026, replacing the growing-chain model: "I don't want a developing
@@ -69,10 +92,12 @@ export function shorten(raw) {
   return out || text.slice(0, LABEL_BUDGET);
 }
 
-// The stations of the route, in the order the story happened. Same chain as before
-// — event, interpretation, feeling, what was done — because that is what the
-// interview exists to expose and what makes a route out of a pile of moments.
-const STATIONS = [
+// The interview's narrative order — event, interpretation, feeling, what was done.
+// This is the Router's spine, and here it is ONLY A FALLBACK: it gives a node its
+// default position for as long as the person has not said what a thing led to.
+// A confirmed edge always outranks it (see order() below), so as the graph fills
+// in, this list has less and less say over the drawing.
+const NARRATIVE = [
   { kind: 'fact', slots: [['stage1', 'trigger'], ['stage1', 'timeline'], ['stage1', 'status']] },
   { kind: 'thought', slots: [['stage2', 'causal'], ['stage2', 'meaning']] },
   { kind: 'feeling', slots: [['stage3', 'emotion'], ['stage3', 'past_echo']] },
@@ -119,9 +144,9 @@ function slotCube(state, stageKey, slot) {
 export function buildMap(state) {
   const cast = buildCast(state?.actorMap).map((a) => ({ ...a, label: shorten(a.label) }));
 
-  const stations = [];
+  let stations = [];
   const seen = new Set();
-  for (const { kind, slots } of STATIONS) {
+  for (const { kind, slots } of NARRATIVE) {
     for (const [stageKey, slot] of slots) {
       const cube = slotCube(state, stageKey, slot);
       if (!cube || seen.has(cube.label)) continue;
@@ -139,6 +164,40 @@ export function buildMap(state) {
       label: shorten(f.question),
       options: f.options.map(shorten),
     }));
+
+  // ── The graph decides the order; the narrative only breaks ties ──
+  // A stable topological sort: every node starts at its narrative rank, each
+  // confirmed `then`/`because` edge adds a real constraint, and among nodes that
+  // are free to go next the lowest narrative rank wins. So a story the person has
+  // related reads in HIS order, a story he has not still reads sensibly, and the
+  // two mix without the drawing ever claiming a relation he did not state.
+  //
+  // A cycle cannot deadlock this: whatever is still constrained when nothing is
+  // free is emitted in narrative order. People do describe circular causes, and a
+  // drawing that vanished because of one would be worse than a drawing that lays
+  // it out flat.
+  const rank = new Map(stations.map((n, i) => [n.id, i]));
+  const indeg = new Map(stations.map((n) => [n.id, 0]));
+  const out = new Map(stations.map((n) => [n.id, []]));
+  for (const e of Object.values(state?.edges ?? {})) {
+    if (!e.confirmed) continue;
+    if (e.kind !== 'then' && e.kind !== 'because') continue;
+    if (!rank.has(e.from) || !rank.has(e.to) || e.from === e.to) continue;
+    out.get(e.from).push(e.to);
+    indeg.set(e.to, indeg.get(e.to) + 1);
+  }
+  const byId = new Map(stations.map((n) => [n.id, n]));
+  const ordered = [];
+  const placed = new Set();
+  while (ordered.length < stations.length) {
+    const free = stations.filter((n) => !placed.has(n.id) && indeg.get(n.id) === 0);
+    const next = (free.length ? free : stations.filter((n) => !placed.has(n.id)))
+      .sort((a, b) => rank.get(a.id) - rank.get(b.id))[0];
+    ordered.push(next);
+    placed.add(next.id);
+    for (const t of out.get(next.id)) indeg.set(t, indeg.get(t) - 1);
+  }
+  stations = ordered;
 
   // The links between consecutive stations, and WHERE EACH ONE COMES FROM.
   //

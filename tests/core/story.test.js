@@ -409,3 +409,55 @@ describe('story map — cross-stage material is drawn, not discarded', () => {
     expect(buildMap(s).stations).toEqual([]);
   });
 });
+
+describe('story map — the graph orders the diagram, the stages only break ties', () => {
+  // Ran, 5.9.2026: "with new information the GRAPH develops and the diagram
+  // follows. The stages are the narrative by which the Router steers the interview
+  // and makes sure no stage is left unanswered." So the stage order is a fallback
+  // for material he has not related, never a claim about his story.
+  const four = () => {
+    let s = createState();
+    const put = (k, sl, t) => { s = setSlot(addFindings(s, k, sl, [t]), k, sl, 2); };
+    put('stage1', 'trigger', 'הודעה');
+    put('stage3', 'emotion', 'עלבון');
+    put('stage1', 'auto_reaction', 'יצאת');
+    put('stage2', 'meaning', 'לא נחשב');
+    return s;
+  };
+
+  it('falls back to the narrative order while he has related nothing', () => {
+    expect(buildMap(four()).stations.map((n) => n.label)).toEqual([
+      'הודעה', 'לא נחשב', 'עלבון', 'יצאת',
+    ]);
+  });
+
+  it('re-orders to HIS order once he states a relation', () => {
+    const s = mergeEdges(four(), [
+      { from: 'stage1.auto_reaction', to: 'stage3.emotion', kind: 'because', confirmed: true },
+    ]);
+    expect(buildMap(s).stations.map((n) => n.label)).toEqual([
+      'הודעה', 'לא נחשב', 'יצאת', 'עלבון',
+    ]);
+  });
+
+  it('ignores an unconfirmed edge — the system never re-orders on its own guess', () => {
+    const s = mergeEdges(four(), [
+      { from: 'stage1.auto_reaction', to: 'stage3.emotion', kind: 'because' },
+    ]);
+    expect(buildMap(s).stations.map((n) => n.label)).toEqual([
+      'הודעה', 'לא נחשב', 'עלבון', 'יצאת',
+    ]);
+  });
+
+  it('survives a circular account instead of vanishing', () => {
+    // People do describe circular causes. A drawing that disappeared over one
+    // would be worse than a drawing that lays it out flat.
+    const s = mergeEdges(four(), [
+      { from: 'stage3.emotion', to: 'stage1.auto_reaction', kind: 'because', confirmed: true },
+      { from: 'stage1.auto_reaction', to: 'stage3.emotion', kind: 'because', confirmed: true },
+    ]);
+    const out = buildMap(s).stations.map((n) => n.label);
+    expect(out).toHaveLength(4);
+    expect(new Set(out).size).toBe(4);
+  });
+});
