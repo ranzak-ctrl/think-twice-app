@@ -24,6 +24,7 @@ import {
   setMapLabel,
   mergeActorMap,
   mergeOpenForks,
+  mergeEdges,
   deriveActorsScore,
 } from './state.js';
 import { preCheck } from '../safety/index.js';
@@ -168,6 +169,12 @@ export async function runTurn(state, history, userText) {
       },
     };
   }
+
+  // Story edges: the relations between the case's entities. Merged at any stage —
+  // an edge routinely joins a beat in one stage to a beat in another, which is also
+  // why gating on them is not the same problem as gating on the actor map
+  // (questions-for-natali §10). Display only; the Router never reads them.
+  if (ev.edges) nextState = mergeEdges(nextState, ev.edges);
 
   // Open forks (פיצולים לא-מוכרעים): what the STORY left undecided. Merged in at any
   // stage — unlike the actor map this is not stage-1 only, because a story can leave

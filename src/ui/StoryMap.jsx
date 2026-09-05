@@ -150,7 +150,7 @@ function Scene({ cast, stations }) {
 
 // The order of events is known, so the same material becomes a route: a winding
 // path from where it started to where it stands, a cube at every station.
-function Journey({ cast, stations, forks }) {
+function Journey({ cast, stations, links, forks }) {
   const top = 74;
   const step = 92;
   const CH = 36;
@@ -183,10 +183,14 @@ function Journey({ cast, stations, forks }) {
       {legs.map((leg, i) => {
         const [ax, ay] = leg[leg.length - 2];
         const [bx, by] = leg[leg.length - 1];
+        // legs[0] is the lead-in and legs[last] the tail; the ones between join
+        // station i-1 to station i, so they carry links[i - 1].
+        const link = links?.[i - 1];
+        const cls = link?.sourced ? ' is-sourced' : '';
         return (
           <g key={i}>
-            <path className="mp-route" d={inked(leg, `leg${i}`, 2.6)} />
-            <path className="mp-head" d={head(ax, ay, bx, by, `h${i}`)} />
+            <path className={`mp-route${cls}`} d={inked(leg, `leg${i}`, 2.6)} />
+            <path className={`mp-head${cls}`} d={head(ax, ay, bx, by, `h${i}`)} />
           </g>
         );
       })}

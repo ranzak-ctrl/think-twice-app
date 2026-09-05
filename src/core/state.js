@@ -55,6 +55,11 @@ export function createState() {
     // the model and not from truncating a finding. See setMapLabel.
     mapLabels: {},
 
+    // Story edges — the relations BETWEEN the case's entities, keyed "from→to".
+    // Ran, 5.9.2026: the edges are the interviewee's, not the system's. Each:
+    // { id, from, to, kind, confirmed }. See mergeEdges.
+    edges: {},
+
     meta: {
       currentStage: 1,
       questionCount: 0,        // questions asked in current stage
@@ -218,6 +223,72 @@ export function setMapLabel(state, stageKey, slot, raw) {
     ...state,
     mapLabels: { ...byStage, [stageKey]: { ...(byStage[stageKey] ?? {}), [slot]: label } },
   };
+}
+
+// ── Story edges (הקשתות) ──
+// Ran's ruling, 5.9.2026: "the edges are part of the interviewee's story. When the
+// system is not settled on the relation between the entities, it asks him."
+//
+// That settles a real objection rather than waving it away. An edge is a CLAIM —
+// "this led to that" is a causal assertion about someone's life — and a model that
+// invents one implants interpretation, which is exactly what the judge's `ownership`
+// dimension exists to catch. The ruling makes the claim HIS: the model never infers
+// an edge, it reports one it was told, and where there is none the clarification is
+// the next question. So a drawn arrow is his account, not our inference.
+//
+// It also makes the drawing more honest than it is today, not less: the arrows now
+// on screen come from a hardcoded order in storyMap.js (fact→thought→feeling→action)
+// and assert "led to" with nothing behind them.
+//
+// This is the third instance of one pattern already in the system — an unclear actor
+// (clear:false) blocks and forces a clarification; an unconfirmed slot (< 2) is not
+// drawn and keeps being asked about; an unconfirmed edge now joins them.
+//
+// Endpoints are node ids as the map names them: "stageN.slot" for a beat,
+// "actor:<id>" for a character, "fork:<id>" for an open fork.
+export const EDGE_KINDS = new Set([
+  'then',    // temporal succession — and then
+  'because', // causal — that is why
+  'agent',   // an actor did this beat
+]);
+
+const edgeNode = (v) => (typeof v === 'string' ? v.trim() : '');
+
+// The slot an endpoint refers to, or '' when it is not a beat. Used to keep a
+// barred slot out of the graph entirely — a wound with an edge attached is still a
+// wound on the drawing, and refusing it at the write is cheaper than trusting every
+// future reader to check (the same reasoning as setMapLabel).
+const endpointSlot = (node) => {
+  const m = /^stage[1-7]\.(.+)$/.exec(node);
+  return m ? m[1] : '';
+};
+
+export function mergeEdges(state, reported) {
+  const byId = { ...(state.edges ?? {}) };
+  for (const e of Array.isArray(reported) ? reported : []) {
+    const from = edgeNode(e?.from);
+    const to = edgeNode(e?.to);
+    const kind = edgeNode(e?.kind);
+    if (!from || !to || from === to) continue;        // a node cannot lead to itself
+    if (!EDGE_KINDS.has(kind)) continue;              // unknown relation — dropped
+    if (NEVER_SHOW_SLOTS.has(endpointSlot(from))) continue;
+    if (NEVER_SHOW_SLOTS.has(endpointSlot(to))) continue;
+
+    const id = `${from}→${to}`;
+    const prev = byId[id];
+    byId[id] = {
+      id,
+      from,
+      to,
+      kind,
+      // Confirmed means HE said so. An omitted flag on a delta keeps what the edge
+      // already had; a new edge is unconfirmed until he confirms it, never by
+      // default — defaulting to true is how the system would start asserting
+      // relations again through the back door.
+      confirmed: typeof e?.confirmed === 'boolean' ? e.confirmed : (prev?.confirmed ?? false),
+    };
+  }
+  return { ...state, edges: byId };
 }
 
 // ── Actor map (מפת שחקנים) — stage-1 resolved cast ──
@@ -435,5 +506,6 @@ export function importState(json) {
     actorMap: state.actorMap ?? {},
     openForks: state.openForks ?? {},
     mapLabels: state.mapLabels ?? {},
+    edges: state.edges ?? {},
   };
 }

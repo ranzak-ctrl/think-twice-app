@@ -6,8 +6,11 @@ import {
   addFindings,
   mergeActorMap,
   mergeOpenForks,
+  mergeEdges,
   setMapLabel,
   setSlot,
+  exportState,
+  importState,
 } from '../../src/core/state.js';
 
 // The story mirror (src/core/story.js). These guard the rules in that file's
@@ -330,5 +333,49 @@ describe('barred slots — refused at the store, not only at the drawing', () =>
   it('still stores a label for an ordinary stage-2 slot', () => {
     const s = setMapLabel(createState(), 'stage2', 'meaning', 'לא מקצועי');
     expect(s.mapLabels.stage2.meaning).toBe('לא מקצועי');
+  });
+});
+
+describe('story edges — the relations belong to the interviewee', () => {
+  // Ran, 5.9.2026: the edges are part of HIS story; where the system is not settled
+  // on a relation it asks him. So the system never asserts one by default.
+  it('leaves a new edge unconfirmed unless he said so', () => {
+    const s = mergeEdges(createState(), [
+      { from: 'stage1.trigger', to: 'stage3.emotion', kind: 'because' },
+    ]);
+    expect(s.edges['stage1.trigger→stage3.emotion'].confirmed).toBe(false);
+  });
+
+  it('keeps confirmation across a delta that omits the flag', () => {
+    let s = mergeEdges(createState(), [
+      { from: 'a', to: 'b', kind: 'then', confirmed: true },
+    ]);
+    s = mergeEdges(s, [{ from: 'a', to: 'b', kind: 'because' }]); // relation refined
+    expect(s.edges['a→b']).toMatchObject({ kind: 'because', confirmed: true });
+  });
+
+  it('refuses an edge touching a barred slot, at the write', () => {
+    // A wound with an arrow attached is still a wound on the drawing.
+    const s = mergeEdges(createState(), [
+      { from: 'stage2.wound', to: 'stage3.emotion', kind: 'because', confirmed: true },
+      { from: 'stage3.emotion', to: 'stage2.adhd_pattern', kind: 'then', confirmed: true },
+    ]);
+    expect(s.edges).toEqual({});
+  });
+
+  it('refuses a self-loop and an unknown relation', () => {
+    const s = mergeEdges(createState(), [
+      { from: 'stage1.trigger', to: 'stage1.trigger', kind: 'then' },
+      { from: 'a', to: 'b', kind: 'causes' },
+    ]);
+    expect(s.edges).toEqual({});
+  });
+
+  it('survives the export/import round trip and older exports without the field', () => {
+    const s = mergeEdges(createState(), [{ from: 'a', to: 'b', kind: 'then' }]);
+    expect(importState(exportState(s)).edges['a→b'].kind).toBe('then');
+    const old = JSON.parse(exportState(s));
+    delete old.edges;
+    expect(importState(JSON.stringify(old)).edges).toEqual({});
   });
 });

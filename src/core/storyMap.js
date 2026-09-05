@@ -120,8 +120,37 @@ export function buildMap(state) {
       options: f.options.map(shorten),
     }));
 
+  // The links between consecutive stations, and WHERE EACH ONE COMES FROM.
+  //
+  // Ran's ruling of 5.9.2026 — the edges are the interviewee's — makes this the
+  // honest part of the drawing. A link he actually stated is `sourced`; a link with
+  // nothing behind it is the fixed STATIONS order asserting "led to" on its own
+  // authority, which is what the ruling is against. Both are drawn for now, because
+  // dropping the unsourced ones would leave a row of disconnected boxes until the
+  // model starts reporting edges, but they are told apart: his arrows are drawn
+  // firmly, ours tentatively. What SHOULD happen to an unconfirmed relation —
+  // whether it blocks a stage the way an unclear character does — is the open
+  // implementation question in questions-for-natali.md §10.
+  const edges = Object.values(state?.edges ?? {});
+  const links = [];
+  for (let i = 0; i < stations.length - 1; i++) {
+    const a = stations[i].id;
+    const b = stations[i + 1].id;
+    const edge = edges.find(
+      (e) => e.confirmed && ((e.from === a && e.to === b) || (e.from === b && e.to === a)),
+    );
+    links.push({ from: i, to: i + 1, kind: edge?.kind ?? 'then', sourced: Boolean(edge) });
+  }
+
   const hasTime = state?.coverage?.stage1?.timeline === CONFIRMED;
   const form = hasTime && stations.length >= 2 ? 'journey' : 'scene';
 
-  return { form, cast, stations, forks, isEmpty: cast.length === 0 && stations.length === 0 };
+  return {
+    form,
+    cast,
+    stations,
+    links,
+    forks,
+    isEmpty: cast.length === 0 && stations.length === 0,
+  };
 }

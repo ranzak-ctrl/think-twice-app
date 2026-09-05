@@ -54,6 +54,7 @@ export function parseResponse(raw) {
       gapObservations: parseGapObservations(evaluation),
       openForks: parseOpenForks(evaluation),
       mapLabels: parseMapLabels(evaluation),
+      edges: parseEdges(evaluation),
     },
   };
 }
@@ -106,6 +107,28 @@ function parseSlotFindings(evaluation) {
     if (items.length) out[key] = items;
   }
   return out;
+}
+
+// Parse the model's story edges — the relations between the case's entities, which
+// per Ran's ruling of 5.9.2026 belong to the interviewee and are never inferred by
+// the system. Shape only here; the kind whitelist, the barred-slot refusal and the
+// confirmed default are the store's rules (state.mergeEdges).
+function parseEdges(evaluation) {
+  const raw = evaluation.edges;
+  if (!Array.isArray(raw)) return null; // absent → nothing to merge (back-compat)
+  const out = [];
+  for (const e of raw) {
+    const from = typeof e?.from === 'string' ? e.from.trim() : '';
+    const to = typeof e?.to === 'string' ? e.to.trim() : '';
+    if (!from || !to) continue;
+    out.push({
+      from,
+      to,
+      kind: typeof e?.kind === 'string' ? e.kind.trim() : '',
+      confirmed: typeof e?.confirmed === 'boolean' ? e.confirmed : null,
+    });
+  }
+  return out.length ? out : null;
 }
 
 // Parse the model's map labels — the one or two words that name a slot's cube on

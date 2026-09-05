@@ -487,6 +487,21 @@ button {
   opacity: 0.85;
 }
 
+/* An arrow the person actually stated (a confirmed edge) against one the fixed
+   station order assumed. Ran, 5.9.2026: the edges are his. Until every arrow has
+   him behind it, the drawing should not pretend they all do — so his are solid and
+   firm, and ours stay broken and light. */
+.mp-route.is-sourced {
+  stroke-dasharray: none;
+  stroke-width: 1.8;
+  opacity: 1;
+}
+
+.mp-head.is-sourced {
+  stroke-width: 1.9;
+  opacity: 1;
+}
+
 .mp-cube {
   fill: var(--surface);
   stroke: var(--text-muted);
