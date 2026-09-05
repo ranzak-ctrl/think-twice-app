@@ -508,6 +508,21 @@ button {
   stroke-width: 1.6;
 }
 
+/* Material the interview has not settled yet — most often something that belongs
+   to a later stage and surfaced early. Ran, 5.9.2026: it is not ignored, it is
+   drawn; it just must not look as certain as what has been worked through. Broken
+   line and lighter ink, the same vocabulary the open fork uses. */
+.mp-cube.is-provisional {
+  stroke-dasharray: 5 4;
+  stroke: var(--text-faint);
+  stroke-width: 1.4;
+}
+
+.mp-label.is-provisional {
+  fill: var(--text-muted);
+  font-weight: 500;
+}
+
 /* What was actually DONE carries the heaviest line on the map — the one place a
    weight difference is allowed to mean something. */
 .mp-cube.is-strong {

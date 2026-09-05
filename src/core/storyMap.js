@@ -19,9 +19,23 @@
 // This module decides the form and the contents. StoryMap.jsx draws them and
 // decides nothing, so a new form is a change in one place.
 //
-// THE GATES ARE UNCHANGED, and still come from Ran's two rules of 28.8:
-//   certainty     — a slot's material reaches the map only at score 2, so the map
-//                   never draws something the interview has not settled.
+// THE TWO RULES from Ran, 28.8, one of them revised on 5.9:
+//   certainty     — a WEIGHT, not a gate. Score 2 draws firm, 1 draws provisional,
+//                   0 and U do not draw. It was a gate until 5.9.2026 and that was
+//                   wrong: a conversation is not a linear axis, material belonging
+//                   to stage 3 routinely surfaces in stage 1, and the interview
+//                   already captures it — the cross-stage key records the emotion,
+//                   the finding and the label are stored, the slot is seeded so it
+//                   is waiting when the interview arrives. The map then refused to
+//                   draw it, so the person told the system something and watched it
+//                   vanish. Ran: "even if material belonging to later stages comes
+//                   up in slot 1, it is not ignored — it is represented in the
+//                   diagram, and it populates the slot we reach later, which may
+//                   shorten that inquiry and which deeper inquiry may update."
+//                   Nothing understood is hidden; nothing half-understood is drawn
+//                   as settled, which is what the original rule was protecting. U
+//                   stays out: "he doesn't remember" is a valid final answer for
+//                   the Router and still not a thing you can draw.
 //   significance  — one map element per slot. The Transition Protocol's slot list
 //                   is the clinical answer to what a case is made of.
 // And the exclusions are unchanged: never the wound, never the ADHD pattern, never
@@ -38,6 +52,7 @@
 import { NEVER_MIRROR, buildCast } from './story.js';
 
 const CONFIRMED = 2;
+const PROVISIONAL = 1;
 
 // Fallback only — see LABELS above. Takes the first words up to a budget,
 // preferring a clean word boundary.
@@ -69,24 +84,29 @@ const STATIONS = [
   },
 ];
 
-// The latest finding in a slot, gated on that slot being confirmed. Latest rather
-// than first so a correction replaces what is drawn instead of piling up beside it.
-function confirmedLabel(state, stageKey, slot) {
-  if (NEVER_MIRROR.has(slot)) return '';
-  if (state?.coverage?.[stageKey]?.[slot] !== CONFIRMED) return '';
+// → { label, provisional } for a slot worth drawing, or null. See the certainty
+// rule in the header. Latest finding rather than first, so a correction replaces
+// what is drawn instead of piling up beside it.
+function slotCube(state, stageKey, slot) {
+  if (NEVER_MIRROR.has(slot)) return null;
+  const level = state?.coverage?.[stageKey]?.[slot];
+  if (level !== CONFIRMED && level !== PROVISIONAL) return null;
+  const provisional = level === PROVISIONAL;
 
   // The model's name for this cube, when it gave one. Preferred over anything
   // derived from the finding: the label is what the map is FOR.
   const named = state?.mapLabels?.[stageKey]?.[slot];
-  if (typeof named === 'string' && named.trim()) return named.trim();
+  if (typeof named === 'string' && named.trim()) return { label: named.trim(), provisional };
 
   // Otherwise fall back to trimming the latest finding, so the cube is not empty.
   // Latest rather than first, so a correction replaces what is drawn.
   const items = state?.findings?.[stageKey]?.[slot] ?? [];
   for (let i = items.length - 1; i >= 0; i--) {
-    if (typeof items[i] === 'string' && items[i].trim()) return shorten(items[i]);
+    if (typeof items[i] === 'string' && items[i].trim()) {
+      return { label: shorten(items[i]), provisional };
+    }
   }
-  return '';
+  return null;
 }
 
 // StateDocument → a map spec.
@@ -103,10 +123,10 @@ export function buildMap(state) {
   const seen = new Set();
   for (const { kind, slots } of STATIONS) {
     for (const [stageKey, slot] of slots) {
-      const label = confirmedLabel(state, stageKey, slot);
-      if (!label || seen.has(label)) continue;
-      seen.add(label);
-      stations.push({ id: `${stageKey}.${slot}`, kind, label });
+      const cube = slotCube(state, stageKey, slot);
+      if (!cube || seen.has(cube.label)) continue;
+      seen.add(cube.label);
+      stations.push({ id: `${stageKey}.${slot}`, kind, ...cube });
     }
   }
 
@@ -142,7 +162,8 @@ export function buildMap(state) {
     links.push({ from: i, to: i + 1, kind: edge?.kind ?? 'then', sourced: Boolean(edge) });
   }
 
-  const hasTime = state?.coverage?.stage1?.timeline === CONFIRMED;
+  // A provisional timeline is still a time dimension — enough to lay a route along.
+  const hasTime = [CONFIRMED, PROVISIONAL].includes(state?.coverage?.stage1?.timeline);
   const form = hasTime && stations.length >= 2 ? 'journey' : 'scene';
 
   return {

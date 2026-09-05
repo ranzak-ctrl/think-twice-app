@@ -379,3 +379,33 @@ describe('story edges — the relations belong to the interviewee', () => {
     expect(importState(JSON.stringify(old)).edges).toEqual({});
   });
 });
+
+describe('story map — cross-stage material is drawn, not discarded', () => {
+  // Ran, 5.9.2026: a conversation is not a linear axis. Material belonging to a
+  // later stage that surfaces early is captured at level 1 and must be REPRESENTED,
+  // not hidden until the interview reaches its stage.
+  it('draws a later stage’s slot captured during stage 1, marked provisional', () => {
+    let s = setSlot(addFindings(createState(), 'stage1', 'trigger', ['הודעה על גיוס']), 'stage1', 'trigger', 2);
+    s = setSlot(addFindings(s, 'stage3', 'emotion', ['נעלבת']), 'stage3', 'emotion', 1);
+    const st = buildMap(s).stations;
+    expect(st.map((x) => x.label)).toEqual(['הודעה על גיוס', 'נעלבת']);
+    expect(st.map((x) => x.provisional)).toEqual([false, true]);
+  });
+
+  it('promotes it to settled when the interview reaches the slot and confirms it', () => {
+    let s = setSlot(addFindings(createState(), 'stage3', 'emotion', ['נעלבת']), 'stage3', 'emotion', 1);
+    expect(buildMap(s).stations[0].provisional).toBe(true);
+    s = setSlot(addFindings(s, 'stage3', 'emotion', ['עלבון עמוק']), 'stage3', 'emotion', 2);
+    expect(buildMap(s).stations[0]).toMatchObject({ label: 'עלבון עמוק', provisional: false });
+  });
+
+  it('still refuses U — a thing he does not remember is not a thing you can draw', () => {
+    const s = setSlot(addFindings(createState(), 'stage1', 'timeline', ['לא זוכר']), 'stage1', 'timeline', 'U');
+    expect(buildMap(s).stations).toEqual([]);
+  });
+
+  it('still refuses a barred slot however it was captured', () => {
+    const s = setSlot(addFindings(createState(), 'stage2', 'wound', ['אני לא שווה']), 'stage2', 'wound', 1);
+    expect(buildMap(s).stations).toEqual([]);
+  });
+});

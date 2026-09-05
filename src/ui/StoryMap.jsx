@@ -47,12 +47,12 @@ function inked(points, seed, amt = 2.2) {
 
 // A drawn rectangle — four inked sides rather than a rect, so the corners do not
 // close perfectly, the way a hand does not close them.
-function Cube({ x, y, w, h, seed, strong }) {
+function Cube({ x, y, w, h, seed, strong, provisional }) {
   const l = x - w / 2;
   const t = y - h / 2;
   return (
     <path
-      className={`mp-cube${strong ? ' is-strong' : ''}`}
+      className={`mp-cube${strong ? ' is-strong' : ''}${provisional ? ' is-provisional' : ''}`}
       d={inked([[l, t], [l + w, t], [l + w, t + h], [l, t + h], [l - 0.5, t]], seed, 1.5)}
     />
   );
@@ -123,7 +123,15 @@ function Scene({ cast, stations }) {
     <svg className="mp" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="מפת הסיפור">
       {here && (
         <>
-          <Cube x={cx} y={eh / 2 + 8} w={cubeW(here.label, 150)} h={eh} seed={here.id} strong />
+          <Cube
+            x={cx}
+            y={eh / 2 + 8}
+            w={cubeW(here.label, 150)}
+            h={eh}
+            seed={here.id}
+            strong={!here.provisional}
+            provisional={here.provisional}
+          />
           <Label x={cx} y={eh / 2 + 8} text={here.label} />
         </>
       )}
@@ -198,8 +206,16 @@ function Journey({ cast, stations, links, forks }) {
         const [x, y] = at(i);
         return (
           <g key={s.id} className={`mp-station is-${s.kind}`}>
-            <Cube x={x} y={y} w={cubeW(s.label, 120)} h={CH} seed={s.id} strong={s.kind === 'action'} />
-            <Label x={x} y={y} text={s.label} />
+            <Cube
+              x={x}
+              y={y}
+              w={cubeW(s.label, 120)}
+              h={CH}
+              seed={s.id}
+              strong={s.kind === 'action' && !s.provisional}
+              provisional={s.provisional}
+            />
+            <Label x={x} y={y} text={s.label} cls={s.provisional ? 'mp-label is-provisional' : 'mp-label'} />
           </g>
         );
       })}
