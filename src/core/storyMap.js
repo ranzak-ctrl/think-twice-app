@@ -241,6 +241,19 @@ export function buildMap(state) {
     arcs.push({ from: a, to: b, kind: e.kind });
   }
 
+  // Who did what: `agent` edges, resolved to the stations each character acts in.
+  // Until now these were stored and drawn nowhere, because only beats had
+  // positions — the map knew the manager made the remark and showed a cast box
+  // floating in the corner with no line to anything.
+  const agents = [];
+  for (const a of cast) {
+    const beats = Object.values(state?.edges ?? {})
+      .filter((e) => e.confirmed && e.kind === 'agent' && e.from === `actor:${a.id}`)
+      .map((e) => stations.findIndex((n) => n.id === e.to))
+      .filter((i) => i >= 0);
+    agents.push({ ...a, beats: [...new Set(beats)].sort((x, y) => x - y) });
+  }
+
   const hasTime = [CONFIRMED, PROVISIONAL].includes(state?.coverage?.stage1?.timeline);
   const form = hasTime && stations.length >= 2 ? 'journey' : 'scene';
 
@@ -248,6 +261,7 @@ export function buildMap(state) {
     form,
     cast,
     stations,
+    agents,
     links,
     arcs,
     forks,

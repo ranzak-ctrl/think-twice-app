@@ -115,7 +115,7 @@ function lines(text) {
   return b ? [a, b] : [a];
 }
 
-const CUBE_MAX = 210; // leaves both margins clear for arcs
+const CUBE_MAX = 200; // leaves both margins clear for arcs
 const cubeW = (text, min = 96, max = CUBE_MAX) =>
   Math.min(max, Math.max(min, Math.max(...lines(text).map((l) => l.length)) * PER_CHAR + 26));
 
@@ -136,7 +136,9 @@ function Label({ x, y, text, cls = 'mp-label' }) {
 // through one of them, and at 360 there was barely 50px of clearance, so the first
 // arc drawn cut straight through two cubes on its way past — a relation he stated,
 // rendered as a line through the words of the beats it was not about.
-const W = 430;
+// Wide enough for two working margins: characters stand in one, and relations
+// across the story arc through the other. Neither may run over a cube.
+const W = 520;
 
 // No time in the story yet: a place, with the people who are at it. There is
 // nothing to lay a route along, so the map does not pretend there is.
@@ -188,12 +190,12 @@ function Scene({ cast, stations }) {
 
 // The order of events is known, so the same material becomes a route: a winding
 // path from where it started to where it stands, a cube at every station.
-function Journey({ cast, stations, links, arcs, forks }) {
+function Journey({ cast, stations, agents, links, arcs, forks }) {
   const top = 74;
   const step = 92;
   const CH = 36;
   const H = top + stations.length * step + (forks.length ? 92 : 48);
-  const at = (i) => [i % 2 === 0 ? 255 : 150, top + i * step];
+  const at = (i) => [i % 2 === 0 ? 315 : 210, top + i * step];
   const pts = stations.map((_, i) => at(i));
 
   // The route runs BETWEEN the cubes, never through them: each leg leaves the
@@ -202,7 +204,7 @@ function Journey({ cast, stations, links, arcs, forks }) {
   // across the words — a map's path threads past its landmarks, it does not
   // cross them out.
   const legs = [];
-  legs.push([[255, top - 40], [255, top - CH / 2 - 4]]);
+  legs.push([[315, top - 40], [315, top - CH / 2 - 4]]);
   for (let i = 0; i < pts.length - 1; i++) {
     const [x0, y0] = pts[i];
     const [x1, y1] = pts[i + 1];
@@ -213,7 +215,7 @@ function Journey({ cast, stations, links, arcs, forks }) {
       [x1, y1 - CH / 2 - 4],
     ]);
   }
-  const last = pts[pts.length - 1] ?? [255, top];
+  const last = pts[pts.length - 1] ?? [315, top];
   legs.push([[last[0], last[1] + CH / 2 + 4], [last[0], last[1] + 40]]);
 
   return (
@@ -239,7 +241,8 @@ function Journey({ cast, stations, links, arcs, forks }) {
         const [x0, y0] = at(arc.from);
         const [x1, y1] = at(arc.to);
         // Out through whichever margin is farther from both endpoints.
-        const side = (x0 + x1) / 2 > W / 2 ? 22 : W - 22;
+        // Arcs always take the right margin; the left one belongs to the cast.
+        const side = W - 26;
         const mid = [side, (y0 + y1) / 2];
         return (
           <g key={`arc${i}`}>
@@ -296,18 +299,37 @@ function Journey({ cast, stations, links, arcs, forks }) {
         );
       })}
 
-      {/* Who is on this map. A boxed legend rather than floating words, so it
-          reads as part of the drawing instead of a caption that drifted in. */}
-      {cast.length > 0 && (
-        <g className="mp-cast">
-          <Cube x={66} y={30} w={112} h={18 + cast.length * 14} seed="cast" />
-          {cast.map((a, i) => (
-            <text className="mp-name" key={a.id} x={66} y={30 - (cast.length - 1) * 7 + i * 14 + 4}>
-              {a.label}
-            </text>
-          ))}
-        </g>
-      )}
+      {/* The cast, standing in the left margin beside the beats they act in.
+          A character with `agent` edges sits at the average height of those beats
+          and is joined to each; one with none stays at the top, present in the
+          story without a claim about what he did. Ran, 5.9.2026: draw the agent
+          edges — until now the map held "the manager made the remark" and drew a
+          box in the corner joined to nothing. */}
+      {(agents ?? []).map((a, i) => {
+        const w = Math.min(104, Math.max(64, a.label.length * PER_CHAR + 20));
+        const ax = 8 + w / 2;
+        const ay = a.beats.length
+          ? a.beats.reduce((sum, b) => sum + at(b)[1], 0) / a.beats.length
+          : top - 34 + i * 34;
+        return (
+          <g key={a.id}>
+            {a.beats.map((b) => {
+              const [bx, by] = at(b);
+              return (
+                <Leg
+                  key={b}
+                  points={[[ax + w / 2, ay], [(ax + bx) / 2, (ay + by) / 2], [bx - cubeW(stations[b].label, 120) / 2, by]]}
+                  seed={`ag${a.id}${b}`}
+                  className="mp-agent"
+                />
+              );
+            })}
+            <Cube x={ax} y={ay} w={w} h={26} seed={a.id} />
+            <text className="mp-name" x={ax} y={ay + 4}>{a.label}</text>
+          </g>
+        );
+      })}
+
     </svg>
   );
 }

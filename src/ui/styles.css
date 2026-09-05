@@ -536,6 +536,13 @@ button {
   stroke-width: 2.1;
 }
 
+/* Who did it. Solid — he said so — and lighter than the spine, because the map's
+   subject is what happened, not who is standing next to it. */
+.mp-agent {
+  stroke-width: 1.2;
+  opacity: 0.55;
+}
+
 /* An arc: a relation he stated between beats that are not next to each other.
    Solid like every other arrow of his, and thinner than the chain so the route
    still reads as the spine of the story. */
