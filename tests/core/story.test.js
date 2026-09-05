@@ -933,3 +933,65 @@ describe('story nodes — the store contracts', () => {
     }
   });
 });
+
+describe('story map — two cubes in one slot keep the order he told them in', () => {
+  // Ran's run of 5.9.2026: "אמרתי שחייב לנח, אבל היא לא ויתרה… נתנה עצות". The model
+  // reported the edge into "לא ויתרה" and not the one into "נתנה עצות", so that cube
+  // fell back to its SLOT's place in NARRATIVE — where stage1.timeline sits ahead of
+  // stage1.auto_reaction — and the map drew her advice before he had asked for
+  // anything. Its sibling in the same slot was already pinned after his refusal by an
+  // edge he did state; chaining same-slot cubes in report order carries the pin over.
+  const run = () => {
+    let s = createState();
+    for (const [k, sl] of [['stage1', 'trigger'], ['stage1', 'timeline'],
+      ['stage1', 'auto_reaction'], ['stage1', 'status']]) {
+      s = setSlot(addFindings(s, k, sl, ['x']), k, sl, 2);
+    }
+    s = setMapLabel(s, 'stage1', 'auto_reaction', 'אמרת שצריך לנוח');
+    s = mergeNodes(s, [
+      { id: 'stage1.trigger', label: 'ביקשה לקניות', slot: 'stage1.trigger' },
+      { id: 'wont_let_go', label: 'לא ויתרה', slot: 'stage1.timeline' },
+      { id: 'gave_advice', label: 'נתנה עצות', slot: 'stage1.timeline' },
+      { id: 'must_accept', label: 'חייבת להשלים', slot: 'stage1.status' },
+    ]);
+    return mergeEdges(s, [
+      { from: 'stage1.auto_reaction', to: 'wont_let_go', kind: 'then', confirmed: true },
+      { from: 'stage1.auto_reaction', to: 'must_accept', kind: 'then', confirmed: true },
+    ]);
+  };
+
+  it('reads in his order, not the stage list’s', () => {
+    expect(buildMap(run()).stations.map((n) => n.label)).toEqual([
+      'ביקשה לקניות',
+      'אמרת שצריך לנוח',
+      'לא ויתרה',
+      'נתנה עצות',
+      'חייבת להשלים',
+    ]);
+  });
+
+  it('lets a confirmed edge outrank the sibling order', () => {
+    // He said the advice came FIRST after all. His arrow wins over our inference.
+    const s = mergeEdges(run(), [
+      { from: 'gave_advice', to: 'wont_let_go', kind: 'then', confirmed: true },
+    ]);
+    const labels = buildMap(s).stations.map((n) => n.label);
+    expect(labels.indexOf('נתנה עצות')).toBeLessThan(labels.indexOf('לא ויתרה'));
+  });
+
+  it('never presents the sibling order as an arrow he drew', () => {
+    // The chain link between two same-slot cubes is ours, so it stays tentative.
+    const m = buildMap(run());
+    const i = m.stations.findIndex((n) => n.id === 'wont_let_go');
+    expect(m.links[i].sourced).toBe(false);
+    expect(m.arcs.some((a) => a.from === 'wont_let_go' && a.to === 'gave_advice')).toBe(false);
+  });
+
+  it('does not deadlock when the siblings contradict a stated edge', () => {
+    const s = mergeEdges(run(), [
+      { from: 'gave_advice', to: 'wont_let_go', kind: 'then', confirmed: true },
+      { from: 'wont_let_go', to: 'gave_advice', kind: 'then', confirmed: true },
+    ]);
+    expect(buildMap(s).stations).toHaveLength(5);
+  });
+});

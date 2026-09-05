@@ -273,12 +273,56 @@ export function buildMap(state) {
   const rank = new Map(stations.map((n, i) => [n.id, i]));
   const indeg = new Map(stations.map((n) => [n.id, 0]));
   const out = new Map(stations.map((n) => [n.id, []]));
+  const constrain = (from, to) => {
+    if (!rank.has(from) || !rank.has(to) || from === to) return;
+    out.get(from).push(to);
+    indeg.set(to, indeg.get(to) + 1);
+  };
+  const stated = new Set();
   for (const e of Object.values(state?.edges ?? {})) {
     if (!e.confirmed) continue;
     if (e.kind !== 'then' && e.kind !== 'because') continue;
-    if (!rank.has(e.from) || !rank.has(e.to) || e.from === e.to) continue;
-    out.get(e.from).push(e.to);
-    indeg.set(e.to, indeg.get(e.to) + 1);
+    constrain(e.from, e.to);
+    // Both directions: what matters below is whether he said anything at all about
+    // how these two stand to each other.
+    stated.add(`${e.from}|${e.to}`);
+    stated.add(`${e.to}|${e.from}`);
+  }
+
+  // Two cubes in ONE slot keep the order they were reported in — and that order
+  // propagates, which is the point. Ran's run of 5.9.2026 put "נתנה עצות" two
+  // places too early: he had said "אמרתי שחייב לנוח, אבל היא לא ויתרה… נתנה עצות",
+  // and the model reported the edge into "לא ויתרה" but not the one into "נתנה
+  // עצות". With nothing on it, that cube fell back to its SLOT's position in
+  // NARRATIVE, where stage1.timeline sits ahead of stage1.auto_reaction — so the
+  // map put her advice before he had asked for anything.
+  //
+  // Its sibling in the same slot was already pinned after his refusal by an edge he
+  // did state. Chaining same-slot cubes in report order carries that pin onto the
+  // one beside it, and the claim it makes is far weaker than the one it replaces:
+  // "these two, which the model reported together, came in the order it gave them"
+  // against "everything in this slot precedes everything in that one".
+  //
+  // It YIELDS to anything he said. A pair he has related is skipped entirely rather
+  // than constrained both ways — adding the sibling edge on top of a contradicting
+  // one of his makes a two-node cycle, and the cycle fallback then resolves it by
+  // narrative rank, which is to say his stated order loses to the very default this
+  // is here to correct. (Written the other way first, and the test below caught it.)
+  // It is never drawn as one of his arrows either: nothing here reaches `links` or
+  // `arcs`, so an inferred order stays a dashed line.
+  const bySlot = new Map();
+  for (const n of stations) {
+    if (n.seq < 0) continue; // a slot's own fallback cube stands alone in its slot
+    if (!bySlot.has(n.slot)) bySlot.set(n.slot, []);
+    bySlot.get(n.slot).push(n);
+  }
+  for (const siblings of bySlot.values()) {
+    const inOrder = [...siblings].sort((a, b) => a.seq - b.seq);
+    for (let i = 0; i < inOrder.length - 1; i++) {
+      const [a, b] = [inOrder[i].id, inOrder[i + 1].id];
+      if (stated.has(`${a}|${b}`)) continue;
+      constrain(a, b);
+    }
   }
   const ordered = [];
   const placed = new Set();
