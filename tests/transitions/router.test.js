@@ -33,6 +33,12 @@ function withQuestionCount(state, count) {
   return { ...state, meta: { ...state.meta, questionCount: count } };
 }
 
+// A summary is on the table awaiting the user's verdict — the only state from
+// which confirming or rejecting means anything.
+function awaiting(state, nextStage = 2) {
+  return { ...state, meta: { ...state.meta, awaitingConfirmation: true, pendingNextStage: nextStage } };
+}
+
 // ─── 1. Entry: new state stays in stage 1 ───────────────────────────────────
 describe('Entry', () => {
   it('fresh state stays in stage 1', () => {
@@ -173,6 +179,66 @@ describe('Confirmation flow', () => {
     const rejected = rejectConfirmation(s);
     expect(rejected.meta.currentStage).toBe(1);
     expect(rejected.meta.awaitingConfirmation).toBe(false);
+  });
+
+  // Regression: rejecting a summary used to change nothing the gate reads. The
+  // load guard stays triggered (questionCount only rises) and coverage never
+  // falls, so the very next turn re-offered the same summary — "לתקן" could
+  // never actually correct anything.
+  it('reject does not re-offer the summary on the next turn', () => {
+    let s = createState();
+    s = fillStage(s, 1);
+    s = withSaturation(s);
+    s = withQuestionCount(s, 20); // load guard at the ceiling
+    expect(route(s).decision).toBe(Decision.REQUEST_CONFIRMATION);
+
+    s = rejectConfirmation(awaiting(s));
+    s = withQuestionCount(s, 21); // the correction turn
+    const after = route(s);
+    expect(after.decision).toBe(Decision.STAY);
+    expect(after.reason).toBe('correcting_summary');
+  });
+
+  it('the summary returns once the grace window passes — no stranded stage', () => {
+    let s = createState();
+    s = fillStage(s, 1);
+    s = withSaturation(s);
+    s = withQuestionCount(s, 20);
+    s = rejectConfirmation(awaiting(s));
+
+    expect(route(withQuestionCount(s, 22)).decision).toBe(Decision.STAY);
+    expect(route(withQuestionCount(s, 23)).decision).toBe(Decision.REQUEST_CONFIRMATION);
+  });
+
+  it('repeated rejections do not accumulate into a stage that never asks again', () => {
+    let s = createState();
+    s = fillStage(s, 1);
+    s = withSaturation(s);
+    s = withQuestionCount(s, 20);
+    s = rejectConfirmation(awaiting(s));
+    expect(s.meta.confirmationFloor).toBe(23);
+
+    s = rejectConfirmation(awaiting(withQuestionCount(s, 23)));
+    expect(s.meta.confirmationFloor).toBe(26); // measured from the count, not stacked
+  });
+
+  it('the floor does not survive into the next stage', () => {
+    let s = createState();
+    s = fillStage(s, 1);
+    s = withQuestionCount(s, 20);
+    s = rejectConfirmation(awaiting(s));
+    expect(s.meta.confirmationFloor).toBe(23);
+
+    s = confirmAndAdvance(awaiting(s));
+    expect(s.meta.confirmationFloor).toBe(0);
+  });
+
+  // Rejecting is a reply to a summary that was actually offered. Unguarded, a
+  // stray call would buy three turns of forced STAY in a stage where nothing
+  // was ever asked.
+  it('rejecting does nothing when no summary is on offer', () => {
+    let s = withQuestionCount(createState(), 20);
+    expect(rejectConfirmation(s)).toBe(s);
   });
 
   it('awaiting confirmation blocks further routing', () => {

@@ -97,6 +97,10 @@ export function createState() {
       decisionLog: [],         // recent Router decisions (guide mode) — capped
       mergeAttempt: null,      // stage-7 either-or: 'real' | 'avoidance' | null (transient)
       awaitingConfirmation: false,
+      // questionCount below which the summary is not offered again. Set when the
+      // user rejects a summary, so "לתקן" buys turns to actually correct it. See
+      // rejectConfirmation.
+      confirmationFloor: 0,
       safetyFlag: false,
       sessionComplete: false,
       // Real-API token tally. `inputTokens` is the UNCACHED remainder once prompt

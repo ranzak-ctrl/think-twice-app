@@ -381,6 +381,11 @@ export async function runTurn(state, history, userText) {
         currentStage: decision.targetStage ?? nextState.meta.currentStage,
         questionCount: 0,
         saturationCount: 0,
+        // The floor is a threshold ON questionCount, so the two only mean
+        // anything as a pair — zeroing one without the other would pin the
+        // reopened stage in STAY for a full grace window, past the load guard,
+        // which could not fire because the floor sits above it.
+        confirmationFloor: 0,
         mergeAttempt: null,
       },
       coverage: {

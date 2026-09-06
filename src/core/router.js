@@ -25,6 +25,17 @@ const SATURATION_LIMIT = 2;
 // do not treat 20/15 as clinically validated.
 const LOAD_GUARD_DEFAULT = 20;
 const LOAD_GUARD_STAGE5 = 15;
+// Turns bought by rejecting a summary. Without it the gate that produced the
+// summary is still open on the next turn — questionCount only rises, coverage
+// never falls — so "לתקן" re-offered the same summary immediately and the user
+// could never correct anything. Bounded on purpose: questionCount always
+// climbs, so the floor is always crossed and no stage can strand behind it.
+// INTERIM VALUE — how long a correction takes is interview pace, and the
+// transition protocol has no rejection branch to read it off: it defines the
+// confirmation gate and says nothing about what follows "לתקן". Filed as
+// docs/questions-for-natali.md §13. Same family as the load guard (§1) but not
+// covered by it. Not clinically validated; changing it is this one line.
+const REJECT_GRACE = 3;
 
 const CORE_SLOTS = {
   1: ['trigger', 'timeline', 'actors', 'status', 'auto_reaction'],
@@ -130,8 +141,17 @@ export function route(state) {
 
   if (readyToAdvance && currentStage < 7) {
     const nextStage = currentStage + 1;
+    // Checked before the floor: both produce STAY, but a missing dependency is a
+    // structural fact and the floor is a transient one. Reporting the transient
+    // reason would hide the durable blocker from the guide trail.
     if (!dependenciesMet(coverage, nextStage)) {
       return { decision: Decision.STAY, reason: 'dependency_not_met' };
+    }
+    // The user rejected the last summary and is still inside the grace window —
+    // hold whatever reopened the gate (load guard, full coverage or saturation)
+    // and let the correction land first.
+    if (questionCount < (meta.confirmationFloor ?? 0)) {
+      return { decision: Decision.STAY, reason: 'correcting_summary' };
     }
     return {
       decision: Decision.REQUEST_CONFIRMATION,
@@ -181,6 +201,9 @@ export function confirmAndAdvance(state) {
       awaitingConfirmation: false,
       questionCount: 0,
       saturationCount: 0,
+      // The new stage starts from zero, so a floor left over from a rejection in
+      // the stage that just closed would silently suppress its first summary.
+      confirmationFloor: 0,
       // KPI: record the closing stage's question count before it resets.
       kpi: {
         ...meta.kpi,
@@ -200,12 +223,26 @@ export function confirmAndAdvance(state) {
 
 // Called when user clicks "לתקן" (fix summary)
 export function rejectConfirmation(state) {
+  const { meta } = state;
+  // Same guard as confirmAndAdvance. Harmless while this only cleared two
+  // already-false flags; now that it writes routing state, a stray call would
+  // buy three turns of forced STAY in a stage that never offered a summary.
+  if (!meta.awaitingConfirmation) return state;
   return {
     ...state,
     meta: {
-      ...state.meta,
+      ...meta,
       awaitingConfirmation: false,
       pendingNextStage: null,
+      // Push the gate out past the correction. Measured from the current count
+      // rather than added to any previous floor, so repeated rejections cannot
+      // accumulate into a stage that never offers a summary again.
+      confirmationFloor: meta.questionCount + REJECT_GRACE,
+      decisionLog: appendDecisionLog(meta.decisionLog, {
+        decision: Decision.STAY,
+        reason: 'summary_rejected',
+        stage: meta.currentStage,
+      }),
     },
   };
 }

@@ -41,4 +41,16 @@ describe('session — Re-open opener (stage 7 → 6 merge)', () => {
     expect(nextState.meta.questionCount).toBe(0);
     expect(nextState.meta.saturationCount).toBe(0);
   });
+
+  // Re-open is the other path that changes stage, and confirmationFloor is a
+  // threshold ON questionCount — zeroing one without the other would pin the
+  // reopened stage in STAY for a whole grace window, past the load guard, which
+  // could not fire because the floor would sit above it. Asserted by name
+  // rather than by "the counters", because the counters are what the sibling
+  // assertions above already enumerate: a fifth field added later needs its own
+  // line here, and a silent omission is exactly what this guards.
+  it('clears the summary-correction floor on re-open', async () => {
+    const { nextState } = await runStage7Turn({ merge_attempt: 'real' });
+    expect(nextState.meta.confirmationFloor).toBe(0);
+  });
 });
