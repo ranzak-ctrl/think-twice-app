@@ -74,3 +74,27 @@ export function rewriteTurn(history, index, question, note) {
     },
   ];
 }
+
+/**
+ * A note on a turn, without replacing it.
+ *
+ * Ran, 6.9.2026: give feedback on what was wrong and move on, without having to
+ * write the question you would have asked instead. Until now the editor demanded
+ * both fields, so the only way to record "this question was off" was to also
+ * rewrite the turn — which discards every answer that followed it. A tester with
+ * an opinion and no better wording had to choose between losing the transcript
+ * and saying nothing.
+ *
+ * This path replaces nothing and discards nothing. What it must not do is forget:
+ * a turn that was rewritten EARLIER carries the interviewer's own wording on
+ * `original`, and a later note on the same turn has to keep it, or the export
+ * stops showing what the model actually asked. Same rule the rewrite path states
+ * for itself, on the other path in.
+ *
+ * @param {object} [existing] the turn's current feedback, if it has any
+ * @param {string} note the tester's words, already trimmed
+ * @returns {object} feedback to store on the turn
+ */
+export function mergeNote(existing, note) {
+  return { ...(existing ?? {}), text: note, at: Date.now() };
+}

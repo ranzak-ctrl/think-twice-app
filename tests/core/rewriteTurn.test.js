@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rewriteTurn, buildRevision } from '../../src/ui/rewriteTurn.js';
+import { rewriteTurn, buildRevision, mergeNote } from '../../src/ui/rewriteTurn.js';
 
 const transcript = () => [
   { role: 'assistant', content: 'אז ספר לי — מה קרה?', at: 1 },
@@ -95,5 +95,40 @@ describe('buildRevision', () => {
     const rev = buildRevision(before, 1, 'שאלה', 'הערה', 1);
     rewriteTurn(before, 1, 'שאלה', 'הערה');
     expect(rev.discarded).toHaveLength(2);
+  });
+});
+
+describe('a note without a rewrite', () => {
+  // Ran, 6.9.2026: give feedback on what was wrong and move on, without writing
+  // the question you would have asked instead. The editor used to demand both
+  // fields, so recording "this question was off" also rewrote the turn — which
+  // discards every answer that followed it.
+  it('files the note and touches nothing else', () => {
+    const fb = mergeNote(undefined, 'השאלה הייתה סגורה מדי');
+    expect(fb.text).toBe('השאלה הייתה סגורה מדי');
+    expect(fb.rewrite).toBeUndefined();
+    expect(fb.original).toBeUndefined();
+    expect(typeof fb.at).toBe('number');
+  });
+
+  it('keeps the interviewer’s own wording from an earlier rewrite', () => {
+    // The rewrite path guards this for itself; a note arriving afterwards has to
+    // guard it too, or the export stops showing what the model actually asked.
+    const after = rewriteTurn(
+      [{ role: 'assistant', content: 'מה הרגשת?' }],
+      0,
+      'מה עבר לך בראש?',
+      'לא רגש — מחשבה',
+    );
+    const fb = mergeNote(after[0].feedback, 'בעצם זו שאלה טובה');
+    expect(fb.original).toBe('מה הרגשת?');
+    expect(fb.rewrite).toBe('מה עבר לך בראש?');
+    expect(fb.text).toBe('בעצם זו שאלה טובה');
+  });
+
+  it('does not mutate the feedback it was given', () => {
+    const existing = { text: 'ישן', original: 'מה הרגשת?' };
+    mergeNote(existing, 'חדש');
+    expect(existing.text).toBe('ישן');
   });
 });

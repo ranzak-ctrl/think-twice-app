@@ -3,6 +3,7 @@ import ConfirmButtons from './ConfirmButtons.jsx';
 import DecisionBoard from './DecisionBoard.jsx';
 import Preamble from './Preamble.jsx';
 import { Mark, Send, ArrowDown, Note, Trash } from './icons.jsx';
+import { mergeNote } from './rewriteTurn.js';
 
 // Treat the reader as "at the bottom" within this many pixels — the standard
 // chat rule: auto-scroll only while they are following the live conversation.
@@ -244,10 +245,22 @@ function Message({
     setEditing(true);
   };
 
-  // Both fields are required (Ran, 15.8): feedback without the question the
-  // tester expected is an opinion nobody can act on, and a replacement question
-  // without a reason leaves no record of why the interview was steered.
-  const canSave = draft.trim().length > 0 && rewriteDraft.trim().length > 0;
+  // The note is required; the replacement question is not (Ran, 6.9.2026: "give
+  // feedback on what was wrong and move on without defining the next question").
+  //
+  // Ran's rule of 15.8 — that a replacement question without a reason leaves no
+  // record of why the interview was steered — still holds, and is the half that
+  // stays required. The other half was doing something it was not meant to: the
+  // only way to record "this question was off" was to ALSO rewrite the turn,
+  // which discards every answer that followed. A tester with an opinion and no
+  // better wording had to choose between losing the transcript and saying
+  // nothing, and that is not a trade the instrument should be forcing.
+  const canSave = draft.trim().length > 0;
+
+  // Which of the two things saving does. The second field is the switch: with it,
+  // the turn is replaced and the interview continues from the tester's question;
+  // without it, the note is filed and nothing else moves.
+  const willRewrite = rewriteDraft.trim().length > 0;
 
   // How many turns saving would discard. Shown before, never after: there is no
   // undo, and the tester should decide with the number in front of them rather
@@ -256,7 +269,9 @@ function Message({
 
   const save = () => {
     if (!canSave) return;
-    onRewrite(index, rewriteDraft.trim(), draft.trim());
+    const note = draft.trim();
+    if (willRewrite) onRewrite(index, rewriteDraft.trim(), note);
+    else onFeedback(index, mergeNote(feedback, note));
     setEditing(false);
   };
 
@@ -310,19 +325,24 @@ function Message({
                 if (e.key === 'Escape') setEditing(false);
                 if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) save();
               }}
-              placeholder="נסח את השאלה שהיית מצפה לקבל בשלב הזה"
-              aria-label="השאלה שציפית לה"
+              placeholder="לא חובה — נסח את השאלה שהיית מצפה לקבל בשלב הזה"
+              aria-label="השאלה שציפית לה (לא חובה)"
             />
 
+            {/* What saving will do, in the words of what is in the fields right
+                now. It changes as the second field is filled or emptied, so the
+                tester is never told about a consequence that is not theirs. */}
             <p className="note-edit-hint">
-              הראיון ימשך מהשאלה שהזנת בטופס המשוב.
+              {willRewrite
+                ? 'הראיון ימשך מהשאלה שהזנת בטופס המשוב.'
+                : 'ההערה תישמר והראיון ימשיך כרגיל. אם תשאיר את השדה השני ריק, שום תור לא יימחק.'}
             </p>
 
             {/* Kept alongside Ran's line rather than folded into it: that line
                 says what happens next, this one says what stops existing. Only
                 appears when turns are actually at stake, and saving cannot be
                 undone. */}
-            {discards > 0 && (
+            {willRewrite && discards > 0 && (
               <p className="note-edit-hint is-warn">
                 {discards} התורות שאחרי השאלה הזו יימחקו. אין ביטול.
               </p>
@@ -333,7 +353,7 @@ function Message({
                 className="btn btn-primary"
                 onClick={save}
                 disabled={!canSave}
-                title={canSave ? undefined : 'יש למלא את שני השדות'}
+                title={canSave ? undefined : 'יש לכתוב מה לא עבד בשאלה'}
               >
                 שמור
               </button>
