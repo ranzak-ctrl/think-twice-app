@@ -303,10 +303,14 @@ button {
 }
 
 .chat {
-  flex: 2 1 0;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* At a third of the row the conversation still has to be readable, and Hebrew
+     bubbles wrap badly below this. Narrower than the point where the drawing is
+     dropped entirely (1024px), so it only ever binds with the guide panel open. */
+  min-width: 320px;
 }
 
 /* ------------------------------------------------------- stage rail -- */
@@ -443,11 +447,14 @@ button {
    wobble is deterministic per node (StoryPanel.jsx `pick`), so the sketch is
    stable across renders — it is drawn once, not redrawn. */
 
-/* The drawing gets half the conversation's width (Ran, 4.9.2026), so the two are
-   sized in proportion rather than the map living in a fixed strip: `.chat` is
-   flex 2 and this is flex 1, which holds the ratio at every window size. */
+/* The drawing gets two thirds of the row (Ran, 6.9.2026) — it was a third until
+   then, sized as an accompaniment to the conversation. Reversing the two flex
+   values makes the map the larger surface and the chat the column beside it,
+   and keeps them in proportion at every window size rather than putting the map
+   in a fixed strip. The rail is flex:none, so it is a third of what is left of
+   the screen once the rail has its 34px. */
 .story {
-  flex: 1 1 0;
+  flex: 2 1 0;
   min-width: 0;
   padding: 22px 18px 28px;
   overflow-y: auto;
