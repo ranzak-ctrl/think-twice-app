@@ -234,9 +234,17 @@ export default function App({ onUnauthorized }) {
     // Only the picture depends on the panel being open — it is captured from
     // what is on screen, so that it records what the tester actually saw. The
     // data goes out either way, and the drawing can be rebuilt from it.
+    // The transcript is the point of the export and the only copy that exists —
+    // nothing is persisted anywhere. So capturing the picture must never be able
+    // to cost it: a throw here (no XMLSerializer, a detached node, a browser
+    // that will not compute styles) drops the drawing, not the run.
     const stamp = Date.now();
-    const svgNode = document.querySelector('svg.mp');
-    const mapSvg = serializeMap(svgNode);
+    let mapSvg = null;
+    try {
+      mapSvg = serializeMap(document.querySelector('svg.mp'));
+    } catch {
+      mapSvg = null;
+    }
 
     const payload = {
       exportedAt: new Date().toISOString(),
