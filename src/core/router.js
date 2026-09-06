@@ -35,7 +35,7 @@ const LOAD_GUARD_STAGE5 = 15;
 // confirmation gate and says nothing about what follows "לתקן". Filed as
 // docs/questions-for-natali.md §13. Same family as the load guard (§1) but not
 // covered by it. Not clinically validated; changing it is this one line.
-const REJECT_GRACE = 3;
+export const REJECT_GRACE = 3;
 
 const CORE_SLOTS = {
   1: ['trigger', 'timeline', 'actors', 'status', 'auto_reaction'],

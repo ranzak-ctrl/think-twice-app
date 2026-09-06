@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { route, confirmAndAdvance, rejectConfirmation, Decision, evaluateStage } from '../../src/core/router.js';
+import {
+  route,
+  confirmAndAdvance,
+  rejectConfirmation,
+  Decision,
+  evaluateStage,
+  REJECT_GRACE,
+} from '../../src/core/router.js';
 import { createState } from '../../src/core/state.js';
 
 // Helper: set all core slots for a stage to a given value
@@ -206,8 +213,9 @@ describe('Confirmation flow', () => {
     s = withQuestionCount(s, 20);
     s = rejectConfirmation(awaiting(s));
 
-    expect(route(withQuestionCount(s, 22)).decision).toBe(Decision.STAY);
-    expect(route(withQuestionCount(s, 23)).decision).toBe(Decision.REQUEST_CONFIRMATION);
+    const returns = 20 + REJECT_GRACE; // the floor — the first turn it is offered again
+    expect(route(withQuestionCount(s, returns - 1)).decision).toBe(Decision.STAY);
+    expect(route(withQuestionCount(s, returns)).decision).toBe(Decision.REQUEST_CONFIRMATION);
   });
 
   it('repeated rejections do not accumulate into a stage that never asks again', () => {
@@ -216,10 +224,12 @@ describe('Confirmation flow', () => {
     s = withSaturation(s);
     s = withQuestionCount(s, 20);
     s = rejectConfirmation(awaiting(s));
-    expect(s.meta.confirmationFloor).toBe(23);
+    expect(s.meta.confirmationFloor).toBe(20 + REJECT_GRACE);
 
-    s = rejectConfirmation(awaiting(withQuestionCount(s, 23)));
-    expect(s.meta.confirmationFloor).toBe(26); // measured from the count, not stacked
+    const second = 20 + REJECT_GRACE;
+    s = rejectConfirmation(awaiting(withQuestionCount(s, second)));
+    // Measured from the count, not stacked onto the previous floor.
+    expect(s.meta.confirmationFloor).toBe(second + REJECT_GRACE);
   });
 
   it('the floor does not survive into the next stage', () => {
@@ -227,7 +237,7 @@ describe('Confirmation flow', () => {
     s = fillStage(s, 1);
     s = withQuestionCount(s, 20);
     s = rejectConfirmation(awaiting(s));
-    expect(s.meta.confirmationFloor).toBe(23);
+    expect(s.meta.confirmationFloor).toBe(20 + REJECT_GRACE);
 
     s = confirmAndAdvance(awaiting(s));
     expect(s.meta.confirmationFloor).toBe(0);
