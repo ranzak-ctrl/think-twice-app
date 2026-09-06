@@ -4,6 +4,7 @@ import GuidePanel from './GuidePanel.jsx';
 import StageRail from './StageRail.jsx';
 import StoryMap from './StoryMap.jsx';
 import { buildMap } from '../core/storyMap.js';
+import { serializeMap, rasterize } from './mapExport.js';
 import { getPref, setPref } from '../adapters/uiPrefs.js';
 import ConfirmDialog from './ConfirmDialog.jsx';
 import { Logo, Plus, Download, Upload, Gauge, MapSketch } from './icons.jsx';
@@ -208,21 +209,54 @@ export default function App({ onUnauthorized }) {
     addMessage('assistant', 'בסדר — מה רצית לתקן?');
   }, []);
 
-  const handleExport = () => {
+  const download = (href, filename) => {
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = filename;
+    a.click();
+  };
+
+  const handleExport = async () => {
     // Full session: the transcript (history) + the StateDocument. The
     // /export-conversation command turns this file into a Drive .docx.
     // history + state is the interview; revisions is what the tester wanted
     // changed and what that cost. The second half is the point of a guide-mode
     // run, so it ships in the same file rather than in a parallel one nobody
     // remembers to save.
-    const payload = { exportedAt: new Date().toISOString(), history, state, revisions };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `think-twice-session-${Date.now()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    //
+    // The map ships three ways, because they answer different questions. `map`
+    // is the projection the drawing is a rendering of — the cubes, the arrows
+    // and who owns them — and it is what a fixture or an analysis reads.
+    // `mapSvg` is the drawing itself, still text, still diffable. The PNG is
+    // for looking at: Ran's review of a run is of the picture, and a picture
+    // nobody can open without running code is not one.
+    //
+    // Only the picture depends on the panel being open — it is captured from
+    // what is on screen, so that it records what the tester actually saw. The
+    // data goes out either way, and the drawing can be rebuilt from it.
+    const stamp = Date.now();
+    const svgNode = document.querySelector('svg.mp');
+    const mapSvg = serializeMap(svgNode);
+
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      history,
+      state,
+      revisions,
+      map,
+      mapSvg,
+    };
+    const json = URL.createObjectURL(
+      new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    );
+    download(json, `think-twice-session-${stamp}.json`);
+    URL.revokeObjectURL(json);
+
+    if (mapSvg) {
+      const png = await rasterize(mapSvg);
+      // Same stamp as the transcript, so the pair stays obvious in a folder.
+      if (png) download(png, `think-twice-map-${stamp}.png`);
+    }
   };
 
   const handleImport = (e) => {
