@@ -111,6 +111,19 @@ export function Gauge({ size = 16 }) {
   );
 }
 
+// The case map: two cubes and the arrow between them, which is what the drawing
+// is made of. Not an eye — an eye means "preview"; this button is about one
+// particular thing on the screen, and its own shape says which.
+export function MapSketch({ size = 16 }) {
+  return (
+    <svg {...base(size)}>
+      <rect x="3" y="3.5" width="8" height="6" rx="1.2" />
+      <rect x="13" y="14.5" width="8" height="6" rx="1.2" />
+      <path d="M7 9.5v4a1.5 1.5 0 0 0 1.5 1.5H13" />
+    </svg>
+  );
+}
+
 export function ArrowDown({ size = 16 }) {
   return (
     <svg {...base(size)}>

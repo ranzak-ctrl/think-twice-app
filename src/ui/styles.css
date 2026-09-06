@@ -717,6 +717,13 @@ button {
   .story {
     display: none;
   }
+
+  /* And the button that shows it goes with it. A control whose only effect is
+     hidden by a media query is a control that does nothing, and the header is
+     tightest exactly at the width where this would appear to be broken. */
+  .btn-map {
+    display: none;
+  }
 }
 
 /* Positioning context for the jump pill. It must be the scrolling area alone —

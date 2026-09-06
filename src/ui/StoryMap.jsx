@@ -18,7 +18,6 @@
 // re-randomised on every render would shimmer in the corner of the eye of someone
 // design/brief.md:39 says arrives with no attention to spare.
 
-import { buildMap } from '../core/storyMap.js';
 
 /* ---------------------------------------------------------------- sketching -- */
 /* rough.js draws every line here. It replaced a hand-rolled jitter that nudged
@@ -585,9 +584,11 @@ function Board({ form, stations, ground, agents, containers, links, arcs, forks 
   );
 }
 
-export default function StoryMap({ state }) {
-  const map = buildMap(state);
-  if (map.isEmpty) return null;
+// Takes the built map, not the state. App builds it once per turn — it needs the
+// same answer to decide whether the toggle button has anything to toggle — and two
+// calls to a pure projection that must agree is a way for them to disagree.
+export default function StoryMap({ map }) {
+  if (!map || map.isEmpty) return null;
   return (
     <aside className="story" aria-label="מפת הסיפור">
       <Board {...map} />

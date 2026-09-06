@@ -1,10 +1,12 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import Chat from './Chat.jsx';
 import GuidePanel from './GuidePanel.jsx';
 import StageRail from './StageRail.jsx';
 import StoryMap from './StoryMap.jsx';
+import { buildMap } from '../core/storyMap.js';
+import { getPref, setPref } from '../adapters/uiPrefs.js';
 import ConfirmDialog from './ConfirmDialog.jsx';
-import { Logo, Plus, Download, Upload, Gauge } from './icons.jsx';
+import { Logo, Plus, Download, Upload, Gauge, MapSketch } from './icons.jsx';
 import { createState, importState } from '../core/state.js';
 import { confirmAndAdvance, rejectConfirmation } from '../core/router.js';
 import { runTurn, generateStageOpener } from '../core/session.js';
@@ -41,6 +43,11 @@ export default function App({ onUnauthorized }) {
   const [state, setState] = useState(() => createState());
   const [history, setHistory] = useState(() => [openingMessage()]);
   const [guideOpen, setGuideOpen] = useState(false);
+  // Whether the case map is on screen. Ran, 6.9.2026: a button that hides and
+  // reveals the drawing. Remembered per browser — see src/adapters/uiPrefs.js for
+  // why a display preference is not the user content principle 6 keeps out of
+  // storage. Shown by default, so nobody has to find the button to see the map.
+  const [mapOpen, setMapOpen] = useState(() => getPref('mapOpen', true));
   const [guideWidth, setGuideWidth] = useState(340); // resizable via the divider
   const [loading, setLoading] = useState(false);
   const [confirmNew, setConfirmNew] = useState(false);
@@ -48,6 +55,10 @@ export default function App({ onUnauthorized }) {
   // discarded. Separate from `history` precisely because history gets cut.
   const [revisions, setRevisions] = useState([]);
   const fileRef = useRef(null);
+
+  // Built once and used twice: the drawing itself, and the header toggle, which
+  // only appears once there is something on the map to hide.
+  const map = useMemo(() => buildMap(state), [state]);
 
   // Nothing is persisted anywhere (no server, no storage — see CLAUDE.md), so
   // anything past the opening message is lost for good unless it is exported.
@@ -284,6 +295,25 @@ export default function App({ onUnauthorized }) {
               onChange={handleImport}
             />
 
+            {/* Only once the map holds something. A toggle for an empty panel is a
+                control that appears to do nothing, and this one sits next to the
+                first answer of the interview, where confusion is expensive. */}
+            {!map.isEmpty && (
+              <button
+                className={`btn btn-map${mapOpen ? ' is-on' : ''}`}
+                onClick={() => {
+                  const next = !mapOpen;
+                  setMapOpen(next);
+                  setPref('mapOpen', next);
+                }}
+                aria-pressed={mapOpen}
+                title={mapOpen ? 'הסתר את האיור' : 'הצג את האיור'}
+              >
+                <MapSketch />
+                <span className="btn-label">האיור</span>
+              </button>
+            )}
+
             <button
               className={`btn${guideOpen ? ' is-on' : ''}`}
               onClick={() => setGuideOpen((o) => !o)}
@@ -316,7 +346,7 @@ export default function App({ onUnauthorized }) {
             onConfirm={handleConfirm}
             onReject={handleReject}
           />
-          <StoryMap state={state} />
+          {mapOpen && <StoryMap map={map} />}
           <StageRail
             stage={state.meta.currentStage}
             sessionComplete={state.meta.sessionComplete}
