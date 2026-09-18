@@ -8,7 +8,9 @@
     "build": "vite build",
     "test": "vitest run --no-file-parallelism",
     "test:watch": "vitest",
-    "gates": "node scripts/run-gates.mjs"
+    "gates": "node scripts/run-gates.mjs",
+    "registrar:on": "node scripts/registrar-switch.mjs on",
+    "registrar:off": "node scripts/registrar-switch.mjs off"
   },
   "dependencies": {
     "react": "^18.3.1",
