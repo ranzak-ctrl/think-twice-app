@@ -1,8 +1,24 @@
-// Builds the comparison table CI writes into the run summary.
+// Builds the table CI writes into the run summary.
 //
-// The point is the DELTA. A judge score of 4.2 after the registrar means nothing
-// on its own; 4.6 before and 4.2 after means something, and it is the only form of
-// this number worth acting on.
+// ── WHAT THE TWO JUDGE COLUMNS ARE, AND ARE NOT ──
+// They are NOT before/after on the registrar. The judge scores a FIXED fixture
+// (tests/fixtures/meat-transcript.js), and REGISTRAR_ENABLED cannot change one
+// character of it — so the two columns are the same measurement taken twice, and
+// any gap between them is the judge's own variance.
+//
+// That is worth printing, just not as a delta: identical input scoring 5 and then
+// 3 means the judge is too noisy to gate on, which you cannot learn from one run.
+//
+// Nor does the unit suite carry the registrar's effect. Measured 18.9.2026: the
+// two states produce ZERO differing test outcomes — and that is the requirement
+// holding, not a gap. event-model.md §8 demands the Router decide identically with
+// the registrar and without it, and registrar-neutrality.test.js enforces it. So
+// what this workflow proves is that the switch BREAKS nothing. Whether it HELPS is
+// not measured here and must not be read into it.
+//
+// Measuring the registrar against the judge needs a transcript PRODUCED by a live
+// interview in each state (sim/), not a fixture. Until that exists, this file must
+// not imply otherwise — an earlier version of this header did.
 
 import { readFileSync, existsSync } from 'node:fs';
 
@@ -53,22 +69,42 @@ if (err) {
 }
 
 if (before?.judge === 'ran' && after?.judge === 'ran') {
-  out.push('| ממד | לפני | אחרי | שינוי | |');
+  out.push('**ציוני השופט** — על תמליל קבוע (fixture). שתי ההרצות מזינות לשופט את **אותו טקסט בדיוק**,');
+  out.push('ולכן הפער ביניהן הוא רעש של השופט עצמו — לא השפעה של הרשם.');
+  out.push('');
+  out.push('| ממד | הרצה 1 | הרצה 2 | פער (רעש) | מעל הסף |');
   out.push('|---|---|---|---|---|');
+  let noisy = false;
   for (const d of DIMS) {
     const b = before.scores[d], a = after.scores[d];
     if (b == null && a == null) continue;
-    const delta = b != null && a != null ? (a - b) : null;
-    const arrow = delta == null ? '' : delta > 0.05 ? `▲ +${delta.toFixed(1)}` : delta < -0.05 ? `▼ ${delta.toFixed(1)}` : '=';
-    // The threshold is what decides, not the direction: a drop that stays above 4
-    // is information, a score below 4 is a blocker.
-    out.push(`| \`${d}\` | ${b ?? '—'} | ${a ?? '—'} | ${arrow} | ${a >= THRESHOLD ? '✅' : '❌ מתחת ל-4'} |`);
+    const gap = b != null && a != null ? Math.abs(a - b) : null;
+    if (gap != null && gap >= 1) noisy = true;
+    // The threshold is what decides. The gap column is a stability read on the
+    // judge, and only a gap of a full point or more is worth flagging.
+    const gapCell = gap == null ? '—' : gap === 0 ? 'זהה' : gap >= 1 ? `⚠ ${gap.toFixed(1)}` : gap.toFixed(1);
+    const low = [b, a].filter((v) => v != null).every((v) => v >= THRESHOLD);
+    out.push(`| \`${d}\` | ${b ?? '—'} | ${a ?? '—'} | ${gapCell} | ${low ? '✅' : '❌ מתחת ל-4'} |`);
   }
   out.push('');
-  const failing = DIMS.filter((d) => after.scores[d] != null && after.scores[d] < THRESHOLD);
+  if (noisy) {
+    out.push('> ⚠ **השופט אינו יציב.** אותו תמליל קיבל ציונים שרחוקים בנקודה שלמה או יותר.');
+    out.push('> כל עוד זה המצב, אין להסיק מציון בודד של השופט — תקן את `judge.md` לפני שמסתמכים עליו.');
+    out.push('');
+  }
+  out.push('**מה ההרצה הזו מוכיחה:** שהמתג לא שובר כלום. שתי ההרצות אמורות לצאת זהות —');
+  out.push('‏`docs/event-model.md` §8 דורש שה-Router יכריע אותו דבר עם הרשם ובלעדיו, ו-');
+  out.push('‏`registrar-neutrality.test.js` אוכף את זה. זהות = הדרישה מתקיימת.');
+  out.push('');
+  out.push('**מה היא לא מוכיחה:** שהרשם משפר משהו. לזה דרוש ראיון חי בכל אחד משני המצבים');
+  out.push('ושיפוט של שני התמלילים שייצאו ממנו — זה עוד לא קיים.');
+  out.push('');
+  // Below the threshold in EITHER run is below the threshold: a dimension that
+  // scored 3 once and 4 once has not passed, it has been inconsistent.
+  const failing = DIMS.filter((d) => [before.scores[d], after.scores[d]].some((v) => v != null && v < THRESHOLD));
   out.push(failing.length
-    ? `> ❌ **לא לפרוס.** מתחת לסף: ${failing.join(' · ')}. הרץ \`npm run registrar:off\`, או תקן ונסה שוב.`
-    : '> ✅ **כל הממדים מעל הסף.** מוכן לבדיקה חיה — פרוס ל-preview והרץ ראיון אחד אמיתי.');
+    ? `> ❌ **לא לפרוס.** ירד מתחת לסף לפחות פעם אחת: ${failing.join(' · ')}.`
+    : '> ✅ **כל הממדים מעל הסף בשתי ההרצות.** מוכן לבדיקה חיה — פרוס ל-preview והרץ ראיון אחד אמיתי.');
 } else {
   // Why the comparison is missing decides what to do about it, and the two reasons
   // call for opposite actions. Saying "check the secret" under a block that just
