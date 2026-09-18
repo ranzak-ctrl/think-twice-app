@@ -74,6 +74,11 @@ export async function judgeTranscript({
     body: JSON.stringify({
       model,
       max_tokens: 1024,
+      // Sonnet 5 runs adaptive thinking by default. model.js disables it for the
+      // interview and this call needs it off for the same reason: the judge must
+      // return a compact JSON envelope, not reasoning, and thinking tokens count
+      // against max_tokens.
+      thinking: { type: 'disabled' },
       system: judgeMd,
       messages: [{ role: 'user', content: transcript }],
     }),
@@ -85,6 +90,15 @@ export async function judgeTranscript({
   }
 
   const data = await res.json();
-  const rawText = data.content?.[0]?.text ?? '';
+  // Pick the first block that CARRIES TEXT — never content[0].
+  //
+  // This is the bug that made the acceptance gate silently unusable, found on the
+  // first cloud run (18.9.2026). With thinking on, the reply LEADS with a
+  // `thinking` block that has no `.text`, so content[0].text was '' and
+  // parseJudgeScores returned `no_json` — which reads like the model answered
+  // badly when in fact it was never read. model.js:721 already carried this exact
+  // fix and its comment; judge.js never got it, so the judge had never once
+  // scored anything against sonnet-5.
+  const rawText = data.content?.find((b) => typeof b?.text === 'string')?.text ?? '';
   return parseJudgeScores(rawText);
 }

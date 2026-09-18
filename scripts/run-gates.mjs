@@ -69,23 +69,36 @@ const child = spawn('npx', ['vitest', 'run', '--no-file-parallelism'], {
   shell: true,
 });
 
+// vitest colours its output, and those escape codes were ending up inside the
+// Hebrew summary as "[22m" / "[39m". Stripped from the copy that is PARSED and
+// reported; the copy printed to the console keeps its colours.
+const stripAnsi = (s) => s.replace(/\u001B\[[0-9;]*m/g, '');
+
 let log = '';
 const capture = (chunk) => {
   const text = chunk.toString();
-  log += text;
+  log += stripAnsi(text);
   process.stdout.write(text);
 };
 child.stdout.on('data', capture);
 child.stderr.on('data', capture);
 
 child.on('close', (code) => {
-  const scores = [...log.matchAll(/(empathy|non_judgment|ownership|active_listening|natural_hebrew)\D{0,12}(\d(?:\.\d+)?)/g)];
+  // The judge test prints one JSON line about itself, pass or fail. Read that,
+  // never vitest's own formatting: the default reporter prints a describe name
+  // and an assertion message ONLY on failure, so the previous detector reported a
+  // judge that ran and scored 5/5 as "skipped — did not run at all". A gate whose
+  // success path reads like its failure path is worse than no gate.
+  const marker = /JUDGE_RESULT (\{.*\})/.exec(log);
+  let judged = null;
+  if (marker) { try { judged = JSON.parse(marker[1]); } catch { /* keep null */ } }
+
   // Three outcomes, not two. "It ran" and "the key was rejected" look identical in
   // a scroll of vitest output, and reporting the second as the first is exactly the
   // kind of quiet false pass this script exists to prevent.
-  const judgeSkipped = !/LLM-judge acceptance/.test(log);
+  const judgeSkipped = !marker;
   const keyRejected = /authentication_error|invalid x-api-key|401/i.test(log);
-  const judgeRan = !judgeSkipped && !keyRejected;
+  const scores = Object.entries(judged?.scores ?? {});
 
   const header =
     `שערי הקבלה — Think Twice\n` +
@@ -100,15 +113,18 @@ child.on('close', (code) => {
   // broken". They call for completely different actions.
   const failedFiles = [...log.matchAll(/FAIL\s+(\S+)/g)].map((m) => m[1]);
   const unitFailures = failedFiles.filter((f) => !f.includes('judge'));
-  // The API's own error text, which the assertion now carries through.
-  const judgeError = /judge call failed → ([^\n]{0,300})/.exec(log)?.[1]?.trim() ?? '';
+  // The API's own error text, straight from the marker.
+  const judgeError = judged && !judged.ok
+    ? [judged.error, judged.raw].filter(Boolean).join(' | ').slice(0, 400)
+    : '';
 
   writeFileSync(`${OUT}.json`, JSON.stringify({
     registrar,
     judge: judgeSkipped ? 'skipped' : keyRejected || judgeError ? 'rejected' : 'ran',
     judgeError,
+    judgeNotes: judged?.notes ?? '',
     unitFailures: [...new Set(unitFailures)],
-    scores: Object.fromEntries(scores.map(([, d, v]) => [d, Number(v)])),
+    scores: judged?.scores ?? {},
     exitCode: code ?? 1,
   }, null, 2));
 
@@ -121,11 +137,15 @@ child.on('close', (code) => {
     console.log('  ⚠ המפתח נדחה ע"י השרת. העתק אותו שוב מ-Vercel — ייתכן שחסר תו או שפג תוקפו.');
   } else if (scores.length) {
     console.log('  ציוני השופט (הסף: 4 בכל ממד):');
-    for (const [, dim, val] of scores) {
+    for (const [dim, val] of scores) {
       console.log(`    ${Number(val) >= 4 ? '✅' : '❌'}  ${dim.padEnd(18)} ${val}`);
     }
+    if (judged?.notes) console.log(`\n  הערות השופט: ${judged.notes}`);
   } else {
-    console.log('  השופט רץ. הציונים בקובץ המלא.');
+    // Ran, returned no scores: the call went through but the reply could not be
+    // parsed. Says so plainly instead of implying the interview scored badly.
+    console.log('  ⚠ השופט רץ אך לא הוחזרו ציונים. הסיבה בקובץ המלא.');
+    if (judgeError) console.log(`     ${judgeError}`);
   }
   console.log(`\n  ${code === 0 ? '✅ הכול עבר' : '❌ משהו נפל — הפרטים בקובץ'}`);
   console.log(`\n  📄 שלח לי את הקובץ:  ${OUT}`);

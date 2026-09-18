@@ -39,11 +39,16 @@ if (err) {
   out.push('```');
   out.push(err);
   out.push('```');
-  out.push(
-    '> הבדיקות עצמן ירוקות — **הקוד תקין.** מה שנכשל הוא הקריאה ל-API.\n' +
-    '> הסיבה הנפוצה ביותר: **רווח או שורה חדשה שנדבקו עם המפתח** לתוך הסוד ב-GitHub.\n' +
-    '> מחק את הסוד, העתק את המפתח מחדש **בלי רווחים בקצוות**, והרץ שוב.',
-  );
+  // Advice has to match the error. This block used to say "re-paste your key" for
+  // ANY judge failure — and the first real failure was a parsing bug in our own
+  // code, where that advice would have cost a wasted cycle on a correct key.
+  const looksLikeAuth = /authentication|invalid x-api-key|401|credit|billing/i.test(err);
+  out.push(looksLikeAuth
+    ? '> הבדיקות עצמן ירוקות — **הקוד תקין.** מה שנכשל הוא הקריאה ל-API.\n' +
+      '> הסיבה הנפוצה ביותר: **רווח או שורה חדשה שנדבקו עם המפתח** לתוך הסוד ב-GitHub.\n' +
+      '> מחק את הסוד, העתק את המפתח מחדש **בלי רווחים בקצוות**, והרץ שוב.'
+    : '> **המפתח עבד והמודל ענה** — מה שנכשל הוא קריאת התשובה. זו לא בעיה במפתח\n' +
+      '> ולא בראיון: אל תיגע בסוד. הטקסט למעלה הוא מה שהמודל באמת החזיר.');
   out.push('');
 }
 
@@ -65,7 +70,13 @@ if (before?.judge === 'ran' && after?.judge === 'ran') {
     ? `> ❌ **לא לפרוס.** מתחת לסף: ${failing.join(' · ')}. הרץ \`npm run registrar:off\`, או תקן ונסה שוב.`
     : '> ✅ **כל הממדים מעל הסף.** מוכן לבדיקה חיה — פרוס ל-preview והרץ ראיון אחד אמיתי.');
 } else {
-  out.push('> השוואה לא אפשרית — השופט לא רץ בשתי ההרצות. בדוק שהסוד `ANTHROPIC_API_KEY` מוגדר ב-GitHub.');
+  // Why the comparison is missing decides what to do about it, and the two reasons
+  // call for opposite actions. Saying "check the secret" under a block that just
+  // said the key worked sends Ran to fix the one thing that is not broken.
+  const skipped = [before, after].some((r) => r && r.judge === 'skipped');
+  out.push(skipped
+    ? '> השוואה לא אפשרית — השופט **לא רץ**. הגדר את הסוד `ANTHROPIC_API_KEY` ב-GitHub תחת Settings ← Secrets and variables ← Actions.'
+    : '> השוואה לא אפשרית — השופט רץ אך לא החזיר ציונים בשתי ההרצות. הסיבה למעלה; **הסוד תקין ואין מה לשנות בו**.');
 }
 
 console.log(out.join('\n'));
