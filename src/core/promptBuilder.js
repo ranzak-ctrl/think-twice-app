@@ -42,6 +42,24 @@ export function buildSystemPrompt({ stage, state }) {
     .join('\n\n---\n\n');
 }
 
+// Registrar mode — the call that assembles the event. Returns '' until the prompt
+// exists, and runTurn treats an empty prompt as "no registrar", so the interview
+// behaves exactly as it does today.
+//
+// The prompt file is `prompt-editor`'s to write (CLAUDE.md: it is the ONLY agent
+// that edits src/content/prompts/**), so the import lands with that file and this
+// function returns its text. Everything downstream — registrar.js, the serial call
+// in runTurn, the merge, the account in this file's state summary — is built and
+// tested and waiting on exactly this one line.
+//
+// What that prompt must produce: JSON with `setting` · `beats` · `stances` ·
+// `emotions` · `actors` · `edges` · `groups` · `open_forks` · `gap_observations`,
+// all deltas keyed by a stable id, and NO `message` field. See src/core/registrar.js
+// for the contract and docs/event-model.md §2 for what each entity carries.
+export function buildRegistrarPrompt() {
+  return '';
+}
+
 // Summary mode — built when the Router decides a stage transition is due.
 // Persona + summary instruction + state only; no probing agent, no evaluator.
 export function buildSummaryPrompt({ state }) {
