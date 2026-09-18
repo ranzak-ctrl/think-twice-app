@@ -210,6 +210,67 @@ function beatLine(b, actorMap) {
   return `${who}${b.text}${soft}`;
 }
 
+// ── THE RELATIONS HE STATED ──
+// Until 18.9.2026 the account rendered no edges at all, and adding `derives_from`
+// made that visible: an edge kind the interviewer never sees is a field nothing
+// consumes — the exact mistake `facts`/`thoughts`/`feelings`/`reactions` were.
+//
+// Not every edge needs a line here. The account ALREADY expresses two of the four
+// kinds implicitly: the sequence is `then`, and the per-actor columns are `agent`.
+// What it silently dropped is the three that carry a claim — `because`, `echo` and
+// `derives_from` — which are precisely the ones the person had to state himself.
+//
+// Only `confirmed` edges. An unconfirmed edge is a relation the system is not
+// settled on, and it belongs in the clarification queue, not in an account that
+// reads as what is known (Ran, 5.9.2026).
+const RELATION_LABEL = {
+  because: 'ולכן',
+  echo: 'מזכיר',
+  derives_from: 'נגזר מ',
+};
+
+// An endpoint's readable name. Endpoints are addressed four ways — a slot's own
+// cube, an actor, a fork, or a ledger entity — and an edge whose endpoint cannot be
+// resolved is dropped rather than printed as a raw id.
+function endpointText(state, record, actorMap, ref) {
+  const id = String(ref ?? '').trim();
+  const actor = /^actor:(.+)$/.exec(id);
+  if (actor) return nameOf(actorMap, actor[1]);
+  const fork = /^fork:(.+)$/.exec(id);
+  if (fork) return state?.openForks?.[fork[1]]?.question ?? '';
+  const entity = /^(beat|stance|emotion):(.+)$/.exec(id);
+  if (entity) {
+    const store = { beat: record.beats, stance: record.stances, emotion: record.emotions }[entity[1]];
+    const e = store?.[entity[2]];
+    // Redaction reaches here too. mergeEdges refuses an edge whose endpoint is a
+    // BARRED SLOT, but an entity-id endpoint ("stance:w") does not match that
+    // pattern — so a wound stance can legitimately be an endpoint, and this is
+    // where the redacted account has to stop it.
+    return e ? (e.label?.trim() || e.text || e.name || '') : '';
+  }
+  const slot = /^stage[1-7]\.(.+)$/.exec(id);
+  if (slot) {
+    const beats = Object.values(record.beats ?? {}).filter((b) => b.slot === id);
+    if (beats.length) return beats[0].label?.trim() || beats[0].text;
+    return state?.mapLabels?.[id.split('.')[0]]?.[slot[1]] ?? '';
+  }
+  return '';
+}
+
+function relationsBlock(state, record, actorMap) {
+  const lines = [];
+  for (const e of Object.values(state?.edges ?? {})) {
+    if (!e?.confirmed) continue;
+    const label = RELATION_LABEL[e.kind];
+    if (!label) continue; // `then` and `agent` are already in the account
+    const from = endpointText(state, record, actorMap, e.from);
+    const to = endpointText(state, record, actorMap, e.to);
+    if (!from || !to) continue; // unresolvable, or redacted away
+    lines.push(`  ${from} ← ${label} ← ${to}`);
+  }
+  return lines.length ? `**קשרים שציינת:**\n${lines.join('\n')}` : '';
+}
+
 // StateDocument → the event as an account for the interviewer's prompt.
 // Empty sections are omitted rather than printed as empty headings: an account with
 // blanks in it is a form, and a model handed a form fills the form.
@@ -255,6 +316,11 @@ export function renderEvent(state, { full = false } = {}) {
 
   const seq = sequenceBlock(record, actorMap);
   if (seq) parts.push(seq);
+
+  // `record` here is the REDACTED one when full is false, so a relation touching a
+  // wound stance resolves to '' and the line is dropped with it.
+  const rel = relationsBlock(state, record, actorMap);
+  if (rel) parts.push(rel);
 
   // The ground the incident ran on: standing conditions and ongoing beats, with no
   // arrows between them. "אין שותפות אמיתית" is not the next thing that happened

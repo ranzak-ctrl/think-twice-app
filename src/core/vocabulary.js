@@ -42,6 +42,20 @@ export const EDGE_KINDS = new Set([
   'because', // causal — that is why
   'agent',   // an actor did this beat
   'echo',    // resemblance — this felt like that. Never re-orders the map.
+  // derivation — this came OUT OF that. Approved by Ran, 18.9.2026, and the only
+  // kind on the list the protocol already required: stage 6's מבחן החלחול says
+  // "לפחות חלופה אחת מקושרת לפרשנות החלופית; אם אין — סיגנל ל-Re-open של נושא 5".
+  // That is an explicit link between two entities, i.e. an edge, and it had no kind.
+  //
+  // `because` is the WRONG word for it and that is the whole reason it needed its
+  // own: the alternative was not CAUSED by the reinterpretation, it was DERIVED
+  // from it. One is a claim about his life; the other is a claim about where an
+  // idea came from.
+  //
+  // Like `echo`, it never re-orders the map — derivation is not precedence. The
+  // alternative does not happen after the reading in the story's timeline; it does
+  // not happen in the story at all.
+  'derives_from',
 ]);
 
 // A container is a claim, so all three kinds are gated on `confirmed`.

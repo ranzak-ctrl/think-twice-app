@@ -429,13 +429,14 @@
       <tr><td class="ent">מְכָל<br><code>group</code></td><td>קופסה סביב קבוצת פריטים</td><td class="test">חייב <code>confirmed</code> — <b>קופסה היא טענה</b></td><td><code>community</code> · <code>process</code> · <code>perspective</code></td></tr>
     </table>
 
-    <div class="sec">ארבע קשתות</div>
+    <div class="sec">חמש קשתות</div>
     <table>
       <tr><th style="width:110px">קשת</th><th style="width:30%">מה היא טוענת</th><th>דוגמה</th></tr>
       <tr><td class="edg"><code>then</code></td><td>רצף זמן — <b>ואז</b></td><td>"עברת בסלון" ◀ "שאלת ממתי הוחלט"</td></tr>
       <tr><td class="edg"><code>because</code></td><td>סיבתיות — <b>ולכן</b></td><td>"היא לא ויתרה" ◀ "יצאת מהחדר"</td></tr>
       <tr><td class="edg"><code>agent</code></td><td>שחקן ביצע פעולה</td><td><code>actor:wife</code> ◀ "בחרה צימר"</td></tr>
       <tr><td class="edg"><code>echo</code></td><td>דמיון — <b>ככה הרגשתי אז</b></td><td>"עלבון" ◀ "כשמורים אמרו שאני לא משתדל"</td></tr>
+      <tr><td class="edg"><code>derives_from</code> <span class="new">אושר 18.9</span></td><td>גזירה — <b>זה יצא מזה</b></td><td>"לשאול מתי נוח לה" ◀ "היא רצתה רגע נעים"</td></tr>
     </table>
     <div class="note" style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
       <b style="color:var(--txt)">שתי מוסכמות שמחזיקות את הכול:</b><br>
@@ -452,11 +453,10 @@
     </table>
 
     <div class="sec" style="color:var(--warn)">מה חסר — הצעות להכרעה</div>
-    <div class="prop">
-      <b class="h">① <code>derives_from</code> — הקשת שהפרוטוקול כבר מחייב, ופשוט לא נבנתה</b>
-      <code>transition-protocol.md</code>, שלב 6, <b>מבחן החלחול</b>: <i>"לפחות חלופה אחת מקושרת לפרשנות החלופית; אם אין — סיגנל ל-Re-open של נושא 5"</i>.<br>
-      זה <b>קשר מפורש בין שתי יישויות</b> = קשת. אין לה סוג. ו-<code>because</code> הוא שימוש שגוי: החלופה לא <b>נגרמה</b> מהפרשנות — היא <b>נגזרה</b> ממנה.<br>
-      <span style="color:var(--accent2)">▸ המלצה: להוסיף.</span> זו היחידה ברשימה שכבר מחויבת ע"י הפרוטוקול.
+    <div class="prop" style="background:rgba(110,224,176,.06);border-color:#2f6b52">
+      <b class="h" style="color:var(--accent2)">✅ <code>derives_from</code> — אושר ונוסף (רן, 18.9.2026)</b>
+      היחידה ברשימה שהפרוטוקול <b>כבר</b> חייב: מבחן החלחול בשלב 6 הוא קשר מפורש בין שתי יישויות, ולא היה לו סוג.<br>
+      <b>ומה שההוספה חשפה:</b> <code>renderEvent</code> <b>לא רינדר קשתות בכלל</b> — סוג שהמראיין לא רואה הוא שדה שאיש לא צורך. נוסף קטע <b>"קשרים שציינת"</b> לסיפור, לשלוש הקשתות שנושאות טענה (<code>because</code> · <code>echo</code> · <code>derives_from</code>); <code>then</code> ו-<code>agent</code> כבר מיוצגות ברצף ובטורים.
     </div>
     <div class="prop">
       <b class="h">② <code>about</code> — מה שמעגן את שכבת התודעה בשכבת העובדה</b>

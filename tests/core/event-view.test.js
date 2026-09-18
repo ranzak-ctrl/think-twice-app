@@ -8,6 +8,7 @@ import {
   createEventRecord,
 } from '../../src/core/eventRecord.js';
 import { renderEvent } from '../../src/core/eventView.js';
+import { mergeEdges } from '../../src/core/state.js';
 
 function build() {
   let r = createEventRecord();
@@ -187,5 +188,58 @@ describe('what the interviewer must still be told', () => {
       { id: 'n', slot: 'stage1.timeline', actor: 'romi', text: 'ישבה לידה', camera: true, phase: 'before' },
     ]);
     expect(renderEvent(s)).toContain('— romi');
+  });
+});
+
+describe('the relations he stated reach the interviewer', () => {
+  const withEdges = (edges) => {
+    const s = build();
+    s.eventRecord = mergeStances(s.eventRecord, [
+      { id: 'alt', slot: 'stage6.alternatives', type: 'want', actor: 'self', text: 'לשאול מתי נוח לה', label: 'לשאול מתי נוח' },
+      { id: 're', slot: 'stage5.alt_formulation', type: 'reading', actor: 'wife', text: 'רצתה רגע נעים', label: 'רצתה רגע נעים' },
+      { id: 'w', slot: 'stage2.wound', type: 'reading', actor: 'self', text: 'אני לא נחשב', label: 'לא נחשב' },
+      { id: 'c', slot: 'stage2.causal', type: 'reading', actor: 'self', text: 'החליטו בלעדיי', label: 'החליטו בלעדיי' },
+    ]);
+    return mergeEdges({ ...s, edges: {} }, edges);
+  };
+
+  // Until 18.9.2026 renderEvent rendered no edges at all — so adding an edge kind
+  // would have been a field nothing consumes.
+  it('renders the percolation link stage 6 requires', () => {
+    const out = renderEvent(withEdges([{ from: 'stance:alt', to: 'stance:re', kind: 'derives_from', confirmed: true }]));
+    expect(out).toContain('**קשרים שציינת:**');
+    expect(out).toContain('לשאול מתי נוח ← נגזר מ ← רצתה רגע נעים');
+  });
+
+  it('leaves out `then` and `agent` — the account already carries them', () => {
+    const out = renderEvent(withEdges([
+      { from: 'stance:c', to: 'stance:re', kind: 'then', confirmed: true },
+      { from: 'actor:wife', to: 'stance:re', kind: 'agent', confirmed: true },
+    ]));
+    expect(out).not.toContain('קשרים שציינת');
+  });
+
+  it('leaves out an unconfirmed edge — that belongs in the clarification queue', () => {
+    const out = renderEvent(withEdges([{ from: 'stance:c', to: 'stance:re', kind: 'because', confirmed: false }]));
+    expect(out).not.toContain('קשרים שציינת');
+  });
+
+  // mergeEdges refuses an edge whose endpoint is a barred SLOT, but "stance:w" does
+  // not match that pattern — so the redacted account is where this has to stop.
+  it('drops a relation that touches the wound when redacted, and keeps it for the probe', () => {
+    const s = withEdges([{ from: 'stance:c', to: 'stance:w', kind: 'because', confirmed: true }]);
+    expect(renderEvent(s)).not.toContain('לא נחשב');
+    expect(renderEvent(s, { full: true })).toContain('החליטו בלעדיי ← ולכן ← לא נחשב');
+  });
+
+  it('drops an edge whose endpoint resolves to nothing rather than printing a raw id', () => {
+    const out = renderEvent(withEdges([{ from: 'stance:ghost', to: 'stance:re', kind: 'because', confirmed: true }]));
+    expect(out).not.toContain('stance:');
+    expect(out).not.toContain('ghost');
+  });
+
+  it('names a character endpoint by name', () => {
+    const out = renderEvent(withEdges([{ from: 'stance:re', to: 'actor:wife', kind: 'echo', confirmed: true }]));
+    expect(out).toContain('רצתה רגע נעים ← מזכיר ← אשתך');
   });
 });
