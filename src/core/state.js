@@ -676,29 +676,18 @@ function withGap(state, gaps, key, record, logEntry) {
   };
 }
 
-// The two things that clash. Ran, 18.9.2026: "חשוב שנדע אילו סתירות מתקיימות
-// בתיאור של המאורע... לא נחשוף את הקשתות האלה אבל כן נחזיק אותן על הגרף."
+// The two things that clash. Ran, 18.9.2026: "לא נחשוף את הקשתות האלה אבל כן נחזיק
+// אותן על הגרף." A record used to carry ONE `target`, so the two contradicting
+// things collapsed into the free-text `note` — a relation stored as a scalar.
 //
-// He was right and my objection was wrong twice over. I had said this duplicates
-// `gaps` — it does not: a record carries ONE `target`, so the two things that
-// contradict each other collapsed into the free-text `note`. A contradiction is by
-// nature a RELATION and it was stored as a SCALAR, which loses exactly what he
-// asked to keep. And I had said drawing it would show the person a report on
-// themselves — true, and irrelevant to storing it.
+// It lives here and not as an `edges` kind for a reason that is about the code:
+// `confirmed` is that store's contract and it is meaningless for an observation
+// the system makes ABOUT him rather than one he states, and `edges` is the bag of
+// things that get drawn while `gaps` is structurally hidden (no projection reads
+// it; principle 8 keeps it off disk). Full reasoning: docs/event-vocabulary.md ב.6.
 //
-// It lives HERE and not as an `edges` kind, for a structural reason: it would be
-// the only edge that is NOT the interviewee's. Every other kind carries Ran's
-// ruling of 5.9 — "הקשתות הן של המרואיין" — and `confirmed` is the contract of that
-// store. A contradiction is never something he states; it is the system's
-// observation ABOUT him, so `confirmed` is meaningless for it. `gaps` is also
-// structurally hidden: no projection reads it and CLAUDE.md principle 8 keeps it
-// off disk. `edges` is the bag of things that get drawn.
-//
-// Endpoints use the graph's own vocabulary — `beat:` / `stance:` / `emotion:` /
-// `actor:` / `fork:` / `stageN.slot` — so this IS a relation between graph
-// entities, just held in the hidden store. That is what makes "which beat has the
-// most contradictions hanging off it" answerable: the densest knot in the story,
-// which is often where the injury is.
+// Endpoints use the graph's own vocabulary, so this IS a relation between graph
+// entities — just held in the hidden store.
 const GAP_PAIR_MAX = 2;
 function normalizeBetween(raw, prev) {
   if (!Array.isArray(raw)) return prev ?? null;

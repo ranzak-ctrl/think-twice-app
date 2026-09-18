@@ -369,18 +369,23 @@ describe('four kinds carry a claim; two are already in the account', () => {
 });
 
 describe('no edge kind may quietly acquire ordering power', () => {
+  // Asserted on the SET rather than scraped out of storyMap.js source. The
+  // declaration moved into vocabulary.js, the regex then matched nothing, and a
+  // guard that matches nothing passes everything.
   it('only then and because constrain the drawing order', async () => {
-    const { EDGE_KINDS } = await import('../../src/core/vocabulary.js');
-    const src = (await import('node:fs')).readFileSync(
-      new URL('../../src/core/storyMap.js', import.meta.url), 'utf8');
-    const ordering = /ORDERING_KINDS = new Set\(\[([^\]]*)\]\)/.exec(src)[1];
-    const listed = [...ordering.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
-    expect(listed).toEqual(['then', 'because']);
-    // Every other kind in the vocabulary is deliberately outside it.
+    const { EDGE_KINDS, ORDERING_EDGE_KINDS } = await import('../../src/core/vocabulary.js');
+    expect([...ORDERING_EDGE_KINDS].sort()).toEqual(['because', 'then']);
     for (const k of EDGE_KINDS) {
       if (k === 'then' || k === 'because') continue;
-      expect(listed).not.toContain(k);
+      expect([...ORDERING_EDGE_KINDS], `${k} must not order the map`).not.toContain(k);
     }
+  });
+
+  it('storyMap uses that set rather than declaring its own', async () => {
+    const src = (await import('node:fs')).readFileSync(
+      new URL('../../src/core/storyMap.js', import.meta.url), 'utf8');
+    expect(src).toContain('ORDERING_EDGE_KINDS as ORDERING_KINDS');
+    expect(src).not.toMatch(/ORDERING_KINDS\s*=\s*new Set/);
   });
 });
 

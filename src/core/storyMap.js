@@ -83,12 +83,13 @@
 // than because it is good.
 
 import { NEVER_MIRROR, buildCast } from './story.js';
+// One definition of which edges may order, guarded by a test that also checks every
+// other kind in the vocabulary stays out of it.
+import { ORDERING_EDGE_KINDS as ORDERING_KINDS } from './vocabulary.js';
 
 const CONFIRMED = 2;
 const PROVISIONAL = 1;
 
-// The edge kinds that are allowed to say "this came before that". See the topo sort.
-const ORDERING_KINDS = new Set(['then', 'because']);
 
 // Fallback only — see LABELS above. Takes the first words up to a budget,
 // preferring a clean word boundary.
