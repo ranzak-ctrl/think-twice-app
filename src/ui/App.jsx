@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import Chat from './Chat.jsx';
+import { reportFailure } from '../adapters/errorReport.js';
 import GuidePanel from './GuidePanel.jsx';
 import StageRail from './StageRail.jsx';
 import StoryMap from './StoryMap.jsx';
@@ -59,6 +60,28 @@ export default function App({ onUnauthorized }) {
   // the adapter builds each entry and puts no interview content in it. Held in
   // memory like everything else; nothing is persisted (principle 6).
   const [failures, setFailures] = useState([]);
+
+  // The bundle filename is the build's fingerprint: it encodes which VITE_ config
+  // produced the deployment, so a report names the exact build that failed.
+  const bundleName = () =>
+    document.querySelector('script[src*="/assets/index-"]')?.src?.split('/').pop() ?? null;
+
+  // One path for both halves: keep it for the downloadable report, and send the
+  // metadata to the Runtime Log so a failure is visible without the tester doing
+  // anything. The send is fire-and-forget and cannot affect the turn.
+  const recordFailure = useCallback(
+    (failure, atState) => {
+      const entry = { ...failure, at: new Date().toISOString() };
+      setFailures((f) => [...f, entry]);
+      reportFailure({
+        failures: [entry],
+        stage: atState.meta.currentStage,
+        questionCount: atState.meta.questionCount,
+        bundle: bundleName(),
+      });
+    },
+    []
+  );
   const fileRef = useRef(null);
 
   // Built once and used twice: the drawing itself, and the header toggle, which
@@ -175,7 +198,7 @@ export default function App({ onUnauthorized }) {
       try {
         const { nextState, reply, unauthorized, failure } = await runTurn(state, history, text);
         setState(nextState);
-        if (failure) setFailures((f) => [...f, { ...failure, at: new Date().toISOString() }]);
+        if (failure) recordFailure(failure, nextState);
         if (unauthorized) {
           // A locked door, not a failed turn. Take the person's message back out
           // of the transcript so they can send it again once they are through,
@@ -203,7 +226,7 @@ export default function App({ onUnauthorized }) {
     try {
       const { nextState, message, failure } = await generateStageOpener(advanced, history);
       setState(nextState);
-      if (failure) setFailures((f) => [...f, { ...failure, at: new Date().toISOString() }]);
+      if (failure) recordFailure(failure, nextState);
       addMessage('assistant', message);
     } finally {
       setLoading(false);
@@ -235,7 +258,7 @@ export default function App({ onUnauthorized }) {
     const payload = {
       reportedAt: new Date().toISOString(),
       app: {
-        bundle: document.querySelector('script[src*="/assets/index-"]')?.src?.split('/').pop() ?? null,
+        bundle: bundleName(),
         userAgent: navigator.userAgent,
         href: window.location.origin,
       },
