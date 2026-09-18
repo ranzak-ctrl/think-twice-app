@@ -590,7 +590,23 @@ function mergeUsage(acc, u) {
   };
 }
 
-export async function complete({ stage, systemPrompt, messages, mode }) {
+// `fetchImpl` and `apiUrl` are injectable so the live request path can be
+// exercised outside a browser (principle 4; judge.js sets the pattern). The
+// defaults are the deployed path, so no caller in the app passes either.
+//
+// Deliberately NOT injectable: the API key. Removing `x-api-key` from the client
+// is the fix in 96ec371, and a key parameter here would reopen it. A Node caller
+// that must reach the API directly supplies a `fetchImpl` that attaches its own
+// key — standing in for the serverless proxy, which is exactly what the proxy
+// does in production. The key never enters this module.
+export async function complete({
+  stage,
+  systemPrompt,
+  messages,
+  mode,
+  fetchImpl = fetch,
+  apiUrl = '/api/anthropic/v1/messages',
+}) {
   const model = import.meta.env.VITE_MODEL ?? 'claude-sonnet-5';
   // Mock mode is explicit: VITE_USE_MOCK=true (local dev + tests). Anything else
   // runs live against the serverless proxy, which holds the key server-side.
@@ -616,7 +632,7 @@ export async function complete({ stage, systemPrompt, messages, mode }) {
       const appPw = getAppPassword();
       if (appPw) headers['x-app-password'] = appPw;
 
-      res = await fetch('/api/anthropic/v1/messages', {
+      res = await fetchImpl(apiUrl, {
         method: 'POST',
         headers,
         body: JSON.stringify({

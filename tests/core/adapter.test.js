@@ -193,3 +193,57 @@ describe('adapter complete() — JSON retry', () => {
     expect(result.ok).toBe(false);
   });
 });
+
+// Injectable transport (principle 4). The live request path hardcoded a relative
+// URL, which has no origin outside a browser — so no test could drive it and the
+// live contract went unverified for a month (DEPLOY-STATUS, "פער אימות חי").
+// These cover the seam itself; the test that actually calls the model lives in
+// tests/live/ and is opt-in.
+describe('adapter complete() — injectable transport', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_USE_MOCK', 'false');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it('calls the deployed proxy path by default', async () => {
+    const fetchStub = makeFetch([VALID]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    await complete(ARGS);
+
+    expect(fetchStub.mock.calls[0][0]).toBe('/api/anthropic/v1/messages');
+  });
+
+  it('uses an injected fetch and absolute url instead of the global', async () => {
+    const globalStub = makeFetch([VALID]);
+    vi.stubGlobal('fetch', globalStub);
+    const injected = makeFetch([VALID]);
+
+    const result = await complete({
+      ...ARGS,
+      fetchImpl: injected,
+      apiUrl: 'https://api.anthropic.com/v1/messages',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(injected).toHaveBeenCalledTimes(1);
+    expect(injected.mock.calls[0][0]).toBe('https://api.anthropic.com/v1/messages');
+    expect(globalStub).not.toHaveBeenCalled();
+  });
+
+  // Guards 96ec371: the client must never carry a key, in any environment. The
+  // proxy injects it. An apiKey argument here would reopen the leak, so passing
+  // one must change nothing.
+  it('never sends an x-api-key header, even if handed a key', async () => {
+    const fetchStub = makeFetch([VALID]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    await complete({ ...ARGS, apiKey: 'sk-ant-must-be-ignored' });
+
+    const sent = Object.keys(fetchStub.mock.calls[0][1].headers).map((h) => h.toLowerCase());
+    expect(sent).not.toContain('x-api-key');
+  });
+});
