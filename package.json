@@ -10,7 +10,8 @@
     "test:watch": "vitest",
     "gates": "node scripts/run-gates.mjs",
     "registrar:on": "node scripts/registrar-switch.mjs on",
-    "registrar:off": "node scripts/registrar-switch.mjs off"
+    "registrar:off": "node scripts/registrar-switch.mjs off",
+    "gates:report": "node scripts/gates-report.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

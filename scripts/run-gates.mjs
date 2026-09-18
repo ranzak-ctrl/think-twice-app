@@ -12,7 +12,10 @@
 import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 
-const OUT = 'gates-output.txt';
+// `--out=<name>` lets CI keep the two runs apart. Two reports that cannot be told
+// apart are worthless, which is the whole reason this is run twice.
+const outArg = process.argv.find((a) => a.startsWith('--out='));
+const OUT = outArg ? outArg.slice('--out='.length) : 'gates-output.txt';
 const line = '─'.repeat(64);
 
 // A local .env is the normal place for the key on Ran's machine, and vitest does
@@ -86,6 +89,15 @@ child.on('close', (code) => {
     `מצב הרשם: ${registrar}\n` +
     `${line}\n\n`;
   writeFileSync(OUT, header + log);
+
+  // A machine-readable twin, so CI can build one comparison table instead of
+  // asking anyone to read two logs side by side.
+  writeFileSync(`${OUT}.json`, JSON.stringify({
+    registrar,
+    judge: judgeSkipped ? 'skipped' : keyRejected ? 'rejected' : 'ran',
+    scores: Object.fromEntries(scores.map(([, d, v]) => [d, Number(v)])),
+    exitCode: code ?? 1,
+  }, null, 2));
 
   console.log(`\n${line}`);
   console.log(`  מצב הרשם בהרצה זו:  ${registrar}`);
