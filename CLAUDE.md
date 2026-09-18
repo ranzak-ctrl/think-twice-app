@@ -2,9 +2,9 @@
 
 ## ⛔ עיקרון ברזל — זהות הפרויקט
 
-**כל הפרויקט הזה מנוהל מ-`ranzak@gmail.com` בלבד.** זהו פרויקט פרטי. אימייל העבודה של רן **לא** מקושר ל-GitHub, ל-Vercel או לכל שירות בפרויקט, ואסור שיופיע בשום מקום — לא בקומיטים, לא בקבצים, לא בהגדרות, לא בתיעוד.
+**כל הפרויקט הזה מנוהל מ-`ranzak@gmail.com` בלבד — ומהחשבונות המקושרים אליו ב-Anthropic, ב-GitHub וב-Vercel.** זהו פרויקט פרטי. אימייל העבודה של רן **לא** מקושר לאף אחד מהם, ולא לשום שירות אחר בפרויקט, ואסור שיופיע בשום מקום — לא בקומיטים, לא בקבצים, לא בהגדרות, לא בתיעוד.
 
-- **GitHub:** `ranzak-ctrl` · **Vercel:** team `think-twice1` · **Drive:** `ranzak@gmail.com`
+- **Anthropic:** `ranzak@gmail.com` — מחזיק את `ANTHROPIC_API_KEY` שמשרת את הבודקים, ואת סשני Claude Code · **GitHub:** `ranzak-ctrl` · **Vercel:** team `think-twice1` · **Drive:** `ranzak@gmail.com`
 - הריפו מחזיק `user.email` **מקומי** שגובר על ההגדרה הגלובלית של המכונה. אל תסיר אותו:
   ```bash
   git config --local user.email "ranzak@gmail.com"
