@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "test": "vitest run --no-file-parallelism",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "gates": "node scripts/run-gates.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
