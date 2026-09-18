@@ -12,6 +12,7 @@ import stage5Md from '../content/prompts/agents/stage5-transform.md?raw';
 import stage6Md from '../content/prompts/agents/stage6-alternatives.md?raw';
 import stage7Md from '../content/prompts/agents/stage7-decision.md?raw';
 import { FORBIDDEN_PATTERNS } from '../content/forbidden.js';
+import { renderEvent } from './eventView.js';
 
 const STAGE_PROMPTS = {
   1: stage1Md,
@@ -132,7 +133,7 @@ export function formatHistory(history) {
 }
 
 function summarizeState(state) {
-  const { coverage, meta, facts, thoughts, feelings, reactions } = state;
+  const { coverage, meta } = state;
   const threads = (meta.savedThreads ?? []).length
     ? `\nsaved_threads: ${JSON.stringify(meta.savedThreads)}`
     : '';
@@ -170,15 +171,17 @@ function summarizeState(state) {
   const groups = Object.keys(state.groups ?? {}).length
     ? `\ngroups: ${JSON.stringify(Object.values(state.groups))}`
     : '';
-  return `## STATE SUMMARY (hidden from user)
+  // The assembled event leads, and the bookkeeping follows it. A model handed
+  // key-value pairs answers about key-value pairs; a model handed an account asks
+  // its next question about the story. Empty until the registrar is wired, so this
+  // is a no-op for now — `renderEvent` returns '' for an untouched record.
+  const event = renderEvent(state);
+
+  return `${event ? `${event}\n\n` : ''}## STATE SUMMARY (hidden from user)
 stage: ${meta.currentStage}
 questions_this_stage: ${meta.questionCount}
 saturation: ${meta.saturationCount}
 question_aperture: ${meta.questionAperture}
 resistance: ${meta.resistanceFlag || 'none'}${threads}${actorMap}${openForks}${nodes}${edges}${groups}
-facts: ${JSON.stringify(facts)}
-thoughts: ${JSON.stringify(thoughts)}
-feelings: ${JSON.stringify(feelings)}
-reactions: ${JSON.stringify(reactions)}
 coverage: ${JSON.stringify(coverage)}`;
 }

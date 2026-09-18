@@ -3,12 +3,23 @@
 
 export const SLOT_UNKNOWN = 'U';
 
+// The registrar's ledger. This import is circular — eventRecord.js reads
+// NEVER_SHOW_SLOTS from here — and is safe because neither side dereferences the
+// other at module-evaluation time: createEventRecord and displayable are both
+// called later. Asserted by tests/core/state.test.js importing a fresh state.
+import { createEventRecord } from './eventRecord.js';
+
 export function createState() {
   return {
-    facts: {},
-    thoughts: {},   // includes wound (מוגלה) and ADHD pattern tag
-    feelings: {},   // emotion name + intensity + past echo
-    reactions: {},  // automatic + planned
+    // `facts` / `thoughts` / `feelings` / `reactions` used to sit here. They were
+    // declared when the document was designed and NOTHING EVER WROTE TO THEM: the
+    // four updaters (updateFacts and siblings) were unreferenced outside this file
+    // for the life of the project, and all four shipped into every prompt on every
+    // turn as `{}`. That empty shape was the registrar's chair, left empty — the
+    // system compensated by having the interviewing model report slot numbers
+    // instead of anyone assembling the event. `eventRecord` is what finally sits
+    // in it, so the four are removed rather than left as decoys.
+    eventRecord: createEventRecord(),
     basket: [],     // alternative responses (stage 6)
     board: [],      // decision board rows (stage 7, built from basket)
     decision: {},   // { type, choice, rationale, package_gain, package_cost }
@@ -148,22 +159,6 @@ export function setSlot(state, stageKey, slotKey, value) {
 
 export function updateMeta(state, patch) {
   return { ...state, meta: { ...state.meta, ...patch } };
-}
-
-export function updateFacts(state, patch) {
-  return { ...state, facts: { ...state.facts, ...patch } };
-}
-
-export function updateThoughts(state, patch) {
-  return { ...state, thoughts: { ...state.thoughts, ...patch } };
-}
-
-export function updateFeelings(state, patch) {
-  return { ...state, feelings: { ...state.feelings, ...patch } };
-}
-
-export function updateReactions(state, patch) {
-  return { ...state, reactions: { ...state.reactions, ...patch } };
 }
 
 export function addToBasket(state, option) {
@@ -738,8 +733,13 @@ export function importState(json) {
     throw new Error('Invalid state document: missing coverage or meta');
   }
   // Back-compat: older exports predate gap-management / findings / actor map.
+  // An export from before the registrar has no eventRecord; an export from before
+  // this change carries the four dead stores, which are dropped rather than
+  // restored — nothing reads them and nothing ever wrote them.
+  const { facts, thoughts, feelings, reactions, ...rest } = state;
   return {
-    ...state,
+    ...rest,
+    eventRecord: state.eventRecord ?? createEventRecord(),
     gaps: state.gaps ?? { byTarget: {}, log: [] },
     findings: state.findings ?? {},
     actorMap: state.actorMap ?? {},

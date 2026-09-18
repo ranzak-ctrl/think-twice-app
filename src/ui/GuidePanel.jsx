@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { formatSelfOther } from '../core/kpi.js';
+import { renderEvent } from '../core/eventView.js';
 import { Close } from './icons.jsx';
 
 const STAGE_NAMES = {
@@ -129,7 +130,8 @@ function formatCacheSaving(usage) {
 }
 
 export default function GuidePanel({ state, width = 320, notes = [], revisions = [], onClose }) {
-  const { coverage, meta, facts, thoughts, feelings, reactions } = state;
+  const { coverage, meta } = state;
+  const eventText = renderEvent(state);
   const gaps = state.gaps ?? { byTarget: {}, log: [] };
   const findings = state.findings ?? {};
   const actorMap = state.actorMap ?? {};
@@ -405,12 +407,15 @@ export default function GuidePanel({ state, width = 320, notes = [], revisions =
         )}
       </Section>
 
-      {/* State data */}
-      <Section title="State">
-        <Pre label="facts" data={facts} />
-        <Pre label="thoughts" data={thoughts} />
-        <Pre label="feelings" data={feelings} />
-        <Pre label="reactions" data={reactions} />
+      {/* The assembled event — what the registrar built and what the interviewer
+          reads. Replaces the four `facts`/`thoughts`/`feelings`/`reactions` boxes
+          that stood here printing `{}` for the life of the project, because
+          nothing ever wrote to them. Rendered as text, exactly as the interviewer
+          receives it, so a tester reads the same account the model does. */}
+      <Section title="המאורע">
+        {eventText
+          ? <pre style={{ whiteSpace: 'pre-wrap', fontSize: 11, lineHeight: 1.6, margin: 0 }}>{eventText}</pre>
+          : <div style={{ fontSize: 11, opacity: 0.6 }}>טרם נאסף</div>}
       </Section>
 
       {/* KPIs */}
