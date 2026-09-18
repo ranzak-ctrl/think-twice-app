@@ -89,12 +89,28 @@ export const EDGE_KINDS = new Set([
   // AGAINST `because` it is the exact mirror: `because` says Y brought X about,
   // `despite` says Y was a reason for X NOT to happen and it happened anyway.
   //
-  // IT DOES NOT ORDER THE MAP, and the reason here is sharper than for the others:
-  // its temporal direction is the REVERSE of `then`. The obstacle precedes or
-  // coexists with the act that defied it, so Y comes before X while the edge points
-  // X → Y. Ordering on it would mean inverting it first, and an edge kind that
-  // orders backwards is a trap nobody would remember. `then` still carries the
-  // sequence wherever he stated one.
+  // IT DOES NOT ORDER THE MAP. A first draft of this comment said its temporal
+  // direction is "the reverse of `then`", which is not quite true and made the
+  // argument weaker than it is. The real reason:
+  //
+  //   `despite` SAYS NOTHING ABOUT TIME. Its direction is semantic — challenger →
+  //   obstacle — and where the obstacle sits in the sequence varies:
+  //     "הלכתי לקניות למרות שהגב תפס"        obstacle EARLIER (and `ongoing`, so
+  //                                           it has no place in the sequence at all)
+  //     "אמרתי שחייב לנוח אבל היא לא ויתרה"   obstacle EARLIER
+  //     "הלכתי למרות שידעתי שאצטרך לחזור"     obstacle LATER — an anticipated cost
+  //
+  // An edge whose temporal meaning is INCONSISTENT cannot be an ordering
+  // constraint. That also closes the obvious workaround — "just invert it in the
+  // sort" only works if it is reversed every time, and it is not.
+  //
+  // What it would cost: on the first example the map would draw the shopping trip
+  // BEFORE the back seized, asserting a sequence of his day he never described —
+  // the exact class of claim the whole `confirmed` mechanism exists to prevent.
+  //
+  // Nothing is lost. Where he also stated a sequence ("קודם הגב תפס ואז הלכתי")
+  // that is a `then` edge and it orders correctly. `despite` adds the CONCESSION,
+  // not the order, and the two can sit on one pair in opposite directions.
   //
   // It routinely crosses the two lanes — an episode beat defying an `ongoing`
   // condition — which is exactly the cross-lane arrow Ran ruled on 5.9.2026 is
