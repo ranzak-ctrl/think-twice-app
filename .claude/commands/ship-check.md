@@ -50,10 +50,26 @@ Do not check `VITE_LIVE` — it is a no-op since the `VITE_USE_MOCK` change and 
 
 **7 · Deployed commit is current.** Compare the live commit against `git log -1`. Production has been silently stale before; treat any gap as a FAIL and name the missing commits.
 
-**8 · Spend ceiling in place.** Confirm the deployed `ANTHROPIC_API_KEY` is a dedicated key covered by a ceiling, not the general-purpose one. Note the mechanism: in the Anthropic console the limit belongs to a **Workspace**, not to a key — a key inherits the ceiling of the workspace it was created in. So "a key with a limit" means a key issued inside a workspace that has one, and checking the key alone tells you nothing. Testers running full interviews against an uncapped key is an open, known risk (DEPLOY-STATUS).
+**8 · Usage is being watched.** There is deliberately **no spend ceiling** (Ran, 18.9.2026). Do not report its absence as a failure and do not propose adding one as a fix — it is a decision, not an oversight.
+
+The reasoning: a hard ceiling on a therapeutic interview tool does not degrade, it cuts. A tester severed at stage 3 is left with an opened wound and no closure, and testers work at hours nobody is watching. That clinical cost outweighs what the ceiling was guarding, given a closed group whose size and session count Ran controls directly.
+
+What the ceiling actually guarded was never tester overspend — it was **blast radius if `APP_PASSWORD` spreads beyond the group**. The key itself is sound: server-side only, never in the bundle (gate 3), behind the password gate. So watch the thing that would signal it:
+
+- Every proxy call now logs to Vercel Runtime Logs — `event: "ok"` per successful turn. Count them. A day's volume far above what the known testers could produce is the signal.
+- The Anthropic console's usage view is the second source, and the one that shows cost.
+
+**What reopens this question** — any of these, and a ceiling is back on the table:
+- The link and password go beyond the controlled tester group, or to an open audience.
+- Runtime Logs show volume the tester group cannot account for.
+- The app stops being a closed prototype.
+
+If the first happens, rotate `APP_PASSWORD` first; that is faster and more precise than a ceiling.
 
 ## Report
 
 A gate table, then a single verdict: SAFE TO DEPLOY or BLOCKED. If blocked, the smallest set of fixes that clears it, in order.
 
-Gate 3 and gate 8 are not waivable. Any other gate may be knowingly accepted, but say explicitly that it is being accepted and what the exposure is.
+Gate 3 is not waivable — a leaked key in a served bundle cannot be undone. (Gate 8 was unwaivable until 18.9, when the ceiling was deliberately dropped; it is now a monitoring gate and passes as long as someone is actually watching the volume.)
+
+Any other gate may be knowingly accepted, but say explicitly that it is being accepted and what the exposure is. Gate 5 is the one most often skipped and least safe to skip: it is the only check that touches the model.
