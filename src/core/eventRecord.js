@@ -69,6 +69,14 @@ export const SOURCES = new Set(['stated', 'attributed', 'inferred', 'unknown']);
 
 // Backstops, in the spirit of NODES_MAX: they should never be what stops anything,
 // and they are here so a runaway report cannot grow the ledger without limit.
+// A cube's name. Ran, 4.9–5.9.2026: the map holds "cubes, a word or two in each",
+// and choosing WHAT a cube stands for is a judgement — "no amount of code turns a
+// sentence into one". So the registrar names each entity, and a projection falls
+// back to trimming `text` only so a cube is never empty, which is visibly not the
+// same thing. Refused rather than trimmed when over-long, exactly as MAP_LABEL_MAX
+// is: a label that needs cutting is not a label.
+export const ENTITY_LABEL_MAX = 24;
+
 export const BEATS_MAX = 60;
 export const STANCES_MAX = 40;
 export const EMOTIONS_MAX = 30;
@@ -87,6 +95,13 @@ export function createEventRecord() {
     emotions: {},  // what someone felt
   };
 }
+
+// The model's name for this entity's cube, or '' when it did not give a usable one.
+// Over-long is refused, never trimmed — see ENTITY_LABEL_MAX.
+const entityLabel = (raw, prev) => {
+  const l = typeof raw === 'string' ? raw.replace(/\s+/g, ' ').trim() : '';
+  return l && l.length <= ENTITY_LABEL_MAX ? l : (prev ?? '');
+};
 
 const clean = (v, max = TEXT_MAX) => {
   const t = typeof v === 'string' ? v.replace(/\s+/g, ' ').trim() : '';
@@ -163,6 +178,7 @@ export function mergeBeats(record, reported) {
         // text. '' when the registrar could not place it.
         phase: ['before', 'during', 'after'].includes(b?.phase) ? b.phase : (prev?.phase ?? ''),
         toward: clean(b?.toward, 60) || prev?.toward || '',
+        label: entityLabel(b?.label, prev?.label),
       };
     }),
   };
@@ -197,6 +213,11 @@ export function mergeStances(record, reported) {
         // Hebrew; false by default for the same reason `camera` is.
         thirdPerson: typeof s?.third_person === 'boolean' ? s.third_person : (prev?.thirdPerson ?? false),
         context: clean(s?.context, 60) || prev?.context || '',
+        // Ran's two clocks apply to a stance as much as to a beat: "I thought she
+        // was ignoring me right then" is an episode, "I never get a say in this
+        // house" is the ground it ran on. Reported, never guessed.
+        scale: s?.scale === 'ongoing' ? 'ongoing' : (prev?.scale ?? 'episode'),
+        label: entityLabel(s?.label, prev?.label),
       };
     }),
   };
@@ -225,6 +246,7 @@ export function mergeEmotions(record, reported) {
         pace: EMOTION_PACES.has(e?.pace) ? e.pace : (prev?.pace ?? 'situational'),
         source: SOURCES.has(e?.source) ? e.source : (prev?.source ?? 'unknown'),
         context: clean(e?.context, 60) || prev?.context || '',
+        label: entityLabel(e?.label, prev?.label),
       };
     }),
   };
