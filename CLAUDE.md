@@ -31,7 +31,8 @@
 - docs/principle-zero.md — עיקרון 0: הובלה, התנגדויות, רשימות "אסור"
 - docs/dev-plan.md — תכנית הפיתוח: שלבים 0–7, בדיקות, רף קבלה
 - docs/core-assumptions.md — הנחות היסוד הקליניות
-- docs/event-model.md — מודל המאורע: פירוק ליישויות, ריבוד, והרשם (**טיוטה לדיון — לא הוכרע**)
+- docs/event-model.md — מודל המאורע: פירוק ליישויות, ריבוד, והרשם (ארכיטקטורה הוכרעה 18.9.2026)
+- docs/event-vocabulary.md — אוצר המילים של הגרף: יישויות, קשתות, צירים (**רשימה לניהול**)
 - docs/gap-management.md — ניהול פערים: התפיסה הרעיונית (חסין למספור שלבים)
 - docs/gap-management-implementation.md — אפיון היישום: המדד, הכוכבית, goal-gate
 - docs/test-plan.md — תכנית הבדיקות
