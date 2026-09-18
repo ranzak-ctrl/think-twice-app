@@ -20,7 +20,7 @@ const SOURCE = read('src/core/vocabulary.js');
 const SETS = {
   STANCE_TYPES: [STANCE_TYPES, ['want', 'goal', 'reading']],
   EMOTION_PACES: [EMOTION_PACES, ['situational', 'prior', 'trait']],
-  EDGE_KINDS: [EDGE_KINDS, ['then', 'because', 'agent', 'echo', 'derives_from']],
+  EDGE_KINDS: [EDGE_KINDS, ['then', 'because', 'agent', 'echo', 'derives_from', 'about']],
   GROUP_KINDS: [GROUP_KINDS, ['community', 'process', 'perspective']],
   SOURCES: [SOURCES, ['stated', 'attributed', 'inferred', 'unknown']],
   NODE_SCALES: [NODE_SCALES, ['episode', 'ongoing']],

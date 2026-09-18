@@ -429,7 +429,7 @@
       <tr><td class="ent">מְכָל<br><code>group</code></td><td>קופסה סביב קבוצת פריטים</td><td class="test">חייב <code>confirmed</code> — <b>קופסה היא טענה</b></td><td><code>community</code> · <code>process</code> · <code>perspective</code></td></tr>
     </table>
 
-    <div class="sec">חמש קשתות</div>
+    <div class="sec">שש קשתות</div>
     <table>
       <tr><th style="width:110px">קשת</th><th style="width:30%">מה היא טוענת</th><th>דוגמה</th></tr>
       <tr><td class="edg"><code>then</code></td><td>רצף זמן — <b>ואז</b></td><td>"עברת בסלון" ◀ "שאלת ממתי הוחלט"</td></tr>
@@ -437,6 +437,7 @@
       <tr><td class="edg"><code>agent</code></td><td>שחקן ביצע פעולה</td><td><code>actor:wife</code> ◀ "בחרה צימר"</td></tr>
       <tr><td class="edg"><code>echo</code></td><td>דמיון — <b>ככה הרגשתי אז</b></td><td>"עלבון" ◀ "כשמורים אמרו שאני לא משתדל"</td></tr>
       <tr><td class="edg"><code>derives_from</code> <span class="new">אושר 18.9</span></td><td>גזירה — <b>זה יצא מזה</b></td><td>"לשאול מתי נוח לה" ◀ "היא רצתה רגע נעים"</td></tr>
+      <tr><td class="edg"><code>about</code> <span class="new">אושר 18.9</span></td><td>מושא — <b>זה על זה</b><br><span style="color:var(--mut);font-size:11px">תמיד תודעה ← יעד</span></td><td>"עלבון" ◀ "מה שהיא ענתה"</td></tr>
     </table>
     <div class="note" style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
       <b style="color:var(--txt)">שתי מוסכמות שמחזיקות את הכול:</b><br>
@@ -458,11 +459,12 @@
       היחידה ברשימה שהפרוטוקול <b>כבר</b> חייב: מבחן החלחול בשלב 6 הוא קשר מפורש בין שתי יישויות, ולא היה לו סוג.<br>
       <b>ומה שההוספה חשפה:</b> <code>renderEvent</code> <b>לא רינדר קשתות בכלל</b> — סוג שהמראיין לא רואה הוא שדה שאיש לא צורך. נוסף קטע <b>"קשרים שציינת"</b> לסיפור, לשלוש הקשתות שנושאות טענה (<code>because</code> · <code>echo</code> · <code>derives_from</code>); <code>then</code> ו-<code>agent</code> כבר מיוצגות ברצף ובטורים.
     </div>
-    <div class="prop">
-      <b class="h">② <code>about</code> — מה שמעגן את שכבת התודעה בשכבת העובדה</b>
-      <i>"נעלבתי <b>ממה שהיא ענתה</b>"</i> — הרגש מצביע על פעימה מסוימת. היום זה <code>context</code>, מחרוזת חופשית, ולכן <b>לא ניתן לציור ולא למעקב</b>. ו-<code>because</code> יטען שהפעימה <b>גרמה</b> לרגש — טענה חזקה יותר ממה שנאמר.<br>
-      <b>בלעדיה, כל שכבת התודעה מרחפת מעל הסיפור בלי להיות קשורה אליו באף נקודה.</b><br>
-      <span style="color:var(--accent2)">▸ המלצה: להוסיף.</span>
+    <div class="prop" style="background:rgba(110,224,176,.06);border-color:#2f6b52">
+      <b class="h" style="color:var(--accent2)">✅ <code>about</code> — אושר ונוסף (רן, 18.9.2026)</b>
+      מעגנת את שכבת התודעה בשכבת העובדה. <b>שני מבחנים:</b> מול <code>because</code> — <b>מילת היחס</b> ("נעלבתי <b>מ</b>מה שענתה" ← about · "<b>בגלל</b> שענתה" ← because). מול <code>echo</code> — <b>פנים או חוץ?</b> יעד בתוך המאורע ← about · אירוע עבר ← echo. <b>ובספק — <code>about</code></b>, היא טוענת פחות.<br>
+      <b>נאכף בקוד:</b> חייבת לצאת מ<b>תודעה</b> — פעימה אינה "על" שום דבר. הפרה <b>נדחית, לא מתהפכת</b>.<br>
+      <b>הסכנה שזה מכסה:</b> זהות קשת היא <code>from→to</code>, אז דיווח חוזר של אותו זוג מסודר תחת סוג שני <b>דורס בשקט</b> — וזוג שהתהפך ל-<code>because</code> מתחיל לטעון סיבתיות שאיש לא אמר.<br>
+      <b>פותחת:</b> שני רגשות על רגע אחד · שתי תודעות על רגע אחד (<b>"יציאה מעצמי" כנתון</b>) · שרשרת החלחול עד השורש.
     </div>
     <div class="prop">
       <b class="h">③ <code>despite</code> — ניגוד</b>

@@ -6,6 +6,7 @@ import {
   mergeEmotions,
   mergeSetting,
   createEventRecord,
+  mergeEmotions,
 } from '../../src/core/eventRecord.js';
 import { renderEvent } from '../../src/core/eventView.js';
 import { mergeEdges } from '../../src/core/state.js';
@@ -241,5 +242,83 @@ describe('the relations he stated reach the interviewer', () => {
   it('names a character endpoint by name', () => {
     const out = renderEvent(withEdges([{ from: 'stance:re', to: 'actor:wife', kind: 'echo', confirmed: true }]));
     expect(out).toContain('רצתה רגע נעים ← מזכיר ← אשתך');
+  });
+});
+
+describe('about — the mind layer anchored to the fact layer', () => {
+  const anchored = (edges) => {
+    const s = build();
+    s.eventRecord = mergeEmotions(s.eventRecord, [
+      { id: 'hurt', slot: 'stage3.emotion', actor: 'self', name: 'עלבון', granular: true, intensity: 8, label: 'עלבון' },
+      { id: 'relief', slot: 'stage3.emotion', actor: 'self', name: 'הקלה', granular: true, label: 'הקלה' },
+    ]);
+    s.eventRecord = mergeStances(s.eventRecord, [
+      { id: 'mine', slot: 'stage2.causal', type: 'reading', actor: 'self', text: 'התעלמה ממני', label: 'התעלמה ממני' },
+      { id: 'hers', slot: 'stage5.intention', type: 'want', actor: 'wife', text: 'רגע נעים', label: 'רגע נעים', source: 'attributed' },
+      { id: 'w', slot: 'stage2.wound', type: 'reading', actor: 'self', text: 'אני לא נחשב', label: 'לא נחשב' },
+    ]);
+    s.eventRecord = mergeBeats(s.eventRecord, [
+      { id: 'answered', slot: 'stage1.timeline', actor: 'wife', text: 'ענתה לך', label: 'ענתה לך', camera: true, phase: 'during' },
+    ]);
+    return mergeEdges({ ...s, edges: {} }, edges);
+  };
+
+  it('renders a feeling pointing at the moment it is about', () => {
+    const out = renderEvent(anchored([{ from: 'emotion:hurt', to: 'beat:answered', kind: 'about', confirmed: true }]));
+    expect(out).toContain('עלבון ← על ← ענתה לך');
+  });
+
+  it('holds two opposite feelings on one moment — invisible with a free-text context', () => {
+    const out = renderEvent(anchored([
+      { from: 'emotion:hurt', to: 'beat:answered', kind: 'about', confirmed: true },
+      { from: 'emotion:relief', to: 'beat:answered', kind: 'about', confirmed: true },
+    ]));
+    expect(out).toContain('עלבון ← על ← ענתה לך');
+    expect(out).toContain('הקלה ← על ← ענתה לך');
+  });
+
+  it('lines his reading up against the want he attributes to her, on the same beat', () => {
+    // This is "יציאה מעצמי" as data: two minds pointing at one moment. With `context`
+    // as a string he writes "כשהיא ענתה" and the attribution writes "הרגע ההוא" —
+    // the same moment, two strings, and no code can tell.
+    const out = renderEvent(anchored([
+      { from: 'stance:mine', to: 'beat:answered', kind: 'about', confirmed: true },
+      { from: 'stance:hers', to: 'beat:answered', kind: 'about', confirmed: true },
+    ]));
+    expect(out).toContain('התעלמה ממני ← על ← ענתה לך');
+    expect(out).toContain('רגע נעים ← על ← ענתה לך');
+  });
+
+  it('redacts a relation pointing at the wound, and keeps it for the probe', () => {
+    const s = anchored([{ from: 'emotion:hurt', to: 'stance:w', kind: 'about', confirmed: true }]);
+    expect(renderEvent(s)).not.toContain('לא נחשב');
+    expect(renderEvent(s, { full: true })).toContain('עלבון ← על ← לא נחשב');
+  });
+});
+
+describe('about runs mind → target, and the code refuses the other way', () => {
+  const edge = (from, to, kind = 'about') =>
+    mergeEdges({ edges: {} }, [{ from, to, kind, confirmed: true }]).edges;
+
+  it('refuses an `about` whose source is a beat — a beat is not about anything', () => {
+    expect(edge('beat:answered', 'emotion:hurt')).toEqual({});
+    expect(edge('stage1.trigger', 'emotion:hurt')).toEqual({});
+    expect(edge('actor:wife', 'beat:answered')).toEqual({});
+  });
+
+  it('accepts a stance, an emotion, or a mental slot as the source', () => {
+    for (const from of ['stance:mine', 'emotion:hurt', 'stage2.causal', 'stage5.intention']) {
+      expect(Object.keys(edge(from, 'beat:answered'))).toHaveLength(1);
+    }
+  });
+
+  it('refuses rather than flips — flipping would invent a relation', () => {
+    const out = edge('beat:answered', 'emotion:hurt');
+    expect(out['emotion:hurt→beat:answered']).toBeUndefined();
+  });
+
+  it('constrains only `about`; the other kinds keep their own directions', () => {
+    expect(Object.keys(edge('beat:answered', 'emotion:hurt', 'because'))).toHaveLength(1);
+    expect(Object.keys(edge('actor:wife', 'beat:answered', 'agent'))).toHaveLength(1);
   });
 });

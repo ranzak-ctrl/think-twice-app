@@ -12,7 +12,7 @@ import { createEventRecord } from './eventRecord.js';
 // Re-exported here because story.js and the tests already import these names
 // from state.js, and moving a definition should not move an import path.
 import {
-  EDGE_KINDS, GROUP_KINDS, NODE_SCALES, NEVER_SHOW_SLOTS, LABEL_MAX,
+  EDGE_KINDS, GROUP_KINDS, NODE_SCALES, NEVER_SHOW_SLOTS, LABEL_MAX, MENTAL_SLOTS,
 } from './vocabulary.js';
 export { EDGE_KINDS, GROUP_KINDS, NODE_SCALES, NEVER_SHOW_SLOTS };
 export const MAP_LABEL_MAX = LABEL_MAX;
@@ -417,6 +417,16 @@ const endpointSlot = (node) => {
   return m ? m[1] : '';
 };
 
+// `about` runs mind → target, always. A beat is not about anything; only a reading,
+// a want or a feeling points at something. Accepts a ledger entity (`stance:` /
+// `emotion:`) or a mental slot's own cube, so an edge reported before the registrar
+// entified the thought is not silently lost. See vocabulary.js MENTAL_SLOTS.
+function isMentalRef(ref) {
+  if (/^(stance|emotion):/.test(ref)) return true;
+  const slot = /^stage[1-7]\.(.+)$/.exec(ref);
+  return !!slot && MENTAL_SLOTS.has(slot[1]);
+}
+
 export function mergeEdges(state, reported) {
   const byId = { ...(state.edges ?? {}) };
   for (const e of Array.isArray(reported) ? reported : []) {
@@ -425,6 +435,9 @@ export function mergeEdges(state, reported) {
     const kind = edgeNode(e?.kind);
     if (!from || !to || from === to) continue;        // a node cannot lead to itself
     if (!EDGE_KINDS.has(kind)) continue;              // unknown relation — dropped
+    // The one direction rule code can decide. Refused rather than flipped: flipping
+    // would invent a relation, and this contract's whole point is that it never does.
+    if (kind === 'about' && !isMentalRef(from)) continue;
     if (NEVER_SHOW_SLOTS.has(endpointSlot(from))) continue;
     if (NEVER_SHOW_SLOTS.has(endpointSlot(to))) continue;
 

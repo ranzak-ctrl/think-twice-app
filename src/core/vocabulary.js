@@ -56,7 +56,45 @@ export const EDGE_KINDS = new Set([
   // alternative does not happen after the reading in the story's timeline; it does
   // not happen in the story at all.
   'derives_from',
+  // aboutness — this feeling / reading / want is DIRECTED AT that. Approved by Ran,
+  // 18.9.2026. It is what anchors the mind layer to the fact layer: without it the
+  // whole mental side floats above the story without touching it at any point.
+  //
+  // AGAINST `because`, and the distinction is almost literally the preposition:
+  //   "נעלבתי מ-מה שהיא ענתה"        → about   (object)
+  //   "בגלל שהיא ענתה ככה נעלבתי"    → because (cause)
+  // `because` is a causal claim about his life; `about` claims only direction. In
+  // doubt, `about` — it claims less, and over-claiming causation is exactly what
+  // the judge's `ownership` dimension exists to catch.
+  //
+  // AGAINST `echo`, one crisp test: IS THE TARGET INSIDE THIS EVENT OR OUTSIDE IT?
+  // Inside → about. A past event outside the case → echo. A feeling carrying both
+  // is `stage3.past_echo` with both its ends visible.
+  //
+  // Never orders the map: direction is not precedence. Beyond that, `about` runs
+  // mind→fact while a `because` on the same two nodes runs fact→mind, so letting
+  // `about` constrain the sort would manufacture a cycle out of a coherent pair.
+  'about',
 ]);
+
+// `about` belongs to MINDS. A beat cannot be "about" anything — only a reading, a
+// want or a feeling can point at something. mergeEdges enforces this at the write,
+// which is the half of the direction rule that code can actually decide.
+//
+// What code CANNOT decide is whether a given mind→fact pair is `about` or
+// `because`; that is a reading of his wording, and it lives in registrar.md with
+// the preposition test above. The hazard it guards against is concrete: an edge's
+// identity is `from→to`, so re-reporting one ordered pair under a second kind
+// REPLACES the first silently — and a pair that flipped from `about` to `because`
+// would start asserting causation nobody stated.
+export const MENTAL_SLOTS = new Set([
+  'causal', 'meaning', 'wound', 'adhd_pattern',              // stage 2
+  'emotion', 'past_echo',                                     // stage 3
+  'planned_reaction',                                         // stage 4
+  'perspective', 'intention', 'alt_formulation', 're_emotion', // stage 5
+  'goal',                                                     // stage 7
+]);
+
 
 // A container is a claim, so all three kinds are gated on `confirmed`.
 export const GROUP_KINDS = new Set(['community', 'process', 'perspective']);

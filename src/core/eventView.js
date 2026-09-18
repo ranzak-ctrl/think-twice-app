@@ -227,6 +227,7 @@ const RELATION_LABEL = {
   because: 'ולכן',
   echo: 'מזכיר',
   derives_from: 'נגזר מ',
+  about: 'על',
 };
 
 // An endpoint's readable name. Endpoints are addressed four ways — a slot's own
