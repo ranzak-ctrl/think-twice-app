@@ -5,6 +5,7 @@ import {
   mergeStances,
   mergeEmotions,
   mergeSetting,
+  createEventRecord,
 } from '../../src/core/eventRecord.js';
 import { renderEvent } from '../../src/core/eventView.js';
 
@@ -88,31 +89,51 @@ describe('the protocol tests are visible in the account', () => {
   });
 });
 
-describe('the empty column on another character', () => {
-  it('names what is not known about her, using the same headings', () => {
-    const block = renderEvent(build());
-    const hers = block.slice(block.indexOf('— אשתך'));
-    expect(hers).toContain('לא ידוע:');
-    expect(hers).toContain('פרשנות');
-    expect(hers).toContain('רגש');
+describe('the cast appears even before anything is recorded about them', () => {
+  it('names a character in the cast with nothing yet attributed', () => {
+    const out = renderEvent(build());
+    expect(out).toContain('— אשתך (בת זוג)');
   });
 
-  it('says nothing of the kind about the interviewee — an empty column on him is ordinary', () => {
-    let r = createEventRecord();
-    r = mergeBeats(r, [{ id: 'b', slot: 'stage1.trigger', actor: 'self', text: 'עברת', camera: true }]);
-    expect(renderEvent({ eventRecord: r })).not.toContain('לא ידוע');
+  // Removed on router-guard's finding: a "לא ידוע" line naming another character's
+  // missing interpretation / wants / feelings fired for anyone in actorMap, so every
+  // prompt from stage-1 turn three carried stage-3 and stage-5 material addressed to
+  // the stage-1 agent. test-plan §א.2 item 10 is a live regression for that drift.
+  it('never names which mind-layer fields are missing — that is cross-stage pressure', () => {
+    expect(renderEvent(build())).not.toContain('לא ידוע');
   });
+});
 
-  it('drops the unknown line once the column is filled', () => {
+describe('redaction — the default is safe and only the probe opts out', () => {
+  const withWound = () => {
     const s = build();
     s.eventRecord = mergeStances(s.eventRecord, [
-      { id: 'p', slot: 'stage5.perspective', type: 'reading', actor: 'wife', text: 'לא ידעה שאתה שם', source: 'stated' },
-      { id: 'w', slot: 'stage5.intention', type: 'want', actor: 'wife', text: 'רגע נעים', source: 'stated' },
+      { id: 'w', slot: 'stage2.wound', type: 'reading', actor: 'self', text: 'אני לא שווה', source: 'stated' },
+      { id: 'p', slot: 'stage2.adhd_pattern', type: 'reading', actor: 'self', text: 'חוסר ארגון', source: 'stated' },
     ]);
-    s.eventRecord = mergeEmotions(s.eventRecord, [
-      { id: 'we', slot: 'stage3.emotion', actor: 'wife', name: 'עייפות', granular: true },
-    ]);
-    expect(renderEvent(s).slice(renderEvent(s).indexOf('— אשתך'))).not.toContain('לא ידוע');
+    return s;
+  };
+
+  // summarizeState feeds FOUR builders, two of which (summary, opener) are spoken to
+  // the person verbatim. The default must therefore be redacted, so a builder that
+  // forgets to think about it gets the safe behaviour rather than the leak.
+  it('redacts the wound and the ADHD pattern by default', () => {
+    const out = renderEvent(withWound());
+    expect(out).not.toContain('אני לא שווה');
+    expect(out).not.toContain('חוסר ארגון');
+    expect(out).toContain('החליטו בלעדיי'); // everything else still there
+  });
+
+  it('gives the probe the whole account — stage 2 cannot explore what it is not told', () => {
+    const out = renderEvent(withWound(), { full: true });
+    expect(out).toContain('אני לא שווה');
+    expect(out).toContain('חוסר ארגון');
+  });
+});
+
+describe('inertness — the account is the ledger\'s account', () => {
+  it('renders nothing for an empty ledger even when the cast is populated', () => {
+    expect(renderEvent({ eventRecord: createEventRecord(), actorMap: { boss: { label: 'הממונה' } } })).toBe('');
   });
 });
 
@@ -140,12 +161,12 @@ describe('the two clocks stay apart', () => {
 describe('what the interviewer must still be told', () => {
   // NEVER_SHOW_SLOTS guards the MAP, not this: stage 2 cannot probe a subject it is
   // not told about, and summarizeState already ships the full coverage map today.
-  it('includes wound material — the prompt is not the person screen', () => {
+  it('includes wound material for the probe — stage 2 cannot probe what it is not told', () => {
     const s = build();
     s.eventRecord = mergeStances(s.eventRecord, [
       { id: 'w', slot: 'stage2.wound', type: 'reading', actor: 'self', text: 'אני לא שווה', source: 'stated' },
     ]);
-    expect(renderEvent(s)).toContain('אני לא שווה');
+    expect(renderEvent(s, { full: true })).toContain('אני לא שווה');
   });
 
   it('carries what the story itself left undecided', () => {

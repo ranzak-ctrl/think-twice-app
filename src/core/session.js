@@ -111,6 +111,7 @@ export async function runTurn(state, history, userText) {
   // untouched and the interview proceeds the way it does today.
   const registrar = await runRegistrar({
     state,
+    stage,
     messages,
     systemPrompt: buildRegistrarPrompt({ state }),
     completeImpl: complete,

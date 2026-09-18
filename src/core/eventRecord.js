@@ -8,8 +8,13 @@
 // and serves them in the decisions within their own domain of responsibility."
 //
 // So this module is a LEDGER, not an authority. It holds what the registrar
-// assembled; derive.js turns it into the slot scores the Router already reads; the
-// Router's rules do not change by one line. Nothing here decides anything.
+// assembled, and eventView.js hands it to the interviewer. It produces NO slot
+// scores: `coverage` stays the interviewer's, and the Router's rules do not change
+// by one line. Nothing here decides anything.
+//
+// (An earlier draft had the CODE derive scores from this ledger, in a module called
+// derive.js. Ran overruled it on 18.9.2026 — "הרשם לא נותן ציונים" — and
+// docs/event-model.md v3 records it as rejected. No such module exists.)
 //
 // ── WHY IT EXISTS: the interviewer grades its own work ──
 // session.js writes `ev.slots` straight into `coverage`. The model says "trigger =
@@ -29,10 +34,11 @@
 //
 // ── WHAT THE REGISTRAR REPORTS, AND WHAT THE CODE COMPUTES ──
 // This is engineering principle 1 applied one level lower than before. The model
-// used to propose the CONCLUSION ("this slot is 2"). Now it reports OBSERVATIONS —
-// is this beat something a camera would catch, is this emotion word specific, did
-// he say this himself or did the interviewer offer it — and the code computes the
-// conclusion from them (derive.js). Observations are auditable; a 2 is not.
+// used to carry the whole load. Now the registrar reports OBSERVATIONS — is this
+// beat something a camera would catch, is this emotion word specific, did he say it
+// himself or did the interviewer offer it — and the INTERVIEWER, reading an
+// assembled story instead of a database dump, still reports `coverage` itself.
+// Observations are auditable; a bare 2 is not.
 //
 // ── DISPLAY IS NOT THIS MODULE'S JOB, AND THE WOUND PROVES IT ──
 // A first draft of the design said the store must refuse barred content at the
@@ -50,6 +56,11 @@ import { NEVER_SHOW_SLOTS } from './state.js';
 
 // An entity names the slot it feeds. That reference is what makes derivation
 // possible at all, and it is also what the display guard checks.
+// ⚠ NEVER dereference NEVER_SHOW_SLOTS at module scope in this file. The import
+// from state.js is circular, and it is a `const`: hoisting saves the FUNCTIONS here,
+// not that binding. A module-scope read (e.g. `const BARRED = [...NEVER_SHOW_SLOTS]`)
+// would sit in the TDZ and throw a ReferenceError in ONE import order only — the
+// nastiest shape this bug can take. Read it inside a function, as displayable does.
 const SLOT_RE = /^stage([1-7])\.(.+)$/;
 
 export const STANCE_TYPES = new Set(['want', 'goal', 'reading']);
@@ -64,7 +75,8 @@ export const EMOTION_PACES = new Set(['situational', 'prior', 'trait']);
 // Who claims this — the attribution axis. It is not bookkeeping: it IS the
 // protocol's מבחן הבעלות ("the interpretation was formulated BY THE USER. If the
 // agent had to offer one, the slot stays 1 until the user adopts it in his own
-// words"), as a field instead of as a hope. derive.js reads it directly.
+// words"), as a field instead of as a hope. The interviewer reads it directly, and
+// eventView.js marks an unadopted stance in the account it hands over.
 export const SOURCES = new Set(['stated', 'attributed', 'inferred', 'unknown']);
 
 // Backstops, in the spirit of NODES_MAX: they should never be what stops anything,
@@ -88,7 +100,7 @@ export function createEventRecord() {
     // The stage (הבמה): where, when, whether this belongs to a run of events, and
     // what was standing true throughout. `place` and `precedent` have no slot of
     // their own in the protocol — they are held for the probing agent and for the
-    // map, and derive.js does not score them. See docs/event-model.md §2.
+    // map; no slot scores them. See docs/event-model.md §2.
     setting: { place: '', time: '', precedent: '', conditions: [] },
     beats: {},     // what someone did
     stances: {},   // what someone wanted, was after, or understood
@@ -154,7 +166,7 @@ function mergeInto(store, reported, cap, build) {
 // `camera` is the protocol's מבחן המצלמה as a field: true when the content is
 // something a camera would have caught ("he said X on the phone"), false when it is
 // a generalisation or a reading ("he had a go at me"). The registrar judges it;
-// derive.js is what acts on it. An omission IS a beat — "she didn't answer the
+// the interviewer acts on it. An omission IS a beat — "she didn't answer the
 // messages" is a step taken, and it is already the example in evaluator.md.
 export function mergeBeats(record, reported) {
   return {
@@ -275,8 +287,8 @@ export function mergeSetting(record, reported) {
   };
 }
 
-// Every entity in the ledger that feeds one slot. Used by derive.js and by any
-// projection; `displayable` still has to be applied by whoever draws.
+// Every entity in the ledger that feeds one slot. For any projection over the
+// ledger; `displayable` still has to be applied by whoever draws.
 export const bySlot = (store, slot) => Object.values(store ?? {}).filter((e) => e.slot === slot);
 
 // Entities belonging to the interviewee. The registrar is told to use 'self' for

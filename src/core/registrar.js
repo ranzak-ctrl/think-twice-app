@@ -153,13 +153,13 @@ export function applyRegistrar(state, deltas, turn = 0) {
 // without an assembled story — that is precisely how it runs today — so a bad
 // parse, a network error or a missing prompt degrades to the current behaviour
 // instead of stopping the interview. The error is returned for the guide trail.
-export async function runRegistrar({ state, messages, systemPrompt, completeImpl, turn = 0 }) {
+export async function runRegistrar({ state, messages, systemPrompt, completeImpl, turn = 0, stage }) {
   if (!systemPrompt || !messages?.length || typeof completeImpl !== 'function') {
     return { state, usage: null, error: 'not_configured' };
   }
   let result;
   try {
-    result = await completeImpl({ systemPrompt, messages, mode: 'registrar' });
+    result = await completeImpl({ stage, systemPrompt, messages, mode: 'registrar' });
   } catch (err) {
     return { state, usage: null, error: err?.message ?? 'call_failed' };
   }

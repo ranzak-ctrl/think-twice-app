@@ -12,6 +12,7 @@ import stage5Md from '../content/prompts/agents/stage5-transform.md?raw';
 import stage6Md from '../content/prompts/agents/stage6-alternatives.md?raw';
 import stage7Md from '../content/prompts/agents/stage7-decision.md?raw';
 import { FORBIDDEN_PATTERNS } from '../content/forbidden.js';
+import registrarMd from '../content/prompts/registrar.md?raw';
 import { renderEvent } from './eventView.js';
 
 const STAGE_PROMPTS = {
@@ -28,7 +29,10 @@ const LAST_K_TURNS = 6;
 
 export function buildSystemPrompt({ stage, state }) {
   const stagePrompt = STAGE_PROMPTS[stage] ?? '';
-  const stateSummary = summarizeState(state);
+  // The ONLY caller that gets the unredacted account — its output is a question
+  // to the person, never a text spoken verbatim, and stage 2 must see the מוגלה to
+  // probe it. Summary / opener / board keep the safe default.
+  const stateSummary = summarizeState(state, { full: true });
 
   return [
     personaMd,
@@ -42,22 +46,32 @@ export function buildSystemPrompt({ stage, state }) {
     .join('\n\n---\n\n');
 }
 
-// Registrar mode — the call that assembles the event. Returns '' until the prompt
-// exists, and runTurn treats an empty prompt as "no registrar", so the interview
-// behaves exactly as it does today.
+// Registrar mode — the call that assembles the event.
 //
-// The prompt file is `prompt-editor`'s to write (CLAUDE.md: it is the ONLY agent
-// that edits src/content/prompts/**), so the import lands with that file and this
-// function returns its text. Everything downstream — registrar.js, the serial call
-// in runTurn, the merge, the account in this file's state summary — is built and
-// tested and waiting on exactly this one line.
+// ⚠ THE SWITCH IS OFF. Flipping REGISTRAR_ENABLED turns the registrar on for every
+// interview, and CLAUDE.md's workflow gates that: "כל שינוי בפרומפטים ← הרצת
+// תסריטי הזהב + שופט-LLM". Neither can run here — both need a live
+// ANTHROPIC_API_KEY, and prompt-editor explicitly did NOT claim a judge pass. The
+// mock returns '{}' for this mode, so the e2e scripts do not exercise the prompt
+// at all. What must happen first is written in docs/event-model.md §8.
 //
-// What that prompt must produce: JSON with `setting` · `beats` · `stances` ·
-// `emotions` · `actors` · `edges` · `groups` · `open_forks` · `gap_observations`,
-// all deltas keyed by a stable id, and NO `message` field. See src/core/registrar.js
-// for the contract and docs/event-model.md §2 for what each entity carries.
-export function buildRegistrarPrompt() {
-  return '';
+// Everything else is built, wired and tested. This boolean is the whole switch.
+export const REGISTRAR_ENABLED = false;
+
+// The registrar gets the UNREDACTED account, and that is not an oversight.
+// prompt-editor caught it while writing registrar.md: `full` defaults to redacting
+// NEVER_SHOW_SLOTS, and a redacted account hides the ids of the wound stances THE
+// REGISTRAR ITSELF recorded. It reports deltas keyed by id, so it can only leave an
+// entity alone — or correct it — if it can see the id it minted. Hand it a redacted
+// account and it mints a fresh id for the מוגלה every single turn, filling the
+// ledger with duplicates of the one thing that must never be duplicated.
+//
+// This is safe for the same reason buildSystemPrompt is: the registrar has no
+// `message` field and speaks to nobody. Redaction protects the calls whose output
+// is spoken to the person; this one produces JSON.
+export function buildRegistrarPrompt({ state }) {
+  if (!REGISTRAR_ENABLED) return '';
+  return [registrarMd, summarizeState(state, { full: true })].filter(Boolean).join('\n\n---\n\n');
 }
 
 // Summary mode — built when the Router decides a stage transition is due.
@@ -150,7 +164,9 @@ export function formatHistory(history) {
   }));
 }
 
-function summarizeState(state) {
+// `full` reaches renderEvent: the probe needs the whole account (stage 2 cannot
+// explore a wound it is not told about); every user-facing builder gets it redacted.
+function summarizeState(state, { full = false } = {}) {
   const { coverage, meta } = state;
   const threads = (meta.savedThreads ?? []).length
     ? `\nsaved_threads: ${JSON.stringify(meta.savedThreads)}`
@@ -193,7 +209,7 @@ function summarizeState(state) {
   // key-value pairs answers about key-value pairs; a model handed an account asks
   // its next question about the story. Empty until the registrar is wired, so this
   // is a no-op for now — `renderEvent` returns '' for an untouched record.
-  const event = renderEvent(state);
+  const event = renderEvent(state, { full });
 
   return `${event ? `${event}\n\n` : ''}## STATE SUMMARY (hidden from user)
 stage: ${meta.currentStage}

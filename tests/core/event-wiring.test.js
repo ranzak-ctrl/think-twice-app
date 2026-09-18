@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createState, importState, exportState } from '../../src/core/state.js';
+import { createState, importState, exportState, mergeActorMap } from '../../src/core/state.js';
 import { mergeBeats, mergeSetting, createEventRecord } from '../../src/core/eventRecord.js';
 import { buildSystemPrompt } from '../../src/core/promptBuilder.js';
 
@@ -49,8 +49,13 @@ describe('back-compat with exports that predate the registrar', () => {
 });
 
 describe('the interviewer prompt carries the account', () => {
-  it('omits it entirely while the record is empty — today, a no-op', () => {
-    const prompt = buildSystemPrompt({ stage: 1, state: createState() });
+  // The previous version passed createState(), whose actorMap is {} — the ONE state
+  // in which the old assertion held. A live stage-1 state has a cast the interviewer
+  // populated itself, and the account used to leak a section on turn three. The
+  // fixture now carries an actor, so the test actually tests the claim it certifies.
+  it('omits it entirely while the LEDGER is empty, cast or no cast', () => {
+    const state = mergeActorMap(createState(), [{ id: 'boss', label: 'הממונה', clear: true }]);
+    const prompt = buildSystemPrompt({ stage: 1, state });
     expect(prompt).not.toContain('המאורע כפי שנאסף');
     expect(prompt).toContain('## STATE SUMMARY');
   });

@@ -33,23 +33,35 @@
 // filling one, and the interviewer choosing its next question is exactly who should
 // see that it is empty. It is never shown to the person — see the note below.
 //
-// ── NEVER_SHOW_SLOTS DOES NOT APPLY HERE, AND THAT IS NOT AN OVERSIGHT ──
-// This text goes into the INTERVIEWER'S PROMPT. It is never rendered to the person.
-// The wound and the ADHD pattern must be in it: stage 2 explores them, and the
-// interview cannot probe what it is not told. `findings` already ships wound
-// material into the prompt today for the same reason, and `summarizeState` has
-// always sent the full coverage map.
+// ── REDACTION: THE DEFAULT IS SAFE, AND buildSystemPrompt OPTS OUT ──
+// An earlier version of this header claimed NEVER_SHOW_SLOTS need not apply here
+// because "this text goes into the INTERVIEWER'S PROMPT, never to the person", and
+// because "findings already ships wound material into the prompt today". BOTH WERE
+// FALSE, and router-guard caught it before the registrar went live:
 //
-// The prohibition in CLAUDE.md is on FORMULATING the wound for him, reflecting it
-// back as our reading, or confronting him with it. That is a rule about what the
-// interviewer SAYS, enforced in the prompts and by the judge — not about what it
-// knows. The guard that matters here is `displayable()` in eventRecord.js, and it
-// belongs to whatever draws the map, not to this.
+//   1. renderEvent is called from `summarizeState`, which is a body of FOUR
+//      builders — buildSystemPrompt, buildSummaryPrompt, buildOpenerPrompt and
+//      buildBoardPrompt. The summary and the opener are the two calls whose entire
+//      output is spoken to the person, and the summary instruction is literally
+//      "סכם בקצרה, במילים שלי".
+//   2. `findings` appears in NO prompt — it goes only to GuidePanel. The single
+//      wound-related item any prompt carried was the integer coverage.stage2.wound,
+//      which has no text in it. This account was about to be the first mechanism in
+//      the project's history to put מוגלה TEXT into a prompt, and it would have
+//      landed in the two user-facing ones.
 //
-// If a future reader is tempted to filter the wound out of this view: doing so
-// would make stage 2 unable to see its own subject, and would not protect anyone.
+// Nothing downstream would have stopped it: forbidden.js has no wound rule, and
+// neither summary.md nor opener.md nor persona.md mentions the מוגלה. The stage-2
+// agent prompt, the one place the rule lives, is not part of the summary call.
+//
+// So `full` defaults to FALSE and redacts, and only buildSystemPrompt — the probe,
+// which must know the wound in order to explore it — asks for the whole account.
+// The polarity is deliberate: a future builder that forgets to think about this
+// gets the safe behaviour, not the leak. The guard is `displayable()` from
+// eventRecord.js, exported for exactly this and previously not called by the
+// projection that needed it most.
 
-import { isSelf, bySlot } from './eventRecord.js';
+import { isSelf, displayable } from './eventRecord.js';
 
 // The interviewee is addressed, never described. Findings are already written in
 // the second person (evaluator.md: "נסח כל ממצא בפנייה אליו — גוף שני"), and an
@@ -86,7 +98,11 @@ function actorIds(state, record) {
     seen.add(v);
     ids.push(v);
   };
-  add('self'); // the interviewee leads the cast; he is the one in the room
+  // The interviewee leads the cast, under whatever id the cast actually uses for
+  // him. evaluator.md and the mock spell it `user`, which isSelf accepts — keying
+  // the block on the literal 'self' meant actorMap['self'] was undefined, so an
+  // interviewee marked clear:false lost his ⚠ and his relation.
+  add(Object.keys(state?.actorMap ?? {}).find(isSelf) ?? 'self');
   for (const id of Object.keys(state?.actorMap ?? {})) if (!isSelf(id)) add(id);
   for (const store of [record.beats, record.stances, record.emotions]) {
     for (const e of Object.values(store ?? {})) if (has(e.actor) && !isSelf(e.actor)) add(e.actor);
@@ -133,26 +149,25 @@ function actorBlock(record, actorMap, id) {
     lines.push(`  רגש: ${txt}`);
   }
 
-  // What is not known about this character. Stated as a fact about the record, for
-  // the interviewer only — the person never sees this text. Only for OTHERS: an
-  // empty column on the interviewee is the ordinary state of stages 1 and 2 and
-  // says nothing, while an empty column on another character is what stage 5 exists
-  // to fill.
-  if (!isSelf(id)) {
-    // Named with the same nouns as the headings above, so the line reads against
-    // the block it sits under — and so no Hebrew verb has to agree with a gender
-    // the record does not carry.
-    const missing = [];
-    if (!stances.some((s) => s.type === 'reading')) missing.push('פרשנות');
-    if (!stances.some((s) => s.type === 'want' || s.type === 'goal')) missing.push('רצון/מטרה');
-    if (!emotions.length) missing.push('רגש');
-    if (missing.length && (beats.length || stances.length || emotions.length || actorMap?.[id])) {
-      lines.push(`  לא ידוע: ${missing.join(' · ')}`);
-    }
-  }
+  // A "לא ידוע" line naming what is missing from another character's mind-layer
+  // used to sit here. Removed, on router-guard's finding: it fired for any actor in
+  // `actorMap` whether or not the ledger held anything, so from stage-1 turn three
+  // onward EVERY prompt gained a section whose whole content was a list of what is
+  // unknown about another character's interpretation, wants and feelings — stage-5
+  // and stage-3 material, pushed at the stage-1 agent. docs/test-plan.md §א.2 item
+  // 10 is a live regression for exactly that drift (סחף שלב 2→5).
+  //
+  // The account's job is to say what IS known. What to probe next is the stage
+  // prompt's and the Router's, and duplicating it here only creates pressure across
+  // a boundary the interview works to hold. Reversible, stage-gated, if it turns
+  // out the interviewer wants it — that is a clinical call, not a code one.
 
-  if (!lines.length) return '';
+  // A character in the cast is part of the event even before anything is recorded
+  // about them — "who is in this story" is an answer, and dropping them here made
+  // the account quietly narrower than the cast. So the name line stands on its own;
+  // what is MISSING about them is deliberately not named (see above).
   const a = actorMap?.[id];
+  if (!lines.length && !a) return '';
   const rel = !isSelf(id) && has(a?.relation) ? ` (${a.relation.trim()})` : '';
   const unclear = a?.clear === false ? ' ⚠ לא ברור' : '';
   return [`— ${nameOf(actorMap, id)}${rel}${unclear}`, ...lines].join('\n');
@@ -198,9 +213,31 @@ function beatLine(b, actorMap) {
 // StateDocument → the event as an account for the interviewer's prompt.
 // Empty sections are omitted rather than printed as empty headings: an account with
 // blanks in it is a form, and a model handed a form fills the form.
-export function renderEvent(state) {
-  const record = state?.eventRecord;
-  if (!record) return '';
+export function renderEvent(state, { full = false } = {}) {
+  const raw = state?.eventRecord;
+  if (!raw) return '';
+
+  // The account is the LEDGER's account. With an empty ledger there is no account,
+  // whatever else the document holds — which is what makes this genuinely inert
+  // while the registrar is not yet writing, rather than inert-looking. The earlier
+  // version leaked a cast section as soon as the INTERVIEWER populated actorMap in
+  // stage 1, so the branch changed the live prompt on turn three while claiming to
+  // change nothing.
+  const s0 = raw.setting ?? {};
+  const empty =
+    !Object.keys(raw.beats ?? {}).length &&
+    !Object.keys(raw.stances ?? {}).length &&
+    !Object.keys(raw.emotions ?? {}).length &&
+    !has(s0.place) && !has(s0.time) && !has(s0.precedent) && !(s0.conditions ?? []).length;
+  if (empty) return '';
+
+  // Redaction, unless the caller is the probe. See the header.
+  const keep = (store) =>
+    full ? (store ?? {}) : Object.fromEntries(Object.entries(store ?? {}).filter(([, e]) => displayable(e)));
+  const record = full
+    ? raw
+    : { ...raw, beats: keep(raw.beats), stances: keep(raw.stances), emotions: keep(raw.emotions) };
+
   const actorMap = state?.actorMap ?? {};
   const s = record.setting ?? {};
   const parts = [];
