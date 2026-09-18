@@ -7,21 +7,50 @@ Run every gate before a deployment reaches testers. Report each as PASS or FAIL 
 
 ## Gates
 
-**1 · Test suite green.** `npm test`. The expected count is ~323 plus one skipped (the opt-in judge). A drop in count is as much a failure as a red test — it means tests stopped being collected.
+**1 · Test suite green.** `npm test`. As of 18.9 that is 482 passing plus one skipped (the opt-in judge; `tests/live/` adds more skips once it exists). Read the number, not just the colour: a drop in count is as much a failure as a red test — it means tests stopped being collected. And remember what green does not cover — no test in the suite calls the model, so a clean run says nothing about how production behaves. That is gate 5's job.
 
 **2 · Production build succeeds.** `npm run build`.
 
 **3 · No API key in the bundle.** Grep `dist/` for `sk-ant`, for `ANTHROPIC_API_KEY`, and for any long base64-ish literal. The browser must call `/api/anthropic/v1/messages` with no key; the serverless function injects it. This gate is the one that must never be waived — a leaked key in a public bundle is unrecoverable.
 
-**4 · Serverless functions actually built.** The known failure is that `api/` was never compiled into functions at all, which surfaced as every `/api/*` returning 404. Confirm both `api/ping.js` and `api/anthropic/v1/messages.js` exist and that the last deployment log shows a functions build step.
+**4 · Serverless functions actually built.** The known failure is that `api/` was never compiled into functions at all, which surfaced as every `/api/*` returning 404. Confirm all three of `api/ping.js`, `api/anthropic/v1/messages.js` and `api/report.js` exist, and that the last deployment log shows a functions build step.
 
-**5 · Live endpoints respond.** `curl -s -o /dev/null -w "%{http_code}" https://think-twice-nine.vercel.app/api/ping` must return 200. Then the proxy with an `x-app-password` header — it must reject a wrong password and accept the right one. Ask Ran for the password rather than reading it from any env file.
+**5 · Live endpoints respond, and one real interview turn runs.** `curl -s -o /dev/null -w "%{http_code}" https://think-twice-nine.vercel.app/api/ping` must return 200. Then the proxy with an `x-app-password` header — it must reject a wrong password and accept the right one. Ask Ran for the password rather than reading it from any env file.
 
-**6 · Password gate active.** `VITE_REQUIRE_PASSWORD=1` set in the Vercel environment, and `PasswordGate` present in the served app. Do not check `VITE_LIVE` — it is a no-op since the `VITE_USE_MOCK` change and would pass or fail meaninglessly. What matters is that `VITE_USE_MOCK` is **not** set to `true` in Vercel.
+`/api/ping` is not enough on its own and never has been: it never touches the model, so it returns 200 against a missing key, an exhausted account and a broken response shape alike. **The gate is one real turn in the browser.** The live interview went unverified from 14.8 through 18.9 while roughly fifty commits shipped — the whole illustration layer among them — precisely because ping was treated as proof.
+
+From a cloud session this gate cannot run at all: the network policy refuses `vercel.app` with a 403 on CONNECT. Do not report it as passing or failing from there. Say it is unverifiable in this environment, hand Ran the commands, and clear what you can with gate 6 instead.
+
+**6 · Build configuration, proven by the bundle fingerprint.** Three variables reach the browser, and all three are burned into the JS at build time rather than read at runtime:
+
+| variable | what it decides |
+|---|---|
+| `VITE_USE_MOCK` | live model vs scripted mock |
+| `VITE_REQUIRE_PASSWORD` | whether the password gate exists at all |
+| `VITE_MODEL` | which model the app names |
+
+Vite names the output file after a hash of its contents, so **the bundle filename is a fingerprint of the configuration that produced it.** That makes the deployment's configuration checkable without reaching the site:
+
+```bash
+# 1. the deployed name, from the Vercel build log (the `dist/assets/index-*.js` line)
+# 2. the same commit, built here with the configuration production is supposed to have
+env -u VITE_USE_MOCK -u VITE_MODEL VITE_REQUIRE_PASSWORD=1 npm run build
+```
+
+**Identical name → the gate passes**, and it passes for both halves at once: the password gate is on, and the app is live rather than mock, because a `VITE_USE_MOCK=true` build produces a different name. **A different name → stop.** Something in the Vercel environment is not what you think. Rebuild locally varying one variable at a time until you find which one accounts for the difference, and do not deploy until you know.
+
+Two rules for using this:
+
+- **Build, never compare against a remembered hash.** The fingerprint changes with every code change, so a value written down last week proves nothing. It is only meaningful against a build of the same commit.
+- **Same commit both sides.** Comparing your working tree against a log line from an older deployment measures the code difference, not the configuration.
+
+This gate works from a cloud session, where gate 5 cannot run at all. It is the only configuration check available there, and it replaces the old "look at the Vercel dashboard and trust it".
+
+Do not check `VITE_LIVE` — it is a no-op since the `VITE_USE_MOCK` change and would pass or fail meaninglessly.
 
 **7 · Deployed commit is current.** Compare the live commit against `git log -1`. Production has been silently stale before; treat any gap as a FAIL and name the missing commits.
 
-**8 · Spend ceiling in place.** Confirm the deployed `ANTHROPIC_API_KEY` is a dedicated key with a spending limit, not a general-purpose one. Testers running full interviews against an uncapped key is an open, known risk (DEPLOY-STATUS).
+**8 · Spend ceiling in place.** Confirm the deployed `ANTHROPIC_API_KEY` is a dedicated key covered by a ceiling, not the general-purpose one. Note the mechanism: in the Anthropic console the limit belongs to a **Workspace**, not to a key — a key inherits the ceiling of the workspace it was created in. So "a key with a limit" means a key issued inside a workspace that has one, and checking the key alone tells you nothing. Testers running full interviews against an uncapped key is an open, known risk (DEPLOY-STATUS).
 
 ## Report
 
