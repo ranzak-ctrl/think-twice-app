@@ -22,10 +22,30 @@ if (!before || !after) {
 
 for (const [label, r] of [['לפני (הרשם כבוי)', before], ['אחרי (הרשם דלוק)', after]]) {
   if (!r) continue;
-  const judge = { ran: '✅ רץ', skipped: '⚠ דילג — המפתח חסר', rejected: '⚠ המפתח נדחה' }[r.judge];
-  out.push(`**${label}** — בדיקות: ${r.exitCode === 0 ? '✅ עברו' : '❌ נפלו'} · שופט: ${judge}`);
+  const judge = { ran: '✅ רץ', skipped: '⚠ דילג — המפתח חסר', rejected: '❌ נכשל' }[r.judge];
+  // The unit suite and the judge are separate verdicts. A red judge with a green
+  // suite means the code is fine and the API call is not, and collapsing the two
+  // into one ❌ sends you looking in the wrong place.
+  const units = (r.unitFailures ?? []).length
+    ? `❌ נפלו: ${r.unitFailures.join(' · ')}`
+    : '✅ עברו';
+  out.push(`**${label}** — בדיקות היחידה: ${units} · שופט: ${judge}`);
 }
 out.push('');
+
+const err = after?.judgeError || before?.judgeError;
+if (err) {
+  out.push('**מה השרת החזיר:**');
+  out.push('```');
+  out.push(err);
+  out.push('```');
+  out.push(
+    '> הבדיקות עצמן ירוקות — **הקוד תקין.** מה שנכשל הוא הקריאה ל-API.\n' +
+    '> הסיבה הנפוצה ביותר: **רווח או שורה חדשה שנדבקו עם המפתח** לתוך הסוד ב-GitHub.\n' +
+    '> מחק את הסוד, העתק את המפתח מחדש **בלי רווחים בקצוות**, והרץ שוב.',
+  );
+  out.push('');
+}
 
 if (before?.judge === 'ran' && after?.judge === 'ran') {
   out.push('| ממד | לפני | אחרי | שינוי | |');

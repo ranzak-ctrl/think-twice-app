@@ -101,7 +101,10 @@ describe.skipIf(!hasKey || !runJudge)('LLM-judge acceptance (real API)', () => {
     'scores the meat golden transcript ≥ 4 on every dimension',
     async () => {
       const res = await judgeTranscript({ history: meatTranscript, apiKey });
-      expect(res.ok).toBe(true);
+      // The API's own words, not a bare boolean. judgeTranscript returns
+      // { ok:false, error:<response body> } and the assertion used to throw away
+      // the one field that says WHY — which in CI meant a red run with no cause.
+      expect(res.ok, `judge call failed → ${res.error ?? '(no error text)'}`).toBe(true);
       for (const dim of JUDGE_DIMENSIONS) {
         expect(res.scores[dim], `${dim}: ${res.notes}`).toBeGreaterThanOrEqual(4);
       }

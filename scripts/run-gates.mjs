@@ -30,7 +30,11 @@ function keyFromEnvFile() {
   return '';
 }
 
-const key = process.env.ANTHROPIC_API_KEY || keyFromEnvFile();
+// Trimmed, and that is a fix rather than tidiness: a GitHub secret preserves
+// whatever was pasted, and a trailing newline picked up from a copy is invisible
+// in the UI and rejected by the API as an invalid key. Telling a human to "paste
+// it again without spaces" is worse than removing them.
+const key = (process.env.ANTHROPIC_API_KEY || keyFromEnvFile()).trim();
 const keyLooksReal = key.startsWith('sk-ant-') && key.length > 30;
 
 console.log(`\n${line}\n  שערי הקבלה — Think Twice\n${line}\n`);
@@ -92,9 +96,18 @@ child.on('close', (code) => {
 
   // A machine-readable twin, so CI can build one comparison table instead of
   // asking anyone to read two logs side by side.
+  // Which files failed, so "the judge failed" is never reported as "the suite is
+  // broken". They call for completely different actions.
+  const failedFiles = [...log.matchAll(/FAIL\s+(\S+)/g)].map((m) => m[1]);
+  const unitFailures = failedFiles.filter((f) => !f.includes('judge'));
+  // The API's own error text, which the assertion now carries through.
+  const judgeError = /judge call failed → ([^\n]{0,300})/.exec(log)?.[1]?.trim() ?? '';
+
   writeFileSync(`${OUT}.json`, JSON.stringify({
     registrar,
-    judge: judgeSkipped ? 'skipped' : keyRejected ? 'rejected' : 'ran',
+    judge: judgeSkipped ? 'skipped' : keyRejected || judgeError ? 'rejected' : 'ran',
+    judgeError,
+    unitFailures: [...new Set(unitFailures)],
     scores: Object.fromEntries(scores.map(([, d, v]) => [d, Number(v)])),
     exitCode: code ?? 1,
   }, null, 2));
