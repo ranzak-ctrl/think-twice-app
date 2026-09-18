@@ -3,12 +3,31 @@
 
 export const SLOT_UNKNOWN = 'U';
 
+// The registrar's ledger. This import is circular — eventRecord.js reads
+// NEVER_SHOW_SLOTS from here — and is safe because neither side dereferences the
+// other at module-evaluation time: createEventRecord and displayable are both
+// called later. Asserted by tests/core/state.test.js importing a fresh state.
+import { createEventRecord } from './eventRecord.js';
+// The graph's vocabulary lives in one module now — see vocabulary.js for why.
+// Re-exported here because story.js and the tests already import these names
+// from state.js, and moving a definition should not move an import path.
+import {
+  EDGE_KINDS, GROUP_KINDS, NODE_SCALES, NEVER_SHOW_SLOTS, LABEL_MAX, MENTAL_SLOTS,
+} from './vocabulary.js';
+export { EDGE_KINDS, GROUP_KINDS, NODE_SCALES, NEVER_SHOW_SLOTS };
+export const MAP_LABEL_MAX = LABEL_MAX;
+
 export function createState() {
   return {
-    facts: {},
-    thoughts: {},   // includes wound (מוגלה) and ADHD pattern tag
-    feelings: {},   // emotion name + intensity + past echo
-    reactions: {},  // automatic + planned
+    // `facts` / `thoughts` / `feelings` / `reactions` used to sit here. They were
+    // declared when the document was designed and NOTHING EVER WROTE TO THEM: the
+    // four updaters (updateFacts and siblings) were unreferenced outside this file
+    // for the life of the project, and all four shipped into every prompt on every
+    // turn as `{}`. That empty shape was the registrar's chair, left empty — the
+    // system compensated by having the interviewing model report slot numbers
+    // instead of anyone assembling the event. `eventRecord` is what finally sits
+    // in it, so the four are removed rather than left as decoys.
+    eventRecord: createEventRecord(),
     basket: [],     // alternative responses (stage 6)
     board: [],      // decision board rows (stage 7, built from basket)
     decision: {},   // { type, choice, rationale, package_gain, package_cost }
@@ -150,22 +169,6 @@ export function updateMeta(state, patch) {
   return { ...state, meta: { ...state.meta, ...patch } };
 }
 
-export function updateFacts(state, patch) {
-  return { ...state, facts: { ...state.facts, ...patch } };
-}
-
-export function updateThoughts(state, patch) {
-  return { ...state, thoughts: { ...state.thoughts, ...patch } };
-}
-
-export function updateFeelings(state, patch) {
-  return { ...state, feelings: { ...state.feelings, ...patch } };
-}
-
-export function updateReactions(state, patch) {
-  return { ...state, reactions: { ...state.reactions, ...patch } };
-}
-
 export function addToBasket(state, option) {
   return { ...state, basket: [...state.basket, option] };
 }
@@ -227,7 +230,6 @@ export function addFindings(state, stageKey, slotKey, items) {
 // understanding. Over-long values are refused rather than trimmed — a label that
 // needs cutting is not a label, and silently trimming it would put the sentence
 // back in the cube this field exists to keep out.
-export const MAP_LABEL_MAX = 24;
 
 // Slots that may never be shown to the person: the wound (מוגלה) and the ADHD
 // pattern. CLAUDE.md and Natali's ruling of 14.8 — he reaches the wound himself,
@@ -240,7 +242,6 @@ export const MAP_LABEL_MAX = 24;
 // stage 2 lands, and a single guard in a single consumer was the only thing between
 // that and the person's own screen. A label that is never stored cannot be drawn by
 // a consumer that forgets to check. story.js re-exports this as NEVER_MIRROR.
-export const NEVER_SHOW_SLOTS = new Set(['wound', 'adhd_pattern']);
 
 export function setMapLabel(state, stageKey, slot, raw) {
   if (NEVER_SHOW_SLOTS.has(slot)) return state;
@@ -279,7 +280,6 @@ export function setMapLabel(state, stageKey, slot, raw) {
 // standing state rather than a moment is a reading of what he said. Code that
 // guessed it would be asserting the shape of his story again. Unreported defaults
 // to `episode`, which is the drawing we already had.
-export const NODE_SCALES = new Set(['episode', 'ongoing']);
 
 // How many nodes one slot may put on the map. The significance rule from Ran's
 // gate of 28.8 ("how significant is the item") survives here as a budget rather
@@ -405,20 +405,6 @@ export function mergeNodes(state, reported) {
 //
 // Endpoints are node ids as the map names them: "stageN.slot" for a beat,
 // "actor:<id>" for a character, "fork:<id>" for an open fork.
-export const EDGE_KINDS = new Set([
-  'then',    // temporal succession — and then
-  'because', // causal — that is why
-  'agent',   // an actor did this beat
-  // resemblance — this felt like that. Added 5.9.2026 after prompt-editor found a
-  // relation the first three could not carry: "that is how I felt when teachers
-  // said I do not try" relates the feeling to its past echo, and it is a relation
-  // he STATED. `because` was the only near fit and it would have asserted that the
-  // past CAUSED the feeling — a causal claim he never made, in the one dimension
-  // (`ownership`) the judge exists to catch. A kind that says only "these resemble
-  // each other" keeps the edge without inventing the cause. It never re-orders the
-  // map: resemblance is not precedence.
-  'echo',
-]);
 
 const edgeNode = (v) => (typeof v === 'string' ? v.trim() : '');
 
@@ -431,6 +417,16 @@ const endpointSlot = (node) => {
   return m ? m[1] : '';
 };
 
+// `about` runs mind → target, always. A beat is not about anything; only a reading,
+// a want or a feeling points at something. Accepts a ledger entity (`stance:` /
+// `emotion:`) or a mental slot's own cube, so an edge reported before the registrar
+// entified the thought is not silently lost. See vocabulary.js MENTAL_SLOTS.
+function isMentalRef(ref) {
+  if (/^(stance|emotion):/.test(ref)) return true;
+  const slot = /^stage[1-7]\.(.+)$/.exec(ref);
+  return !!slot && MENTAL_SLOTS.has(slot[1]);
+}
+
 export function mergeEdges(state, reported) {
   const byId = { ...(state.edges ?? {}) };
   for (const e of Array.isArray(reported) ? reported : []) {
@@ -439,6 +435,9 @@ export function mergeEdges(state, reported) {
     const kind = edgeNode(e?.kind);
     if (!from || !to || from === to) continue;        // a node cannot lead to itself
     if (!EDGE_KINDS.has(kind)) continue;              // unknown relation — dropped
+    // The one direction rule code can decide. Refused rather than flipped: flipping
+    // would invent a relation, and this contract's whole point is that it never does.
+    if (kind === 'about' && !isMentalRef(from)) continue;
     if (NEVER_SHOW_SLOTS.has(endpointSlot(from))) continue;
     if (NEVER_SHOW_SLOTS.has(endpointSlot(to))) continue;
 
@@ -487,7 +486,6 @@ export function mergeEdges(state, reported) {
 // interviewee." A box is a claim in every case, so `confirmed` gates all three
 // kinds, not only perspective. It is the same contract the edges already run:
 // report it unconfirmed, ask, and draw only once he has said so.
-export const GROUP_KINDS = new Set(['community', 'process', 'perspective']);
 export const GROUP_MEMBERS_MAX = 12;
 
 export function mergeGroups(state, reported) {
@@ -678,6 +676,37 @@ function withGap(state, gaps, key, record, logEntry) {
   };
 }
 
+// The two things that clash. Ran, 18.9.2026: "לא נחשוף את הקשתות האלה אבל כן נחזיק
+// אותן על הגרף." A record used to carry ONE `target`, so the two contradicting
+// things collapsed into the free-text `note` — a relation stored as a scalar.
+//
+// It lives here and not as an `edges` kind for a reason that is about the code:
+// `confirmed` is that store's contract and it is meaningless for an observation
+// the system makes ABOUT him rather than one he states, and `edges` is the bag of
+// things that get drawn while `gaps` is structurally hidden (no projection reads
+// it; principle 8 keeps it off disk). Full reasoning: docs/event-vocabulary.md ב.6.
+//
+// Endpoints use the graph's own vocabulary, so this IS a relation between graph
+// entities — just held in the hidden store.
+const GAP_PAIR_MAX = 2;
+function normalizeBetween(raw, prev) {
+  if (!Array.isArray(raw)) return prev ?? null;
+  const refs = raw.map((r) => (typeof r === 'string' ? r.trim() : '')).filter(Boolean);
+  // A pair or nothing. One endpoint is not a relation, and three is not a pair.
+  return refs.length === GAP_PAIR_MAX ? refs : (prev ?? null);
+}
+
+// Every live contradiction that names a pair, keyed by endpoint. The query Ran
+// named: which entity the most contradictions hang off.
+export function contradictionKnots(gaps) {
+  const counts = new Map();
+  for (const rec of Object.values(gaps?.byTarget ?? {})) {
+    if (rec.status === 'resolved' || !rec.between) continue;
+    for (const ref of rec.between) counts.set(ref, (counts.get(ref) ?? 0) + 1);
+  }
+  return counts;
+}
+
 // Apply one model observation to the gap records. Returns a new state.
 // One record per targetKey — a new observation always updates, never duplicates.
 export function recordGapObservation(state, observation, turn, thresholds) {
@@ -699,6 +728,7 @@ export function recordGapObservation(state, observation, turn, thresholds) {
       target, dimension, level, status: 'starred',
       firstTurn: turn, lastTurn: turn, touches: 0,
       history: [{ turn, level }], note,
+      between: normalizeBetween(observation?.between, null),
     };
     return withGap(state, gaps, key, record, { turn, level, delta: null, action: 'star' });
   }
@@ -716,6 +746,9 @@ export function recordGapObservation(state, observation, turn, thresholds) {
   const record = {
     ...existing,
     level, status,
+    // Omitted on a re-touch keeps the pair already on record — the same delta
+    // contract every other store here runs.
+    between: normalizeBetween(observation?.between, existing.between ?? null),
     lastTurn: turn,
     touches: existing.touches + 1,
     history: [...existing.history, { turn, level }],
@@ -738,8 +771,13 @@ export function importState(json) {
     throw new Error('Invalid state document: missing coverage or meta');
   }
   // Back-compat: older exports predate gap-management / findings / actor map.
+  // An export from before the registrar has no eventRecord; an export from before
+  // this change carries the four dead stores, which are dropped rather than
+  // restored — nothing reads them and nothing ever wrote them.
+  const { facts, thoughts, feelings, reactions, ...rest } = state;
   return {
-    ...state,
+    ...rest,
+    eventRecord: state.eventRecord ?? createEventRecord(),
     gaps: state.gaps ?? { byTarget: {}, log: [] },
     findings: state.findings ?? {},
     actorMap: state.actorMap ?? {},

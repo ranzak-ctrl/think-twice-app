@@ -533,6 +533,16 @@ function mockComplete({ stage, mode }) {
     return { ok: true, message, evaluation: null }; // summary mode = plain text (no JSON)
   }
 
+  // Registrar mode — assembles the event, never speaks. It has no scripted mock
+  // story: the golden scripts are transcripts of an INTERVIEW, and inventing a
+  // registrar report for them would test the fixture rather than the registrar.
+  // An empty report keeps every existing test on its current path, and the real
+  // behaviour is exercised in tests/core/registrar.test.js against an injected
+  // completeImpl. It does NOT advance the turn counter — no probing turn was spent.
+  if (mode === 'registrar') {
+    return { ok: true, raw: '{}', message: null, evaluation: null };
+  }
+
   // Board mode — Router returned SHOW_BOARD; return the synthesised board.
   if (mode === 'board') {
     const raw = JSON.stringify({
@@ -713,6 +723,15 @@ export async function complete({
     const raw = data.content?.find((b) => typeof b?.text === 'string')?.text ?? '';
     // Summary / opener modes are plain prose — no JSON to parse (the model's natural
     // text can't fail a JSON parse; live symptom of forcing JSON here was no_json).
+    // The registrar returns JSON with NO `message` field — that absence is the
+    // structural guarantee it cannot address anyone (registrar.js). parseResponse
+    // requires `message` and would reject every well-formed registrar reply, then
+    // retry it twice more behind REPAIR_NUDGE: three serial API calls per turn, in
+    // front of a waiting person, for nothing. Hand the text back unparsed and let
+    // parseRegistrarResponse read it.
+    if (mode === 'registrar') {
+      return { ok: true, raw, message: null, evaluation: null, usage };
+    }
     if (mode === 'summary' || mode === 'opener') {
       const message = raw.trim();
       return message

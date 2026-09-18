@@ -5,8 +5,10 @@
 // on a server. THE ROUTER DECIDES TRANSITIONS — runTurn only applies them.
 
 import { route, Decision, resolveResistance } from './router.js';
+import { runRegistrar } from './registrar.js';
 import {
   buildSystemPrompt,
+  buildRegistrarPrompt,
   buildSummaryPrompt,
   buildSummaryMessages,
   buildOpenerPrompt,
@@ -92,9 +94,37 @@ export async function runTurn(state, history, userText) {
   const turn = currentHistory.filter((m) => m.role === 'user').length; // monotonic turn index
   const messages = formatHistory(currentHistory);
   let usage = state.meta.usage ?? EMPTY_USAGE;
+
+  // ── THE REGISTRAR GOES FIRST, AND THAT ORDER IS THE POINT ──
+  // Ran's cycle, 18.9.2026: "the registrar hands the story to the interviewer › the
+  // interviewer decides the next question › the new information goes back to the
+  // registrar › the registrar hands over the UPDATED story". So the fold happens
+  // before the probe, and the interviewer's prompt is built from the state the
+  // registrar just wrote. Running the two in parallel would hand the interviewer
+  // the story as of the previous turn — cheaper by one call's latency, and wrong:
+  // the next question should be asked about the picture that includes what the
+  // person just said.
+  //
+  // Inert until the prompt exists (buildRegistrarPrompt returns '' today), so this
+  // is currently a no-op and the interview behaves exactly as before. A registrar
+  // failure never costs the person their turn — runRegistrar returns the state
+  // untouched and the interview proceeds the way it does today.
+  const registrar = await runRegistrar({
+    state,
+    stage,
+    messages,
+    systemPrompt: buildRegistrarPrompt({ state }),
+    completeImpl: complete,
+    turn,
+  });
+  usage = addUsage(usage, registrar.usage);
+  const probeState = registrar.state;
+
   const result = await complete({
     stage,
-    systemPrompt: buildSystemPrompt({ stage, state }),
+    // Built from the registrar's state, not the turn's opening state — this is
+    // where the serial order actually pays.
+    systemPrompt: buildSystemPrompt({ stage, state: probeState }),
     messages,
   });
   usage = addUsage(usage, result.usage);
@@ -112,7 +142,9 @@ export async function runTurn(state, history, userText) {
     };
   }
 
-  let nextState = { ...state };
+  // Everything below builds on what the registrar wrote, not on the turn's opening
+  // state. While inert the two are the same object's contents, so nothing moves.
+  let nextState = { ...probeState };
   const ev = result.evaluation ?? {};
 
   // Slot updates. Bare slot names → the current stage (set as reported). Cross-stage
@@ -174,6 +206,10 @@ export async function runTurn(state, history, userText) {
   // (overriding whatever the model put in slots.actors). A muddled cast can't reach
   // 2, so the Router won't advance stage 1 on it. Only when a map is reported —
   // otherwise the reported slot score stands (back-compat). The code decides.
+  // The cast is the REGISTRAR's (applyRegistrar merges it at any stage, which is
+  // what unfreezes it past stage 1). This path stays for as long as the registrar
+  // is inert and the interviewer is still the only reporter; once registrar.md
+  // lands, `actor_map` leaves evaluator.md and this block goes with it.
   if (stage === 1 && ev.actorMap) {
     nextState = mergeActorMap(nextState, ev.actorMap);
     nextState = {

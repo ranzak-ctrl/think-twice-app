@@ -83,9 +83,13 @@
 // than because it is good.
 
 import { NEVER_MIRROR, buildCast } from './story.js';
+// One definition of which edges may order, guarded by a test that also checks every
+// other kind in the vocabulary stays out of it.
+import { ORDERING_EDGE_KINDS as ORDERING_KINDS } from './vocabulary.js';
 
 const CONFIRMED = 2;
 const PROVISIONAL = 1;
+
 
 // Fallback only — see LABELS above. Takes the first words up to a budget,
 // preferring a clean word boundary.
@@ -281,7 +285,12 @@ export function buildMap(state) {
   const stated = new Set();
   for (const e of Object.values(state?.edges ?? {})) {
     if (!e.confirmed) continue;
-    if (e.kind !== 'then' && e.kind !== 'because') continue;
+    // Only succession and causation constrain the order. `echo` (resemblance) and
+    // `derives_from` (an alternative came out of a reinterpretation) are relations
+    // that are NOT precedence — and a derivation does not happen in the story's
+    // timeline at all, it happens in the interview. Listed by name so that adding a
+    // kind to the vocabulary cannot silently give it ordering power.
+    if (!ORDERING_KINDS.has(e.kind)) continue;
     constrain(e.from, e.to);
     // Both directions: what matters below is whether he said anything at all about
     // how these two stand to each other.

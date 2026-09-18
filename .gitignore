@@ -13,3 +13,6 @@ build/
 # Per-machine Claude Code permission grants. settings.json is shared;
 # settings.local.json is personal and must not travel with the repo.
 .claude/settings.local.json
+
+# Output of `npm run gates` — a local report, regenerated on every run
+gates-output.txt

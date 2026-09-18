@@ -1,0 +1,85 @@
+# The acceptance gates, run in the cloud.
+#
+# Ran, 18.9.2026: "אני לא רוצה לעבוד יותר מהמחשב המקומי אלא רק מהפרויקט בענן."
+#
+# Why this file exists rather than a script he runs: the Claude Code cloud session
+# cannot reach the deployed app (the network policy answers 403 to CONNECT) and
+# holds no ANTHROPIC_API_KEY, by design. GitHub Actions can do both — the key lives
+# in repository secrets, which is a place built for it, instead of in a chat
+# message or an ephemeral container.
+#
+# Manual trigger only. The judge is a real, paid API call; running it on every push
+# would bill for pushes that changed a comment.
+#
+# IT RUNS BOTH SWITCH STATES IN ONE GO. Measuring the registrar means comparing
+# before against after, and two runs a day apart with nobody sure which was which
+# is not a measurement.
+
+name: שערי קבלה
+
+on:
+  workflow_dispatch:
+    inputs:
+      note:
+        description: 'מה בודקים בהרצה הזו (לתיעוד בלבד)'
+        required: false
+        default: ''
+
+jobs:
+  gates:
+    name: מריץ את השערים בשני מצבי המתג
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # npm ci, not install: the lockfile is committed and CI should install exactly it.
+      - run: npm ci
+
+      # Baseline first, and on its own step so a failure here is distinguishable
+      # from a failure caused by the registrar.
+      - name: הרצה 1 — הרשם כבוי (בסיס)
+        id: before
+        continue-on-error: true
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          node scripts/registrar-switch.mjs off
+          node scripts/run-gates.mjs --out=gates-before.txt
+
+      - name: הרצה 2 — הרשם דלוק
+        id: after
+        continue-on-error: true
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          node scripts/registrar-switch.mjs on
+          node scripts/run-gates.mjs --out=gates-after.txt
+
+      # The report is the deliverable. It is written to the run's summary page so
+      # it is read in a browser, not downloaded and opened.
+      - name: הדוח
+        if: always()
+        run: node scripts/gates-report.mjs >> "$GITHUB_STEP_SUMMARY"
+
+      - name: הלוגים המלאים
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gates-logs
+          path: gates-*.txt
+
+      # The workflow fails if either run failed, so the Actions list shows a red
+      # cross without anyone opening it.
+      - name: תוצאה
+        if: always()
+        run: |
+          if [ "${{ steps.before.outcome }}" != "success" ] || [ "${{ steps.after.outcome }}" != "success" ]; then
+            echo "::error::אחת ההרצות נפלה — ראה את הדוח בסיכום הריצה"
+            exit 1
+          fi
