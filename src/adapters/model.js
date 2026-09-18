@@ -590,6 +590,19 @@ function mergeUsage(acc, u) {
   };
 }
 
+// Technical description of a failed turn, for the downloadable error report.
+// Metadata ONLY — no prompt, no messages, no user text, no model output. The
+// upstream error body is deliberately not carried through: Anthropic's message
+// field can echo the request, and that would be interview content leaving the
+// browser (principle 6). Only the machine-readable `error.type` is kept.
+function describeUpstream(text) {
+  try {
+    return JSON.parse(text)?.error?.type ?? 'unknown';
+  } catch {
+    return 'unparseable_error_body';
+  }
+}
+
 // `fetchImpl` and `apiUrl` are injectable so the live request path can be
 // exercised outside a browser (principle 4; judge.js sets the pattern). The
 // defaults are the deployed path, so no caller in the app passes either.
@@ -619,6 +632,9 @@ export async function complete({
   let usage = null;
   let attemptMessages = messages;
   let lastFailure = null;
+  // Kept across retries so a parse failure can still name the request the proxy
+  // logged, even though the last attempt returned HTTP 200.
+  let lastRequestId = null;
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     let res;
@@ -648,7 +664,14 @@ export async function complete({
       });
     } catch (err) {
       console.error('Network error:', err);
-      return { ok: false, error: err.message, message: 'בעיית תקשורת. בדוק חיבור לאינטרנט.', evaluation: null, usage };
+      return {
+        ok: false,
+        error: err.message,
+        message: 'בעיית תקשורת. בדוק חיבור לאינטרנט.',
+        evaluation: null,
+        usage,
+        failure: { kind: 'network', status: null, requestId: null, stage, mode: mode ?? 'turn', attempt, detail: String(err?.message ?? err) },
+      };
     }
 
     // 401 is the proxy rejecting the shared access password, not the model
@@ -663,14 +686,24 @@ export async function complete({
         message: 'צריך סיסמת גישה כדי להמשיך.',
         evaluation: null,
         usage,
+        failure: { kind: 'unauthorized', status: 401, requestId: res.headers?.get?.('x-request-id') ?? null, stage, mode: mode ?? 'turn', attempt, detail: 'app password rejected by proxy' },
       };
     }
 
     if (!res.ok) {
       const err = await res.text();
       console.error('Anthropic API error:', err);
-      return { ok: false, error: err, message: 'שגיאה בחיבור למודל. נסה שוב.', evaluation: null, usage };
+      return {
+        ok: false,
+        error: err,
+        message: 'שגיאה בחיבור למודל. נסה שוב.',
+        evaluation: null,
+        usage,
+        failure: { kind: 'http', status: res.status, requestId: res.headers?.get?.('x-request-id') ?? null, stage, mode: mode ?? 'turn', attempt, detail: describeUpstream(err) },
+      };
     }
+
+    lastRequestId = res.headers?.get?.('x-request-id') ?? lastRequestId;
 
     const data = await res.json();
     usage = mergeUsage(usage, data.usage);
@@ -684,7 +717,14 @@ export async function complete({
       const message = raw.trim();
       return message
         ? { ok: true, message, evaluation: null, usage }
-        : { ok: false, error: `empty_${mode}`, message: 'שגיאה בעיבוד התשובה. נסה שוב.', evaluation: null, usage };
+        : {
+            ok: false,
+            error: `empty_${mode}`,
+            message: 'שגיאה בעיבוד התשובה. נסה שוב.',
+            evaluation: null,
+            usage,
+            failure: { kind: 'empty_response', status: res.status, requestId: res.headers?.get?.('x-request-id') ?? null, stage, mode, attempt, detail: `model returned no text in ${mode} mode` },
+          };
     }
     const parsed = parseResponse(raw);
     if (parsed.ok) return { ...parsed, usage };
@@ -705,6 +745,15 @@ export async function complete({
     message: 'שגיאה בעיבוד התשובה. נסה שוב.',
     evaluation: null,
     usage,
+    failure: {
+      kind: 'parse_failed',
+      status: 200,
+      requestId: lastRequestId,
+      stage,
+      mode: mode ?? 'turn',
+      attempt: MAX_ATTEMPTS,
+      detail: lastFailure?.error ?? 'parse_failed',
+    },
   };
 }
 

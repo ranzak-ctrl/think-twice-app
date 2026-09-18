@@ -55,6 +55,10 @@ export default function App({ onUnauthorized }) {
   // Append-only log of every tester rewrite, including the turns each one
   // discarded. Separate from `history` precisely because history gets cut.
   const [revisions, setRevisions] = useState([]);
+  // Technical failures seen this session, for the error report. Metadata only —
+  // the adapter builds each entry and puts no interview content in it. Held in
+  // memory like everything else; nothing is persisted (principle 6).
+  const [failures, setFailures] = useState([]);
   const fileRef = useRef(null);
 
   // Built once and used twice: the drawing itself, and the header toggle, which
@@ -169,8 +173,9 @@ export default function App({ onUnauthorized }) {
       setHistory((h) => [...h, { role: 'user', content: text, at: Date.now() }]);
       setLoading(true);
       try {
-        const { nextState, reply, unauthorized } = await runTurn(state, history, text);
+        const { nextState, reply, unauthorized, failure } = await runTurn(state, history, text);
         setState(nextState);
+        if (failure) setFailures((f) => [...f, { ...failure, at: new Date().toISOString() }]);
         if (unauthorized) {
           // A locked door, not a failed turn. Take the person's message back out
           // of the transcript so they can send it again once they are through,
@@ -196,8 +201,9 @@ export default function App({ onUnauthorized }) {
     setState(advanced);
     setLoading(true);
     try {
-      const { nextState, message } = await generateStageOpener(advanced, history);
+      const { nextState, message, failure } = await generateStageOpener(advanced, history);
       setState(nextState);
+      if (failure) setFailures((f) => [...f, { ...failure, at: new Date().toISOString() }]);
       addMessage('assistant', message);
     } finally {
       setLoading(false);
@@ -214,6 +220,34 @@ export default function App({ onUnauthorized }) {
     a.href = href;
     a.download = filename;
     a.click();
+  };
+
+  // Technical error report — deliberately NOT the session. It carries what
+  // diagnoses a failure and nothing that identifies a person or an interview:
+  // no transcript, no prompt, no state document, no map. `requestId` matches the
+  // `x-request-id` the proxy logged, so this file and the Vercel Runtime Log line
+  // point at the same request without either one holding the conversation.
+  //
+  // Storing the interview outside the browser is forbidden (principle 6). This
+  // stays inside it: the file is built in memory and handed to the person, who
+  // decides where it goes. Nothing is uploaded.
+  const handleErrorReport = () => {
+    const payload = {
+      reportedAt: new Date().toISOString(),
+      app: {
+        bundle: document.querySelector('script[src*="/assets/index-"]')?.src?.split('/').pop() ?? null,
+        userAgent: navigator.userAgent,
+        href: window.location.origin,
+      },
+      stage: state.meta.currentStage,
+      questionCount: state.meta.questionCount,
+      failures,
+    };
+    const json = URL.createObjectURL(
+      new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    );
+    download(json, `think-twice-error-${Date.now()}.json`);
+    URL.revokeObjectURL(json);
   };
 
   const handleExport = async () => {
@@ -324,6 +358,18 @@ export default function App({ onUnauthorized }) {
               <Download />
               <span className="btn-label">ייצוא</span>
             </button>
+
+            {/* Appears only once something has actually failed, so a clean run
+                never shows a button about errors. */}
+            {failures.length > 0 && (
+              <button
+                className="btn"
+                onClick={handleErrorReport}
+                title="דוח תקלה טכנית — בלי תוכן הראיון"
+              >
+                <span className="btn-label">דוח תקלה ({failures.length})</span>
+              </button>
+            )}
 
             <button className="btn" onClick={() => fileRef.current?.click()} title="ייבוא">
               <Upload />

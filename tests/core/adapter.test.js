@@ -247,3 +247,104 @@ describe('adapter complete() — injectable transport', () => {
     expect(sent).not.toContain('x-api-key');
   });
 });
+
+// The error report's whole licence to exist is that it carries no interview
+// content (principle 6: "אסור לאחסן תוכן משתמש מחוץ לדפדפן"). The adapter builds
+// the metadata, so the guarantee is enforced here. If a future change starts
+// passing the upstream body or the prompt through, these fail.
+describe('adapter complete() — failure metadata carries no interview content', () => {
+  const SECRET_PROMPT = 'SYSTEM_PROMPT_SENTINEL_דמות_גלובלית';
+  const SECRET_USER = 'USER_TEXT_SENTINEL_קניתי_בשר_לא_איכותי';
+  const LOADED = {
+    stage: 2,
+    systemPrompt: SECRET_PROMPT,
+    messages: [{ role: 'user', content: SECRET_USER }],
+  };
+
+  beforeEach(() => {
+    vi.stubEnv('VITE_USE_MOCK', 'false');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  // An upstream error body that echoes the request — the realistic worst case,
+  // and the reason the body is reduced to `error.type` rather than passed along.
+  const echoingError = JSON.stringify({
+    type: 'error',
+    error: { type: 'invalid_request_error', message: `bad input near: ${SECRET_USER}` },
+  });
+
+  it('reduces an upstream error body to its type and keeps the request id', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: false,
+        status: 400,
+        headers: { get: (h) => (h === 'x-request-id' ? 'abc12345' : null) },
+        text: async () => echoingError,
+        json: async () => JSON.parse(echoingError),
+      }))
+    );
+
+    const res = await complete(LOADED);
+
+    expect(res.ok).toBe(false);
+    expect(res.failure.kind).toBe('http');
+    expect(res.failure.status).toBe(400);
+    expect(res.failure.requestId).toBe('abc12345');
+    expect(res.failure.detail).toBe('invalid_request_error');
+    expect(JSON.stringify(res.failure)).not.toContain(SECRET_USER);
+    expect(JSON.stringify(res.failure)).not.toContain(SECRET_PROMPT);
+  });
+
+  it('reports a network failure without the prompt or the message', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new Error('getaddrinfo ENOTFOUND');
+      })
+    );
+
+    const res = await complete(LOADED);
+
+    expect(res.failure.kind).toBe('network');
+    expect(res.failure.stage).toBe(2);
+    expect(JSON.stringify(res.failure)).not.toContain(SECRET_USER);
+    expect(JSON.stringify(res.failure)).not.toContain(SECRET_PROMPT);
+  });
+
+  it('reports an exhausted JSON retry and still names the logged request', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => ({
+        ok: true,
+        status: 200,
+        headers: { get: (h) => (h === 'x-request-id' ? 'req98765' : null) },
+        json: async () => ({
+          content: [{ type: 'text', text: `prose, not json — ${SECRET_USER}` }],
+          usage: { input_tokens: 1, output_tokens: 1 },
+        }),
+        text: async () => '',
+      }))
+    );
+
+    const res = await complete(LOADED);
+
+    expect(res.failure.kind).toBe('parse_failed');
+    expect(res.failure.requestId).toBe('req98765');
+    expect(JSON.stringify(res.failure)).not.toContain(SECRET_USER);
+    expect(JSON.stringify(res.failure)).not.toContain(SECRET_PROMPT);
+  });
+
+  it('adds no failure object to a successful turn', async () => {
+    const fetchStub = makeFetch([VALID]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    const res = await complete(ARGS);
+
+    expect(res.ok).toBe(true);
+    expect(res.failure ?? null).toBeNull();
+  });
+});

@@ -434,7 +434,10 @@ export async function runTurn(state, history, userText) {
   };
 
   nextState = { ...nextState, meta: { ...nextState.meta, usage } };
-  return { nextState, reply, decision: decision.decision };
+  // `failure` is technical metadata for the error report (null on a good turn).
+  // The adapter builds it and carries no interview content in it — see
+  // describeUpstream in model.js and principle 6.
+  return { nextState, reply, decision: decision.decision, failure: result.failure ?? null };
 }
 
 // Low-level opener: produce the opening message + the raw usage of the call. The
@@ -453,19 +456,23 @@ async function completeStageOpener(state, history, opts = {}) {
     mode: 'opener',
   });
   const message = result.ok && result.message ? result.message : signpostForStage(stage);
-  return { message, usage: result.usage };
+  // A failed opener falls back to the static signpost, which looks like a normal
+  // turn on screen. Without this the degradation is invisible — exactly the class
+  // of silent failure the error report exists to catch.
+  return { message, usage: result.usage, failure: result.failure ?? null };
 }
 
 // Forward-transition opener (called by the UI on confirm) — folds the call's usage
 // into state and returns the opening message.
 export async function generateStageOpener(state, history, opts = {}) {
-  const { message, usage } = await completeStageOpener(state, history, opts);
+  const { message, usage, failure } = await completeStageOpener(state, history, opts);
   return {
     nextState: {
       ...state,
       meta: { ...state.meta, usage: addUsage(state.meta.usage ?? EMPTY_USAGE, usage) },
     },
     message,
+    failure: failure ?? null,
   };
 }
 
