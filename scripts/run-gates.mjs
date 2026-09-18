@@ -37,7 +37,7 @@ function keyFromEnvFile() {
 const key = (process.env.ANTHROPIC_API_KEY || keyFromEnvFile()).trim();
 const keyLooksReal = key.startsWith('sk-ant-') && key.length > 30;
 
-console.log(`\n${line}\n  שערי הקבלה — Think Twice\n${line}\n`);
+console.log(`\n${line}\n  רף הקבלה — Think Twice\n${line}\n`);
 
 if (!keyLooksReal) {
   console.log(
@@ -101,7 +101,7 @@ child.on('close', (code) => {
   const scores = Object.entries(judged?.scores ?? {});
 
   const header =
-    `שערי הקבלה — Think Twice\n` +
+    `רף הקבלה — Think Twice\n` +
     `תאריך: ${new Date().toISOString()}\n` +
     `מצב הרשם: ${registrar}\n` +
     `${line}\n\n`;

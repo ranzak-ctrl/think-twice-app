@@ -14,7 +14,7 @@ const DIMS = ['empathy', 'non_judgment', 'ownership', 'active_listening', 'natur
 const THRESHOLD = 4;
 const out = [];
 
-out.push('## שערי קבלה\n');
+out.push('## רף הקבלה\n');
 
 if (!before || !after) {
   out.push('> ⚠ אחת ההרצות לא הפיקה דוח. ראה את הלוגים המלאים (Artifacts).\n');
