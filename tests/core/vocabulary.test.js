@@ -103,6 +103,25 @@ describe('one definition, however it is imported', () => {
   });
 });
 
+describe('the documents do not describe a world that no longer exists', () => {
+  // Found by Ran reading the dashboard: the "where the list lives" section was
+  // still phrased as a RECOMMENDATION to build vocabulary.js, hours after it was
+  // built. The value guards above cannot catch that — every value was listed
+  // correctly, in a paragraph saying the module did not exist.
+  it('neither document still calls the vocabulary scattered', () => {
+    for (const [name, text] of [['doc', VOCAB_DOC], ['dashboard', DASHBOARD]]) {
+      expect(text, `${name} still says the vocabulary is scattered`).not.toContain('מפוזרת על שני קבצים');
+    }
+  });
+
+  it('neither still recommends building the module that exists', () => {
+    for (const [name, text] of [['doc', VOCAB_DOC], ['dashboard', DASHBOARD]]) {
+      expect(text, `${name} still recommends building vocabulary.js`)
+        .not.toMatch(/המלצה[^\n]{0,40}מודול אחד/);
+    }
+  });
+});
+
 describe('the module sits at the bottom of the import graph', () => {
   // This is what removed the state.js ↔ eventRecord.js cycle. router-guard called
   // that cycle a latent trap: a future module-scope read of the const it re-entered

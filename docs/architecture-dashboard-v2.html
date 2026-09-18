@@ -506,9 +506,17 @@
 
     <div class="sec">איפה הרשימה גרה</div>
     <div class="note" style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
-      היום היא <b>מפוזרת על שני קבצים</b>: <code>EDGE_KINDS</code> ו-<code>GROUP_KINDS</code> ב-<code>state.js</code>; <code>STANCE_TYPES</code> · <code>EMOTION_PACES</code> · <code>SOURCES</code> ב-<code>eventRecord.js</code>; <code>NODE_SCALES</code> שוב ב-<code>state.js</code>.<br>
-      <b style="color:var(--accent2)">▸ המלצה:</b> מודול אחד <code>src/core/vocabulary.js</code> שכולם מייבאים ממנו, <b>ובדיקה שנופלת כשהמסמך והקוד נסחפים</b>. אחרת הרשימה תסחף בדיוק כמו ש-<code>/docs</code> סחף מול הקוד.<br>
-      <span style="color:var(--mut)">הפירוט המלא: <code>docs/event-vocabulary.md</code>. המסך הזה הוא הרשימה לניהול.</span>
+      <b style="color:var(--accent2)">✅ בוצע 18.9.2026:</b> <code>src/core/vocabulary.js</code> מחזיק את כל הסטים; <code>state.js</code> ו-<code>eventRecord.js</code> מייבאים ממנו ומייצאים מחדש, כך ששום נתיב ייבוא לא נשבר. <b>שום ערך לא שונה</b> — רק הועברו. ובונוס: האיחוד <b>חיסל את הייבוא המעגלי</b> בין השניים.
+      <table style="margin-top:10px">
+        <tr><th style="width:150px"></th><th><code>vocabulary.js</code></th><th><code>event-vocabulary.md</code></th><th>המסך הזה</th></tr>
+        <tr><td>מה זה</td><td>הסטים עצמם</td><td>הרשימה, קריאה</td><td>הרשימה לניהול</td></tr>
+        <tr><td>מי צורך</td><td>הקוד והבדיקות</td><td>רן · נטלי · <code>prompt-editor</code></td><td>רן</td></tr>
+        <tr><td>אם משנים</td><td><b>ההתנהגות משתנה</b></td><td>לא זזה</td><td>לא זזה</td></tr>
+        <tr><td>הערכים</td><td class="test">✅ <b>מכריע</b></td><td>משקף</td><td>משקף</td></tr>
+        <tr><td>מבחני ההכרעה</td><td>תמצית</td><td class="test">✅ <b>מלא</b></td><td>תמצית</td></tr>
+        <tr><td>מה נאכף היכן</td><td class="test">✅ <b>בלעדי</b></td><td>מזכיר</td><td>—</td></tr>
+      </table>
+      <b>ולמה שלושה עותקים:</b> <code>vocabulary.js</code> <b>אינו קריא לקהל שהכי זקוק לרשימה</b> — נטלי לא תפתח <code>.js</code>, ו-<code>prompt-editor</code> צריך את המבחנים כדי לכתוב את <code>registrar.md</code>. אותה רשימה בשלוש צורות, ו-<code>tests/core/vocabulary.test.js</code> הוא מה שמונע מהן להיפרד.
     </div>
   </div></div>
 
