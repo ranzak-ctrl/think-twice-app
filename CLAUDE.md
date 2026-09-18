@@ -37,7 +37,8 @@
 - docs/gap-management-implementation.md — אפיון היישום: המדד, הכוכבית, goal-gate
 - docs/test-plan.md — תכנית הבדיקות
 - docs/questions-for-natali.md — שאלות קליניות פתוחות + הכרעות שהתקבלו
-- docs/architecture-dashboard.html — דשבורד הארכיטקטורה
+- docs/architecture-dashboard.html — דשבורד הארכיטקטורה (v1 · 15.8.2026 · **ללא הרשם**)
+- docs/architecture-dashboard-v2.html — **דשבורד v2** — אותם שלושה מבטים, כולל הרשם ומחזור-התור הדו-שלבי
 - docs/workspace.html — מרכז העבודה
 
 אם קובץ ב-`/docs` נוגד את הקוד — הקוד הוא העובדה, המסמך הוא הבאג. אם `/docs` נוגד את הדרייב בעניין קליני — לעצור ולשאול את רן.

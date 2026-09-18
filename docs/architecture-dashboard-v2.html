@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Think Twice — דשבורד ארכיטקטורה v2 (הרשם)</title>
+</head>
+<body style="margin:0;padding:18px 10px 40px;background:#0f1115">
+<style>
+:root{--bg:#0f1115;--panel:#171a21;--panel2:#1d2129;--line:#2c323d;--txt:#e7eaf0;--mut:#9aa4b2;--accent:#7ca7ff;--accent2:#6ee0b0;--warn:#f0b46b;--esc:#ff9d7a;--chip:#222734;}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)}
+#ttdash *{box-sizing:border-box}
+#ttdash{background:var(--bg);color:var(--txt);font-family:"Segoe UI",Arial,system-ui,sans-serif;padding:20px 16px 30px;border-radius:12px;direction:rtl;max-width:980px;margin:0 auto}
+#ttdash .dtitle{font-size:19px;font-weight:800;margin:0 0 2px}
+#ttdash .dsub{color:var(--mut);font-size:12.5px;margin:0 0 8px}
+#ttdash .dlegend{font-size:11px;color:var(--mut);margin:0 0 14px}
+#ttdash .dlegend b{color:var(--txt)}
+#ttdash .dnav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px}
+#ttdash .dnav button{background:var(--panel2);color:var(--mut);border:1px solid var(--line);border-radius:8px;padding:8px 15px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+#ttdash .dnav button.on{background:var(--accent);color:#0b0e14;border-color:var(--accent)}
+#ttdash .dnav .step{font-size:10px;font-weight:600;opacity:.7;margin-inline-end:5px}
+#ttdash .view{display:none}
+#ttdash .view.show{display:block;animation:fade .2s}
+@keyframes fade{from{opacity:.3}to{opacity:1}}
+.future{opacity:.72}
+.fbadge{display:inline-block;background:#23262e;color:#8a93a3;font-size:9.5px;font-weight:800;padding:1px 7px;border-radius:6px;border:1px solid #3a3f4a;letter-spacing:.02em;margin-inline-end:6px}
+
+/* ===== architecture ===== */
+.tt-arch{direction:rtl;color:var(--txt)}
+.tt-arch .wrap{max-width:1000px;margin:0 auto}
+.tt-arch h1{font-size:17px;margin:0 0 4px}
+.tt-arch .sub{color:var(--mut);font-size:12.5px;margin:0 0 18px}
+.tt-arch .layer-label{color:var(--mut);font-size:12px;font-weight:700;letter-spacing:.05em;margin:0 2px 8px;text-transform:uppercase}
+.tt-arch .num{display:inline-flex;width:20px;height:20px;border-radius:50%;background:var(--accent);color:#0b0e14;font-weight:800;font-size:12px;align-items:center;justify-content:center;margin-inline-start:6px}
+.tt-arch .new{display:inline-block;background:var(--accent2);color:#08120d;font-size:9.5px;font-weight:800;padding:1px 6px;border-radius:6px;margin-inline-start:6px;letter-spacing:.04em;vertical-align:middle}
+.tt-arch .row{display:flex;gap:8px;flex-wrap:nowrap}
+.tt-arch .stage{flex:1;background:var(--chip);border:1px solid var(--line);border-radius:9px;padding:10px 6px;text-align:center;font-size:13px;font-weight:600}
+.tt-arch .stage b{display:block;color:var(--accent);font-size:15px;margin-bottom:2px}
+.tt-arch .agents{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:6px}
+.tt-arch .agent{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px 4px;text-align:center;font-size:12.5px;font-weight:600;color:var(--accent2)}
+.tt-arch .agent.act{grid-column:span 2;background:#1a2630;border-color:#2d4a3f}
+.tt-arch .slotcap{color:var(--mut);font-size:10.5px;margin:8px 2px 4px}
+.tt-arch .slotrow{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.tt-arch .slotcell{background:#14161c;border:1px solid var(--line);border-radius:8px;padding:7px 5px;text-align:center}
+.tt-arch .slotcell.act{grid-column:span 2;display:flex;gap:8px}
+.tt-arch .slotcell .sgrp{flex:1}
+.tt-arch .slotcell .slc{display:block;font-family:Consolas,monospace;font-size:10px;color:var(--mut);line-height:1.7;direction:ltr}
+.tt-arch .slotcell .sgl{display:block;font-size:9px;color:var(--accent2);font-weight:700;margin-bottom:3px;letter-spacing:.03em;direction:ltr}
+.tt-arch .arrows{display:flex;justify-content:space-around;color:var(--mut);font-size:12px;margin:7px 0}
+.tt-arch .arrows span{flex:1;text-align:center}
+.tt-arch .state{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:6px}
+.tt-arch .state h3{margin:0 0 10px;font-size:13.5px}
+.tt-arch .state h3 .num{background:var(--accent2);color:#08120d}
+.tt-arch .panels{display:grid;grid-template-columns:1.35fr 1fr;gap:12px}
+.tt-arch .panel{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:11px 12px}
+.tt-arch .panel .cap{color:var(--mut);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}
+.tt-arch .arena,.tt-arch .meaning{font-size:12.5px;line-height:1.7}
+.tt-arch .tag{color:var(--accent);font-weight:700}
+.tt-arch .tag2{color:var(--accent2);font-weight:700}
+.tt-arch .arcnote{color:var(--mut);font-size:11.5px;margin:6px 0;text-align:center}
+.tt-arch table.cov{width:100%;border-collapse:collapse;font-size:12px}
+.tt-arch table.cov td{padding:3px 4px;border-bottom:1px solid #232833}
+.tt-arch table.cov td:first-child{color:var(--mut)}
+.tt-arch table.cov td:last-child{font-family:Consolas,monospace;color:var(--accent2);text-align:left;direction:ltr}
+.tt-arch .sat{color:var(--mut);font-size:11.5px;margin-top:7px}
+.tt-arch .gaps{margin-top:12px;background:var(--panel2);border:1px dashed var(--accent2);border-radius:9px;padding:11px 12px}
+.tt-arch .gaplist{font-size:12.5px;line-height:1.9}
+.tt-arch .gaplist code{background:#0b0e13;padding:1px 5px;border-radius:4px;color:var(--accent);font-family:Consolas,monospace}
+.tt-arch .st-res{color:var(--accent2);font-weight:700}
+.tt-arch .st-star{color:var(--warn);font-weight:700}
+.tt-arch .st-esc{color:var(--esc);font-weight:700}
+.tt-arch .router{background:#1a1d25;border:1px solid #3a3340;border-radius:12px;padding:14px 16px;margin-top:14px}
+.tt-arch .router h3{margin:0 0 8px;font-size:13.5px}
+.tt-arch .router h3 .num{background:var(--warn);color:#1a1205}
+.tt-arch .router ul{margin:0;padding-inline-start:18px;font-size:12.5px;line-height:1.75}
+.tt-arch .router code{background:#0b0e13;padding:1px 5px;border-radius:4px;color:var(--accent)}
+.tt-arch .loops{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.tt-arch .loop{flex:1;min-width:200px;background:var(--panel2);border:1px dashed #3a4150;border-radius:9px;padding:9px 11px;font-size:12px;color:var(--mut)}
+.tt-arch .loop b{color:var(--txt)}
+.tt-arch .loop.rep{border-color:var(--esc)}
+.tt-arch .fut-note{margin-top:11px;background:#15161b;border:1px dashed #3a3f4a;border-radius:9px;padding:9px 12px;font-size:12px;color:var(--mut)}
+.tt-arch .legend{margin-top:16px;color:var(--mut);font-size:12px;line-height:1.7}
+.tt-arch .status{margin-top:14px;background:#10221a;border:1px solid #2d5a45;border-radius:8px;padding:9px 12px;color:var(--accent2);font-size:12px}
+
+/* ===== dataflow ===== */
+#ttflow{direction:rtl;color:var(--txt)}
+#ttflow h1{font-size:17px;margin:0 0 3px}
+#ttflow .sub{color:var(--mut);font-size:12.5px;margin:0 0 14px}
+#ttflow .tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+#ttflow .tabs button{background:var(--panel2);color:var(--mut);border:1px solid var(--line);border-radius:20px;padding:6px 13px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit}
+#ttflow .tabs button.on{background:var(--accent);color:#0b0e14;border-color:var(--accent)}
+#ttflow .stepctl{display:flex;gap:8px;align-items:center;margin-bottom:14px}
+#ttflow .stepctl button{background:var(--chip);color:var(--txt);border:1px solid var(--line);border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;font-family:inherit}
+#ttflow #hint{color:var(--mut);font-size:11.5px}
+#ttflow .banner{background:#13212b;border:1px solid #234;border-radius:9px;padding:9px 12px;margin-bottom:10px;font-size:12.5px}
+#ttflow .bstage{color:var(--accent);font-weight:700;margin-inline-end:10px}
+#ttflow .arrow{text-align:center;color:var(--accent);font-size:13px;line-height:1.2;margin:2px 0}
+#ttflow .arrow .flab{color:var(--mut);font-size:10.5px}
+#ttflow .pcard{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px 13px;transition:opacity .15s,border-color .15s}
+#ttflow .pcard.dim{opacity:.32}
+#ttflow .pcard.hot{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+#ttflow .pt{font-size:13.5px;font-weight:700;margin:0 0 1px;display:flex;align-items:center;gap:7px}
+#ttflow .pnum{display:inline-flex;width:19px;height:19px;border-radius:50%;background:var(--accent);color:#0b0e14;font-size:11px;font-weight:800;align-items:center;justify-content:center}
+#ttflow .pcard.r4 .pnum{background:var(--accent2);color:#08120d}
+#ttflow .pcard.r5 .pnum{background:var(--warn);color:#1a1205}
+#ttflow .cap2{color:var(--mut);font-size:11px;margin:3px 0 4px}
+#ttflow .json{font-family:Consolas,monospace;direction:ltr;text-align:left;background:#0b0e13;border:1px solid #20242e;border-radius:7px;padding:8px 10px;font-size:11px;line-height:1.5;white-space:pre-wrap;color:#cdd6e3;margin:0}
+#ttflow .json .k{color:var(--accent)}
+#ttflow .json .g{color:var(--accent2)}
+#ttflow .json .w{color:var(--warn)}
+#ttflow .json .cm{color:var(--mut)}
+#ttflow .json .val{color:#e7eaf0}
+#ttflow .json .esc{color:var(--esc)}
+#ttflow .json .star{color:var(--warn)}
+#ttflow .json .res{color:var(--accent2)}
+#ttflow .loopback{margin-top:12px;border:1px dashed #3a4150;border-radius:9px;padding:8px 12px;color:var(--mut);font-size:12px;text-align:center}
+
+/* ===== router axes ===== */
+#rax{direction:rtl;color:var(--txt)}
+#rax h1{font-size:17px;margin:0 0 3px}
+#rax .sub{color:var(--mut);font-size:12.5px;margin:0 0 14px}
+#rax .axes{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+#rax .ax{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:12px}
+#rax .ax.gapax{border-color:#3a3340}
+#rax .axname{font-size:13.5px;font-weight:700;margin:0 0 2px}
+#rax .axdesc{color:var(--mut);font-size:11px;margin:0 0 10px;min-height:28px}
+#rax .seg{display:flex;gap:5px}
+#rax .seg button{flex:1;background:var(--panel2);color:var(--mut);border:1px solid var(--line);border-radius:7px;padding:6px 2px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+#rax .seg button.on{background:var(--accent);color:#0b0e14;border-color:var(--accent)}
+#rax .seg.gap button.on[data-v="escalated"]{background:var(--esc);border-color:var(--esc)}
+#rax .seg.gap button.on[data-v="starred"]{background:var(--warn);border-color:var(--warn)}
+#rax input[type=range]{width:100%;accent-color:var(--accent);margin:2px 0}
+#rax .track{position:relative;height:9px;background:var(--panel2);border-radius:6px;margin:8px 0 4px}
+#rax .fill{height:100%;border-radius:6px;background:var(--accent);transition:width .12s,background .12s}
+#rax .thr{position:absolute;top:-3px;height:15px;width:2px;background:var(--accent2);inset-inline-start:80%}
+#rax .covval{font-size:12px;font-weight:700}
+#rax .push{margin-top:9px;font-size:11.5px;font-weight:700;border-radius:7px;padding:5px 8px;text-align:center}
+#rax .push.adv{background:#10241b;color:var(--accent2);border:1px solid #2d5a45}
+#rax .push.hold{background:#2a1713;color:var(--esc);border:1px solid #5a3128}
+#rax .push.neu{background:var(--panel2);color:var(--mut);border:1px solid var(--line)}
+#rax .tkpanel{margin-top:11px;background:#12131a;border:1px solid #3a3340;border-radius:10px;padding:11px 12px}
+#rax .tkttl{font-size:11px;color:var(--mut);font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
+#rax .tk{font-family:Consolas,monospace;direction:ltr;text-align:left;background:#0b0e13;border:1px solid #20242e;border-radius:7px;padding:8px 10px;font-size:11px;line-height:1.55;white-space:pre-wrap;color:#cdd6e3}
+#rax .tk .star{color:var(--warn)} #rax .tk .esc{color:var(--esc)} #rax .tk .cm{color:var(--mut)} #rax .tk .g{color:var(--accent2)}
+#rax .guard{margin-top:11px;background:var(--panel);border:1px dashed #4a3a1c;border-radius:9px;padding:9px 12px;display:flex;align-items:center;gap:9px;font-size:12.5px}
+#rax .guard input{width:16px;height:16px;accent-color:var(--warn)}
+#rax .guard .gl{color:var(--warn);font-weight:700}
+#rax .fatigue{margin-top:9px;background:#15161b;border:1px dashed #3a3f4a;border-radius:9px;padding:10px 12px;font-size:12px;color:var(--mut)}
+#rax .fatigue .fl{color:#aab2c0;font-weight:700}
+#rax .arrow{text-align:center;color:var(--accent);font-size:16px;margin:10px 0 4px}
+#rax .router{background:#1a1d25;border:1px solid #3a3340;border-radius:12px;padding:15px 16px}
+#rax .rttl{font-size:12px;color:var(--mut);font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px}
+#rax .decision{font-size:21px;font-weight:800;margin:0 0 4px}
+#rax .why{font-size:12.5px;color:var(--txt);line-height:1.55}
+#rax .formula{margin-top:11px;background:#0b0e13;border:1px solid #20242e;border-radius:8px;padding:9px 11px;font-size:11.5px;color:var(--mut);line-height:1.7}
+#rax .formula b{color:var(--txt)}
+#rax .dadv{color:var(--accent2)} #rax .dhold{color:var(--esc)} #rax .dwait{color:var(--warn)}
+#rax .hintbar{margin-top:9px;font-size:11px;color:var(--mut);text-align:center}
+</style>
+<div id="ttdash">
+  <div class="dtitle">Think Twice — דשבורד ארכיטקטורה <span style="color:var(--accent2)">v2 · הרשם</span></div>
+  <p class="dsub">שלושה מבטים על אותה מערכת: מבט-על → תור בודד → החלטת Router. <b style="color:var(--accent2)">v2 משלב את הרשם</b> — סוכן חדש שבונה את המאורע.</p>
+  <p class="dlegend">מקרא בשלות: <b style="color:var(--accent2)">✅ ממומש</b> · <b style="color:var(--warn)">🟡 באפיון</b> · <b style="color:#8a93a3">⬜ טרם תוכנן · לא פעיל</b></p>
+  <p class="dlegend" style="color:#8b949e">נכון ל-<b>18.9.2026</b> · <b>v2</b> · <b style="color:var(--accent2)">עותק</b> של הדשבורד המקורי (<code>architecture-dashboard.html</code>), שנשאר ללא שינוי.<br>אומת מול <code style="font-family:ui-monospace,Menlo,Consolas,monospace">router.js · session.js · registrar.js · eventRecord.js · eventView.js · eventMap.js · promptBuilder.js</code>. <b style="color:var(--warn)">המתג כבוי:</b> <code>REGISTRAR_ENABLED = false</code> — הכול בנוי ונבדק (545 בדיקות), והראיון רץ היום בדיוק כמו ב-v1.</p>
+  <div class="dnav">
+    <button data-v="arch" class="on"><span class="step">מבט-על</span> ארכיטקטורה מאוחדת</button>
+    <button data-v="flow"><span class="step">תור בודד</span> מחזור התור</button>
+    <button data-v="router"><span class="step">החלטה</span> צירי ה-Router</button>
+  </div>
+
+  <div class="view show" id="view-arch"><div class="tt-arch"><div class="wrap">
+    <h1>ארכיטקטורה מאוחדת <span class="new">מפת-שחקנים · ממצאים · פתיחים</span></h1>
+    <p class="sub">7 שלבים · 7 סוכנים · State · Router</p>
+    <div class="layer-label"><span class="num">1</span> השיחה — מסע המשתמש (7 שלבים)</div>
+    <div class="row">
+      <div class="stage"><b>1</b>עובדות</div><div class="stage"><b>2</b>פרשנות</div><div class="stage"><b>3</b>רגש</div><div class="stage"><b>4</b>תגובה</div><div class="stage"><b>5</b>פרשנות חלופית</div><div class="stage"><b>6</b>חלופות תגובה</div><div class="stage"><b>7</b>לוח הכרעה</div>
+    </div>
+    <div class="arcnote">פתח-השאלה נע: פתוח ("ספר לי מה קרה") ◀━━━━━▶ סגור ("במה אתה בוחר?")</div>
+
+    <div class="layer-label" style="margin-top:20px;color:var(--accent2)"><span class="num" style="background:var(--accent2);color:#0b0e14">R</span> הרשם — סוכן חדש <span class="new">🟡 בנוי · המתג כבוי</span></div>
+    <div class="router" style="border-color:#2f6b52;background:rgba(110,224,176,.05)">
+      <h3 style="color:var(--accent2)"><span class="num" style="background:var(--accent2);color:#0b0e14">R</span> REGISTRAR — בונה את המאורע <span style="color:var(--mut);font-weight:400;font-size:12px">(קריאת מודל נפרדת · רץ לפני המראיין)</span></h3>
+      <div class="arcnote" style="border-color:#2f6b52;color:var(--txt);margin-bottom:10px">
+        <b>תכלית הראיון היא לבנות את המאורע</b> — לא להשאיר אותו מפוזר בתובנות המצטברות של שרשרת המראיינים.<br>
+        <span style="color:var(--mut)">רן, 18.9.2026 · <code>coverage</code> הוא מכשיר מדידה בדרך לשם — <b>לא המוצר</b>.</span>
+      </div>
+      <ul>
+        <li><b>קורא:</b> את <b>זוג-התור</b> — שאלת המראיין + תשובת האדם. לא חילוץ של המראיין: ממסר מאבד מידע ולא משחרר עומס.</li>
+        <li><b>כותב:</b> <code>eventRecord</code> · <code>actorMap</code> · <code>edges</code> · <code>groups</code> · <code>openForks</code> · <code>gaps</code> — <b>הכותב היחיד של הגרף</b>.</li>
+        <li><b>לא כותב:</b> <code>coverage</code> · <code>meta</code>. <b>אינו נותן ציונים</b> — "מה רמת הכיסוי, הכל כרגיל".</li>
+        <li><b>אין לו שדה <code>message</code></b> — ערובה מבנית שאינו פונה לאיש, לא כלל שצריך לזכור.</li>
+        <li><b>לא ממציא קשת.</b> יחס שלא נמסר = <code>confirmed:false</code> ונכנס לתור הבירור. "הקשתות הן של המרואיין".</li>
+      </ul>
+      <div class="loops">
+        <div class="loop" style="border-color:#2f6b52"><b>↻ הלולאה</b> — הרשם מקפל את התשובה ◀ המראיין קורא סיפור מעודכן ◀ שואל ◀ התשובה חוזרת לרשם. <b>טורית, לא מקבילה.</b></div>
+        <div class="loop" style="border-color:#5a3128"><b>⏱ המחיר</b> — היום קריאה אחת לתור; עם הרשם <b>שתיים בטור</b>. ההמתנה מצטברת במקום להיבלע ב-<code>max()</code>. <b style="color:var(--esc)">טרם נמדד.</b></div>
+      </div>
+      <div class="gaplist" style="margin-top:10px;line-height:1.9">
+        <b style="color:var(--accent2)">שבעת המבחנים בפרוטוקול — עכשיו שדות, לא מסקנות:</b><br>
+        <code>camera</code> מבחן המצלמה · <code>source</code> מבחן הבעלות · <code>third_person</code> מבחן הגוף השלישי · <code>granular</code> מבחן הגרנולריות · <code>phase</code> שלמות ציר-הזמן · <code>scale</code> מצב-מול-מאורע · <code>confirmed</code> הקשת היא שלו<br>
+        <span class="sat" style="display:block;margin-top:6px">עד היום המודל דיווח את ה<b>מסקנה</b> ("slot = 2") ואף מבחן לא היה בר-הרצה. הרשם מדווח <b>תצפיות</b>; המראיין עדיין מדרג בעצמו.</span>
+      </div>
+    </div>
+    <div class="arcnote" style="margin:8px 0">↓ הסיפור המורכב מוגש למראיין — <b>במקום dump של JSON</b></div>
+
+    <div class="layer-label" style="margin-top:16px"><span class="num">2</span> הסוכנים שמנהלים (7) — 1:1 לשלבים <span style="color:var(--mut);font-weight:400;font-size:11px">· תוקן 14.8: Act פוצל ל-Alternatives + Decision, לפי 7 קבצי הסוכן בקוד</span></div>
+    <div class="agents">
+      <div class="agent">Intake</div><div class="agent">Interpretation</div><div class="agent">Feel</div><div class="agent">React</div><div class="agent">Transform</div><div class="agent">Alternatives<br><span style="color:var(--mut);font-weight:400;font-size:11px">divergence</span></div><div class="agent">Decision<br><span style="color:var(--mut);font-weight:400;font-size:11px">convergence</span></div>
+    </div>
+    <div class="slotcap">▾ ה-Slots של כל סוכן (targetKey = stage{N}.{slot})</div>
+    <div class="slotrow">
+      <div class="slotcell"><span class="slc">trigger</span><span class="slc">timeline</span><span class="slc">actors</span><span class="slc">status</span><span class="slc">auto_reaction</span></div>
+      <div class="slotcell"><span class="slc">causal</span><span class="slc">meaning</span><span class="slc">wound</span><span class="slc">adhd_pattern</span></div>
+      <div class="slotcell"><span class="slc">emotion</span><span class="slc">intensity</span><span class="slc">past_echo</span></div>
+      <div class="slotcell"><span class="slc">auto_reaction</span><span class="slc">planned_reaction</span></div>
+      <div class="slotcell"><span class="slc">perspective</span><span class="slc">intention</span><span class="slc">alt_formulation</span><span class="slc">re_emotion</span></div>
+      <div class="slotcell"><span class="slc">alternatives</span><span class="slc">zero_action</span><span class="slc">alt_from_transform</span></div>
+      <div class="slotcell"><span class="slc">goal</span><span class="slc">board_presented</span><span class="slc">sharp_decision</span><span class="slc">package_test</span></div>
+    </div>
+    <div class="arrows"><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span><span>↓ write</span></div>
+    <div class="state">
+      <h3><span class="num">3</span> STATE — Shared Context <span style="color:var(--mut);font-weight:400;font-size:12px">(JSON נסתר)</span></h3>
+      <div class="panels">
+        <div class="panel">
+          <div class="cap">Case Narrative — תוכן</div>
+          <div class="arena"><span class="tag">▒ שכבת הזירה</span> (אופרציונלי — מה נעשה/תוכנן):<br>טריגר · ציר-זמן[] · שחקנים · מקום · אובייקט · סטטוס · Reactions · ResponseOptions[] · Decision</div>
+          <div class="arcnote">▲ קשתות גרף ▼ (רגש→פרשנות, פרשנות→טריגר)</div>
+          <div class="meaning"><span class="tag2">▒ שכבת המשמעות</span> (נומינלי — פרשנות/משמעות/מטרה):<br>Thoughts(מוגלה) · Feelings · AltPerspectives(Δרגש) · Expectations(→יעד)</div>
+        </div>
+        <div class="panel">
+          <div class="cap">Coverage Scorecard (נסתר)</div>
+          <table class="cov">
+            <tr><td>1 intake</td><td>2 2 2 2 2</td></tr><tr><td>2 interpretation</td><td>2 2 2 1</td></tr><tr><td>3 feel</td><td>2 2 2</td></tr><tr><td>4 react</td><td>2 1</td></tr><tr><td>5 transform</td><td>2 2 2 2</td></tr><tr><td>6 act-diverg.</td><td>2 2 2</td></tr><tr><td>7 act-converg.</td><td>2 2 2 2 1</td></tr>
+          </table>
+          <div class="sat">0 / 1 / 2 / U · saturation = 1</div>
+        </div>
+      </div>
+      <div class="gaps" style="border-color:var(--accent2)">
+        <div class="cap" style="color:var(--accent2)">‏<code>eventRecord</code> — רשומת המאורע <span class="new">🟡 בנוי · המתג כבוי</span></div>
+        <div class="gaplist">
+          • <code>beats</code> — פעולות: <code>{actor, text, label, camera, phase, scale, toward}</code> · <b>פעולה היא יישות</b>, לא מחרוזת בתוך שחקן<br>
+          • <code>stances</code> — עמדות: <code>want · goal · reading</code> · <b>לכל שחקן</b> · נושאת <code>source</code><br>
+          • <code>emotions</code> — רגשות: <code>situational · prior · trait</code> · <b>לכל שחקן</b> · <code>intensity</code> 1–10<br>
+          • <code>setting</code> — זירה: מקום · זמן · תקדים · תנאי רקע
+        </div>
+        <div class="sat">החליפה את <code>facts</code>/<code>thoughts</code>/<code>feelings</code>/<code>reactions</code> — ארבעה מאגרים ש<b>אף שורת קוד מעולם לא כתבה אליהם</b>, ונשלחו כ-<code>{}</code> ריק לכל פרומפט בכל תור. זו הייתה הצורה של הרשם, שהושארה ריקה.</div>
+      </div>
+      <div class="gaps" style="border-color:var(--accent)">
+        <div class="cap" style="color:var(--accent)">מפת שחקנים + ממצאים <span class="new">✅ ממומש</span></div>
+        <div class="gaplist">
+          • <code>actorMap</code> — קאסט פתור: <code>id → {label, role, relation, clear, actions[]}</code><br>
+          • הקוד גוזר <code>actors</code> מהבהירות: ריק→0 · עמום→1 · כולם ברורים→2<br>
+          • <code>findings</code> — ממצאים מילוליים לכל slot: <code>stageN.slot → [...]</code>
+        </div>
+        <div class="sat">המודל מדווח דלתא · הקוד ממזג לפי id · <s style="opacity:.55">שלב-1 בלבד</s> ← <b style="color:var(--accent2)">בכל שלב</b>: הקאסט קפא בסוף שלב 1, בזמן ששלב 5 "בוחר דמות מתוך המפה" ולומד עליה את הדבר המשמעותי ביותר — בלי לאן לכתוב אותו בחזרה.</div>
+      </div>
+      <div class="gaps">
+        <div class="cap" style="color:var(--accent2)">Gaps — מדד עקביות <span class="new">✅ Build 1</span></div>
+        <div class="gaplist">
+          • <code>stage1.timeline</code> · <b>9</b>/10 · <span class="st-res">resolved ▲</span><br>
+          • <code>topic:חיסכון</code> · <b>4</b>/10 · <span class="st-star">starred</span><br>
+          • <code>stage2.wound</code> · <b>2</b>/10 · <span class="st-esc">escalated</span> <span class="fbadge">🟡 Build 2</span>
+        </div>
+        <div class="sat">record · star · resolve · reopen-של-resolved ✅ · escalate + reprobe + reopenSlot = Build 2</div>
+      </div>
+    </div>
+    <div class="feedup" style="text-align:center;color:var(--warn);font-size:12px;margin:10px 0 2px">▲ control — ה-Router קובע את השלב הבא · מעבר מפיק <b>סיכום-לאישור</b> + <b>פתיח-שלב מעוגן</b> (opener) <span class="new">✅</span></div>
+    <div class="router">
+      <h3><span class="num">4</span> GRAPH-BASED ROUTER <span style="color:var(--mut);font-weight:400;font-size:12px">(קוד — לא LLM)</span></h3>
+      <ul>
+        <li>קורא את ה-<b>Coverage</b> + מונה מיצוי · מעבר על <b>כיסוי-מלא</b> או (סף-רך ∧ מיצוי) <span class="new">✅</span></li>
+        <li><b>שער מפת-שחקנים <span class="new">✅</span>:</b> שלב 1 לא עובר כל עוד דמות <code>clear:false</code> · load-guard = רשת ביטחון</li>
+        <li><b>GATES:</b> שלב 5 דורש 2 · שלב 7 דורש 6 + יעד · 6▶7 חד-כיווני</li>
+        <li><b>פערים — Build 1 ✅:</b> יסודי/חוסם = <span class="st-esc">escalated</span> + <code>reopenSlot</code> <span class="new">🟡 Build 2</span> · אחרת <span class="st-star">starred</span></li>
+        <li>מכריע ומחזיר <code>control</code> — <b>המודל מציע, הקוד מכריע</b></li>
+        <li style="border-top:1px solid #2c323d;padding-top:7px;margin-top:7px"><b style="color:var(--accent2)">v2 — שורה אחת לא זזה.</b> <code>route()</code> צורך <code>meta</code> ו-<code>coverage</code> בלבד. הרשם <b>אינו מגיע אליו</b>; הממשק נשאר <code>coverage</code> ותו לא. <code>router.js</code> זהה בית-בבית לגרסה שלפני הרשם.</li>
+        <li><b>ולמה זה נשאר כך:</b> ה-Router ניתן לבדיקה <b>כי הוא עיוור</b> — מטריצת 34 המקרים ממצה את התנהגותו. Router שקורא נרטיב אינו בר-מיצוי, והמטריצה מתה.</li>
+      </ul>
+      <div class="loops">
+        <div class="loop"><b>↺ Re-open</b> — חוזר לצומת קודם + <b>פתיח מעוגן</b> שמסביר למה חזרנו <span class="new">✅</span></div>
+        <div class="loop"><b>↩ Backward</b> — סוכן מאוחר מנתב עדכון בחזרה לשלב 1.</div>
+        <div class="loop rep"><b>↪ reprobe <span class="new">🟡</span></b> — חזרה דחויה ל-<span class="st-esc">escalated</span>, תזמון אלגנטי.</div>
+      </div>
+      <div class="fut-note future" style="border-color:#5a3128"><span class="fbadge" style="background:rgba(255,157,122,.14);color:#ff9d7a">🔴 חוסם שחרור</span><b style="color:#aab2c0">גלאי עייפות</b> — יחליף את מגן-העומס (placeholder 20/15) במנגנון ששוקלל מורכבות-סיפור + שיתוף-פעולה. הקונספט מתועד; ממתין להכרעת נטלי על ספים וטון.</div>
+    </div>
+    <div class="gaps" style="border-color:#5a4a7a;margin-top:12px">
+      <div class="cap" style="color:#b9a3e8">המפה — מהיום <b>היטל</b>, לא מאגר <span class="new">🟡 בנוי · לא מוחלף</span></div>
+      <div class="gaplist">
+        • <code>eventMap.js → nodesFromRecord()</code> מוציא <b>בדיוק את הצורה ש-<code>state.nodes</code> מחזיק</b> — ההחלפה ב-<code>storyMap.js</code> היא שורה אחת<br>
+        • <b>לא הוחלף עדיין</b> — היפוך על רשומה ריקה ירוקן את הציור<br>
+        • <b>וכאן <code>NEVER_SHOW_SLOTS</code> נושך:</b> הרשומה <b>שומרת</b> את המוגלה (ה-Router זקוק ל-<code>stage2.wound</code>), המראיין <b>מקבל</b> אותה (שלב 2 לא יכול לחקור מה שלא סיפרו לו), והציור <b>לעולם לא</b>
+      </div>
+      <div class="sat">בלי זה היו שלושה עותקים של אותו מקרה — הרשומה, <code>nodes</code>, ו-<code>findings</code> — כלומר פיזור גרוע יותר ממה שהיה, לא טוב יותר.</div>
+    </div>
+    <div class="status" style="border-color:var(--esc)">🔴 <b>באג שנתפס לפני ההדלקה (router-guard):</b> הסיפור נכנס ל-<code>summarizeState</code>, שהוא גוף של <b>ארבעה</b> בנאים — כולל <code>buildSummaryPrompt</code> ו-<code>buildOpenerPrompt</code>, ששני הפלטים שלהם <b>נאמרים לאדם כלשונם</b>. זה היה המנגנון הראשון בפרויקט שמכניס <b>טקסט</b> של מוגלה לפרומפט. <b>תוקן:</b> <code>full</code> שברירת המחדל שלו מסתירה; רק המראיין והרשם מוותרים עליה.</div>
+    <div class="status">סטטוס: מנוע הראיון + <b>מפת-שחקנים (שער)</b> + <b>ממצאים</b> + <b>פתיחי-שלב מעוגנים</b> (קדימה + Re-open) + סדר eval-first <b>✅ ממומש ונבדק חי</b> · ניהול פערים Build 1 <b>✅</b> (escalation/reprobe = Build 2 <b style="color:var(--warn)">🟡</b>) · גלאי עייפות <b style="color:var(--esc)">🔴 חוסם שחרור</b> · טיפול בסתירות <b style="color:var(--esc)">🔴 חוסם שחרור</b>.</div>
+
+    <div class="layer-label" style="margin-top:22px"><span class="num">5</span> ההגשה — איך זה מגיע לבודק <span style="color:var(--mut);font-weight:400;font-size:11px">· נוסף 14.8.2026</span></div>
+    <div class="router" style="border-color:#35406a">
+      <h3><span class="num">5</span> DELIVERY &amp; SECRETS <span style="color:var(--mut);font-weight:400;font-size:12px">(web app על Vercel — לא Artifact)</span></h3>
+      <div class="gaplist" style="line-height:2">
+        <code>דפדפן</code> ──<b>בלי מפתח</b>──▶ <code>/api/anthropic/v1/messages</code> ──<b>+ x-api-key</b>──▶ <code>api.anthropic.com</code>
+      </div>
+      <ul>
+        <li><b>הבודקים לא צריכים חשבון Claude</b> — קישור + סיסמה משותפת. זו הסיבה שמסלול ה-Artifact נזנח (25.7).</li>
+        <li><b>הדפדפן לא מחזיק מפתח, באף סביבה <span class="new">✅ 14.8</span>.</b> הוא שולח רק <code>x-app-password</code>; ה-proxy מזריק את <code>ANTHROPIC_API_KEY</code> בצד שרת.</li>
+        <li><b>אסור סוד עם קידומת <code>VITE_</code></b> — כל משתנה <code>VITE_</code> נצרב ל-bundle ומוגש לכל דפדפן.</li>
+        <li>חי/מדומה = דגל מפורש <code>VITE_USE_MOCK === 'true'</code>. <b>חי הוא ברירת המחדל</b> — תקלת שרת נראית כתקלה, לא כשיחה תקינה.</li>
+        <li><b>אין אחסון בצד שרת</b> — ה-proxy הוא pass-through חסר-state. תוכן הראיון חי בזיכרון הדפדפן; ייצוא ידני בלבד.</li>
+      </ul>
+      <div class="fut-note future"><span class="fbadge">🟡 הותר, טרם מומש</span><b style="color:#aab2c0">Persistence מקומי</b> — עיקרון 8 (14.8) מתיר שחזור סשן. <code>gaps</code> לא נשמר (מודיעין פנימי). ה-UX טרם אושר קלינית — אין שחזור אוטומטי עד אישור נטלי.</div>
+      <div class="fut-note future"><span class="fbadge">⬜ חוב ידוע</span><b style="color:#aab2c0">הליבה אינה ניידת</b> — <code>promptBuilder.js</code> (13) ו-<code>judge.js</code> מייבאים <code>.md?raw</code>, תחביר Vite שלא ירוץ ב-Node. עיקרון 4 מופר ביודעין. התבנית הנכונה: הזרקה, כמו <code>fetchImpl</code> ב-<code>judge.js</code>.</div>
+    </div>
+    <div class="status" style="border-color:var(--esc)">⚠️ <b>פער קליני פתוח:</b> הכרעת נטלי (14.8) קובעת ש-<code>adhd_pattern</code> נאמר <b>ע"י המראיין</b> כהשערה מנורמלת, ו-<code>wound</code> מגיע <b>מהמשתמש</b> בלי שנחשוף אותו. הפרומפט של שלב 2 עדיין מציב את שניהם תחת "מה לחקור", ו-<code>forbidden.js</code> לא נושא אף אחד מהכללים. <b>מתועד אך לא נאכף.</b></div>
+  </div></div></div>
+
+  <div class="view" id="view-flow"><div id="ttflow">
+    <h1>מחזור התור — אובייקט הדאטה בכל תחנה <span class="new">v2 · שתי קריאות</span></h1>
+    <p class="sub">התור חדל להיות קריאה אחת. <b style="color:var(--accent2)">הרשם מקפל → המראיין שואל</b> — טורית, ובסדר הזה.</p>
+
+    <div class="pcard" style="border-color:#2f6b52;background:rgba(110,224,176,.05)">
+      <div class="pt" style="color:var(--accent2)"><span class="fbadge" style="background:rgba(110,224,176,.14);color:var(--accent2)">🟡 בנוי · המתג כבוי</span> תחנה 0 — הרשם, לפני כל השאר</div>
+      <div class="pbody" style="font-size:12px;line-height:1.8">
+        <b>קלט:</b> <b>זוג-התור</b> — שאלת המראיין + תשובת האדם. בלי השאלה אין דרך לפתור הפניה: <span style="color:var(--mut)">"מה היא אמרה כשענתה לך?" ← "שזה כבר סוכם" — למה מצביע "זה"?</span><br>
+        &nbsp;&nbsp;+ הרשומה הנוכחית, <b>לא מוסתרת</b>, כדי שיוכל לדווח דלתא לפי <code>id</code> שהוא עצמו טבע.<br><br>
+        <b>פלט:</b> JSON בלבד — <code>setting · beats · stances · emotions · actors · edges · groups · open_forks · gap_observations</code>.<br>
+        <b style="color:var(--esc)">אין <code>message</code>. אין <code>slots</code>.</b><br><br>
+        <div class="sat"><b>למה לא מוסתר:</b> סיפור מוסתר היה מחביא ממנו את המזהים של עמדות המוגלה <b>שהוא עצמו רשם</b> — והוא היה ממציא מזהה חדש בכל תור לדבר היחיד שאסור לשכפל. בטוח מאותה סיבה שהמראיין בטוח: אין לו פה.</div>
+        <div class="sat" style="margin-top:7px"><b style="color:var(--esc)">כשל לעולם לא עולה לאדם בתור שלו:</b> זריקה · קריאה שנכשלה · JSON שבור · פרומפט חסר — ארבעתם מחזירים את המצב כמות שהוא, והראיון ממשיך בדיוק כמו היום.</div>
+        <div class="sat" style="margin-top:7px"><b>ולמה דווקא בטור:</b> במקביל, המראיין היה מקבל את הסיפור <b>של התור הקודם</b>. השאלה הבאה צריכה להישאל על התמונה שכוללת את מה שהאדם בדיוק אמר.</div>
+      </div>
+    </div>
+    <div class="arrow">↓ <span class="flab">eventRecord מעודכן → הסיפור →</span></div>
+
+    <div class="pcard" style="border-color:#35406a">
+      <div class="pt">תחנה 0½ — מה המראיין קורא, ומה השתנה</div>
+      <div class="pbody" style="font-size:12px;line-height:1.8">
+        <b style="color:var(--esc)">לפני:</b> dump של JSON — <code>actor_map · open_forks · nodes · edges · groups · coverage</code>. והנימוק כתוב בקוד עצמו: <b>כדי שהמודל יראה את המזהים שהוא טבע ויוכל לדווח דלתאות.</b> כלומר המראיין קרא בסיס נתונים כדי לזכור את הבוקקיפינג של עצמו — ובאותה נשימה אמור להקשיב לאדם.<br><br>
+        <b style="color:var(--accent2)">אחרי:</b> <code>## המאורע כפי שנאסף עד כה</code> — זירה · <b>טור לכל שחקן</b> (פעולות · רצון/מטרה · פרשנות · רגש) · רצף לפי לפני/במהלך/אחרי · רצועת רקע · מה שלא הוכרע בעולם.<br><br>
+        <div class="sat">מודל שמקבל זוגות מפתח-ערך עונה על זוגות מפתח-ערך. מודל שמקבל <b>סיפור</b> שואל את השאלה הבאה על הסיפור.</div>
+        <div class="sat" style="margin-top:7px"><b>הסתרה:</b> המראיין והרשם מקבלים את הסיפור <b>המלא</b>. <code>summary</code> · <code>opener</code> · <code>board</code> — ששלושתם נאמרים לאדם — מקבלים אותו <b>מוסתר</b>. ברירת המחדל היא ההסתרה, כדי שבנאי עתידי ששוכח יקבל את ההתנהגות הבטוחה.</div>
+      </div>
+    </div>
+    <div class="arrow">↓ <span class="flab">הסיפור + STATE SUMMARY →</span></div>
+    <p class="sub" style="margin-top:14px">▼ ומכאן — התור כפי שהיה: <b>המראיין</b> שואל, מדרג, וה-Router מכריע.</p>
+    <div class="tabs">
+      <button data-k="clean" class="on">① תור נקי</button><button data-k="fund">② פער מהותי</button><button data-k="minor">③ פער לא-מהותי</button><button data-k="reprobe">④ חזרה דחויה</button>
+    </div>
+    <div style="font-size:11px;color:var(--mut);margin:-4px 0 10px">תרחישים ②–④ ממחישים את ניהול-הפערים: מדידה · כוכבית · resolved = <b style="color:var(--accent2)">Build 1 ✅</b> · escalate · reprobe · reopenSlot = <b style="color:var(--warn)">Build 2 🟡</b></div>
+    <div class="stepctl"><button id="ff-next">צעד הבא ▸</button><button id="ff-all">הצג הכל</button><span id="hint"></span></div>
+    <div class="banner" id="ff-banner"></div>
+    <div class="pcard r1" id="p1"><div class="pt"><span class="pnum">1</span> קלט — אובייקט הבקשה</div><div class="pbody"></div></div>
+
+    <div class="pcard" style="border-color:#4a3a1e">
+      <div class="pt"><span class="fbadge" style="background:rgba(240,180,107,.14);color:var(--warn)">🟡 באפיון · טרם מומש</span> הרכב הבקשה — מה ייכנס למטמון ומה לא</div>
+      <div class="pbody" style="font-size:12px;line-height:1.75">
+        <b style="color:var(--accent2)">חשוב:</b> מטמון הפרומפט <b>לא מקטין את מה שנשלח</b>. כל הבייטים עוברים בכל תור, כמו היום. מה שמשתנה הוא החיוב: השרת מזהה קידומת שכבר עיבד וגובה עליה 0.1× במקום 1×.<br><br>
+
+        <b>הקידומת היציבה — נכנסת למטמון (‏~15,900 תווים):</b>
+        <div class="gaplist" style="margin:6px 0">
+          • <code>persona.md</code> — 1,277 · הדמות הגלובלית · <span style="color:var(--accent2)">קבוע לכל הסשן</span><br>
+          • <code>resistance.md</code> — 2,195 · פרסונות ההתנגדות · <span style="color:var(--accent2)">קבוע לכל הסשן</span><br>
+          • <code>evaluator.md</code> — <b>9,240</b> · המעריך · <span style="color:var(--accent2)">קבוע לכל הסשן</span> — <b>58% מהקידומת</b><br>
+          • <code>forbidden.js</code> — 1,349 · הרשימה השחורה · <span style="color:var(--accent2)">קבוע לכל הסשן</span><br>
+          • <code>stage&lt;N&gt;.md</code> — ‏~1,800 · סוכן השלב · <span style="color:var(--warn)">מתחלף במעבר שלב</span> (6 פעמים בראיון)
+        </div>
+
+        <b>הזנב התנודתי — במכוון מחוץ למטמון:</b>
+        <div class="gaplist" style="margin:6px 0">
+          • <code>summarizeState(state)</code> — נבנה מחדש בכל תור מה-StateDocument (coverage · findings · actorMap). לו היה בתוך הבלוק המקומטן, המטמון היה נשבר בכל תור — כתיבה ב-1.25× ואפס קריאות. <b style="color:var(--esc)">גרוע מלא לעשות כלום.</b>
+        </div>
+
+        <div class="sat" style="margin-top:8px">סדר ההרכבה ב-<code>buildSystemPrompt</code> הוא מה שמאפשר את זה: המטמון הוא <b>התאמת-קידומת</b> — שינוי בית אחד מבטל את כל מה שאחריו. <code>stateSummary</code> נמצא <b>אחרון</b>, ולכן הבלוק היציב שמעליו ניתן למטמון כמו-שהוא. אילו היה ראשון, לא היה ניתן לממש מטמון בלי לפרק את המבנה.</div>
+
+        <div class="sat" style="margin-top:8px;border-color:#2f6b52"><b style="color:var(--accent2)">v2 — שתי קריאות, שתי קידומות.</b> לרשם קידומת משלו (<code>registrar.md</code>, ~10,500 תווים) שקבועה לכל הסשן ואינה מתחלפת אפילו במעבר שלב — כלומר <b>מועמדת מטמון טובה יותר</b> מזו של המראיין. ובכיוון הנגדי: כשהמראיין יפסיק לדווח מבנים (שלב <b>ה</b>), <code>evaluator.md</code> יתכווץ — והוא <b>58% מהקידומת שלו</b> היום.</div>
+        <div class="sat" style="margin-top:8px">‏<b>‏TTL:</b> ברירת המחדל היא 5 דקות. בראיון טיפולי שמזמין רפלקציה, הפסקת מחשבה של שש דקות מפילה את הרשומה ומחזירה כתיבה מלאה — ולכן מומלץ <code>ttl: "1h"</code> (כתיבה 2× במקום 1.25×, נקודת איזון 3 בקשות).</div>
+
+        <div class="sat" style="margin-top:8px"><b style="color:var(--accent2)">✅ מה שכבר בוצע (v1.1):</b> ארבעת דלי הטוקנים נישאים מקצה לקצה — <code>adapter → session → state → מד העלות</code>. זה תנאי מוקדם, לא קוסמטיקה: כשמטמון פעיל, <code>input_tokens</code> הוא רק <b>השארית הלא-מקומטנת</b>, ומד שעיוור ל-<code>cache_read</code> גם מדווח חסר וגם מסתיר את הסימן היחיד שאומר אם המטמון עובד בכלל — <code>cache_read</code> שנתקע על 0 פירושו שמשהו מבטל את הקידומת.</div>
+      </div>
+    </div>
+
+    <div class="arrow">↓ <span class="flab">request →</span></div>
+    <div class="pcard r2" id="p2"><div class="pt"><span class="pnum">2</span> מודל — פלט גולמי</div><div class="pbody"></div></div>
+    <div class="arrow">↓ <span class="flab">raw response →</span></div>
+    <div class="pcard r3" id="p3"><div class="pt"><span class="pnum">3</span> Parser — מאומת</div><div class="pbody"></div></div>
+    <div class="arrow">↓ <span class="flab">evaluation →</span></div>
+    <div class="pcard r4" id="p4"><div class="pt"><span class="pnum">4</span> StateDocument — אחרי כתיבה</div><div class="pbody"></div></div>
+    <div class="arrow">↓ <span class="flab">state →</span></div>
+    <div class="pcard r5" id="p5"><div class="pt"><span class="pnum">5</span> Router — אובייקט החלטה</div><div class="pbody"></div></div>
+    <div class="loopback">↩ ה-Router אוצר את ה-request הבא (חזרה לתחנה 1)</div>
+  </div></div>
+
+  <div class="view" id="view-router"><div id="rax">
+    <h1>מה דוחף את ה-Router — שלושת הצירים</h1>
+    <p class="sub">שנה כל ציר וראה איך ההחלטה זזה ואיזו רשומת targetKey נפתחת. <span style="color:var(--esc)">שער מפת-השחקנים (שלב 1) — גייט קשיח נוסף שאינו מוצג כפקד.</span></p>
+    <div class="arcnote" style="border-color:#2f6b52;margin-bottom:12px">
+      <b style="color:var(--accent2)">v2 — הרשם אינו מוסיף ציר.</b> שלושת הצירים כאן הם כל מה שדוחף את ה-Router, לפני הרשם ואחריו.
+      מה שהרשם יודע על סתירות נכנס ל-<code>gaps</code>, ו-<code>router.js</code> <b>אינו קורא <code>gaps</code> בשום מקום</b> — אומת בקוד.
+      <span style="color:var(--mut)">האם סתירה תחסום אי-פעם מעבר = שאלה קלינית פתוחה, <code>questions-for-natali</code> §14.</span>
+    </div>
+    <div class="axes">
+      <div class="ax">
+        <div class="axname">סף רך — כיסוי</div>
+        <div class="axdesc">slots ברמה 2 (סף ≥80%). חוסר כיסוי = <b>אין</b> targetKey.</div>
+        <div class="track"><div class="fill" id="covfill"></div><div class="thr"></div></div>
+        <input type="range" id="cov" min="0" max="100" step="5" value="60">
+        <div class="covval" id="covval"></div><div class="push" id="push-cov"></div>
+      </div>
+      <div class="ax">
+        <div class="axname">מיצוי — saturation</div>
+        <div class="axdesc">תורות רצופים בלי מידע חדש (סף ≥2).</div>
+        <div class="seg" id="sat"><button data-v="0">0</button><button data-v="1" class="on">1</button><button data-v="2">2</button></div>
+        <div class="push" id="push-sat" style="margin-top:36px"></div>
+      </div>
+      <div class="ax gapax">
+        <div class="axname">פערים — עקביות</div>
+        <div class="axdesc">כל פער (לא רק מהותי) פותח <b>targetKey</b>.</div>
+        <div class="seg gap" id="gap"><button data-v="none" class="on">אין</button><button data-v="starred">כוכבית</button><button data-v="escalated">מהותי</button></div>
+        <div class="push" id="push-gap" style="margin-top:9px"></div>
+      </div>
+    </div>
+    <div class="tkpanel"><div class="tkttl">רשומת הפער — gaps.byTarget</div><div class="tk" id="tkbody"></div></div>
+    <div class="guard" style="border-color:#5a3128"><input type="checkbox" id="actor"><span><span class="gl" style="color:var(--esc)">שער מפת-שחקנים (שלב 1)</span> — דמות <code style="color:var(--esc)">clear:false</code> מחזיקה את המעבר</span></div>
+    <div class="guard"><input type="checkbox" id="guard"><span><span class="gl">מגן עומס נורה</span> — רשת ביטחון: כופה מעבר (placeholder 20/15)</span></div>
+    <div class="fatigue future" style="border-color:#5a3128"><span class="fbadge" style="background:rgba(255,157,122,.14);color:#ff9d7a">🔴 חוסם שחרור · לא ממומש</span><span class="fl">גלאי עייפות</span> — המנגנון שיחליף את מגן-העומס: ישקלל מורכבות-סיפור + שיתוף-פעולה, לא ספירת שאלות. <b>הקונספט קיים ומתועד</b> (questions-for-natali §1 + §1א); מה שחסר הוא הכרעת נטלי על הספים והטון. dev-plan §129: "אין סגירת פיתוח בלי זה". אינו מוצג כפקד כי אינו פעיל.</div>
+    <div class="fatigue future" style="border-color:#5a3128"><span class="fbadge" style="background:rgba(255,157,122,.14);color:#ff9d7a">🔴 חוסם שחרור · לא מחווט</span><span class="fl">טיפול בסתירות</span> — <code style="color:var(--esc)">flag_contradiction</code> נפרסר ע"י ה-parser ואז <b>נזרק</b>: הדגל אינו מחווט ל-Re-open Rule, ולכן מידע סותר לא מוריד ציון slot ולא פותח נושא סגור. dev-plan §131. הניסוח הלא-שיפוטי בבעלות נטלי (questions-for-natali §2).</div>
+    <div class="fatigue future" style="border-color:#4a3a1e"><span class="fbadge" style="background:rgba(240,180,107,.14);color:var(--warn)">🟡 באג מוכר</span><span class="fl">reject-loop</span> — דחיית סיכום שנוצר ע"י מגן-העומס משאירה את <code style="color:var(--warn)">questionCount</code> בתקרה, ולכן השער נפתח שוב מיד בתור הבא. תיקון קטן ב-Router; נראה כאן כי הוא מתנהג כמו לולאה בציר מגן-העומס.</div>
+    <div class="arrow">↓</div>
+    <div class="router">
+      <div class="rttl">RouterDecision</div>
+      <div class="decision" id="dec"></div>
+      <div class="why" id="why"></div>
+      <div class="formula"><b>ADVANCE</b> = <b>כיסוי-מלא</b> ∨ (סף רך ✓ ∧ מיצוי ✓) → אישור סיכום + פתיח מעוגן<br>חריגים: <span class="dhold">targetKey מהותי = HOLD</span> · <span class="dhold">שער מפת-שחקנים: דמות <code style="color:var(--esc)">clear:false</code> = HOLD (שלב 1)</span> · <span class="dwait">מגן עומס = ADVANCE כפוי</span></div>
+      <div class="hintbar" id="rhint"></div>
+    </div>
+  </div></div>
+</div>
+<script>
+(function(){var d=document.getElementById('ttdash');if(!d)return;var views={arch:'view-arch',flow:'view-flow',router:'view-router'};d.querySelectorAll('.dnav button').forEach(function(b){b.onclick=function(){var k=b.dataset.v;d.querySelectorAll('.dnav button').forEach(function(x){x.classList.toggle('on',x===b);});Object.keys(views).forEach(function(vk){d.querySelector('#'+views[vk]).classList.toggle('show',vk===k);});};});})();
+(function(){
+  var root=document.getElementById('ttflow'); if(!root) return;
+  var SC={
+    clean:{stage:"שלב 1 — תור נקי",user:"החבר אמר שהבשר לא טוב.",
+      p1:`<div class="cap2">complete({ systemPrompt, messages }) — התשובה = איבר אחרון</div><div class="json">{
+  <span class="k">systemPrompt</span>: <span class="val">"דמות·Intake·מעריך·אסור"</span>,
+  <span class="k">event</span>: <span class="val">"## המאורע כפי שנאסף עד כה \n **השחקנים:** — אתה · פעולות: … \n — חבר מארח (חבר)"</span>,   <span style="color:#6ee0b0">// v2 — הסיפור, ראשון</span>
+  <span class="k">stateSummary</span>: { coverage:{stage1:{trigger:0,timeline:1}}, actorMap:{friend:{label:"חבר מארח",clear:true}}, gaps:{byTarget:{}} },
+  <span class="k">messages</span>: [
+    {role:"assistant", content:"ומה קרה אז?"},
+    {role:"user", content:<span class="val">"החבר אמר שהבשר לא טוב."</span>} <span class="cm">// ← נוכחי</span>
+  ]
+}</div>`,
+      p2:`<div class="cap2">evaluation לפני message — "חלץ, אז שאל"</div><div class="json">{
+  <span class="k">evaluation</span>: { slots:{<span class="g">trigger:2</span>},
+    slot_findings:{ trigger:[<span class="val">"החבר אמר שהבשר לא טוב"</span>] },
+    actor_map:[{ id:"friend", label:"החבר", clear:true }], newInfo:true, gap_observations:[] },
+  <span class="k">message</span>: <span class="val">"מתי הוא התקשר?"</span>
+}</div>`,
+      p3:`<div class="json">{ <span class="k">ok</span>:true, message:"…", evaluation:{slots, slot_findings, actor_map, gap_observations:[]}, usage:{…} }</div>`,
+      p4:`<div class="cap2">trigger 0→2 · findings + actorMap (merge דלתא)</div><div class="json">state = {
+  coverage:{ stage1:{ <span class="g">trigger:2</span>, timeline:1 } },
+  findings:{ stage1:{ trigger:["החבר אמר שהבשר לא טוב"] } },
+  actorMap:{ friend:{ label:"החבר", clear:true } },
+  meta:{ saturationCount:<span class="g">0</span> }, gaps:{byTarget:{}}
+}</div>`,
+      p5:`<div class="json">{ <span class="k">decision</span>:<span class="val">"STAY"</span>, reason:"soft_threshold_not_met" }</div>`},
+    fund:{stage:"שלב 1 — פער מהותי",user:"הצעתי לקנות בשר אחר.",
+      p1:`<div class="cap2">ב-stateSummary findings + actorMap שייסתרו</div><div class="json">{
+  stateSummary:{ findings:{ stage1:{ auto_reaction:[<span class="val">"אמרתי 'לא בא' וניתקתי"</span>] } }, openGaps:[] },
+  messages:[ … {role:"user", content:<span class="esc">"הצעתי לקנות בשר אחר."</span>} ]
+}</div>`,
+      p2:`<div class="json">{
+  <span class="k">message</span>: <span class="val">"רגע, קודם 'לא בא'; עכשיו הצעת? מה קרה קודם?"</span>,
+  evaluation:{ slots:{}, gap_observations:[{ target:"stage1.timeline", <span class="w">level:2</span>, note:"סדר הפוך" }] }
+}</div>`,
+      p3:`<div class="json">{ ok:true, evaluation:{ gap_observations:[{ <span class="w">level:2</span> }] } }</div>`,
+      p4:`<div class="cap2">נוצר targetKey · reopenSlot 2→1</div><div class="json">state = {
+  coverage:{ stage1:{ <span class="esc">timeline:1</span> } },
+  gaps:{ byTarget:{ "stage1.timeline":{ <span class="w">level:2</span>, status:<span class="esc">"escalated"</span>, history:[{6,2}] } } }
+}</div>`,
+      p5:`<div class="json">{ <span class="k">decision</span>:<span class="val">"STAY"</span>, reason:"gap_reopened_foundation" }</div>`},
+    minor:{stage:"שלב 2 — פער לא-מהותי",user:"אני תמיד מנסה לחסוך, אבל זה מביך.",
+      p1:`<div class="json">{
+  stateSummary:{ coverage:{stage2:{causal:1}}, openGaps:[] },
+  messages:[ … {role:"user", content:<span class="val">"מנסה לחסוך, אבל מביך."</span>} ]
+}</div>`,
+      p2:`<div class="json">{
+  <span class="k">message</span>: <span class="val">"מה זה אומר עליך, בעיניך?"</span>,
+  evaluation:{ slots:{<span class="g">causal:2</span>}, slot_findings:{causal:[<span class="val">"הוא לא סומך עליי"</span>]},
+    gap_observations:[{ target:"topic:חיסכון", <span class="w">level:5</span>, note:"יחס מתנדנד" }] }
+}</div>`,
+      p3:`<div class="json">{ ok:true, evaluation:{ thoughts:{…}, gap_observations:[{ <span class="w">level:5</span> }] } }</div>`,
+      p4:`<div class="cap2">targetKey starred · בלי reopenSlot</div><div class="json">state = {
+  coverage:{ stage2:{ <span class="g">causal:2</span> } }, findings:{ stage2:{ causal:["הוא לא סומך עליי"] } },
+  gaps:{ byTarget:{ "topic:חיסכון":{ <span class="w">level:5</span>, status:<span class="star">"starred"</span> } } }
+}</div>`,
+      p5:`<div class="json">{ <span class="k">decision</span>:<span class="val">"REQUEST_CONFIRMATION"</span>, nextStage:3 }</div>`},
+    reprobe:{stage:"שלב 5 — escalated פתוח מקודם",user:"(תשובה רגועה — פתח לחזור)",
+      p1:`<div class="cap2">openGaps לא ריק — זה ה'חוזר למודל'</div><div class="json">{
+  stateSummary:{ <span class="k">openGaps</span>:[{ target:"stage1.timeline", status:<span class="esc">"escalated"</span>, note:"מה אחרי הניתוק? ברר בעדינות" }], reprobe:"stage1.timeline" }
+}</div>`,
+      p2:`<div class="json">{
+  <span class="k">message</span>: <span class="val">"אם אפשר רגע אחורה — מה קרה אחרי שניתקת?"</span>,
+  evaluation:{ gap_observations:[{ target:"stage1.timeline", <span class="g">level:9</span>, note:"הודעה קצרה, ומאז שתיקה" }], revisit_addressed:true }
+}</div>`,
+      p3:`<div class="json">{ ok:true, evaluation:{ gap_observations:[{ <span class="g">level:9</span> }], revisit_addressed:true } }</div>`,
+      p4:`<div class="cap2">אותה רשומה · 2→9 · RESOLVED</div><div class="json">state = {
+  coverage:{ stage1:{ <span class="g">timeline:2</span> } },
+  gaps:{ byTarget:{ "stage1.timeline":{ <span class="g">level:9</span>, status:<span class="res">"resolved"</span>, history:[{6,2},{7,9}] } } }
+}</div>`,
+      p5:`<div class="json">{ <span class="k">decision</span>:<span class="val">"STAY"</span>, reason:"gap_resolved_continue" }</div>`}
+  };
+  var cards=['p1','p2','p3','p4','p5'], active='clean', step=0;
+  function render(){var s=SC[active];root.querySelector('#ff-banner').innerHTML='<span class="bstage">'+s.stage+'</span><span>משתמש: "'+s.user+'"</span>';cards.forEach(function(c,i){var card=root.querySelector('#'+c);card.querySelector('.pbody').innerHTML=s[c];card.classList.toggle('dim',step!==0&&step!==(i+1));card.classList.toggle('hot',step===(i+1));});root.querySelectorAll('.tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.k===active);});root.querySelector('#hint').textContent=step===0?'מוצג הכל (5 תחנות)':('צעד '+step+'/5');}
+  root.querySelectorAll('.tabs button').forEach(function(b){b.onclick=function(){active=b.dataset.k;step=0;render();};});
+  root.querySelector('#ff-next').onclick=function(){step=(step+1)%6;render();};
+  root.querySelector('#ff-all').onclick=function(){step=0;render();};
+  render();
+})();
+(function(){
+  var root=document.getElementById('rax'); if(!root) return;
+  var st={cov:60,sat:1,gap:'none',guard:false,actor:false};
+  function decide(){var soft=st.cov>=80,sat=st.sat>=2,full=st.cov>=100;
+    if(st.gap==='escalated')return{d:'STAY',cls:'dhold',drv:'gap',why:'<b>targetKey מהותי (escalated)</b> מחזיק הכל — reopenSlot מוריד כיסוי. גובר על מגן העומס.'};
+    if(st.actor)return{d:'STAY',cls:'dhold',drv:'actor',why:'<b>שער מפת-שחקנים</b> — דמות לא-ברורה (<code style="color:var(--esc)">clear:false</code>) מחזיקה את שלב 1. מגן-העומס עדיין יכול לכפות.'};
+    if(full||(soft&&sat))return{d:'REQUEST_CONFIRMATION → ADVANCE',cls:'dadv',drv:'both',why:full?'<b>כיסוי מלא ✓</b> (כל הסלוטים ב-2) → מעבר לבד, גם בלי מיצוי.':'<b>סף רך מולא ✓ ומיצוי ✓</b> → סיכום לאישור, ואז מעבר.'};
+    if(st.guard)return{d:'ADVANCE (גיבוי)',cls:'dwait',drv:'guard',why:'<b>מגן העומס נורה</b> — מעבר כפוי. רשת ביטחון בלבד (placeholder).'};
+    var m=[];if(!soft)m.push('כיסוי <80%');if(!sat)m.push('עדיין נכנס מידע');return{d:'STAY',cls:'dwait',drv:'wait',why:'<b>ממתין</b> — '+m.join(' · ')+'.'};}
+  function render(){
+    root.querySelector('#covfill').style.width=st.cov+'%';root.querySelector('#covfill').style.background=st.cov>=80?'var(--accent2)':'var(--accent)';
+    root.querySelector('#covval').textContent=st.cov+'% '+(st.cov>=100?'(כיסוי מלא)':st.cov>=80?'(סף רך מולא)':'(מתחת לסף)');
+    root.querySelectorAll('#sat button').forEach(function(b){b.classList.toggle('on',+b.dataset.v===st.sat);});
+    root.querySelectorAll('#gap button').forEach(function(b){b.classList.toggle('on',b.dataset.v===st.gap);});
+    root.querySelector('#actor').checked=st.actor;
+    var pc=root.querySelector('#push-cov');if(st.cov>=100){pc.className='push adv';pc.textContent='כיסוי מלא → ADVANCE לבד ✓';}else if(st.cov>=80){pc.className='push adv';pc.textContent='סף רך מולא (+מיצוי) ✓';}else{pc.className='push neu';pc.textContent='מחזיק — כיסוי חסר';}
+    var ps=root.querySelector('#push-sat');if(st.sat>=2){ps.className='push adv';ps.textContent='דוחף ל-ADVANCE ✓';}else{ps.className='push neu';ps.textContent='מחזיק — עוד נכנס מידע';}
+    var pg=root.querySelector('#push-gap');if(st.gap==='escalated'){pg.className='push hold';pg.textContent='targetKey · escalated → HOLD';}else if(st.gap==='starred'){pg.className='push neu';pg.textContent='targetKey · starred — לא משפיע';}else{pg.className='push neu';pg.textContent='— אין targetKey';}
+    var tk=root.querySelector('#tkbody');
+    if(st.gap==='none')tk.innerHTML='gaps.byTarget: {}   <span class="cm">// ריק · אין targetKey</span>';
+    else if(st.gap==='starred')tk.innerHTML='gaps.byTarget {\n  "topic:חיסכון": { level:5, status:<span class="star">"starred"</span> }\n}\n<span class="cm">→ נרשם · לא משפיע · לא נשלח</span>';
+    else tk.innerHTML='gaps.byTarget {\n  "stage1.timeline": { level:2, status:<span class="esc">"escalated"</span> }\n}\n<span class="cm">→ reopenSlot(2→1) → </span><span class="esc">HOLD</span>';
+    var r=decide();var de=root.querySelector('#dec');de.innerHTML=r.d;de.className='decision '+r.cls;root.querySelector('#why').innerHTML=r.why;
+    root.querySelector('#rhint').textContent='גורם מכריע: '+({gap:'פערים (targetKey מהותי)',actor:'שער מפת-שחקנים',both:'כיסוי-מלא / מיצוי+סף-רך',guard:'מגן עומס',wait:'אף ציר לא בשל'}[r.drv]);
+  }
+  root.querySelector('#cov').addEventListener('input',function(e){st.cov=+e.target.value;render();});
+  root.querySelectorAll('#sat button').forEach(function(b){b.onclick=function(){st.sat=+b.dataset.v;render();};});
+  root.querySelectorAll('#gap button').forEach(function(b){b.onclick=function(){st.gap=b.dataset.v;render();};});
+  root.querySelector('#guard').addEventListener('change',function(e){st.guard=e.target.checked;render();});
+  root.querySelector('#actor').addEventListener('change',function(e){st.actor=e.target.checked;render();});
+  render();
+})();
+</script>
+</body>
+</html>
