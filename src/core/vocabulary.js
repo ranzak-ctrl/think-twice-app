@@ -1,0 +1,80 @@
+// The graph's vocabulary — every entity kind, edge kind and axis value, in one place.
+//
+// Ran, 18.9.2026: "אני רוצה לנהל רשימה של יישויות וקשתות שמהן ייבנה הגרף של כל
+// מקרה." It could not be produced by reading one place. `EDGE_KINDS` and
+// `GROUP_KINDS` lived in state.js, `STANCE_TYPES` / `EMOTION_PACES` / `SOURCES` in
+// eventRecord.js, `NODE_SCALES` back in state.js again, and the label cap was
+// declared twice under two names that had to agree and had nothing making them.
+// A vocabulary nobody can see is a vocabulary nobody can manage.
+//
+// This module imports NOTHING, which is the point beyond tidiness: it also breaks
+// the state.js ↔ eventRecord.js import cycle that existed only because the barred
+// slots lived in state.js. router-guard called that cycle a latent trap — a future
+// module-scope read of the `const` it re-entered would have thrown a TDZ
+// ReferenceError in ONE import order only, the nastiest shape such a bug can take.
+// With the shared vocabulary at the bottom of the graph, there is no cycle to trip.
+//
+// The reference, with each item's DECISION TEST, is docs/event-vocabulary.md and
+// the מילון tab of docs/architecture-dashboard-v2.html. A test asserts that this
+// file and that document agree, so drift fails in CI rather than in a live run.
+
+// ── Entities ──
+// A stance: what an actor wanted, was after, or understood.
+// Decision test against an emotion: CAN YOU ARGUE WITH IT? A stance can be
+// contradicted by a fact; a feeling cannot.
+export const STANCE_TYPES = new Set(['want', 'goal', 'reading']);
+
+// A feeling's timescale, in Ran's three: a circumstantial feeling, an emotional
+// stance brought in beforehand, and a standing one that characterises the actor.
+export const EMOTION_PACES = new Set(['situational', 'prior', 'trait']);
+
+// ── Edges ──
+// Each was added one at a time, with a case that had no home — `echo` on 5.9.2026,
+// because "that is how I felt when teachers said I do not try" relates a feeling to
+// its past echo and `because` would have asserted a cause he never named.
+//
+// EVERY ADDITION COSTS SOMETHING: a new kind is a new way for the model to classify
+// wrongly. docs/event-vocabulary.md holds the open proposals (`derives_from`, which
+// the protocol's percolation test already requires, and `about`) and the ones
+// recommended against, with reasons.
+export const EDGE_KINDS = new Set([
+  'then',    // temporal succession — and then
+  'because', // causal — that is why
+  'agent',   // an actor did this beat
+  'echo',    // resemblance — this felt like that. Never re-orders the map.
+]);
+
+// A container is a claim, so all three kinds are gated on `confirmed`.
+export const GROUP_KINDS = new Set(['community', 'process', 'perspective']);
+
+// ── Cross-cutting axes ──
+// Attribution. This is the protocol's מבחן הבעלות as a field rather than a hope:
+// `inferred` is what the INTERVIEWER offered, and it stays worth less until the
+// person adopts it in his own words, at which point it is re-reported as `stated`.
+export const SOURCES = new Set(['stated', 'attributed', 'inferred', 'unknown']);
+
+// The two clocks. The axis is STATE vs INCIDENT, never duration — evaluator.md v7
+// was corrected on exactly this: a back that seized this morning is `ongoing` if it
+// held through the whole event.
+export const NODE_SCALES = new Set(['episode', 'ongoing']);
+
+// ── The barred slots ──
+// The wound (מוגלה) and the ADHD pattern. CLAUDE.md and Natali's ruling of
+// 14.8.2026: he reaches the wound himself, and it is never reflected back at him as
+// our reading of him.
+//
+// THE LINE THIS DRAWS, because it is easy to get backwards: these are barred from
+// being DRAWN, not from being stored. coverage.stage2.wound cannot reach 2 unless
+// the record holds the evidence, and stage 2 cannot probe a subject it is not told
+// about — so the ledger keeps them and the interviewer's account carries them.
+// Every PROJECTION applies this set: setMapLabel and mergeNodes/Edges/Groups refuse
+// them at the write, eventMap.js filters on them, and renderEvent redacts them for
+// every builder whose output is spoken to the person.
+export const NEVER_SHOW_SLOTS = new Set(['wound', 'adhd_pattern']);
+
+// ── Shared limit ──
+// A cube's name is a word or two. Over-long is REFUSED, never trimmed: a label that
+// needs cutting is not a label, and trimming would put back the sentence this field
+// exists to keep out. Declared once because state.js and eventRecord.js both
+// enforce it and nothing was keeping their two copies equal.
+export const LABEL_MAX = 24;

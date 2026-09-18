@@ -8,6 +8,14 @@ export const SLOT_UNKNOWN = 'U';
 // other at module-evaluation time: createEventRecord and displayable are both
 // called later. Asserted by tests/core/state.test.js importing a fresh state.
 import { createEventRecord } from './eventRecord.js';
+// The graph's vocabulary lives in one module now — see vocabulary.js for why.
+// Re-exported here because story.js and the tests already import these names
+// from state.js, and moving a definition should not move an import path.
+import {
+  EDGE_KINDS, GROUP_KINDS, NODE_SCALES, NEVER_SHOW_SLOTS, LABEL_MAX,
+} from './vocabulary.js';
+export { EDGE_KINDS, GROUP_KINDS, NODE_SCALES, NEVER_SHOW_SLOTS };
+export const MAP_LABEL_MAX = LABEL_MAX;
 
 export function createState() {
   return {
@@ -222,7 +230,6 @@ export function addFindings(state, stageKey, slotKey, items) {
 // understanding. Over-long values are refused rather than trimmed — a label that
 // needs cutting is not a label, and silently trimming it would put the sentence
 // back in the cube this field exists to keep out.
-export const MAP_LABEL_MAX = 24;
 
 // Slots that may never be shown to the person: the wound (מוגלה) and the ADHD
 // pattern. CLAUDE.md and Natali's ruling of 14.8 — he reaches the wound himself,
@@ -235,7 +242,6 @@ export const MAP_LABEL_MAX = 24;
 // stage 2 lands, and a single guard in a single consumer was the only thing between
 // that and the person's own screen. A label that is never stored cannot be drawn by
 // a consumer that forgets to check. story.js re-exports this as NEVER_MIRROR.
-export const NEVER_SHOW_SLOTS = new Set(['wound', 'adhd_pattern']);
 
 export function setMapLabel(state, stageKey, slot, raw) {
   if (NEVER_SHOW_SLOTS.has(slot)) return state;
@@ -274,7 +280,6 @@ export function setMapLabel(state, stageKey, slot, raw) {
 // standing state rather than a moment is a reading of what he said. Code that
 // guessed it would be asserting the shape of his story again. Unreported defaults
 // to `episode`, which is the drawing we already had.
-export const NODE_SCALES = new Set(['episode', 'ongoing']);
 
 // How many nodes one slot may put on the map. The significance rule from Ran's
 // gate of 28.8 ("how significant is the item") survives here as a budget rather
@@ -400,20 +405,6 @@ export function mergeNodes(state, reported) {
 //
 // Endpoints are node ids as the map names them: "stageN.slot" for a beat,
 // "actor:<id>" for a character, "fork:<id>" for an open fork.
-export const EDGE_KINDS = new Set([
-  'then',    // temporal succession — and then
-  'because', // causal — that is why
-  'agent',   // an actor did this beat
-  // resemblance — this felt like that. Added 5.9.2026 after prompt-editor found a
-  // relation the first three could not carry: "that is how I felt when teachers
-  // said I do not try" relates the feeling to its past echo, and it is a relation
-  // he STATED. `because` was the only near fit and it would have asserted that the
-  // past CAUSED the feeling — a causal claim he never made, in the one dimension
-  // (`ownership`) the judge exists to catch. A kind that says only "these resemble
-  // each other" keeps the edge without inventing the cause. It never re-orders the
-  // map: resemblance is not precedence.
-  'echo',
-]);
 
 const edgeNode = (v) => (typeof v === 'string' ? v.trim() : '');
 
@@ -482,7 +473,6 @@ export function mergeEdges(state, reported) {
 // interviewee." A box is a claim in every case, so `confirmed` gates all three
 // kinds, not only perspective. It is the same contract the edges already run:
 // report it unconfirmed, ask, and draw only once he has said so.
-export const GROUP_KINDS = new Set(['community', 'process', 'perspective']);
 export const GROUP_MEMBERS_MAX = 12;
 
 export function mergeGroups(state, reported) {

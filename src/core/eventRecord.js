@@ -52,7 +52,12 @@
 // applies NEVER_SHOW_SLOTS. `displayable()` below is that guard, exported here so
 // a future projection cannot forget to ask.
 
-import { NEVER_SHOW_SLOTS } from './state.js';
+// From vocabulary.js, not state.js — which is what removes the import cycle that
+// used to run between these two files. The TDZ trap warned about below is gone
+// with it; the warning stays as the reason not to reintroduce one.
+import { NEVER_SHOW_SLOTS, STANCE_TYPES, EMOTION_PACES, SOURCES, LABEL_MAX } from './vocabulary.js';
+export { STANCE_TYPES, EMOTION_PACES, SOURCES };
+export const ENTITY_LABEL_MAX = LABEL_MAX;
 
 // An entity names the slot it feeds. That reference is what makes derivation
 // possible at all, and it is also what the display guard checks.
@@ -63,21 +68,18 @@ import { NEVER_SHOW_SLOTS } from './state.js';
 // nastiest shape this bug can take. Read it inside a function, as displayable does.
 const SLOT_RE = /^stage([1-7])\.(.+)$/;
 
-export const STANCE_TYPES = new Set(['want', 'goal', 'reading']);
 
 // The three timescales of feeling, in Ran's own words (18.9.2026): "תחושות
 // נסיבתיות, עמדה רגשית מוקדמת, עמדה רגשית סטטית שמאפיינת שחקן מסוים כקו לדמותו".
 // They fall exactly onto the two clocks he already ruled for the map — situational
 // is an `episode`, prior and trait are `ongoing` — which is why `paceScale` below
 // can hand the map a scale without the registrar reporting one twice.
-export const EMOTION_PACES = new Set(['situational', 'prior', 'trait']);
 
 // Who claims this — the attribution axis. It is not bookkeeping: it IS the
 // protocol's מבחן הבעלות ("the interpretation was formulated BY THE USER. If the
 // agent had to offer one, the slot stays 1 until the user adopts it in his own
 // words"), as a field instead of as a hope. The interviewer reads it directly, and
 // eventView.js marks an unadopted stance in the account it hands over.
-export const SOURCES = new Set(['stated', 'attributed', 'inferred', 'unknown']);
 
 // Backstops, in the spirit of NODES_MAX: they should never be what stops anything,
 // and they are here so a runaway report cannot grow the ledger without limit.
@@ -87,7 +89,6 @@ export const SOURCES = new Set(['stated', 'attributed', 'inferred', 'unknown']);
 // back to trimming `text` only so a cube is never empty, which is visibly not the
 // same thing. Refused rather than trimmed when over-long, exactly as MAP_LABEL_MAX
 // is: a label that needs cutting is not a label.
-export const ENTITY_LABEL_MAX = 24;
 
 export const BEATS_MAX = 60;
 export const STANCES_MAX = 40;
