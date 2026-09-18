@@ -322,3 +322,108 @@ describe('about runs mind → target, and the code refuses the other way', () =>
     expect(Object.keys(edge('actor:wife', 'beat:answered', 'agent'))).toHaveLength(1);
   });
 });
+
+describe('despite — the concession `then` used to swallow', () => {
+  const defied = (edges) => {
+    const s = build();
+    s.eventRecord = mergeBeats(s.eventRecord, [
+      { id: 'shop', slot: 'stage1.auto_reaction', actor: 'self', text: 'הלכת לקניות', label: 'הלכת לקניות', camera: true, phase: 'during' },
+      { id: 'back', slot: 'stage1.status', actor: 'self', text: 'גב תפוס מהבוקר', label: 'גב תפוס', camera: true, scale: 'ongoing' },
+      { id: 'persist', slot: 'stage1.timeline', actor: 'wife', text: 'לא ויתרה', label: 'לא ויתרה', camera: true, phase: 'during' },
+    ]);
+    return mergeEdges({ ...s, edges: {} }, edges);
+  };
+
+  it('renders the concession, obstacle and all', () => {
+    const out = renderEvent(defied([{ from: 'beat:shop', to: 'beat:back', kind: 'despite', confirmed: true }]));
+    expect(out).toContain('הלכת לקניות ← למרות ← גב תפוס');
+  });
+
+  it('crosses the two lanes — an episode beat defying a standing condition', () => {
+    const s = defied([{ from: 'beat:shop', to: 'beat:back', kind: 'despite', confirmed: true }]);
+    const out = renderEvent(s);
+    // The condition stays on the ground lane and never becomes a station. Sliced to
+    // the relations section rather than to the ground one: "קשרים שציינת" now sits
+    // between them, and it legitimately names the condition.
+    const seq = out.slice(out.indexOf('**הרצף:**'), out.indexOf('**קשרים'));
+    expect(seq).not.toContain('גב תפוס');
+    // ...and the relation between the lanes is still stated, because he stated it.
+    expect(out).toContain('הלכת לקניות ← למרות ← גב תפוס');
+  });
+
+  it('is still only drawn once he has confirmed it', () => {
+    const out = renderEvent(defied([{ from: 'beat:shop', to: 'beat:back', kind: 'despite', confirmed: false }]));
+    expect(out).not.toContain('למרות');
+  });
+});
+
+describe('four kinds carry a claim; two are already in the account', () => {
+  it('only because · echo · derives_from · about · despite get a relation line', () => {
+    const s = build();
+    const withAll = mergeEdges({ ...s, edges: {} }, [
+      { from: 'stage1.trigger', to: 'stage1.timeline', kind: 'then', confirmed: true },
+      { from: 'actor:wife', to: 'stage1.timeline', kind: 'agent', confirmed: true },
+    ]);
+    expect(renderEvent(withAll)).not.toContain('קשרים שציינת');
+  });
+});
+
+describe('no edge kind may quietly acquire ordering power', () => {
+  it('only then and because constrain the drawing order', async () => {
+    const { EDGE_KINDS } = await import('../../src/core/vocabulary.js');
+    const src = (await import('node:fs')).readFileSync(
+      new URL('../../src/core/storyMap.js', import.meta.url), 'utf8');
+    const ordering = /ORDERING_KINDS = new Set\(\[([^\]]*)\]\)/.exec(src)[1];
+    const listed = [...ordering.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]);
+    expect(listed).toEqual(['then', 'because']);
+    // Every other kind in the vocabulary is deliberately outside it.
+    for (const k of EDGE_KINDS) {
+      if (k === 'then' || k === 'because') continue;
+      expect(listed).not.toContain(k);
+    }
+  });
+});
+
+describe('alternative_to — the tool central move, which had no edge at all', () => {
+  it('carries an alternative response back to the reaction it stands against', () => {
+    const s = build();
+    s.eventRecord = mergeBeats(s.eventRecord, [
+      { id: 'left', slot: 'stage4.auto_reaction', actor: 'self', text: 'יצאת מהחדר', label: 'יצאת מהחדר', camera: true, phase: 'after' },
+    ]);
+    s.eventRecord = mergeStances(s.eventRecord, [
+      { id: 'ask', slot: 'stage6.alternatives', type: 'want', actor: 'self', text: 'לשאול מתי נוח לה', label: 'לשאול מתי נוח' },
+    ]);
+    const out = renderEvent(mergeEdges({ ...s, edges: {} }, [
+      { from: 'stance:ask', to: 'beat:left', kind: 'alternative_to', confirmed: true },
+    ]));
+    expect(out).toContain('לשאול מתי נוח ← במקום ← יצאת מהחדר');
+  });
+
+  it('carries an alternative reading back to the original one', () => {
+    const s = build();
+    s.eventRecord = mergeStances(s.eventRecord, [
+      { id: 'orig', slot: 'stage2.causal', type: 'reading', actor: 'self', text: 'התעלמה ממני', label: 'התעלמה ממני' },
+      { id: 'alt', slot: 'stage5.alt_formulation', type: 'reading', actor: 'wife', text: 'לא ידעה שאתה שם', label: 'לא ידעה שאתה שם' },
+    ]);
+    const out = renderEvent(mergeEdges({ ...s, edges: {} }, [
+      { from: 'stance:alt', to: 'stance:orig', kind: 'alternative_to', confirmed: true },
+    ]));
+    expect(out).toContain('לא ידעה שאתה שם ← במקום ← התעלמה ממני');
+  });
+
+  it('relates without ranking — no word in the line says which is better', () => {
+    // brief.md:62 bans highlighting, ranking, starring and pre-selecting. This
+    // states only that the two answer the same moment.
+    const s = build();
+    s.eventRecord = mergeStances(s.eventRecord, [
+      { id: 'a', slot: 'stage6.alternatives', type: 'want', actor: 'self', text: 'לשאול', label: 'לשאול' },
+      { id: 'b', slot: 'stage2.causal', type: 'reading', actor: 'self', text: 'התעלמה', label: 'התעלמה' },
+    ]);
+    const line = renderEvent(mergeEdges({ ...s, edges: {} }, [
+      { from: 'stance:a', to: 'stance:b', kind: 'alternative_to', confirmed: true },
+    ])).split('\n').find((l) => l.includes('במקום'));
+    for (const nudge of ['עדיף', 'מומלץ', 'טוב יותר', 'כדאי', '★', '✓']) {
+      expect(line).not.toContain(nudge);
+    }
+  });
+});

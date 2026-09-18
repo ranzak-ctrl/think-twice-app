@@ -75,6 +75,54 @@ export const EDGE_KINDS = new Set([
   // mind→fact while a `because` on the same two nodes runs fact→mind, so letting
   // `about` constrain the sort would manufacture a cycle out of a coherent pair.
   'about',
+  // concession — this happened EVEN THOUGH that. Approved by Ran, 18.9.2026, on
+  // observed need: it surfaced twice in his live run of 5.9 and collapsed into
+  // `then`, which keeps the sequence and throws away the only part that made it a
+  // story. "הלכתי לקניות למרות שהגב תפס" · "אמרתי שחייב לנוח אבל היא לא ויתרה".
+  //
+  // Direction: X → Y, where X is what happened and Y is what argued against it.
+  //
+  // AGAINST `then`, one question: IS AN EXPECTATION BEING DEFIED? Plain succession
+  // is `then`; "and yet" is `despite`. The interviewee's own words carry it —
+  // "ואז" against "למרות ש" / "אבל".
+  //
+  // AGAINST `because` it is the exact mirror: `because` says Y brought X about,
+  // `despite` says Y was a reason for X NOT to happen and it happened anyway.
+  //
+  // IT DOES NOT ORDER THE MAP, and the reason here is sharper than for the others:
+  // its temporal direction is the REVERSE of `then`. The obstacle precedes or
+  // coexists with the act that defied it, so Y comes before X while the edge points
+  // X → Y. Ordering on it would mean inverting it first, and an edge kind that
+  // orders backwards is a trap nobody would remember. `then` still carries the
+  // sequence wherever he stated one.
+  //
+  // It routinely crosses the two lanes — an episode beat defying an `ongoing`
+  // condition — which is exactly the cross-lane arrow Ran ruled on 5.9.2026 is
+  // drawn only when the interviewee stated the link himself.
+  'despite',
+  // the instead-of relation — X is an alternative to Y. Approved by Ran,
+  // 18.9.2026, over my own objection, which was wrong.
+  //
+  // I had ruled it out on brief.md:62, which forbids anything that may "highlight,
+  // rank, star, pre-select or otherwise nudge one option over another". That ban is
+  // on RANKING. This edge does not rank — it RELATES, and relating two things is
+  // not comparing them. It says only that they answer the same moment; it says
+  // nothing about which is better, and `confirmed` means he said so himself.
+  //
+  // What the objection cost: this is the tool's central move and it had no edge at
+  // all. The whole interview is "here is what you thought → here is another way to
+  // see it" and "here is what you did → here is what else you could do":
+  //   stage5 alt_formulation  ──alternative_to──▶  stage2 causal / meaning
+  //   stage6 alternatives     ──alternative_to──▶  stage1|4 auto_reaction
+  // `derives_from` carries an alternative back to the REINTERPRETATION it grew out
+  // of; nothing carried it back to the ORIGINAL it stands against.
+  //
+  // Direction: the challenger → the incumbent. That is a fact, not a preference —
+  // the automatic reaction happened and the alternative did not.
+  //
+  // Does not order the map: the alternative does not occur after the original in
+  // the story's timeline, it does not occur in the story at all.
+  'alternative_to',
 ]);
 
 // `about` belongs to MINDS. A beat cannot be "about" anything — only a reading, a

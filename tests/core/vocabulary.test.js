@@ -20,7 +20,7 @@ const SOURCE = read('src/core/vocabulary.js');
 const SETS = {
   STANCE_TYPES: [STANCE_TYPES, ['want', 'goal', 'reading']],
   EMOTION_PACES: [EMOTION_PACES, ['situational', 'prior', 'trait']],
-  EDGE_KINDS: [EDGE_KINDS, ['then', 'because', 'agent', 'echo', 'derives_from', 'about']],
+  EDGE_KINDS: [EDGE_KINDS, ['then', 'because', 'agent', 'echo', 'derives_from', 'about', 'despite', 'alternative_to']],
   GROUP_KINDS: [GROUP_KINDS, ['community', 'process', 'perspective']],
   SOURCES: [SOURCES, ['stated', 'attributed', 'inferred', 'unknown']],
   NODE_SCALES: [NODE_SCALES, ['episode', 'ongoing']],
@@ -44,6 +44,34 @@ describe('the vocabulary is exactly what is documented', () => {
       for (const v of set) if (!VOCAB_DOC.includes(v)) undocumented.push(`${name}.${v} → docs/event-vocabulary.md`);
     }
     expect(undocumented).toEqual([]);
+  });
+
+  // Found the hard way: `alternative_to` was approved while the doc still listed it
+  // under "do not add", and the substring check above passed happily — the word WAS
+  // in the document, arguing against itself. Presence is not enough; it must not be
+  // present as a rejection.
+  it('a live edge kind is not still listed as one we decided against', () => {
+    const section = (text, heading, stop) => {
+      const from = text.indexOf(heading);
+      if (from === -1) return '';
+      const rest = text.slice(from + heading.length);
+      const to = rest.indexOf(stop);
+      return to === -1 ? rest : rest.slice(0, to);
+    };
+    // Only the CANDIDATE names, not every mention: the rejection reasons legitimately
+    // name live kinds ("`because` + `despite` cover it"), and a bare substring check
+    // flagged those as rejections of themselves.
+    const docNo = section(VOCAB_DOC, 'ומה שאני ממליץ', '\n> ');
+    const dashNo = section(DASHBOARD, 'ומה שאני ממליץ', '<div class="sec"');
+    const rejected = new Set([
+      ...[...docNo.matchAll(/^\|\s*`([a-z_]+)`/gm)].map((m) => m[1]),
+      ...[...docNo.matchAll(/^\|\s*`[a-z_]+`\s*\/\s*`([a-z_]+)`/gm)].map((m) => m[1]),
+      ...[...dashNo.matchAll(/<b><code>([a-z_]+)<\/code><\/b>/g)].map((m) => m[1]),
+    ]);
+    expect(rejected.size).toBeGreaterThan(0); // the section was found and parsed
+    for (const kind of EDGE_KINDS) {
+      expect([...rejected], `${kind} is live but still listed as rejected`).not.toContain(kind);
+    }
   });
 
   it('a new value cannot be added without showing it in the dashboard', () => {

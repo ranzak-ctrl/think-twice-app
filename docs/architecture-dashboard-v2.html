@@ -429,7 +429,7 @@
       <tr><td class="ent">מְכָל<br><code>group</code></td><td>קופסה סביב קבוצת פריטים</td><td class="test">חייב <code>confirmed</code> — <b>קופסה היא טענה</b></td><td><code>community</code> · <code>process</code> · <code>perspective</code></td></tr>
     </table>
 
-    <div class="sec">שש קשתות</div>
+    <div class="sec">שמונה קשתות</div>
     <table>
       <tr><th style="width:110px">קשת</th><th style="width:30%">מה היא טוענת</th><th>דוגמה</th></tr>
       <tr><td class="edg"><code>then</code></td><td>רצף זמן — <b>ואז</b></td><td>"עברת בסלון" ◀ "שאלת ממתי הוחלט"</td></tr>
@@ -438,6 +438,8 @@
       <tr><td class="edg"><code>echo</code></td><td>דמיון — <b>ככה הרגשתי אז</b></td><td>"עלבון" ◀ "כשמורים אמרו שאני לא משתדל"</td></tr>
       <tr><td class="edg"><code>derives_from</code> <span class="new">אושר 18.9</span></td><td>גזירה — <b>זה יצא מזה</b></td><td>"לשאול מתי נוח לה" ◀ "היא רצתה רגע נעים"</td></tr>
       <tr><td class="edg"><code>about</code> <span class="new">אושר 18.9</span></td><td>מושא — <b>זה על זה</b><br><span style="color:var(--mut);font-size:11px">תמיד תודעה ← יעד</span></td><td>"עלבון" ◀ "מה שהיא ענתה"</td></tr>
+      <tr><td class="edg"><code>despite</code> <span class="new">אושר 18.9</span></td><td>ניגוד — <b>זה קרה למרות זה</b></td><td>"הלכת לקניות" ◀ "גב תפוס"</td></tr>
+      <tr><td class="edg"><code>alternative_to</code> <span class="new">אושר 18.9</span></td><td>במקום — <b>זה חלופה לזה</b><br><span style="color:var(--mut);font-size:11px">מתמודד ← מכהן</span></td><td>"לשאול מתי נוח" ◀ "יצאת מהחדר"</td></tr>
     </table>
     <div class="note" style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
       <b style="color:var(--txt)">שתי מוסכמות שמחזיקות את הכול:</b><br>
@@ -466,17 +468,24 @@
       <b>הסכנה שזה מכסה:</b> זהות קשת היא <code>from→to</code>, אז דיווח חוזר של אותו זוג מסודר תחת סוג שני <b>דורס בשקט</b> — וזוג שהתהפך ל-<code>because</code> מתחיל לטעון סיבתיות שאיש לא אמר.<br>
       <b>פותחת:</b> שני רגשות על רגע אחד · שתי תודעות על רגע אחד (<b>"יציאה מעצמי" כנתון</b>) · שרשרת החלחול עד השורש.
     </div>
-    <div class="prop">
-      <b class="h">③ <code>despite</code> — ניגוד</b>
-      <i>"הלכתי לקניות <b>למרות</b> שהגב תפס"</i> · <i>"אמרתי שחייב לנוח <b>אבל היא לא ויתרה</b>"</i>. היום נופל ל-<code>then</code> ומאבד בדיוק את מה שעושה אותו לסיפור. בהרצה של 5.9 הופיע פעמיים.<br>
-      <span style="color:var(--warn)">▸ המלצה: להשאיר לתצפית נוספת.</span>
+    <div class="prop" style="background:rgba(110,224,176,.06);border-color:#2f6b52">
+      <b class="h" style="color:var(--accent2)">✅ <code>despite</code> — אושר ונוסף (רן, 18.9.2026)</b>
+      נוספה <b>על צורך שנצפה</b>: הופיעה פעמיים בהרצה החיה של 5.9 ונבלעה ל-<code>then</code>, ששומר את הרצף וזורק את מה שהופך אותו לסיפור.<br>
+      <b>מול <code>then</code>:</b> האם מופרת ציפייה? "ואז" מול "למרות ש" / "אבל". <b>מול <code>because</code>:</b> מראה מדויקת — <code>because</code> אומרת ש-Y הביא ל-X, <code>despite</code> אומרת ש-Y היה סיבה ש-X <b>לא</b> יקרה.<br>
+      <b>ואינה מסדרת — הנימוק חד יותר מבשאר:</b> כיוון הזמן שלה <b>הפוך</b> ל-<code>then</code>. המכשול קודם למעשה, בזמן שהקשת מצביעה <code>X → Y</code>. סידור לפיה חייב להפוך אותה קודם, <b>וסוג שמסדר אחורה הוא מלכודת שאיש לא יזכור</b>.
+    </div>
+
+    <div class="prop" style="background:rgba(110,224,176,.06);border-color:#2f6b52">
+      <b class="h" style="color:var(--accent2)">✅ <code>alternative_to</code> — אושר ונוסף (18.9.2026), אחרי שהתנגדתי <b>בטעות</b></b>
+      פסלתי על <code>brief.md</code> שו' 62 — <b>והאיסור שם הוא על דירוג</b>. הקשת אינה מדרגת, היא <b>מקשרת</b>, וקישור אינו השוואה: היא אומרת שהם עונים לאותו רגע, לא מי עדיף.<br>
+      <b>מה ההתנגדות עלתה:</b> זהו <b>המהלך המרכזי של הכלי</b>, ולא הייתה לו קשת. <code>stage5.alt_formulation ◀ stage2.causal</code> · <code>stage6.alternatives ◀ auto_reaction</code>. <code>derives_from</code> נושאת חלופה אל הפרשנות שממנה צמחה; שום דבר לא נשא אותה אל <b>המקור שנגדו היא עומדת</b>.<br>
+      <b>כיוון:</b> מתמודד ← מכהן — <b>עובדה, לא העדפה</b>: התגובה האוטומטית קרתה, החלופה לא.
     </div>
 
     <div class="sec" style="color:var(--esc)">ומה שאני ממליץ <b>לא</b> להוסיף</div>
     <div class="no">
       • <b><code>contradicts</code></b> — זה <code>gaps</code>: מודיעין נסתר, <b>לעולם לא מצויר</b> (gap-management §1). קשת שמציירת סתירה <b>מציגה לאדם דוח על עצמו</b>.<br>
       • <b><code>blocks</code> / <code>prevents</code></b> — <code>because</code> + <code>despite</code> מכסים את זה. סוג שלישי בלי מקרה שאין לו בית.<br>
-      • <b><code>alternative_to</code></b> — לוח ההכרעה בונה את זה מ-<code>basket</code> בקוד, ואסור שמשהו ידרג או ישווה חלופות באיור (<code>brief.md</code> שו' 62).
     </div>
 
     <div class="sec">שדה או קשת?</div>
