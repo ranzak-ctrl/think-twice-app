@@ -25,6 +25,24 @@
 .future{opacity:.72}
 .fbadge{display:inline-block;background:#23262e;color:#8a93a3;font-size:9.5px;font-weight:800;padding:1px 7px;border-radius:6px;border:1px solid #3a3f4a;letter-spacing:.02em;margin-inline-end:6px}
 
+/* ===== vocabulary ===== */
+#vocab{direction:rtl;color:var(--txt);max-width:1000px;margin:0 auto}
+#vocab h1{font-size:17px;margin:0 0 4px}
+#vocab .sub{color:var(--mut);font-size:12.5px;margin:0 0 14px}
+#vocab table{width:100%;border-collapse:collapse;font-size:12px;margin:8px 0 16px;background:var(--panel);border-radius:8px;overflow:hidden}
+#vocab th{background:var(--panel2);color:var(--mut);font-size:11px;text-align:right;padding:7px 9px;font-weight:700;border-bottom:1px solid var(--line)}
+#vocab td{padding:8px 9px;border-bottom:1px solid #232833;vertical-align:top;line-height:1.65}
+#vocab tr:last-child td{border-bottom:none}
+#vocab .ent{font-weight:800;color:var(--accent2);white-space:nowrap}
+#vocab .edg{font-weight:800;color:var(--accent);white-space:nowrap}
+#vocab .test{color:var(--warn)}
+#vocab code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;background:var(--chip);padding:1px 5px;border-radius:4px;color:var(--accent2);direction:ltr;display:inline-block}
+#vocab .sec{font-size:14px;font-weight:800;margin:20px 0 6px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+#vocab .prop{background:rgba(240,180,107,.06);border:1px solid #4a3a1e;border-radius:8px;padding:11px 13px;margin:9px 0;font-size:12px;line-height:1.75}
+#vocab .prop b.h{color:var(--warn);display:block;margin-bottom:3px;font-size:12.5px}
+#vocab .no{background:rgba(255,157,122,.05);border:1px solid #4a2a22;border-radius:8px;padding:11px 13px;margin:9px 0;font-size:12px;line-height:1.75}
+#vocab .note{color:var(--mut);font-size:11.5px;line-height:1.7;margin:6px 0 0}
+
 /* ===== architecture ===== */
 .tt-arch{direction:rtl;color:var(--txt)}
 .tt-arch .wrap{max-width:1000px;margin:0 auto}
@@ -166,6 +184,7 @@
     <button data-v="arch" class="on"><span class="step">מבט-על</span> ארכיטקטורה מאוחדת</button>
     <button data-v="flow"><span class="step">תור בודד</span> מחזור התור</button>
     <button data-v="router"><span class="step">החלטה</span> צירי ה-Router</button>
+    <button data-v="vocab"><span class="step">מילון</span> יישויות וקשתות</button>
   </div>
 
   <div class="view show" id="view-arch"><div class="tt-arch"><div class="wrap">
@@ -390,6 +409,90 @@
     <div class="loopback">↩ ה-Router אוצר את ה-request הבא (חזרה לתחנה 1)</div>
   </div></div>
 
+  <div class="view" id="view-vocab"><div id="vocab">
+    <h1>יישויות וקשתות — אוצר המילים של הגרף <span class="new">רשימה ראשונית</span></h1>
+    <p class="sub">מה שממנו נבנה הגרף של כל מקרה. <b>לכל פריט מבחן הכרעה</b> — איך מבדילים אותו מהשכן שלו.</p>
+    <div class="note" style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:14px">
+      <b style="color:var(--txt)">למה מבחן הכרעה לכל פריט:</b> רשימה בלי מבחנים היא קישוט. המודל יבחר את הפריט שנשמע הכי קרוב, והגרף יתמלא סיווגים שגויים שאיש לא יוכל להצביע עליהם.<br>
+      <b style="color:var(--esc)">וזהירות:</b> כל סוג שמתווסף הוא עוד דרך לסווג לא נכון. ארבע הקשתות הקיימות נוספו <b>אחת-אחת</b>, כל אחת עם מקרה שלא היה לו בית.
+    </div>
+
+    <div class="sec">שבע יישויות</div>
+    <table>
+      <tr><th style="width:96px">יישות</th><th>מה זו</th><th style="width:34%">מבחן ההכרעה</th><th style="width:150px">תת-סוגים</th></tr>
+      <tr><td class="ent">שחקן<br><code>actor</code></td><td>מי פעיל במאורע — <b>כולל המרואיין</b> (<code>self</code>)</td><td class="test">האם <b>עשה</b>, <b>רצה</b> או <b>הרגיש</b> משהו בתוך המאורע? מי שרק הוזכר — אינו שחקן</td><td>—</td></tr>
+      <tr><td class="ent">פעולה<br><code>beat</code></td><td>צעד שמישהו נקט. <b>אי-עשייה היא פעולה</b> ("היא לא ענתה")</td><td class="test"><b>מבחן המצלמה.</b> ולפיצול: "אפשר לחלוק על אחד ולהסכים עם השני?" ← שתי פעולות</td><td><code>episode</code> · <code>ongoing</code></td></tr>
+      <tr><td class="ent">עמדה<br><code>stance</code></td><td>מה שחקן רצה, חתר אליו, או הבין</td><td class="test"><b>אפשר להתווכח על זה?</b> עמדה אפשר לסתור בעובדה — רגש אי אפשר</td><td><code>want</code> · <code>goal</code> · <code>reading</code></td></tr>
+      <tr><td class="ent">רגש<br><code>emotion</code></td><td>מה שחקן הרגיש</td><td class="test"><b>מבחן הגרנולריות</b> — "עלבון" כן, "רע לי" לא</td><td><code>situational</code> · <code>prior</code> · <code>trait</code></td></tr>
+      <tr><td class="ent">זירה<br><code>setting</code></td><td>הבמה: היכן, מתי, על רקע מה</td><td class="test">האם מצלמה הייתה קולטת את זה <b>בלי לצלם אף אחד</b>?</td><td>מקום · זמן · תקדים · תנאי רקע</td></tr>
+      <tr><td class="ent">פיצול<br><code>fork</code></td><td>מה שהסיפור <b>עצמו</b> השאיר פתוח</td><td class="test"><b>עובדה על העולם</b>, לא פער בידע שלנו. דורש ≥2 ענפים</td><td>—</td></tr>
+      <tr><td class="ent">מְכָל<br><code>group</code></td><td>קופסה סביב קבוצת פריטים</td><td class="test">חייב <code>confirmed</code> — <b>קופסה היא טענה</b></td><td><code>community</code> · <code>process</code> · <code>perspective</code></td></tr>
+    </table>
+
+    <div class="sec">ארבע קשתות</div>
+    <table>
+      <tr><th style="width:110px">קשת</th><th style="width:30%">מה היא טוענת</th><th>דוגמה</th></tr>
+      <tr><td class="edg"><code>then</code></td><td>רצף זמן — <b>ואז</b></td><td>"עברת בסלון" ◀ "שאלת ממתי הוחלט"</td></tr>
+      <tr><td class="edg"><code>because</code></td><td>סיבתיות — <b>ולכן</b></td><td>"היא לא ויתרה" ◀ "יצאת מהחדר"</td></tr>
+      <tr><td class="edg"><code>agent</code></td><td>שחקן ביצע פעולה</td><td><code>actor:wife</code> ◀ "בחרה צימר"</td></tr>
+      <tr><td class="edg"><code>echo</code></td><td>דמיון — <b>ככה הרגשתי אז</b></td><td>"עלבון" ◀ "כשמורים אמרו שאני לא משתדל"</td></tr>
+    </table>
+    <div class="note" style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
+      <b style="color:var(--txt)">שתי מוסכמות שמחזיקות את הכול:</b><br>
+      • <b>קצוות בשמות-מרחב:</b> <code>actor:&lt;id&gt;</code> · <code>fork:&lt;id&gt;</code> · <code>beat:&lt;id&gt;</code> · <code>stance:&lt;id&gt;</code> · <code>emotion:&lt;id&gt;</code> · <code>stageN.slot</code>. מזהה בלי קידומת <b>גונב קשתות של פריט אחר</b> — וזו תקלה שכבר הפילה את המפה פעם אחת.<br>
+      • <b><code>confirmed:false</code> כברירת מחדל, תמיד.</b> קשת היא <b>טענה על חייו של מישהו</b>. רן, 5.9.2026: <i>"הקשתות הן של המרואיין. כשהמערכת לא סגורה על הקשר — היא שואלת אותו."</i>
+    </div>
+
+    <div class="sec">שלושה צירים חוצי-יישויות</div>
+    <table>
+      <tr><th style="width:96px">ציר</th><th style="width:34%">ערכים</th><th>מה הוא קובע</th></tr>
+      <tr><td class="ent">ייחוס<br><code>source</code></td><td><code>stated</code> · <code>attributed</code> · <code>inferred</code> · <code>unknown</code></td><td class="test"><b>מבחן הבעלות.</b> <code>inferred</code> = המראיין הציע; נשאר כזה עד שהמרואיין מאמץ <b>במילותיו</b></td></tr>
+      <tr><td class="ent">ודאות</td><td><code>0</code> · <code>1</code> · <code>2</code> · <code>U</code></td><td class="test"><b>משקל, לא שער</b> (רן, 5.9): 2 מלא · 1 מקווקו · 0 ו-U לא מצוירים</td></tr>
+      <tr><td class="ent">קצב<br><code>scale</code></td><td><code>episode</code> · <code>ongoing</code></td><td class="test"><b>מצב מול מאורע — לא משך.</b> גב שתפס הבוקר הוא <code>ongoing</code> אם החזיק לאורך כל האירוע</td></tr>
+    </table>
+
+    <div class="sec" style="color:var(--warn)">מה חסר — הצעות להכרעה</div>
+    <div class="prop">
+      <b class="h">① <code>derives_from</code> — הקשת שהפרוטוקול כבר מחייב, ופשוט לא נבנתה</b>
+      <code>transition-protocol.md</code>, שלב 6, <b>מבחן החלחול</b>: <i>"לפחות חלופה אחת מקושרת לפרשנות החלופית; אם אין — סיגנל ל-Re-open של נושא 5"</i>.<br>
+      זה <b>קשר מפורש בין שתי יישויות</b> = קשת. אין לה סוג. ו-<code>because</code> הוא שימוש שגוי: החלופה לא <b>נגרמה</b> מהפרשנות — היא <b>נגזרה</b> ממנה.<br>
+      <span style="color:var(--accent2)">▸ המלצה: להוסיף.</span> זו היחידה ברשימה שכבר מחויבת ע"י הפרוטוקול.
+    </div>
+    <div class="prop">
+      <b class="h">② <code>about</code> — מה שמעגן את שכבת התודעה בשכבת העובדה</b>
+      <i>"נעלבתי <b>ממה שהיא ענתה</b>"</i> — הרגש מצביע על פעימה מסוימת. היום זה <code>context</code>, מחרוזת חופשית, ולכן <b>לא ניתן לציור ולא למעקב</b>. ו-<code>because</code> יטען שהפעימה <b>גרמה</b> לרגש — טענה חזקה יותר ממה שנאמר.<br>
+      <b>בלעדיה, כל שכבת התודעה מרחפת מעל הסיפור בלי להיות קשורה אליו באף נקודה.</b><br>
+      <span style="color:var(--accent2)">▸ המלצה: להוסיף.</span>
+    </div>
+    <div class="prop">
+      <b class="h">③ <code>despite</code> — ניגוד</b>
+      <i>"הלכתי לקניות <b>למרות</b> שהגב תפס"</i> · <i>"אמרתי שחייב לנוח <b>אבל היא לא ויתרה</b>"</i>. היום נופל ל-<code>then</code> ומאבד בדיוק את מה שעושה אותו לסיפור. בהרצה של 5.9 הופיע פעמיים.<br>
+      <span style="color:var(--warn)">▸ המלצה: להשאיר לתצפית נוספת.</span>
+    </div>
+
+    <div class="sec" style="color:var(--esc)">ומה שאני ממליץ <b>לא</b> להוסיף</div>
+    <div class="no">
+      • <b><code>contradicts</code></b> — זה <code>gaps</code>: מודיעין נסתר, <b>לעולם לא מצויר</b> (gap-management §1). קשת שמציירת סתירה <b>מציגה לאדם דוח על עצמו</b>.<br>
+      • <b><code>blocks</code> / <code>prevents</code></b> — <code>because</code> + <code>despite</code> מכסים את זה. סוג שלישי בלי מקרה שאין לו בית.<br>
+      • <b><code>alternative_to</code></b> — לוח ההכרעה בונה את זה מ-<code>basket</code> בקוד, ואסור שמשהו ידרג או ישווה חלופות באיור (<code>brief.md</code> שו' 62).
+    </div>
+
+    <div class="sec">שדה או קשת?</div>
+    <table>
+      <tr><th style="width:150px">היום שדה</th><th style="width:130px">אפשר כקשת</th><th>האם שווה</th></tr>
+      <tr><td><code>beat.toward</code></td><td><code>target</code></td><td>"צעקת <b>על</b> אשתך" — אולי. בקאסט קטן, שדה מספיק</td></tr>
+      <tr><td><code>emotion.context</code></td><td><code>about</code></td><td style="color:var(--accent2)"><b>כן</b> — ראה הצעה ②</td></tr>
+      <tr><td><code>beat.actor</code> · <code>stance.actor</code></td><td><code>agent</code> (קיימת)</td><td style="color:var(--esc)"><b>ממש לא.</b> הייחוס חייב להיות <b>דרישה מבנית</b> של היישות, לא קשת שאפשר לשכוח. ברגע שהוא קשת — פעולה בלי שחקן היא מצב חוקי, וזה בדיוק התפר שנסגר</td></tr>
+    </table>
+
+    <div class="sec">איפה הרשימה גרה</div>
+    <div class="note" style="background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px">
+      היום היא <b>מפוזרת על שני קבצים</b>: <code>EDGE_KINDS</code> ו-<code>GROUP_KINDS</code> ב-<code>state.js</code>; <code>STANCE_TYPES</code> · <code>EMOTION_PACES</code> · <code>SOURCES</code> ב-<code>eventRecord.js</code>; <code>NODE_SCALES</code> שוב ב-<code>state.js</code>.<br>
+      <b style="color:var(--accent2)">▸ המלצה:</b> מודול אחד <code>src/core/vocabulary.js</code> שכולם מייבאים ממנו, <b>ובדיקה שנופלת כשהמסמך והקוד נסחפים</b>. אחרת הרשימה תסחף בדיוק כמו ש-<code>/docs</code> סחף מול הקוד.<br>
+      <span style="color:var(--mut)">הפירוט המלא: <code>docs/event-vocabulary.md</code>. המסך הזה הוא הרשימה לניהול.</span>
+    </div>
+  </div></div>
+
   <div class="view" id="view-router"><div id="rax">
     <h1>מה דוחף את ה-Router — שלושת הצירים</h1>
     <p class="sub">שנה כל ציר וראה איך ההחלטה זזה ואיזו רשומת targetKey נפתחת. <span style="color:var(--esc)">שער מפת-השחקנים (שלב 1) — גייט קשיח נוסף שאינו מוצג כפקד.</span></p>
@@ -436,7 +539,7 @@
   </div></div>
 </div>
 <script>
-(function(){var d=document.getElementById('ttdash');if(!d)return;var views={arch:'view-arch',flow:'view-flow',router:'view-router'};d.querySelectorAll('.dnav button').forEach(function(b){b.onclick=function(){var k=b.dataset.v;d.querySelectorAll('.dnav button').forEach(function(x){x.classList.toggle('on',x===b);});Object.keys(views).forEach(function(vk){d.querySelector('#'+views[vk]).classList.toggle('show',vk===k);});};});})();
+(function(){var d=document.getElementById('ttdash');if(!d)return;var views={arch:'view-arch',flow:'view-flow',router:'view-router',vocab:'view-vocab'};d.querySelectorAll('.dnav button').forEach(function(b){b.onclick=function(){var k=b.dataset.v;d.querySelectorAll('.dnav button').forEach(function(x){x.classList.toggle('on',x===b);});Object.keys(views).forEach(function(vk){d.querySelector('#'+views[vk]).classList.toggle('show',vk===k);});};});})();
 (function(){
   var root=document.getElementById('ttflow'); if(!root) return;
   var SC={
