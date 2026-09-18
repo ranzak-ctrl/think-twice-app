@@ -9,7 +9,7 @@ import {
   mergeEmotions,
 } from '../../src/core/eventRecord.js';
 import { renderEvent } from '../../src/core/eventView.js';
-import { mergeEdges } from '../../src/core/state.js';
+import { mergeEdges, createState, recordGapObservation, contradictionKnots } from '../../src/core/state.js';
 
 function build() {
   let r = createEventRecord();
@@ -425,5 +425,78 @@ describe('alternative_to — the tool central move, which had no edge at all', (
     for (const nudge of ['עדיף', 'מומלץ', 'טוב יותר', 'כדאי', '★', '✓']) {
       expect(line).not.toContain(nudge);
     }
+  });
+});
+
+describe('contradictions — the probe sees them, nobody else ever does', () => {
+  const withClash = () => {
+    let s = build();
+    s = { ...createState(), ...s };
+    s.eventRecord = mergeBeats(s.eventRecord, [
+      { id: 'b1', slot: 'stage1.trigger', actor: 'self', text: 'הזמנת בשר', label: 'הזמנת בשר', camera: true },
+      { id: 'b7', slot: 'stage1.timeline', actor: 'self', text: 'הגיע ביום ראשון', label: 'הגיע ביום ראשון', camera: true },
+    ]);
+    s = recordGapObservation(s, {
+      target: 'stage1.timeline', dimension: 'factual', level: 2,
+      note: 'קודם שלישי, עכשיו ראשון', between: ['beat:b1', 'beat:b7'],
+    }, 3);
+    return s;
+  };
+
+  it('names the pair that clashes, for the probe', () => {
+    const out = renderEvent(withClash(), { full: true });
+    expect(out).toContain('**סתירות שנרשמו**');
+    expect(out).toContain('הזמנת בשר ↮ הגיע ביום ראשון');
+  });
+
+  // The account feeds four builders and two of them are spoken to the person
+  // verbatim. This is the assertion that keeps them apart.
+  it('never appears in the redacted account — summary, opener and board', () => {
+    const out = renderEvent(withClash());
+    expect(out).not.toContain('סתירות שנרשמו');
+    expect(out).not.toContain('↮');
+    expect(out).not.toContain('קודם שלישי');
+  });
+
+  it('carries the never-confront rule beside the data, so they cannot travel apart', () => {
+    expect(renderEvent(withClash(), { full: true })).toContain('לעולם לא לשקף ולא לעמת');
+  });
+
+  // 10 is fully consistent and 1 is a flat contradiction, so a LOW number is
+  // SEVERE. A bare "2/10" reads like a weak signal to anyone who has not memorised
+  // the scale, which is why the line carries a word too.
+  it('states severity in words as well as the inverted number', () => {
+    const at = (level) => {
+      let s = { ...createState(), ...build() };
+      s = recordGapObservation(s, { target: 'topic:x', level, note: 'n' }, 1);
+      return renderEvent(s, { full: true });
+    };
+    expect(at(1)).toContain('סתירה ישירה (1/10');
+    expect(at(4)).toContain('אי-הלימה (4/10');
+    expect(at(5)).toContain('עמום (5/10');
+  });
+
+  it('falls back to the target and note when the pair does not resolve', () => {
+    let s = { ...createState(), ...build() };
+    s = recordGapObservation(s, { target: 'topic:כסף', dimension: 'cognitive', level: 5, note: 'מי משלם' }, 1);
+    const out = renderEvent(s, { full: true });
+    expect(out).toContain('כסף — מי משלם');
+    expect(out).not.toContain('↮');
+  });
+
+  it('drops a resolved record and brings a re-opened one back', () => {
+    let s = withClash();
+    s = recordGapObservation(s, { target: 'stage1.timeline', level: 9 }, 6); // resolved
+    expect(renderEvent(s, { full: true })).not.toContain('סתירות שנרשמו');
+    s = recordGapObservation(s, { target: 'stage1.timeline', level: 2 }, 9); // re-opened
+    expect(renderEvent(s, { full: true })).toContain('הזמנת בשר ↮ הגיע ביום ראשון');
+  });
+
+  it('answers which entity the most contradictions hang off', () => {
+    let s = withClash();
+    s = recordGapObservation(s, { target: 'topic:כסף', level: 3, between: ['beat:b1', 'stance:c'] }, 5);
+    const knots = contradictionKnots(s.gaps);
+    expect(knots.get('beat:b1')).toBe(2);
+    expect(knots.get('beat:b7')).toBe(1);
   });
 });

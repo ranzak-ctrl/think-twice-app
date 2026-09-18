@@ -676,6 +676,48 @@ function withGap(state, gaps, key, record, logEntry) {
   };
 }
 
+// The two things that clash. Ran, 18.9.2026: "חשוב שנדע אילו סתירות מתקיימות
+// בתיאור של המאורע... לא נחשוף את הקשתות האלה אבל כן נחזיק אותן על הגרף."
+//
+// He was right and my objection was wrong twice over. I had said this duplicates
+// `gaps` — it does not: a record carries ONE `target`, so the two things that
+// contradict each other collapsed into the free-text `note`. A contradiction is by
+// nature a RELATION and it was stored as a SCALAR, which loses exactly what he
+// asked to keep. And I had said drawing it would show the person a report on
+// themselves — true, and irrelevant to storing it.
+//
+// It lives HERE and not as an `edges` kind, for a structural reason: it would be
+// the only edge that is NOT the interviewee's. Every other kind carries Ran's
+// ruling of 5.9 — "הקשתות הן של המרואיין" — and `confirmed` is the contract of that
+// store. A contradiction is never something he states; it is the system's
+// observation ABOUT him, so `confirmed` is meaningless for it. `gaps` is also
+// structurally hidden: no projection reads it and CLAUDE.md principle 8 keeps it
+// off disk. `edges` is the bag of things that get drawn.
+//
+// Endpoints use the graph's own vocabulary — `beat:` / `stance:` / `emotion:` /
+// `actor:` / `fork:` / `stageN.slot` — so this IS a relation between graph
+// entities, just held in the hidden store. That is what makes "which beat has the
+// most contradictions hanging off it" answerable: the densest knot in the story,
+// which is often where the injury is.
+const GAP_PAIR_MAX = 2;
+function normalizeBetween(raw, prev) {
+  if (!Array.isArray(raw)) return prev ?? null;
+  const refs = raw.map((r) => (typeof r === 'string' ? r.trim() : '')).filter(Boolean);
+  // A pair or nothing. One endpoint is not a relation, and three is not a pair.
+  return refs.length === GAP_PAIR_MAX ? refs : (prev ?? null);
+}
+
+// Every live contradiction that names a pair, keyed by endpoint. The query Ran
+// named: which entity the most contradictions hang off.
+export function contradictionKnots(gaps) {
+  const counts = new Map();
+  for (const rec of Object.values(gaps?.byTarget ?? {})) {
+    if (rec.status === 'resolved' || !rec.between) continue;
+    for (const ref of rec.between) counts.set(ref, (counts.get(ref) ?? 0) + 1);
+  }
+  return counts;
+}
+
 // Apply one model observation to the gap records. Returns a new state.
 // One record per targetKey — a new observation always updates, never duplicates.
 export function recordGapObservation(state, observation, turn, thresholds) {
@@ -697,6 +739,7 @@ export function recordGapObservation(state, observation, turn, thresholds) {
       target, dimension, level, status: 'starred',
       firstTurn: turn, lastTurn: turn, touches: 0,
       history: [{ turn, level }], note,
+      between: normalizeBetween(observation?.between, null),
     };
     return withGap(state, gaps, key, record, { turn, level, delta: null, action: 'star' });
   }
@@ -714,6 +757,9 @@ export function recordGapObservation(state, observation, turn, thresholds) {
   const record = {
     ...existing,
     level, status,
+    // Omitted on a re-touch keeps the pair already on record — the same delta
+    // contract every other store here runs.
+    between: normalizeBetween(observation?.between, existing.between ?? null),
     lastTurn: turn,
     touches: existing.touches + 1,
     history: [...existing.history, { turn, level }],

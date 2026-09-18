@@ -274,6 +274,52 @@ function relationsBlock(state, record, actorMap) {
   return lines.length ? `**קשרים שציינת:**\n${lines.join('\n')}` : '';
 }
 
+// ── THE CONTRADICTIONS, FOR THE PROBE ONLY ──
+// Ran, 18.9.2026: "המראיין שמקבל את הסיפור בתחילת כל turn חייב להיות מודע לסתירות
+// ולרמת חומרתן, כיוון שיש לזה השפעה מאוד גדולה על בחירת השאלה הבאה."
+//
+// This rides the `full` flag, and that is not a convenience — it is the whole
+// safety of it. The account feeds FOUR builders and two of them (summary, opener)
+// are spoken to the person verbatim. `full` is already "the probe's unredacted
+// view"; contradictions belong to exactly that set and to nothing else. A test
+// asserts they never appear in the redacted account.
+//
+// THE SCALE IS INVERTED and reading it wrong would be worse than not showing it:
+// 10 is fully consistent, 1 is a flat contradiction. So a LOW number is SEVERE.
+// The line carries a word as well as the number, because a bare "2/10" reads like
+// a weak signal to anyone who has not memorised the scale.
+//
+// Resolved records are left out: they are no longer live. A re-opened one is
+// `starred` again and comes back.
+const SEVERITY = (level) =>
+  level <= 2 ? 'סתירה ישירה' : level <= 4 ? 'אי-הלימה' : 'עמום';
+
+const DIMENSION_HE = { factual: 'עובדתי', emotional: 'רגשי', cognitive: 'קוגניטיבי' };
+
+function contradictionsBlock(state, record, actorMap) {
+  const lines = [];
+  for (const rec of Object.values(state?.gaps?.byTarget ?? {})) {
+    if (!rec || rec.status === 'resolved') continue;
+    const dim = DIMENSION_HE[rec.dimension] ?? rec.dimension ?? '';
+    const head = `${SEVERITY(rec.level)} (${rec.level}/10${dim ? ` · ${dim}` : ''})`;
+    // The pair, when the registrar named one. Falls back to the target plus the
+    // note, because a contradiction with unresolvable endpoints is still
+    // intelligence the interviewer needs.
+    const pair = (rec.between ?? [])
+      .map((r) => endpointText(state, record, actorMap, r))
+      .filter(Boolean);
+    const what = pair.length === 2
+      ? `${pair[0]} ↮ ${pair[1]}`
+      : (rec.target?.label ?? '');
+    const note = rec.note ? ` — ${rec.note}` : '';
+    if (what || note) lines.push(`  ${head}: ${what}${note}`);
+  }
+  if (!lines.length) return '';
+  // gap-management §10.2: the asterisk is the default response, not confrontation.
+  // The account states the rule beside the data so the two never travel apart.
+  return `**סתירות שנרשמו** — מודיעין פנימי, לעולם לא לשקף ולא לעמת:\n${lines.join('\n')}`;
+}
+
 // StateDocument → the event as an account for the interviewer's prompt.
 // Empty sections are omitted rather than printed as empty headings: an account with
 // blanks in it is a form, and a model handed a form fills the form.
@@ -338,6 +384,13 @@ export function renderEvent(state, { full = false } = {}) {
   const forks = Object.values(state?.openForks ?? {}).filter((f) => f && !f.settled && has(f.question));
   if (forks.length) {
     parts.push(`**לא הוכרע בעולם:** ${forks.map((f) => `${f.question} (${f.options.join(' / ')})`).join(' · ')}`);
+  }
+
+  // Last, and only for the probe. See the header: summary / opener / board are
+  // spoken to the person, and this never goes near them.
+  if (full) {
+    const clash = contradictionsBlock(state, record, actorMap);
+    if (clash) parts.push(clash);
   }
 
   if (!parts.length) return '';
