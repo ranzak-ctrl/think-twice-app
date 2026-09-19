@@ -11,6 +11,7 @@
 
 import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { classifyJudge, looksLikeAuthFailure } from './gates-classify.mjs';
 
 // `--out=<name>` lets CI keep the two runs apart. Two reports that cannot be told
 // apart are worthless, which is the whole reason this is run twice.
@@ -84,21 +85,15 @@ child.stdout.on('data', capture);
 child.stderr.on('data', capture);
 
 child.on('close', (code) => {
-  // The judge test prints one JSON line about itself, pass or fail. Read that,
-  // never vitest's own formatting: the default reporter prints a describe name
-  // and an assertion message ONLY on failure, so the previous detector reported a
-  // judge that ran and scored 5/5 as "skipped — did not run at all". A gate whose
-  // success path reads like its failure path is worse than no gate.
-  const marker = /JUDGE_RESULT (\{.*\})/.exec(log);
-  let judged = null;
-  if (marker) { try { judged = JSON.parse(marker[1]); } catch { /* keep null */ } }
-
-  // Three outcomes, not two. "It ran" and "the key was rejected" look identical in
-  // a scroll of vitest output, and reporting the second as the first is exactly the
-  // kind of quiet false pass this script exists to prevent.
-  const judgeSkipped = !marker;
-  const keyRejected = /authentication_error|invalid x-api-key|401/i.test(log);
-  const scores = Object.entries(judged?.scores ?? {});
+  // Everything about what the judge DID is decided in gates-classify.mjs, from the
+  // one JSON line the judge test prints about itself. Three separate bugs came
+  // from inferring it here out of vitest's own output; that module's header has
+  // all three.
+  const verdict = classifyJudge(log);
+  const { judged, unitFailures, judgeError } = verdict;
+  const judgeSkipped = verdict.status === 'skipped';
+  const keyRejected = looksLikeAuthFailure(verdict);
+  const scores = Object.entries(verdict.scores);
 
   const header =
     `רף הקבלה — Think Twice\n` +
@@ -109,18 +104,10 @@ child.on('close', (code) => {
 
   // A machine-readable twin, so CI can build one comparison table instead of
   // asking anyone to read two logs side by side.
-  // Which files failed, so "the judge failed" is never reported as "the suite is
-  // broken". They call for completely different actions.
-  const failedFiles = [...log.matchAll(/FAIL\s+(\S+)/g)].map((m) => m[1]);
-  const unitFailures = failedFiles.filter((f) => !f.includes('judge'));
-  // The API's own error text, straight from the marker.
-  const judgeError = judged && !judged.ok
-    ? [judged.error, judged.raw].filter(Boolean).join(' | ').slice(0, 400)
-    : '';
 
   writeFileSync(`${OUT}.json`, JSON.stringify({
     registrar,
-    judge: judgeSkipped ? 'skipped' : keyRejected || judgeError ? 'rejected' : 'ran',
+    judge: verdict.status,
     judgeError,
     judgeNotes: judged?.notes ?? '',
     unitFailures: [...new Set(unitFailures)],
