@@ -580,6 +580,29 @@ const REPAIR_NUDGE =
 // is working at all: cache_read staying at 0 means something is invalidating the
 // prefix. These are absent from the response until caching is enabled, so they
 // default to 0 and change nothing today.
+// A system prompt arrives either as one string or as { stable, volatile } — the two
+// halves promptBuilder separates so the unchanging part can be cached.
+//
+// WHY THIS LIVES IN THE ADAPTER. The core says WHICH half never changes; only this
+// file knows that Anthropic expresses that as a `cache_control` marker on a content
+// block. Putting the marker in the core would tie the portable half to one
+// provider's wire format (principle 4).
+//
+// The marker goes on the FIRST block, so everything up to and including it is the
+// cached prefix. The volatile half follows uncached, which is the whole point: a
+// prefix that changes every turn is a prefix that is never reused.
+//
+// Whether it is working is visible, not assumed: mergeUsage already carries
+// cache_creation_input_tokens and cache_read_input_tokens, and the guide panel
+// shows the cost. cache_read staying at 0 means the prefix is being invalidated.
+function systemField(sp) {
+  if (typeof sp === 'string') return sp;
+  const blocks = [];
+  if (sp?.stable) blocks.push({ type: 'text', text: sp.stable, cache_control: { type: 'ephemeral' } });
+  if (sp?.volatile) blocks.push({ type: 'text', text: sp.volatile });
+  return blocks;
+}
+
 function mergeUsage(acc, u) {
   if (!u) return acc;
   const pick = (o) => ({
@@ -635,7 +658,8 @@ export async function complete({
   // runs live against the serverless proxy, which holds the key server-side.
   const live = import.meta.env.VITE_USE_MOCK !== 'true';
 
-  if (!live || !systemPrompt || !messages?.length) {
+  const hasSystem = typeof systemPrompt === 'string' ? Boolean(systemPrompt) : Boolean(systemPrompt?.stable || systemPrompt?.volatile);
+  if (!live || !hasSystem || !messages?.length) {
     return mockComplete({ stage, mode });
   }
 
@@ -682,7 +706,7 @@ export async function complete({
           // against max_tokens and add cost/latency. This flow wants a compact
           // JSON envelope, not reasoning — keep it off.
           thinking: { type: 'disabled' },
-          system: systemPrompt,
+          system: systemField(systemPrompt),
           messages: attemptMessages,
         }),
       });
