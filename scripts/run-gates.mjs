@@ -11,7 +11,7 @@
 
 import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { classifyJudge, looksLikeAuthFailure } from './gates-classify.mjs';
+import { classifyJudge, classifyRegistrar, looksLikeAuthFailure } from './gates-classify.mjs';
 
 // `--out=<name>` lets CI keep the two runs apart. Two reports that cannot be told
 // apart are worthless, which is the whole reason this is run twice.
@@ -94,6 +94,7 @@ child.on('close', (code) => {
   const judgeSkipped = verdict.status === 'skipped';
   const keyRejected = looksLikeAuthFailure(verdict);
   const scores = Object.entries(verdict.scores);
+  const reg = classifyRegistrar(log);
 
   const header =
     `רף הקבלה — Think Twice\n` +
@@ -109,6 +110,7 @@ child.on('close', (code) => {
     registrar,
     judge: verdict.status,
     judgeSalvaged: verdict.salvaged,
+    registrar: reg,
     judgeError,
     judgeNotes: judged?.notes ?? '',
     unitFailures: [...new Set(unitFailures)],
@@ -139,6 +141,16 @@ child.on('close', (code) => {
     console.log('  ⚠ השופט רץ אך לא הוחזרו ציונים. הסיבה בקובץ המלא.');
     if (judgeError) console.log(`     ${judgeError}`);
   }
+  // The registrar's own line. Printed whenever the call happened, pass or fail —
+  // a silent registrar is indistinguishable from a working one, which is the whole
+  // reason this call exists.
+  if (reg.ran) {
+    const n = Object.entries(reg.counts).filter(([, v]) => v > 0).map(([k, v]) => `${k} ${v}`).join(' · ');
+    console.log(reg.ok
+      ? `\n  הרשם מול מודל אמיתי:  ✅ הוחזר גרף תקין — ${n || 'ריק'}`
+      : `\n  הרשם מול מודל אמיתי:  ❌ ${reg.error}\n     ${reg.raw.slice(0, 200)}`);
+  }
+
   console.log(`\n  ${code === 0 ? '✅ הכול עבר' : '❌ משהו נפל — הפרטים בקובץ'}`);
   console.log(`\n  📄 שלח לי את הקובץ:  ${OUT}`);
   console.log(`${line}\n`);

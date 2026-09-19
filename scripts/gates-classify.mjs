@@ -70,3 +70,25 @@ export function looksLikeAuthFailure({ judged }) {
   if (!judged || judged.ok) return false;
   return AUTH_PATTERN.test(`${judged.error ?? ''} ${judged.raw ?? ''}`);
 }
+
+// The registrar's live call, read the same way and for the same reason: one JSON
+// line the test prints about itself. It is a separate verdict from the judge's —
+// the judge grades the interview, this only asks whether a real model can produce
+// the ledger's shape at all. Collapsing them would hide which one broke.
+export function classifyRegistrar(log) {
+  const m = /REGISTRAR_RESULT (\{.*\})/.exec(log ?? '');
+  if (!m) return { ran: false, ok: false, counts: {}, error: '', raw: '' };
+  try {
+    const r = JSON.parse(m[1]);
+    return {
+      ran: true,
+      ok: r.ok === true,
+      counts: r.counts ?? {},
+      hasSetting: Boolean(r.hasSetting),
+      error: r.error ?? '',
+      raw: r.raw ?? '',
+    };
+  } catch {
+    return { ran: false, ok: false, counts: {}, error: 'unparseable_marker', raw: '' };
+  }
+}

@@ -49,6 +49,24 @@ for (const [label, r] of [['לפני (הרשם כבוי)', before], ['אחרי (
 }
 out.push('');
 
+// The registrar's live call — a separate verdict from the judge's. The judge grades
+// the interview; this only asks whether a real model can produce the ledger's shape
+// at all. It had never once been asked before 19.9.2026.
+const reg = after?.registrar?.ran ? after.registrar : before?.registrar?.ran ? before.registrar : null;
+if (reg) {
+  if (reg.ok) {
+    const n = Object.entries(reg.counts ?? {}).filter(([, v]) => v > 0).map(([k, v]) => `${k}: ${v}`).join(' · ');
+    out.push(`**הרשם מול מודל אמיתי** — ✅ הוחזר גרף תקין ונפרס. ${n || '(ריק)'}`);
+  } else {
+    out.push(`**הרשם מול מודל אמיתי** — ❌ ${reg.error}`);
+    if (reg.raw) { out.push('```'); out.push(reg.raw); out.push('```'); }
+    out.push('> כשל כאן **אינו** נראה בראיון חי: `runRegistrar` מחזיר את ה-state כמו שהוא');
+    out.push('> כדי שתקלה לא תעלה למשתמש את התור שלו. כלומר רשם שנכשל בכל תור נראה בדיוק');
+    out.push('> כמו רשם שעובד. **אל תדליק את המתג עד שזה ירוק.**');
+  }
+  out.push('');
+}
+
 const err = after?.judgeError || before?.judgeError;
 if (err) {
   out.push('**מה השרת החזיר:**');
