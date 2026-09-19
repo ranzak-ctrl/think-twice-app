@@ -108,6 +108,7 @@ child.on('close', (code) => {
   writeFileSync(`${OUT}.json`, JSON.stringify({
     registrar,
     judge: verdict.status,
+    judgeSalvaged: verdict.salvaged,
     judgeError,
     judgeNotes: judged?.notes ?? '',
     unitFailures: [...new Set(unitFailures)],
@@ -126,6 +127,10 @@ child.on('close', (code) => {
     console.log('  ציוני השופט (הסף: 4 בכל ממד):');
     for (const [dim, val] of scores) {
       console.log(`    ${Number(val) >= 4 ? '✅' : '❌'}  ${dim.padEnd(18)} ${val}`);
+    }
+    if (verdict.salvaged) {
+      console.log('\n  ⚠ תשובת השופט לא הייתה JSON תקין — הציונים חולצו ממנה.');
+      console.log('     הציונים תקפים (נבדקו באותם כללים); הניסוח של judge.md שווה תיקון.');
     }
     if (judged?.notes) console.log(`\n  הערות השופט: ${judged.notes}`);
   } else {

@@ -49,6 +49,49 @@ describe('parseJudgeScores', () => {
   });
 });
 
+// Salvage. From CI run 5 (19.9.2026): the judge returned a complete, correct set
+// of scores and its Hebrew notes quoted the interviewer with unescaped quotes, so
+// JSON.parse rejected the object and the whole verdict was thrown away over
+// punctuation in a commentary field.
+describe('parseJudgeScores — salvaging a reply whose JSON does not parse', () => {
+  // The real reply, shortened but with the breakage intact: ("מה זה אומר עליך")
+  const BROKEN = `\`\`\`json
+{
+  "empathy": 4,
+  "non_judgment": 5,
+  "ownership": 5,
+  "active_listening": 5,
+  "natural_hebrew": 4,
+  "notes": "המראיין מוביל תהליך מובנה — חקירת פרשנות ("מה זה אומר עליך"), מדידת עוצמת רגש."
+}`;
+
+  it('is genuinely unparseable as JSON (guarding the premise of this test)', () => {
+    expect(() => JSON.parse(BROKEN.match(/\{[\s\S]*\}/)[0])).toThrow();
+  });
+
+  it('recovers the five scores anyway, and says it had to', () => {
+    const res = parseJudgeScores(BROKEN);
+    expect(res.ok, res.error).toBe(true);
+    expect(res.scores).toEqual({ empathy: 4, non_judgment: 5, ownership: 5, active_listening: 5, natural_hebrew: 4 });
+    expect(res.salvaged).toBe(true);
+  });
+
+  it('does not mark a clean reply as salvaged', () => {
+    expect(parseJudgeScores(JSON.stringify(FULL)).salvaged).toBeUndefined();
+  });
+
+  // Salvage recovers scores; it must not relax what counts as a score.
+  it('still refuses an out-of-range score found by salvage', () => {
+    const bad = BROKEN.replace('"empathy": 4', '"empathy": 9');
+    expect(parseJudgeScores(bad).ok).toBe(false);
+  });
+
+  it('still refuses when a dimension is missing entirely', () => {
+    const bad = BROKEN.replace(/\s*"ownership": 5,/, '');
+    expect(parseJudgeScores(bad).ok).toBe(false);
+  });
+});
+
 describe('meetsThreshold', () => {
   it('passes when every dimension ≥ threshold', () => {
     expect(meetsThreshold(FULL, 4)).toBe(true);
@@ -141,6 +184,9 @@ describe.skipIf(!hasKey || !runJudge)('LLM-judge acceptance (real API)', () => {
       // and a run that scored 5/5 looked like a run that never happened.
       console.log(`JUDGE_RESULT ${JSON.stringify({
         ok: res.ok,
+        // True when the reply's JSON did not parse and the scores had to be
+        // recovered. Reported so a malformed judge is visible, not smoothed over.
+        salvaged: res.salvaged === true,
         error: res.error ?? '',
         scores: res.scores ?? {},
         notes: res.notes ?? '',

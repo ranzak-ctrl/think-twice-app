@@ -43,6 +43,7 @@ export function classifyJudge(log) {
       judged: null,
       scores: {},
       judgeError: '',
+      salvaged: false,
       unitFailures,
     };
   }
@@ -56,6 +57,9 @@ export function classifyJudge(log) {
     judged,
     scores: judged.scores ?? {},
     judgeError,
+    // The scores are trustworthy either way — salvage validates them exactly as
+    // the strict path does — but a judge emitting invalid JSON is worth saying.
+    salvaged: judged.salvaged === true,
     unitFailures,
   };
 }
