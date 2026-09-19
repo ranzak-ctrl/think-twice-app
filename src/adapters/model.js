@@ -663,7 +663,21 @@ export async function complete({
         headers,
         body: JSON.stringify({
           model,
-          max_tokens: 1024,
+          // An interviewer turn is three sentences and a question; 1024 is ample.
+          // THE REGISTRAR IS NOT THAT SHAPE. It returns a whole graph delta —
+          // beats, stances, emotions, actors, edges, groups, forks, gap
+          // observations — as Hebrew JSON, and Hebrew costs more tokens per
+          // character than English. A four-line transcript already produced
+          // 3 beats · 3 actors · 2 edges in the live test; a rich turn late in an
+          // interview is far bigger.
+          //
+          // Truncation here is the WORST failure this system has, because it is
+          // invisible twice over: the reply is cut mid-JSON, parseRegistrarResponse
+          // returns invalid_json, and runRegistrar deliberately returns the state
+          // untouched so a bad turn never costs the person their turn. The graph
+          // just silently stops growing — and it would degrade exactly as the
+          // interview gets richer, which is when the registrar matters most.
+          max_tokens: mode === 'registrar' ? 8192 : 1024,
           // Sonnet 5 runs adaptive thinking by default; thinking tokens count
           // against max_tokens and add cost/latency. This flow wants a compact
           // JSON envelope, not reasoning — keep it off.
@@ -730,6 +744,19 @@ export async function complete({
     // front of a waiting person, for nothing. Hand the text back unparsed and let
     // parseRegistrarResponse read it.
     if (mode === 'registrar') {
+      // A truncated reply is not a malformed one, and calling it invalid_json
+      // sends the reader hunting for a prompt bug that is not there. The API says
+      // which happened; say it too.
+      if (data.stop_reason === 'max_tokens') {
+        return {
+          ok: false,
+          error: 'registrar_truncated',
+          message: null,
+          evaluation: null,
+          usage,
+          failure: { kind: 'truncated', status: res.status, requestId: lastRequestId, stage, mode, attempt, detail: 'registrar reply hit max_tokens — the graph delta did not fit' },
+        };
+      }
       return { ok: true, raw, message: null, evaluation: null, usage };
     }
     if (mode === 'summary' || mode === 'opener') {

@@ -56,7 +56,7 @@ export function buildSystemPrompt({ stage, state }) {
 // at all. What must happen first is written in docs/event-model.md §8.
 //
 // Everything else is built, wired and tested. This boolean is the whole switch.
-export const REGISTRAR_ENABLED = false;
+export const REGISTRAR_ENABLED = true;
 
 // The registrar gets the UNREDACTED account, and that is not an oversight.
 // prompt-editor caught it while writing registrar.md: `full` defaults to redacting

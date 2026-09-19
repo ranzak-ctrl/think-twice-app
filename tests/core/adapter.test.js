@@ -348,3 +348,46 @@ describe('adapter complete() — failure metadata carries no interview content',
     expect(res.failure ?? null).toBeNull();
   });
 });
+
+
+// The registrar's reply is a whole graph delta in Hebrew, not a three-sentence
+// turn. Before 19.9.2026 it shared the interviewer's max_tokens of 1024, which
+// would have truncated it mid-JSON on any rich turn — and truncation there is
+// invisible twice over: parseRegistrarResponse returns invalid_json and
+// runRegistrar deliberately returns the state untouched, so the graph silently
+// stops growing exactly as the interview gets richer.
+describe('registrar mode — headroom and truncation', () => {
+  const body = async (fetchImpl) => {
+    await complete({ stage: 1, systemPrompt: 'sys', messages: [{ role: 'user', content: 'x' }], mode: 'registrar', fetchImpl });
+    return JSON.parse(fetchImpl.mock.calls[0][1].body);
+  };
+
+  it('asks for far more room than an interviewer turn', async () => {
+    const reg = vi.fn(async () => ({ ok: true, status: 200, headers: { get: () => null }, json: async () => ({ content: [{ text: '{}' }], usage: {} }) }));
+    const turn = vi.fn(async () => ({ ok: true, status: 200, headers: { get: () => null }, json: async () => ({ content: [{ text: '{"message":"m","evaluation":{}}' }], usage: {} }) }));
+
+    expect((await body(reg)).max_tokens).toBe(8192);
+    await complete({ stage: 1, systemPrompt: 'sys', messages: [{ role: 'user', content: 'x' }], fetchImpl: turn });
+    expect(JSON.parse(turn.mock.calls[0][1].body).max_tokens).toBe(1024);
+  });
+
+  it('names a truncated reply instead of letting it surface as invalid JSON', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true, status: 200, headers: { get: () => null },
+      json: async () => ({ stop_reason: 'max_tokens', content: [{ text: '{"beats":[{"id":"b1","lab' }], usage: {} }),
+    }));
+    const res = await complete({ stage: 1, systemPrompt: 'sys', messages: [{ role: 'user', content: 'x' }], mode: 'registrar', fetchImpl });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('registrar_truncated');
+  });
+
+  it('still returns the text when the reply ended normally', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true, status: 200, headers: { get: () => null },
+      json: async () => ({ stop_reason: 'end_turn', content: [{ text: '{"beats":[]}' }], usage: {} }),
+    }));
+    const res = await complete({ stage: 1, systemPrompt: 'sys', messages: [{ role: 'user', content: 'x' }], mode: 'registrar', fetchImpl });
+    expect(res.ok).toBe(true);
+    expect(res.raw).toBe('{"beats":[]}');
+  });
+});
