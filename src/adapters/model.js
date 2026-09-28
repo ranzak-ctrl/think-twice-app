@@ -645,6 +645,29 @@ function describeUpstream(text) {
 // that must reach the API directly supplies a `fetchImpl` that attaches its own
 // key — standing in for the serverless proxy, which is exactly what the proxy
 // does in production. The key never enters this module.
+// Ran, 28.9.2026: run the testers on Haiku 4.5 to cut what a session costs.
+// Half the per-token price of Sonnet 5 in both directions ($1/$5 against $2/$10).
+//
+// Two things about this model that the request body has to respect, and one to
+// watch: its context window is 200K, not the 1M the Sonnet-5 default had — still
+// far more than an interview needs, but the registrar now sends the whole
+// account every turn, so it is no longer unbounded headroom. `output_config`
+// and `effort` are errors on this model; neither is sent from here.
+export const DEFAULT_MODEL = 'claude-haiku-4-5';
+
+// Thinking has to be asked for, or not, per model family — sending the wrong
+// shape is a 400, and this call is a person's turn.
+//
+// Sonnet 5 and the 4.6-and-later families run adaptive thinking by DEFAULT, so
+// they need an explicit opt-out: thinking tokens count against max_tokens and
+// buy nothing here, because this flow wants a compact JSON envelope and not
+// reasoning. Haiku 4.5 is the other shape — thinking is off unless asked for
+// with `{type:'enabled', budget_tokens}` — so omitting the field IS the opt-out,
+// and is the documented way to get no thinking on it.
+function thinkingField(model) {
+  return model.startsWith('claude-haiku-') ? {} : { thinking: { type: 'disabled' } };
+}
+
 export async function complete({
   stage,
   systemPrompt,
@@ -653,7 +676,7 @@ export async function complete({
   fetchImpl = fetch,
   apiUrl = '/api/anthropic/v1/messages',
 }) {
-  const model = import.meta.env.VITE_MODEL ?? 'claude-sonnet-5';
+  const model = import.meta.env.VITE_MODEL ?? DEFAULT_MODEL;
   // Mock mode is explicit: VITE_USE_MOCK=true (local dev + tests). Anything else
   // runs live against the serverless proxy, which holds the key server-side.
   const live = import.meta.env.VITE_USE_MOCK !== 'true';
@@ -702,10 +725,7 @@ export async function complete({
           // just silently stops growing — and it would degrade exactly as the
           // interview gets richer, which is when the registrar matters most.
           max_tokens: mode === 'registrar' ? 8192 : 1024,
-          // Sonnet 5 runs adaptive thinking by default; thinking tokens count
-          // against max_tokens and add cost/latency. This flow wants a compact
-          // JSON envelope, not reasoning — keep it off.
-          thinking: { type: 'disabled' },
+          ...thinkingField(model),
           system: systemField(systemPrompt),
           messages: attemptMessages,
         }),
