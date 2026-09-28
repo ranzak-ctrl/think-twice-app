@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { formatSelfOther } from '../core/kpi.js';
 import { renderEvent } from '../core/eventView.js';
 import { Close } from './icons.jsx';
+import { DEFAULT_MODEL } from '../adapters/model.js';
 
 const STAGE_NAMES = {
   1: 'עובדות',
@@ -86,10 +87,10 @@ const RATES = {
   'claude-haiku-4-5': () => ({ in: 1, out: 5 }),
 };
 
-const MODEL_ID = import.meta.env.VITE_MODEL ?? 'claude-sonnet-5';
+const MODEL_ID = import.meta.env.VITE_MODEL ?? DEFAULT_MODEL;
 
 function rates() {
-  return (RATES[MODEL_ID] ?? RATES['claude-sonnet-5'])();
+  return (RATES[MODEL_ID] ?? RATES[DEFAULT_MODEL])();
 }
 
 /* Cache multipliers, per Anthropic pricing: a write costs 1.25x base input

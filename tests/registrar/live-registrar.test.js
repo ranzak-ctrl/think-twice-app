@@ -23,6 +23,7 @@
 import { describe, it, expect } from 'vitest';
 import registrarMd from '../../src/content/prompts/registrar.md?raw';
 import { parseRegistrarResponse } from '../../src/core/registrar.js';
+import { DEFAULT_MODEL } from '../../src/adapters/model.js';
 
 // Two turn-pairs of the meat case. The registrar's raw material is the transcript
 // itself (event-model.md §5.2), so it is fed as a transcript, not as an extraction.
@@ -49,11 +50,15 @@ describe.skipIf(!hasKey || !runLive)('registrar against a real model', () => {
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-sonnet-5',
+          // The model the interview actually runs — not a name pinned here. A live
+          // test that calls a different model than production reports green about
+          // something nobody ships, which is worse than not running.
+          model: DEFAULT_MODEL,
           max_tokens: 4096,
           // Both lessons from the judge, applied before they can bite again:
           // thinking off, and read the block that CARRIES TEXT rather than [0].
-          thinking: { type: 'disabled' },
+          // Omitted on Haiku, where a thinking config is how you turn it ON.
+          ...(DEFAULT_MODEL.startsWith('claude-haiku-') ? {} : { thinking: { type: 'disabled' } }),
           system: registrarMd,
           messages: [{ role: 'user', content: TRANSCRIPT }],
         }),

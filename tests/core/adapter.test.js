@@ -391,3 +391,60 @@ describe('registrar mode — headroom and truncation', () => {
     expect(res.raw).toBe('{"beats":[]}');
   });
 });
+
+// The two model families take OPPOSITE defaults for thinking, so the opt-out has
+// to be written per family — and sending the wrong shape is a 400 on a person's
+// turn. Sonnet 5 and the 4.6+ families think unless told not to, so they need the
+// explicit `disabled`. Haiku 4.5 does not think unless asked with
+// `{type:'enabled', budget_tokens}`, so for it the field's ABSENCE is the opt-out.
+//
+// Either way the intent is one thing: this flow wants a compact JSON envelope and
+// never reasoning tokens, which cost money and eat max_tokens.
+describe('adapter complete() — thinking is opted out per model family', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_USE_MOCK', 'false');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  const bodyOf = (fetchStub) => JSON.parse(fetchStub.mock.calls[0][1].body);
+
+  it('omits the field on Haiku, where sending a thinking config is the way to turn it ON', async () => {
+    vi.stubEnv('VITE_MODEL', 'claude-haiku-4-5');
+    const fetchStub = makeFetch([VALID]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    await complete(ARGS);
+
+    const body = bodyOf(fetchStub);
+    expect(body.model).toBe('claude-haiku-4-5');
+    expect(body).not.toHaveProperty('thinking');
+  });
+
+  it('still sends the explicit opt-out on a model that thinks by default', async () => {
+    vi.stubEnv('VITE_MODEL', 'claude-sonnet-5');
+    const fetchStub = makeFetch([VALID]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    await complete(ARGS);
+
+    expect(bodyOf(fetchStub).thinking).toEqual({ type: 'disabled' });
+  });
+
+  // The registrar's reply is a whole Hebrew JSON graph and truncation there is the
+  // worst failure in the system — silent twice over. Reasoning tokens would be
+  // charged against the same ceiling.
+  it('keeps the registrar headroom free of reasoning tokens', async () => {
+    vi.stubEnv('VITE_MODEL', 'claude-haiku-4-5');
+    const fetchStub = makeFetch([VALID]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    await complete({ ...ARGS, mode: 'registrar' });
+
+    const body = bodyOf(fetchStub);
+    expect(body.max_tokens).toBe(8192);
+    expect(body).not.toHaveProperty('thinking');
+  });
+});
