@@ -75,14 +75,17 @@ export function buildSystemPrompt(args) {
 
 // Registrar mode — the call that assembles the event.
 //
-// ⚠ THE SWITCH IS OFF. Flipping REGISTRAR_ENABLED turns the registrar on for every
-// interview, and CLAUDE.md's workflow gates that: "כל שינוי בפרומפטים ← הרצת
-// תסריטי הזהב + שופט-LLM". Neither can run here — both need a live
-// ANTHROPIC_API_KEY, and prompt-editor explicitly did NOT claim a judge pass. The
-// mock returns '{}' for this mode, so the e2e scripts do not exercise the prompt
-// at all. What must happen first is written in docs/event-model.md §8.
+// ⚠ THE SWITCH IS ON, and it runs the registrar on every turn of every interview.
+// It was flipped for the release of 28.9 (PR #3); what gated it is docs/event-model.md
+// §8, and the runs that followed are logged in docs/live-findings.md.
 //
-// Everything else is built, wired and tested. This boolean is the whole switch.
+// Still true, and the reason this comment is here rather than gone: the automated
+// suite cannot judge this prompt. The mock returns '{}' for registrar mode, so the
+// e2e golden scripts never exercise it, and the judge needs a live
+// ANTHROPIC_API_KEY. Green tests say nothing about what the registrar does to a
+// real interview — only a live run does.
+//
+// To put it back: `npm run registrar:off`. This boolean is the whole switch.
 export const REGISTRAR_ENABLED = true;
 
 // The registrar gets the UNREDACTED account, and that is not an oversight.
