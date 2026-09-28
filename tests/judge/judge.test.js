@@ -49,6 +49,49 @@ describe('parseJudgeScores', () => {
   });
 });
 
+// Salvage. From CI run 5 (19.9.2026): the judge returned a complete, correct set
+// of scores and its Hebrew notes quoted the interviewer with unescaped quotes, so
+// JSON.parse rejected the object and the whole verdict was thrown away over
+// punctuation in a commentary field.
+describe('parseJudgeScores — salvaging a reply whose JSON does not parse', () => {
+  // The real reply, shortened but with the breakage intact: ("מה זה אומר עליך")
+  const BROKEN = `\`\`\`json
+{
+  "empathy": 4,
+  "non_judgment": 5,
+  "ownership": 5,
+  "active_listening": 5,
+  "natural_hebrew": 4,
+  "notes": "המראיין מוביל תהליך מובנה — חקירת פרשנות ("מה זה אומר עליך"), מדידת עוצמת רגש."
+}`;
+
+  it('is genuinely unparseable as JSON (guarding the premise of this test)', () => {
+    expect(() => JSON.parse(BROKEN.match(/\{[\s\S]*\}/)[0])).toThrow();
+  });
+
+  it('recovers the five scores anyway, and says it had to', () => {
+    const res = parseJudgeScores(BROKEN);
+    expect(res.ok, res.error).toBe(true);
+    expect(res.scores).toEqual({ empathy: 4, non_judgment: 5, ownership: 5, active_listening: 5, natural_hebrew: 4 });
+    expect(res.salvaged).toBe(true);
+  });
+
+  it('does not mark a clean reply as salvaged', () => {
+    expect(parseJudgeScores(JSON.stringify(FULL)).salvaged).toBeUndefined();
+  });
+
+  // Salvage recovers scores; it must not relax what counts as a score.
+  it('still refuses an out-of-range score found by salvage', () => {
+    const bad = BROKEN.replace('"empathy": 4', '"empathy": 9');
+    expect(parseJudgeScores(bad).ok).toBe(false);
+  });
+
+  it('still refuses when a dimension is missing entirely', () => {
+    const bad = BROKEN.replace(/\s*"ownership": 5,/, '');
+    expect(parseJudgeScores(bad).ok).toBe(false);
+  });
+});
+
 describe('meetsThreshold', () => {
   it('passes when every dimension ≥ threshold', () => {
     expect(meetsThreshold(FULL, 4)).toBe(true);
@@ -79,6 +122,38 @@ describe('judgeTranscript (injectable fetch)', () => {
     expect(body.messages[0].content).toContain('מראיין: מה קרה?');
   });
 
+  // The bug the first cloud gate run surfaced (18.9.2026): sonnet-5 LEADS its
+  // reply with a `thinking` block that has no `.text`, so `content[0].text` was
+  // '' and the judge reported `no_json` — indistinguishable from a bad answer.
+  // These two lock the fix in from both sides: read the right block, and don't
+  // let the block appear in the first place.
+  it('reads the first block that carries text, not content[0]', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({
+        content: [
+          { type: 'thinking', thinking: 'the interviewer opened with...' },
+          { type: 'text', text: JSON.stringify(FULL) },
+        ],
+      }),
+    }));
+
+    const res = await judgeTranscript({ history: [], apiKey: 'k', fetchImpl });
+    expect(res.ok, res.error).toBe(true);
+    expect(res.scores).toEqual(FULL);
+  });
+
+  it('disables thinking, so the reply is the JSON envelope and nothing else', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ content: [{ text: JSON.stringify(FULL) }] }),
+    }));
+
+    await judgeTranscript({ history: [], apiKey: 'k', fetchImpl });
+    const body = JSON.parse(fetchImpl.mock.calls[0][1].body);
+    expect(body.thinking).toEqual({ type: 'disabled' });
+  });
+
   it('returns an error result on HTTP failure', async () => {
     const fetchImpl = vi.fn(async () => ({ ok: false, text: async () => 'rate limited' }));
     const res = await judgeTranscript({ history: [], apiKey: 'k', fetchImpl });
@@ -101,7 +176,29 @@ describe.skipIf(!hasKey || !runJudge)('LLM-judge acceptance (real API)', () => {
     'scores the meat golden transcript ≥ 4 on every dimension',
     async () => {
       const res = await judgeTranscript({ history: meatTranscript, apiKey });
-      expect(res.ok).toBe(true);
+
+      // Emitted BEFORE the assertions, so it appears whether the gate passes or
+      // fails. `npm run gates` reads this line. It used to infer the outcome from
+      // vitest's own output, which prints a describe name and an assertion message
+      // only on FAILURE — so a judge that ran and passed was reported as "skipped",
+      // and a run that scored 5/5 looked like a run that never happened.
+      console.log(`JUDGE_RESULT ${JSON.stringify({
+        ok: res.ok,
+        // True when the reply's JSON did not parse and the scores had to be
+        // recovered. Reported so a malformed judge is visible, not smoothed over.
+        salvaged: res.salvaged === true,
+        error: res.error ?? '',
+        scores: res.scores ?? {},
+        notes: res.notes ?? '',
+        // What the model actually said, when it could not be parsed. Without it a
+        // repeat `no_json` is undiagnosable from the report alone.
+        raw: res.ok ? '' : String(res.raw ?? '').slice(0, 400),
+      })}`);
+
+      // The API's own words, not a bare boolean. judgeTranscript returns
+      // { ok:false, error:<response body> } and the assertion used to throw away
+      // the one field that says WHY — which in CI meant a red run with no cause.
+      expect(res.ok, `judge call failed → ${res.error ?? '(no error text)'}`).toBe(true);
       for (const dim of JUDGE_DIMENSIONS) {
         expect(res.scores[dim], `${dim}: ${res.notes}`).toBeGreaterThanOrEqual(4);
       }

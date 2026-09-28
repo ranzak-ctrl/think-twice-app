@@ -11,6 +11,7 @@
 
 import { spawn } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { classifyJudge, classifyRegistrar, looksLikeAuthFailure } from './gates-classify.mjs';
 
 // `--out=<name>` lets CI keep the two runs apart. Two reports that cannot be told
 // apart are worthless, which is the whole reason this is run twice.
@@ -30,10 +31,14 @@ function keyFromEnvFile() {
   return '';
 }
 
-const key = process.env.ANTHROPIC_API_KEY || keyFromEnvFile();
+// Trimmed, and that is a fix rather than tidiness: a GitHub secret preserves
+// whatever was pasted, and a trailing newline picked up from a copy is invisible
+// in the UI and rejected by the API as an invalid key. Telling a human to "paste
+// it again without spaces" is worse than removing them.
+const key = (process.env.ANTHROPIC_API_KEY || keyFromEnvFile()).trim();
 const keyLooksReal = key.startsWith('sk-ant-') && key.length > 30;
 
-console.log(`\n${line}\n  שערי הקבלה — Think Twice\n${line}\n`);
+console.log(`\n${line}\n  רף הקבלה — Think Twice\n${line}\n`);
 
 if (!keyLooksReal) {
   console.log(
@@ -65,26 +70,34 @@ const child = spawn('npx', ['vitest', 'run', '--no-file-parallelism'], {
   shell: true,
 });
 
+// vitest colours its output, and those escape codes were ending up inside the
+// Hebrew summary as "[22m" / "[39m". Stripped from the copy that is PARSED and
+// reported; the copy printed to the console keeps its colours.
+const stripAnsi = (s) => s.replace(/\u001B\[[0-9;]*m/g, '');
+
 let log = '';
 const capture = (chunk) => {
   const text = chunk.toString();
-  log += text;
+  log += stripAnsi(text);
   process.stdout.write(text);
 };
 child.stdout.on('data', capture);
 child.stderr.on('data', capture);
 
 child.on('close', (code) => {
-  const scores = [...log.matchAll(/(empathy|non_judgment|ownership|active_listening|natural_hebrew)\D{0,12}(\d(?:\.\d+)?)/g)];
-  // Three outcomes, not two. "It ran" and "the key was rejected" look identical in
-  // a scroll of vitest output, and reporting the second as the first is exactly the
-  // kind of quiet false pass this script exists to prevent.
-  const judgeSkipped = !/LLM-judge acceptance/.test(log);
-  const keyRejected = /authentication_error|invalid x-api-key|401/i.test(log);
-  const judgeRan = !judgeSkipped && !keyRejected;
+  // Everything about what the judge DID is decided in gates-classify.mjs, from the
+  // one JSON line the judge test prints about itself. Three separate bugs came
+  // from inferring it here out of vitest's own output; that module's header has
+  // all three.
+  const verdict = classifyJudge(log);
+  const { judged, unitFailures, judgeError } = verdict;
+  const judgeSkipped = verdict.status === 'skipped';
+  const keyRejected = looksLikeAuthFailure(verdict);
+  const scores = Object.entries(verdict.scores);
+  const reg = classifyRegistrar(log);
 
   const header =
-    `שערי הקבלה — Think Twice\n` +
+    `רף הקבלה — Think Twice\n` +
     `תאריך: ${new Date().toISOString()}\n` +
     `מצב הרשם: ${registrar}\n` +
     `${line}\n\n`;
@@ -92,10 +105,16 @@ child.on('close', (code) => {
 
   // A machine-readable twin, so CI can build one comparison table instead of
   // asking anyone to read two logs side by side.
+
   writeFileSync(`${OUT}.json`, JSON.stringify({
     registrar,
-    judge: judgeSkipped ? 'skipped' : keyRejected ? 'rejected' : 'ran',
-    scores: Object.fromEntries(scores.map(([, d, v]) => [d, Number(v)])),
+    judge: verdict.status,
+    judgeSalvaged: verdict.salvaged,
+    registrar: reg,
+    judgeError,
+    judgeNotes: judged?.notes ?? '',
+    unitFailures: [...new Set(unitFailures)],
+    scores: judged?.scores ?? {},
     exitCode: code ?? 1,
   }, null, 2));
 
@@ -108,12 +127,30 @@ child.on('close', (code) => {
     console.log('  ⚠ המפתח נדחה ע"י השרת. העתק אותו שוב מ-Vercel — ייתכן שחסר תו או שפג תוקפו.');
   } else if (scores.length) {
     console.log('  ציוני השופט (הסף: 4 בכל ממד):');
-    for (const [, dim, val] of scores) {
+    for (const [dim, val] of scores) {
       console.log(`    ${Number(val) >= 4 ? '✅' : '❌'}  ${dim.padEnd(18)} ${val}`);
     }
+    if (verdict.salvaged) {
+      console.log('\n  ⚠ תשובת השופט לא הייתה JSON תקין — הציונים חולצו ממנה.');
+      console.log('     הציונים תקפים (נבדקו באותם כללים); הניסוח של judge.md שווה תיקון.');
+    }
+    if (judged?.notes) console.log(`\n  הערות השופט: ${judged.notes}`);
   } else {
-    console.log('  השופט רץ. הציונים בקובץ המלא.');
+    // Ran, returned no scores: the call went through but the reply could not be
+    // parsed. Says so plainly instead of implying the interview scored badly.
+    console.log('  ⚠ השופט רץ אך לא הוחזרו ציונים. הסיבה בקובץ המלא.');
+    if (judgeError) console.log(`     ${judgeError}`);
   }
+  // The registrar's own line. Printed whenever the call happened, pass or fail —
+  // a silent registrar is indistinguishable from a working one, which is the whole
+  // reason this call exists.
+  if (reg.ran) {
+    const n = Object.entries(reg.counts).filter(([, v]) => v > 0).map(([k, v]) => `${k} ${v}`).join(' · ');
+    console.log(reg.ok
+      ? `\n  הרשם מול מודל אמיתי:  ✅ הוחזר גרף תקין — ${n || 'ריק'}`
+      : `\n  הרשם מול מודל אמיתי:  ❌ ${reg.error}\n     ${reg.raw.slice(0, 200)}`);
+  }
+
   console.log(`\n  ${code === 0 ? '✅ הכול עבר' : '❌ משהו נפל — הפרטים בקובץ'}`);
   console.log(`\n  📄 שלח לי את הקובץ:  ${OUT}`);
   console.log(`${line}\n`);

@@ -580,6 +580,29 @@ const REPAIR_NUDGE =
 // is working at all: cache_read staying at 0 means something is invalidating the
 // prefix. These are absent from the response until caching is enabled, so they
 // default to 0 and change nothing today.
+// A system prompt arrives either as one string or as { stable, volatile } — the two
+// halves promptBuilder separates so the unchanging part can be cached.
+//
+// WHY THIS LIVES IN THE ADAPTER. The core says WHICH half never changes; only this
+// file knows that Anthropic expresses that as a `cache_control` marker on a content
+// block. Putting the marker in the core would tie the portable half to one
+// provider's wire format (principle 4).
+//
+// The marker goes on the FIRST block, so everything up to and including it is the
+// cached prefix. The volatile half follows uncached, which is the whole point: a
+// prefix that changes every turn is a prefix that is never reused.
+//
+// Whether it is working is visible, not assumed: mergeUsage already carries
+// cache_creation_input_tokens and cache_read_input_tokens, and the guide panel
+// shows the cost. cache_read staying at 0 means the prefix is being invalidated.
+function systemField(sp) {
+  if (typeof sp === 'string') return sp;
+  const blocks = [];
+  if (sp?.stable) blocks.push({ type: 'text', text: sp.stable, cache_control: { type: 'ephemeral' } });
+  if (sp?.volatile) blocks.push({ type: 'text', text: sp.volatile });
+  return blocks;
+}
+
 function mergeUsage(acc, u) {
   if (!u) return acc;
   const pick = (o) => ({
@@ -635,7 +658,8 @@ export async function complete({
   // runs live against the serverless proxy, which holds the key server-side.
   const live = import.meta.env.VITE_USE_MOCK !== 'true';
 
-  if (!live || !systemPrompt || !messages?.length) {
+  const hasSystem = typeof systemPrompt === 'string' ? Boolean(systemPrompt) : Boolean(systemPrompt?.stable || systemPrompt?.volatile);
+  if (!live || !hasSystem || !messages?.length) {
     return mockComplete({ stage, mode });
   }
 
@@ -663,12 +687,26 @@ export async function complete({
         headers,
         body: JSON.stringify({
           model,
-          max_tokens: 1024,
+          // An interviewer turn is three sentences and a question; 1024 is ample.
+          // THE REGISTRAR IS NOT THAT SHAPE. It returns a whole graph delta —
+          // beats, stances, emotions, actors, edges, groups, forks, gap
+          // observations — as Hebrew JSON, and Hebrew costs more tokens per
+          // character than English. A four-line transcript already produced
+          // 3 beats · 3 actors · 2 edges in the live test; a rich turn late in an
+          // interview is far bigger.
+          //
+          // Truncation here is the WORST failure this system has, because it is
+          // invisible twice over: the reply is cut mid-JSON, parseRegistrarResponse
+          // returns invalid_json, and runRegistrar deliberately returns the state
+          // untouched so a bad turn never costs the person their turn. The graph
+          // just silently stops growing — and it would degrade exactly as the
+          // interview gets richer, which is when the registrar matters most.
+          max_tokens: mode === 'registrar' ? 8192 : 1024,
           // Sonnet 5 runs adaptive thinking by default; thinking tokens count
           // against max_tokens and add cost/latency. This flow wants a compact
           // JSON envelope, not reasoning — keep it off.
           thinking: { type: 'disabled' },
-          system: systemPrompt,
+          system: systemField(systemPrompt),
           messages: attemptMessages,
         }),
       });
@@ -730,6 +768,19 @@ export async function complete({
     // front of a waiting person, for nothing. Hand the text back unparsed and let
     // parseRegistrarResponse read it.
     if (mode === 'registrar') {
+      // A truncated reply is not a malformed one, and calling it invalid_json
+      // sends the reader hunting for a prompt bug that is not there. The API says
+      // which happened; say it too.
+      if (data.stop_reason === 'max_tokens') {
+        return {
+          ok: false,
+          error: 'registrar_truncated',
+          message: null,
+          evaluation: null,
+          usage,
+          failure: { kind: 'truncated', status: res.status, requestId: lastRequestId, stage, mode, attempt, detail: 'registrar reply hit max_tokens — the graph delta did not fit' },
+        };
+      }
       return { ok: true, raw, message: null, evaluation: null, usage };
     }
     if (mode === 'summary' || mode === 'opener') {

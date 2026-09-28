@@ -25,7 +25,52 @@ export function formatTranscript(history) {
     .join('\n');
 }
 
+// Validate a bag of candidate scores. Shared by the strict and salvaged paths so
+// the two can never drift into judging by different rules.
+function collectScores(get) {
+  const scores = {};
+  for (const dim of JUDGE_DIMENSIONS) {
+    const v = get(dim);
+    if (typeof v !== 'number' || Number.isNaN(v) || v < 1 || v > 5) {
+      return { bad: dim };
+    }
+    scores[dim] = v;
+  }
+  return { scores };
+}
+
+// Recover the five scores from a reply whose JSON does not parse.
+//
+// THE CASE THIS EXISTS FOR, from CI run 5 (19.9.2026): the judge returned
+// 4/5/5/5/4 and its `notes` quoted the interviewer —
+//   "notes": "...חקירת פרשנות ("מה זה אומר עליך"), מדידת עוצמת..."
+// Those inner quotes are unescaped, so JSON.parse rejects the whole object and a
+// complete, correct set of scores was thrown away over punctuation in a comment
+// field. A judge writing Hebrew notes will quote the interviewer constantly, so
+// this is the normal case, not an edge one.
+//
+// Only NUMBERS are salvaged, and that is the point: a number cannot contain a
+// quote, so `"empathy": 4` is unambiguous no matter how mangled the prose around
+// it is. The same 1–5 validation still applies — this recovers the scores, it does
+// not lower the bar for them. Notes are taken only if they can be had safely.
+function salvageScores(text) {
+  const found = {};
+  for (const dim of JUDGE_DIMENSIONS) {
+    const m = new RegExp(`"${dim}"\\s*:\\s*(-?\\d+(?:\\.\\d+)?)`).exec(text);
+    if (m) found[dim] = Number(m[1]);
+  }
+  const { scores, bad } = collectScores((d) => found[d]);
+  if (bad) return null;
+
+  // Everything after "notes": up to the last quote before the closing brace. Best
+  // effort by design: the notes are commentary, the scores are the verdict.
+  const n = /"notes"\s*:\s*"([\s\S]*)"\s*,?\s*\}?\s*$/.exec(text.trim());
+  return { scores, notes: n ? n[1].trim() : '' };
+}
+
 // Parse the judge's JSON. Returns { ok, scores, notes } or { ok:false, error }.
+// On a salvaged parse `salvaged` is true, so a malformed reply is still visible
+// rather than silently smoothed over.
 export function parseJudgeScores(raw) {
   const text = String(raw ?? '').trim();
   const match = text.match(/\{[\s\S]*\}/);
@@ -35,17 +80,14 @@ export function parseJudgeScores(raw) {
   try {
     obj = JSON.parse(match[0]);
   } catch {
+    const rescued = salvageScores(match[0]);
+    if (rescued) return { ok: true, ...rescued, salvaged: true };
     return { ok: false, error: 'invalid_json', raw };
   }
 
-  const scores = {};
-  for (const dim of JUDGE_DIMENSIONS) {
-    const v = obj[dim];
-    if (typeof v !== 'number' || v < 1 || v > 5) {
-      return { ok: false, error: `missing_or_invalid_score:${dim}`, raw };
-    }
-    scores[dim] = v;
-  }
+  const { scores, bad } = collectScores((d) => obj[d]);
+  if (bad) return { ok: false, error: `missing_or_invalid_score:${bad}`, raw };
+
   return { ok: true, scores, notes: typeof obj.notes === 'string' ? obj.notes : '' };
 }
 
@@ -74,6 +116,11 @@ export async function judgeTranscript({
     body: JSON.stringify({
       model,
       max_tokens: 1024,
+      // Sonnet 5 runs adaptive thinking by default. model.js disables it for the
+      // interview and this call needs it off for the same reason: the judge must
+      // return a compact JSON envelope, not reasoning, and thinking tokens count
+      // against max_tokens.
+      thinking: { type: 'disabled' },
       system: judgeMd,
       messages: [{ role: 'user', content: transcript }],
     }),
@@ -85,6 +132,15 @@ export async function judgeTranscript({
   }
 
   const data = await res.json();
-  const rawText = data.content?.[0]?.text ?? '';
+  // Pick the first block that CARRIES TEXT — never content[0].
+  //
+  // This is the bug that made the acceptance gate silently unusable, found on the
+  // first cloud run (18.9.2026). With thinking on, the reply LEADS with a
+  // `thinking` block that has no `.text`, so content[0].text was '' and
+  // parseJudgeScores returned `no_json` — which reads like the model answered
+  // badly when in fact it was never read. model.js:721 already carried this exact
+  // fix and its comment; judge.js never got it, so the judge had never once
+  // scored anything against sonnet-5.
+  const rawText = data.content?.find((b) => typeof b?.text === 'string')?.text ?? '';
   return parseJudgeScores(rawText);
 }

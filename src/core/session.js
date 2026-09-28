@@ -7,7 +7,7 @@
 import { route, Decision, resolveResistance } from './router.js';
 import { runRegistrar } from './registrar.js';
 import {
-  buildSystemPrompt,
+  buildSystemPromptParts,
   buildRegistrarPrompt,
   buildSummaryPrompt,
   buildSummaryMessages,
@@ -124,7 +124,9 @@ export async function runTurn(state, history, userText) {
     stage,
     // Built from the registrar's state, not the turn's opening state — this is
     // where the serial order actually pays.
-    systemPrompt: buildSystemPrompt({ stage, state: probeState }),
+    // The split form, so the adapter can cache the unchanging half. buildSystemPrompt
+    // still returns the joined text for anything that wants one string.
+    systemPrompt: buildSystemPromptParts({ stage, state: probeState }),
     messages,
   });
   usage = addUsage(usage, result.usage);

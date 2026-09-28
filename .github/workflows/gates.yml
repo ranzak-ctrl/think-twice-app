@@ -15,7 +15,7 @@
 # before against after, and two runs a day apart with nobody sure which was which
 # is not a measurement.
 
-name: שערי קבלה
+name: בדיקת רף הקבלה
 
 on:
   workflow_dispatch:
@@ -27,7 +27,7 @@ on:
 
 jobs:
   gates:
-    name: מריץ את השערים בשני מצבי המתג
+    name: מריץ את הבדיקות בשני מצבי המתג
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
