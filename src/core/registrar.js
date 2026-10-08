@@ -150,9 +150,10 @@ export function applyRegistrar(state, deltas, turn = 0) {
 // any failure returns the state untouched.
 //
 // A registrar failure MUST NOT cost the person their turn. The interview can run
-// without an assembled story — that is precisely how it runs today — so a bad
-// parse, a network error or a missing prompt degrades to the current behaviour
-// instead of stopping the interview. The error is returned for the guide trail.
+// without an assembled story, so a bad parse or a network error degrades to the
+// interview without one instead of stopping it. The error is returned for the
+// guide trail. (A missing registrar TEXT is not a runtime failure any more: the
+// engine refuses to be composed without it while the switch is on — engine.js.)
 export async function runRegistrar({ state, messages, systemPrompt, completeImpl, turn = 0, stage }) {
   if (!systemPrompt || !messages?.length || typeof completeImpl !== 'function') {
     return { state, usage: null, error: 'not_configured' };

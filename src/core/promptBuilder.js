@@ -25,18 +25,29 @@ function text(prompts, key) {
   return v;
 }
 
+// The blacklist rides in every prompt. An empty one would still print its heading
+// with nothing under it — the model told there are rules and shown none.
 function forbiddenBlock(prompts) {
   const list = prompts?.forbidden;
-  if (!Array.isArray(list)) throw new Error('Interview prompts are missing "forbidden"');
+  if (!Array.isArray(list) || !list.some((l) => typeof l === 'string' && l.trim())) {
+    throw new Error('Interview prompts are missing "forbidden"');
+  }
   return '## הנחיות אסורות\n' + list.join('\n');
 }
 
-// The stage agent for a stage number. '' for a stage without one, as before.
+// The stage agent for a stage number. Missing is an error, not an empty string:
+// `.filter(Boolean)` would drop it, and the probe would go out with no agent for
+// the stage it is in (router-guard, 8.10.2026). currentStage is always a stage the
+// pack has, so this only fires on a composition that was wrong to begin with.
 function stagePromptFor(prompts, stage) {
   if (!prompts?.stages || typeof prompts.stages !== 'object') {
     throw new Error('Interview prompts are missing "stages"');
   }
-  return prompts.stages[stageKey(stage)] ?? '';
+  const agent = prompts.stages[stageKey(stage)];
+  if (typeof agent !== 'string' || !agent) {
+    throw new Error(`Interview prompts are missing the agent for ${stageKey(stage)}`);
+  }
+  return agent;
 }
 
 const LAST_K_TURNS = 6;

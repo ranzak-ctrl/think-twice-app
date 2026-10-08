@@ -4,7 +4,10 @@
 // src/core/engine.js); this is where the browser build wires them together: the
 // pack's structure, its texts as Vite loads them, and the adapter that calls the
 // serverless proxy. Everything in the UI that drives the interview goes through
-// this one object, so the interview is chosen in one place.
+// this one object, so the interview is chosen in one place. (importState is the
+// exception, and pack-agnostic: it restores a document, it routes nothing. It joins
+// this object once exports record which interview and version they came from —
+// plan, phase 2.)
 //
 // One interview today. Choosing it per user at login is the shell's job in phase 4
 // of docs/interview-platform-plan.md (§2א) — that will replace this constant with

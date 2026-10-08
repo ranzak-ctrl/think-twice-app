@@ -81,7 +81,6 @@ function requireDeps(deps, who) {
 // Returns { nextState, reply, decision } — the caller owns the history array.
 // `deps` is { pack, prompts, complete }; a shell gets it bound by createEngine.
 export async function runTurn(state, history, userText, deps) {
-  const { pack, prompts, complete } = requireDeps(deps, 'runTurn');
   // Safety pre-check — an acute-distress mention stops the interview safely.
   const check = preCheck(userText);
   if (!check.safe) {
@@ -103,6 +102,11 @@ export async function runTurn(state, history, userText, deps) {
     };
   }
 
+  // After the safety check, never before it: the stop needs nothing injected, and
+  // an acute-distress message must reach it even from a caller that composed the
+  // engine wrong (router-guard, 8.10.2026).
+  const { pack, prompts, complete } = requireDeps(deps, 'runTurn');
+
   const stage = state.meta.currentStage;
   const currentHistory = [...history, { role: 'user', content: userText }];
   const turn = currentHistory.filter((m) => m.role === 'user').length; // monotonic turn index
@@ -119,10 +123,10 @@ export async function runTurn(state, history, userText, deps) {
   // the next question should be asked about the picture that includes what the
   // person just said.
   //
-  // Inert until the prompt exists (buildRegistrarPrompt returns '' today), so this
-  // is currently a no-op and the interview behaves exactly as before. A registrar
-  // failure never costs the person their turn — runRegistrar returns the state
-  // untouched and the interview proceeds the way it does today.
+  // Switched on (REGISTRAR_ENABLED in promptBuilder.js); buildRegistrarPrompt
+  // returns '' when it is off, and this call is then a no-op. A registrar failure
+  // never costs the person their turn — runRegistrar returns the state untouched
+  // and the interview proceeds without the assembled story.
   const registrar = await runRegistrar({
     state,
     stage,

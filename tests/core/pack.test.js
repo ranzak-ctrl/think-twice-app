@@ -100,7 +100,7 @@ describe('validatePack never throws on malformed input', () => {
 });
 
 // The contract allows these; the turn loop does not yet (session.js still assumes
-// Think Twice's shape). They are reported apart from errors, and phase 1 slice 2
+// Think Twice's shape). They are reported apart from errors, and phase 1 slice 3
 // lifts them. router-guard F2/F3: until then, "valid" must not mean "runnable".
 describe('engine limits — valid packs this engine cannot run yet', () => {
   it('a cast gate anywhere but stage 1 / actors', () => {

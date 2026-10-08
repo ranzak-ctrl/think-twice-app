@@ -185,13 +185,13 @@ export function validatePack(pack) {
 
   // ── Engine limits (phase 1). session.js still routes material by
   // /^stage([1-7])\./, derives `stage1.actors` from the cast, and writes the board
-  // and the session's close into `coverage.stage7`. Lifted by phase 1, slice 2.
+  // and the session's close into `coverage.stage7`. Lifted by phase 1, slice 3.
   if (stages.length !== 7) {
-    limits.push('the turn loop still assumes exactly 7 stages (session.js, until phase 1 slice 2)');
+    limits.push('the turn loop still assumes exactly 7 stages (session.js, until phase 1 slice 3)');
   }
   const cast = stages.flatMap((s, i) => (hasComponent(s, 'castClarity') ? [[i + 1, componentOf(s, 'castClarity')]] : []));
   if (cast.some(([n, c]) => n !== 1 || c.slot !== 'actors')) {
-    limits.push('castClarity can only sit on stage 1 with slot "actors" (session.js, until phase 1 slice 2)');
+    limits.push('castClarity can only sit on stage 1 with slot "actors" (session.js, until phase 1 slice 3)');
   }
 
   return done();
@@ -199,9 +199,11 @@ export function validatePack(pack) {
 
 // ── The pack's texts ──
 // What the engine needs from `prompts` to run an interview of this pack (the shape
-// is documented in promptBuilder.js). `judge` belongs to the acceptance harness,
-// not to the interview, and is checked where it is used (judge.js).
-export const REQUIRED_PROMPTS = ['persona', 'resistance', 'evaluator', 'registrar', 'summary', 'opener', 'board'];
+// is documented in promptBuilder.js). Two texts are conditional and checked where
+// they are used: `registrar` only while the registrar is switched on (engine.js
+// knows the switch; this module must import nothing from core), and `judge`, which
+// belongs to the acceptance harness and not to the interview (judge.js).
+export const REQUIRED_PROMPTS = ['persona', 'resistance', 'evaluator', 'summary', 'opener', 'board'];
 
 export function validatePrompts(pack, prompts) {
   const errors = [];
@@ -209,8 +211,13 @@ export function validatePrompts(pack, prompts) {
   for (const k of REQUIRED_PROMPTS) {
     if (typeof prompts[k] !== 'string' || !prompts[k].trim()) errors.push(`prompts.${k} is missing`);
   }
-  if (!Array.isArray(prompts.forbidden) || !prompts.forbidden.every((l) => typeof l === 'string')) {
-    errors.push('prompts.forbidden must be a list of lines');
+  // At least one real line: every prompt prints this list under its own heading.
+  if (
+    !Array.isArray(prompts.forbidden) ||
+    !prompts.forbidden.every((l) => typeof l === 'string') ||
+    !prompts.forbidden.some((l) => l.trim())
+  ) {
+    errors.push('prompts.forbidden must be a non-empty list of lines');
   }
   if (!isObj(prompts.stages)) {
     errors.push('prompts.stages is missing');
