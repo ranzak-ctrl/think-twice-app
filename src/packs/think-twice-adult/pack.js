@@ -21,7 +21,6 @@
 //                stage-1 cast merge and `actors` derivation; the board and close
 //                written into coverage.stage7; the stage-3/5 intensity KPI; the
 //                Hebrew re-open framing (reopenSituation)
-//   promptBuilder.js — the stage agent prompts and every `?raw` import
 //   vocabulary.js — the barred and mental slot sets
 //   story.js / storyMap.js — the map layers
 //   state.js — the /^stage([1-7])\./ guards in mergeNodes / edges / groups

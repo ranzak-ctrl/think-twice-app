@@ -49,7 +49,7 @@
 2. ה-Router לעולם לא מאציל ניווט למשתמש. נקודות החלטה ב-UI: אישורי סיכום + ההכרעה בשלב 7. ותו לא.
 3. פרומפטים הם תוכן, לא קוד — src/content/prompts/, עם מספור גרסה. שינויי ניסוח של נטלי לא נוגעים בקוד.
 4. ליבה ניידת — src/core ללא שום תלות ב-UI או בפלטפורמה (יעבור כמו-שהוא לשרת web עתידי).
-   ⚠️ **כרגע מופר, ביודעין.** `promptBuilder.js` (13 ייבואים) ו-`judge.js` מייבאים `.md?raw` — תחביר ייחודי ל-Vite שלא ירוץ ב-Node נקי. גם `session.js` מייבא ישירות את `adapters/model.js`, שקורא `import.meta.env`. לפני העברה לשרת: להזריק פרומפטים ואדפטר במקום לייבא אותם. `judge.js` כבר מדגים את התבנית הנכונה (`fetchImpl` מוזרק) — ללכת לפיה.
+   ✅ **תוקן ב-8.10.2026.** הליבה לא מייבאת עוד פרומפט, אדפטר או `import.meta`. שלושתם מוזרקים: `createEngine({ pack, prompts, complete })` (`src/core/engine.js`). הדפדפן מרכיב את הראיון ב-`src/ui/interview.js`, וזה המקום היחיד שבו Vite טוען את הטקסטים (`src/packs/think-twice-adult/prompts.js`). הבדיקות מרכיבות אותו באותה דרך ב-`tests/helpers/engine.js`. `tests/core/portable-core.test.js` סורק את הליבה ומריץ תור שלם ב-Node נקי, ונכשל אם ייבוא כזה חוזר. **שומרים על זה:** טקסט חדש שהמודל צריך נכנס ל-`prompts` של החבילה, לא ל-`import` בליבה.
 5. עברית-RTL אזרח ראשון — בכל רכיב UI ובכל פרומפט.
 6. **אין אחסון בצד שרת.** קיים proxy serverless חסר-state (`api/anthropic/v1/messages.js`) שרק מזריק את המפתח ומעביר את הבקשה הלאה — הוא לא כותב, לא שומר ולא מתעד תוכן משתמש. תוכן הראיון חי בזיכרון הדפדפן בלבד; ייצוא ידני בלבד. (הניסוח הקודם "אפס שרת" תיאר את מסלול ה-Artifact ואינו נכון יותר — ראה "אופן ההגשה" למעלה.)
 7. שכבת הבטיחות (src/safety) — אסור להסיר, לעקוף או להחליש. אזכור מצוקה חריפה ← עצירה בטוחה.
@@ -62,7 +62,7 @@
 
 ## מבנה
 - src/ui — React, RTL, צ'אט, כפתורי אישור, לוח הכרעה (נבנה מה-state בקוד!), מצב מדריך
-- src/core — router.js (מכונת מצבים), state.js (StateDocument: coverage · `findings` ממצאים-לסלוט · `actorMap` קאסט-פתור · `gaps` עקביות · `nodes` קוביות המפה · `edges` קשתות · `groups` מכלים · `openForks` פיצולים · `mapLabels` · meta), promptBuilder.js, responseParser.js, session.js (לולאת התור + `generateStageOpener`), storyMap.js (היטל המפה)
+- src/core — router.js (מכונת מצבים), state.js (StateDocument: coverage · `findings` ממצאים-לסלוט · `actorMap` קאסט-פתור · `gaps` עקביות · `nodes` קוביות המפה · `edges` קשתות · `groups` מכלים · `openForks` פיצולים · `mapLabels` · meta), promptBuilder.js (מרכיב פרומפטים מ-`prompts` מוזרקים), responseParser.js, session.js (לולאת התור + `generateStageOpener`), engine.js (`createEngine` — ראיון אחד מורכב: חבילה + טקסטים + קריאת מודל), storyMap.js (היטל המפה)
 - דיווח המודל (evaluation): `evaluation` **לפני** `message` ("חלץ, אז שאל"); כולל `slot_findings` · `actor_map` · `nodes` · `edges` · `groups` · `open_forks` · `map_labels` · `gap_observations`. כל אלה **דלתא** — רק מה שהשתנה, לפי `id` יציב
 - **שכבת המפה (visualization):** `nodes` · `edges` · `groups` הם **תצוגה בלבד** — ה-Router לא קורא אותם לעולם. קובייה אינה slot: ה-slot הוא יחידת ה-Router, הקובייה היא מה שהאיור מצייר, ו-slot מחזיק כמה. לכל קובייה `scale`: `episode` (פעימה של האירוע) או `ongoing` (מצב עומד — מצויר ברצועת רקע, לא על ציר הזמן). האיור: שלוש עמודות — דמויות · פעולות · משמעות — מתחת לרצועת הרקע (רן, 5.9.2026). מה שאינו מאושר (`confirmed:false`) אינו מצויר; הוא נכנס לתור הבירור
 - src/content — prompts/ (דמות גלובלית, 7 סוכנים, מעריך), forbidden.js (רשימה שחורה)
