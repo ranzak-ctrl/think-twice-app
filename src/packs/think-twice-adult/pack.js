@@ -15,9 +15,23 @@
 //
 // ── WHAT IS NOT HERE YET ──
 // Phase 1 moves the configuration out in slices, each guarded by
-// tests/core/prompt-fingerprint.test.js. Still in the core and still to move: the
-// stage agent prompts, the barred and mental slot sets, the map layers, the
-// intensity KPI and the re-open framing in session.js.
+// tests/core/prompt-fingerprint.test.js. Still written for these seven stages, and
+// still to move (the same list as docs/interview-platform-plan.md, phase 1):
+//   session.js — the /^stage([1-7])\./ routing of slots, findings and labels; the
+//                stage-1 cast merge and `actors` derivation; the board and close
+//                written into coverage.stage7; the stage-3/5 intensity KPI; the
+//                Hebrew re-open framing (reopenSituation)
+//   promptBuilder.js — the stage agent prompts and every `?raw` import
+//   vocabulary.js — the barred and mental slot sets
+//   story.js / storyMap.js — the map layers
+//   state.js — the /^stage([1-7])\./ guards in mergeNodes / edges / groups
+// validatePack reports the turn loop's assumptions as engine limits until then.
+//
+// ── WHO OWNS WHAT HERE ──
+// Two kinds of content share this file. The labels and signposts are Natali's
+// wording. The routing numbers, `requires` and the components are the Router's
+// rules — tests/transitions/router.test.js pins every one of them, so an edit
+// here fails the matrix until the change is made on purpose.
 //
 // Clinical source of truth: the "Think Twice" Drive folder, and
 // docs/transition-protocol.md for the slots and the transition rules.
@@ -31,7 +45,7 @@ export const thinkTwiceAdult = {
   routing: {
     softThreshold: 0.8,  // share of core slots at 2 for the soft path
     saturationLimit: 2,  // consecutive turns with no new information
-    loadGuard: 20,       // TEMPORARY backstop — see router.js
+    loadGuard: 20,       // TEMPORARY backstop — placeholder, questions-for-natali §1; see router.js
     rejectGrace: 3,      // turns bought by "לתקן"
   },
 
@@ -80,7 +94,7 @@ export const thinkTwiceAdult = {
       signpost: 'הבנו את התגובה. עכשיו בוא ננסה לראות את זה מנקודת מבט אחרת.',
       slots: [{ id: 'perspective' }, { id: 'intention' }, { id: 'alt_formulation' }, { id: 're_emotion' }],
       requires: ['stage2'],
-      loadGuard: 15,
+      loadGuard: 15, // TEMPORARY backstop — placeholder, questions-for-natali §1
     },
     {
       key: 'stage6',

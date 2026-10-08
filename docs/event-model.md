@@ -303,7 +303,7 @@
 
 ### מה לא זז — שורה אחת לא
 
-`evaluateStage` · `route` · סולם 0/1/2/U · `CORE_SLOTS` · הסף הרך · מונה המיצוי · מגן העומס · התלויות · חד-כיווניות 6→7 · שער מפת-השחקנים · ‏`REJECT_GRACE`. **הממשק אל ה-Router נשאר `coverage` ותו לא.**
+`evaluateStage` · `route` · סולם 0/1/2/U · ה-core slots (`CORE_SLOTS`, מ-8.10.2026 בחבילה `src/packs/think-twice-adult/pack.js`) · הסף הרך · מונה המיצוי · מגן העומס · התלויות · חד-כיווניות 6→7 · שער מפת-השחקנים · ‏`REJECT_GRACE`. **הממשק אל ה-Router נשאר `coverage` ותו לא.**
 
 ---
 

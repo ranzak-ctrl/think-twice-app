@@ -3,10 +3,8 @@
 
 export const SLOT_UNKNOWN = 'U';
 
-// The registrar's ledger. This import is circular — eventRecord.js reads
-// NEVER_SHOW_SLOTS from here — and is safe because neither side dereferences the
-// other at module-evaluation time: createEventRecord and displayable are both
-// called later. Asserted by tests/core/state.test.js importing a fresh state.
+// The registrar's ledger. This import used to be circular (eventRecord.js read
+// NEVER_SHOW_SLOTS from here); both now read it from vocabulary.js, so it is not.
 import { createEventRecord } from './eventRecord.js';
 // The graph's vocabulary lives in one module now — see vocabulary.js for why.
 // Re-exported here because story.js and the tests already import these names
