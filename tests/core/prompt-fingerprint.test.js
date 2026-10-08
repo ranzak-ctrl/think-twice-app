@@ -14,15 +14,15 @@
 
 import { describe, it, expect } from 'vitest';
 import { createHash } from 'node:crypto';
+import { SUMMARY_NUDGE, OPENER_NUDGE } from '../../src/core/promptBuilder.js';
+// Composed the way the app composes them: the pack's texts, injected.
 import {
   buildSystemPromptParts,
   buildRegistrarPrompt,
   buildSummaryPrompt,
   buildOpenerPrompt,
   buildBoardPrompt,
-  SUMMARY_NUDGE,
-  OPENER_NUDGE,
-} from '../../src/core/promptBuilder.js';
+} from '../helpers/engine.js';
 import {
   createState,
   mergeActorMap,

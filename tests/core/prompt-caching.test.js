@@ -10,7 +10,8 @@
 // marker really is attached to it on the wire.
 
 import { describe, it, expect, vi } from 'vitest';
-import { buildSystemPromptParts, buildSystemPrompt, buildRegistrarPrompt, REGISTRAR_ENABLED } from '../../src/core/promptBuilder.js';
+import { REGISTRAR_ENABLED } from '../../src/core/promptBuilder.js';
+import { buildSystemPromptParts, buildSystemPrompt, buildRegistrarPrompt } from '../helpers/engine.js';
 import { createState, mergeActorMap } from '../../src/core/state.js';
 import { complete } from '../../src/adapters/model.js';
 

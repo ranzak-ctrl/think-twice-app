@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createState } from '../../src/core/state.js';
-import { runTurn } from '../../src/core/session.js';
+import { runTurn } from '../helpers/engine.js';
 
 // Integration: model gap_observations → parser → runTurn → state.gaps.byTarget.
 // Mirrors the mock harness in resistance-session.test.js (env stub forces the

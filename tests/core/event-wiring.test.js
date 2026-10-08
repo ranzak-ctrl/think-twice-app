@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createState, importState, exportState, mergeActorMap } from '../../src/core/state.js';
 import { mergeBeats, mergeSetting, createEventRecord } from '../../src/core/eventRecord.js';
-import { buildSystemPrompt } from '../../src/core/promptBuilder.js';
+import { buildSystemPrompt } from '../helpers/engine.js';
 
 describe('the registrar ledger is part of the StateDocument', () => {
   it('a fresh state carries an empty record', () => {

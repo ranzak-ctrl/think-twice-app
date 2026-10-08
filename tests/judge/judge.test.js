@@ -3,10 +3,10 @@ import {
   formatTranscript,
   parseJudgeScores,
   meetsThreshold,
-  judgeTranscript,
-  buildJudgePrompt,
   JUDGE_DIMENSIONS,
 } from '../../src/core/judge.js';
+// The rubric is the pack's, injected (principle 4); the helper binds it.
+import { judgeTranscript, buildJudgePrompt } from '../helpers/engine.js';
 import { meatTranscript } from '../fixtures/meat-transcript.js';
 
 const FULL = { empathy: 5, non_judgment: 5, ownership: 5, active_listening: 4, natural_hebrew: 5 };

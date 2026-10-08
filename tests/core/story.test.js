@@ -266,7 +266,7 @@ describe('open forks — the delta contract', () => {
     // The prompt tells the model to omit an unchanged fork and to reuse its id.
     // It can only do that for a fork it can SEE. Without this the same open
     // question comes back under a new id every turn and is drawn again and again.
-    const { buildSystemPrompt } = await import('../../src/core/promptBuilder.js');
+    const { buildSystemPrompt } = await import('../helpers/engine.js');
     const s = mergeOpenForks(createState(), [
       { id: 'lead', question: 'לא הוכרע מי מנהל את הצוות', options: ['אתה', 'הוא'] },
     ]);
@@ -279,7 +279,7 @@ describe('open forks — the delta contract', () => {
   });
 
   it('omits the key entirely when there are no forks', async () => {
-    const { buildSystemPrompt } = await import('../../src/core/promptBuilder.js');
+    const { buildSystemPrompt } = await import('../helpers/engine.js');
     expect(buildSystemPrompt({ stage: 1, state: createState() })).not.toContain('\nopen_forks: ');
   });
 });

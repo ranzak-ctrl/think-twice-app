@@ -17,7 +17,6 @@ import {
   formatHistory,
 } from './promptBuilder.js';
 import { signpostForStage } from '../content/signposting.js';
-import { complete } from '../adapters/model.js';
 import { countSelfOther } from './kpi.js';
 import {
   appendDecisionLog,
@@ -65,9 +64,24 @@ function addUsage(acc, u) {
   };
 }
 
+// The engine's three dependencies, injected rather than imported (principle 4):
+// the interview's pack, its texts, and the model call. This module used to import
+// the browser's model adapter, which reads Vite's import.meta.env, and that tied
+// the turn loop to the bundler. createEngine (engine.js) validates them once and
+// binds them; this only stops a direct caller that forgot one.
+function requireDeps(deps, who) {
+  const { pack, prompts, complete } = deps ?? {};
+  if (!pack || !prompts || typeof complete !== 'function') {
+    throw new Error(`${who} needs { pack, prompts, complete } — compose an engine with createEngine`);
+  }
+  return { pack, prompts, complete };
+}
+
 // Process a single user message against (state, history).
 // Returns { nextState, reply, decision } — the caller owns the history array.
-export async function runTurn(state, history, userText) {
+// `deps` is { pack, prompts, complete }; a shell gets it bound by createEngine.
+export async function runTurn(state, history, userText, deps) {
+  const { pack, prompts, complete } = requireDeps(deps, 'runTurn');
   // Safety pre-check — an acute-distress mention stops the interview safely.
   const check = preCheck(userText);
   if (!check.safe) {
@@ -113,7 +127,7 @@ export async function runTurn(state, history, userText) {
     state,
     stage,
     messages,
-    systemPrompt: buildRegistrarPrompt({ state }),
+    systemPrompt: buildRegistrarPrompt({ state, prompts }),
     completeImpl: complete,
     turn,
   });
@@ -126,7 +140,7 @@ export async function runTurn(state, history, userText) {
     // where the serial order actually pays.
     // The split form, so the adapter can cache the unchanging half. buildSystemPrompt
     // still returns the joined text for anything that wants one string.
-    systemPrompt: buildSystemPromptParts({ stage, state: probeState }),
+    systemPrompt: buildSystemPromptParts({ stage, state: probeState, prompts }),
     messages,
   });
   usage = addUsage(usage, result.usage);
@@ -366,13 +380,13 @@ export async function runTurn(state, history, userText) {
   }
 
   // The code decides transitions, never the model.
-  const decision = route(nextState);
+  const decision = route(nextState, pack);
   let reply = result.message ?? PARSE_FALLBACK;
 
   if (decision.decision === Decision.REQUEST_CONFIRMATION) {
     const summaryResult = await complete({
       stage: nextState.meta.currentStage,
-      systemPrompt: buildSummaryPrompt({ state: nextState }),
+      systemPrompt: buildSummaryPrompt({ state: nextState, prompts }),
       // Anchor with the model's probe + an explicit "summarize now" turn so the reply
       // is a recap, not a continuation of the dialogue (the dissonance Ran hit).
       messages: buildSummaryMessages(messages, result.message),
@@ -395,7 +409,7 @@ export async function runTurn(state, history, userText) {
   if (decision.decision === Decision.SHOW_BOARD) {
     const boardResult = await complete({
       stage: 7,
-      systemPrompt: buildBoardPrompt({ state: nextState }),
+      systemPrompt: buildBoardPrompt({ state: nextState, prompts }),
       messages,
       mode: 'board',
     });
@@ -436,7 +450,7 @@ export async function runTurn(state, history, userText) {
     // the user's turn, so no confirmation nudge is appended.
     const opener = await completeStageOpener(nextState, currentHistory, {
       situation: reopenSituation(decision),
-    });
+    }, deps);
     usage = addUsage(usage, opener.usage);
     reply = opener.message;
   }
@@ -483,17 +497,18 @@ export async function runTurn(state, history, userText) {
 // (anchored in the story just told), not a generic prompt. `opts.situation` frames a
 // Re-open. Falls back to the static signpost if generation is unavailable (mock / no
 // key / API error). The code still owns the transition; this only phrases the question.
-async function completeStageOpener(state, history, opts = {}) {
+async function completeStageOpener(state, history, opts = {}, deps) {
+  const { pack, prompts, complete } = requireDeps(deps, 'completeStageOpener');
   const stage = state.meta.currentStage;
   const result = await complete({
     stage,
-    systemPrompt: buildOpenerPrompt({ stage, state, situation: opts.situation }),
+    systemPrompt: buildOpenerPrompt({ stage, state, situation: opts.situation, prompts }),
     // Must end with a user turn (no assistant prefill); buildOpenerMessages appends
     // the user's confirmation only when the history ends on an assistant turn.
     messages: buildOpenerMessages(formatHistory(history)),
     mode: 'opener',
   });
-  const message = result.ok && result.message ? result.message : signpostForStage(stage);
+  const message = result.ok && result.message ? result.message : signpostForStage(stage, pack);
   // A failed opener falls back to the static signpost, which looks like a normal
   // turn on screen. Without this the degradation is invisible — exactly the class
   // of silent failure the error report exists to catch.
@@ -502,8 +517,8 @@ async function completeStageOpener(state, history, opts = {}) {
 
 // Forward-transition opener (called by the UI on confirm) — folds the call's usage
 // into state and returns the opening message.
-export async function generateStageOpener(state, history, opts = {}) {
-  const { message, usage, failure } = await completeStageOpener(state, history, opts);
+export async function generateStageOpener(state, history, opts = {}, deps) {
+  const { message, usage, failure } = await completeStageOpener(state, history, opts ?? {}, deps);
   return {
     nextState: {
       ...state,

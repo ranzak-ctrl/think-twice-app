@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createState } from '../../src/core/state.js';
 import { confirmAndAdvance } from '../../src/core/router.js';
-import { runTurn } from '../../src/core/session.js';
+import { runTurn } from '../helpers/engine.js';
 import { resetMockCounters } from '../../src/adapters/model.js';
 
 // Headless end-to-end of the "meat" golden script through the mock adapter.

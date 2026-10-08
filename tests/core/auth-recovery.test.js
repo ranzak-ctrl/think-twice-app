@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { complete } from '../../src/adapters/model.js';
 import { setAppPassword, getAppPassword } from '../../src/adapters/appAuth.js';
 import { createState } from '../../src/core/state.js';
-import { runTurn } from '../../src/core/session.js';
+import { runTurn } from '../helpers/engine.js';
 
 // A 401 from the proxy is a LOCKED DOOR, not a failed model call.
 //

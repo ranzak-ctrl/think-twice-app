@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createState } from '../../src/core/state.js';
-import { generateStageOpener } from '../../src/core/session.js';
+import { generateStageOpener } from '../helpers/engine.js';
 import { buildOpenerMessages, OPENER_NUDGE } from '../../src/core/promptBuilder.js';
 import { signpostForStage } from '../../src/content/signposting.js';
 

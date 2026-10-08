@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createState } from '../../src/core/state.js';
 import { confirmAndAdvance } from '../../src/core/router.js';
-import { runTurn } from '../../src/core/session.js';
+import { runTurn } from '../helpers/engine.js';
 import { resetMockCounters, setMockScenario } from '../../src/adapters/model.js';
 
 // Headless end-to-end of the remaining golden scripts (dev-plan §131). Together

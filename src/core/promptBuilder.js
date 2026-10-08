@@ -1,29 +1,43 @@
-import personaMd from '../content/prompts/persona.md?raw';
-import evaluatorMd from '../content/prompts/evaluator.md?raw';
-import resistanceMd from '../content/prompts/resistance.md?raw';
-import summaryMd from '../content/prompts/summary.md?raw';
-import openerMd from '../content/prompts/opener.md?raw';
-import boardMd from '../content/prompts/board.md?raw';
-import stage1Md from '../content/prompts/agents/stage1-intake.md?raw';
-import stage2Md from '../content/prompts/agents/stage2-interpretation.md?raw';
-import stage3Md from '../content/prompts/agents/stage3-feel.md?raw';
-import stage4Md from '../content/prompts/agents/stage4-react.md?raw';
-import stage5Md from '../content/prompts/agents/stage5-transform.md?raw';
-import stage6Md from '../content/prompts/agents/stage6-alternatives.md?raw';
-import stage7Md from '../content/prompts/agents/stage7-decision.md?raw';
-import { FORBIDDEN_PATTERNS } from '../content/forbidden.js';
-import registrarMd from '../content/prompts/registrar.md?raw';
 import { renderEvent } from './eventView.js';
+import { stageKey } from './pack.js';
 
-const STAGE_PROMPTS = {
-  1: stage1Md,
-  2: stage2Md,
-  3: stage3Md,
-  4: stage4Md,
-  5: stage5Md,
-  6: stage6Md,
-  7: stage7Md,
-};
+// ── THE CORE IMPORTS NO PROMPT ──
+// Every text the model reads belongs to the interview pack and arrives here as
+// `prompts`, injected by whoever composed the engine:
+//
+//   { persona, resistance, evaluator, registrar, summary, opener, board, judge,
+//     stages: { stage1: '…', stage2: '…', … },   // one agent prompt per stage key
+//     forbidden: ['…', …] }                       // the blacklist, one line each
+//
+// It used to import fourteen .md files with Vite's `?raw` — syntax plain Node
+// cannot load, which is exactly what principle 4 forbids, and which welded one
+// interview's texts into the engine. Where the texts come from (a bundler, the file
+// system, a server) is now the caller's business: the browser build reads them in
+// src/packs/think-twice-adult/prompts.js. tests/core/portable-core.test.js loads
+// the core in plain Node to keep it that way.
+//
+// A missing text throws rather than dropping out of the prompt: `.filter(Boolean)`
+// below would otherwise assemble a prompt without, say, the persona, and nothing
+// would notice but the person being interviewed.
+function text(prompts, key) {
+  const v = prompts?.[key];
+  if (typeof v !== 'string' || !v) throw new Error(`Interview prompts are missing "${key}"`);
+  return v;
+}
+
+function forbiddenBlock(prompts) {
+  const list = prompts?.forbidden;
+  if (!Array.isArray(list)) throw new Error('Interview prompts are missing "forbidden"');
+  return '## הנחיות אסורות\n' + list.join('\n');
+}
+
+// The stage agent for a stage number. '' for a stage without one, as before.
+function stagePromptFor(prompts, stage) {
+  if (!prompts?.stages || typeof prompts.stages !== 'object') {
+    throw new Error('Interview prompts are missing "stages"');
+  }
+  return prompts.stages[stageKey(stage)] ?? '';
+}
 
 const LAST_K_TURNS = 6;
 
@@ -43,8 +57,8 @@ const SEP = '\n\n---\n\n';
 // The split is described in plain data — `stable` and `volatile` — and NOT in the
 // API's cache_control vocabulary. Which of the two is cacheable is a fact about the
 // content; how a provider expresses caching belongs to the adapter (principle 4).
-export function buildSystemPromptParts({ stage, state }) {
-  const stagePrompt = STAGE_PROMPTS[stage] ?? '';
+export function buildSystemPromptParts({ stage, state, prompts }) {
+  const stagePrompt = stagePromptFor(prompts, stage);
   // The ONLY caller that gets the unredacted account — its output is a question
   // to the person, never a text spoken verbatim, and stage 2 must see the מוגלה to
   // probe it. Summary / opener / board keep the safe default.
@@ -56,11 +70,11 @@ export function buildSystemPromptParts({ stage, state }) {
     // turn re-sending 46KB. Pulling it out would cache more, at the cost of moving
     // it after the evaluator, which is a change to how the prompt reads.
     stable: [
-      personaMd,
-      resistanceMd,
+      text(prompts, 'persona'),
+      text(prompts, 'resistance'),
       stagePrompt,
-      evaluatorMd,
-      '## הנחיות אסורות\n' + FORBIDDEN_PATTERNS.join('\n'),
+      text(prompts, 'evaluator'),
+      forbiddenBlock(prompts),
     ].filter(Boolean).join(SEP),
     volatile: stateSummary,
   };
@@ -102,18 +116,18 @@ export const REGISTRAR_ENABLED = true;
 // Returns '' when the switch is off — runRegistrar reads that as "not configured"
 // and skips the call, so the falsy string is load-bearing. When on, it returns the
 // two halves, for the reason in buildSystemPromptParts above.
-export function buildRegistrarPrompt({ state }) {
+export function buildRegistrarPrompt({ state, prompts }) {
   if (!REGISTRAR_ENABLED) return '';
-  return { stable: registrarMd, volatile: summarizeState(state, { full: true }) };
+  return { stable: text(prompts, 'registrar'), volatile: summarizeState(state, { full: true }) };
 }
 
 // Summary mode — built when the Router decides a stage transition is due.
 // Persona + summary instruction + state only; no probing agent, no evaluator.
-export function buildSummaryPrompt({ state }) {
+export function buildSummaryPrompt({ state, prompts }) {
   return [
-    personaMd,
-    summaryMd,
-    '## הנחיות אסורות\n' + FORBIDDEN_PATTERNS.join('\n'),
+    text(prompts, 'persona'),
+    text(prompts, 'summary'),
+    forbiddenBlock(prompts),
     summarizeState(state),
   ]
     .filter(Boolean)
@@ -146,15 +160,15 @@ export function buildSummaryMessages(messages, probeMessage) {
 // `situation` (optional) frames the transition — e.g. a Re-open back to an earlier
 // stage to complete info — so the opener can explain why we returned. Forward
 // transitions omit it.
-export function buildOpenerPrompt({ stage, state, situation }) {
-  const stagePrompt = STAGE_PROMPTS[stage] ?? '';
+export function buildOpenerPrompt({ stage, state, situation, prompts }) {
+  const stagePrompt = stagePromptFor(prompts, stage);
   const situationBlock = situation ? `## הקשר המעבר\n${situation}` : '';
   return [
-    personaMd,
+    text(prompts, 'persona'),
     stagePrompt,
-    openerMd,
+    text(prompts, 'opener'),
     situationBlock,
-    '## הנחיות אסורות\n' + FORBIDDEN_PATTERNS.join('\n'),
+    forbiddenBlock(prompts),
     summarizeState(state),
   ]
     .filter(Boolean)
@@ -174,12 +188,12 @@ export function buildOpenerMessages(messages) {
 
 // Board mode — built when the Router returns SHOW_BOARD (stage 7). The code owns
 // the board: the model synthesises rows from the collected basket; we render them.
-export function buildBoardPrompt({ state }) {
+export function buildBoardPrompt({ state, prompts }) {
   const basket = `## BASKET (חלופות שנאספו)\n${JSON.stringify(state.basket ?? [])}`;
   return [
-    personaMd,
-    boardMd,
-    '## הנחיות אסורות\n' + FORBIDDEN_PATTERNS.join('\n'),
+    text(prompts, 'persona'),
+    text(prompts, 'board'),
+    forbiddenBlock(prompts),
     basket,
     summarizeState(state),
   ]

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createState } from '../../src/core/state.js';
-import { runTurn } from '../../src/core/session.js';
+import { runTurn } from '../helpers/engine.js';
 
 // Integration: slot routing in runTurn — bare names → current stage; "stageN.slot"
 // keys capture later-stage info, pre-seeded to level 1 only (Ran, 21.6). Mirrors the

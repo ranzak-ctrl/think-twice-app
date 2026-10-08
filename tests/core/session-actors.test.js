@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createState } from '../../src/core/state.js';
-import { runTurn } from '../../src/core/session.js';
+import { runTurn } from '../helpers/engine.js';
 
 // Integration: the model reports a resolved actor map (מפת שחקנים); the code stores
 // it and DERIVES the stage-1 `actors` score from its clarity — a muddled cast can't

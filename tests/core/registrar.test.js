@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { parseRegistrarResponse, applyRegistrar, runRegistrar } from '../../src/core/registrar.js';
 import { createState } from '../../src/core/state.js';
-import { buildSystemPrompt } from '../../src/core/promptBuilder.js';
+import { buildSystemPrompt } from '../helpers/engine.js';
 
 const report = (o) => JSON.stringify(o);
 

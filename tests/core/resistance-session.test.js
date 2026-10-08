@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createState } from '../../src/core/state.js';
-import { runTurn } from '../../src/core/session.js';
+import { runTurn } from '../helpers/engine.js';
 import { exportState, importState } from '../../src/core/state.js';
 
 // Integration tests: resistance flags flow through the full pipeline

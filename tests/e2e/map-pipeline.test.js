@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { runTurn } from '../../src/core/session.js';
+import { runTurn } from '../helpers/engine.js';
 import { confirmAndAdvance } from '../../src/core/router.js';
 import { createState } from '../../src/core/state.js';
 import { resetMockCounters } from '../../src/adapters/model.js';

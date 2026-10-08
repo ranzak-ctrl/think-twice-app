@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createState } from '../../src/core/state.js';
-import { runTurn } from '../../src/core/session.js';
+import { runTurn } from '../helpers/engine.js';
 import { signpostForStage } from '../../src/content/signposting.js';
 
 // Re-open: a stage-7 "real" merge sends production back to stage 6. The reply must be

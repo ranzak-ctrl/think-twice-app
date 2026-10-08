@@ -197,6 +197,39 @@ export function validatePack(pack) {
   return done();
 }
 
+// ── The pack's texts ──
+// What the engine needs from `prompts` to run an interview of this pack (the shape
+// is documented in promptBuilder.js). `judge` belongs to the acceptance harness,
+// not to the interview, and is checked where it is used (judge.js).
+export const REQUIRED_PROMPTS = ['persona', 'resistance', 'evaluator', 'registrar', 'summary', 'opener', 'board'];
+
+export function validatePrompts(pack, prompts) {
+  const errors = [];
+  if (!isObj(prompts)) return { ok: false, errors: ['prompts is not an object'] };
+  for (const k of REQUIRED_PROMPTS) {
+    if (typeof prompts[k] !== 'string' || !prompts[k].trim()) errors.push(`prompts.${k} is missing`);
+  }
+  if (!Array.isArray(prompts.forbidden) || !prompts.forbidden.every((l) => typeof l === 'string')) {
+    errors.push('prompts.forbidden must be a list of lines');
+  }
+  if (!isObj(prompts.stages)) {
+    errors.push('prompts.stages is missing');
+  } else {
+    const keys = Array.isArray(pack?.stages) ? pack.stages.filter(isObj).map((s) => s.key) : [];
+    for (const key of keys) {
+      if (typeof prompts.stages[key] !== 'string' || !prompts.stages[key].trim()) {
+        errors.push(`prompts.stages.${key} is missing — every stage needs its agent`);
+      }
+    }
+    // A text for a stage the pack does not have would never run — almost always a
+    // typo in a key, which is worth hearing about before an interview starts.
+    for (const key of Object.keys(prompts.stages)) {
+      if (!keys.includes(key)) errors.push(`prompts.stages.${key} names no stage of this pack`);
+    }
+  }
+  return { ok: errors.length === 0, errors };
+}
+
 function hasNonJson(v) {
   if (v === null) return false;
   const t = typeof v;

@@ -3,7 +3,14 @@
 // Portable core: the network call takes an injectable fetch + apiUrl so the
 // pure parsing/formatting is unit-testable and the real call is gated by a key.
 
-import judgeMd from '../content/prompts/judge.md?raw';
+// The rubric is the pack's (`prompts.judge`), injected like every other text the
+// core sends a model — principle 4; see promptBuilder.js. A pack's judge may add
+// dimensions of its own one day (docs/interview-platform-plan.md §3.3).
+function rubricOf(prompts) {
+  const v = prompts?.judge;
+  if (typeof v !== 'string' || !v) throw new Error('Interview prompts are missing "judge"');
+  return v;
+}
 
 export const JUDGE_DIMENSIONS = [
   'empathy',
@@ -13,8 +20,8 @@ export const JUDGE_DIMENSIONS = [
   'natural_hebrew',
 ];
 
-export function buildJudgePrompt() {
-  return judgeMd;
+export function buildJudgePrompt(prompts) {
+  return rubricOf(prompts);
 }
 
 // Render a {role, content}[] history as a labelled Hebrew transcript.
@@ -100,11 +107,13 @@ export function meetsThreshold(scores, threshold = 4) {
 // for testing; the default targets Anthropic directly (works in Node, no proxy).
 export async function judgeTranscript({
   history,
+  prompts,
   apiKey,
   model = 'claude-sonnet-5',
   fetchImpl = fetch,
   apiUrl = 'https://api.anthropic.com/v1/messages',
 }) {
+  const rubric = rubricOf(prompts); // before the network: a missing rubric is not a model failure
   const transcript = formatTranscript(history);
   const res = await fetchImpl(apiUrl, {
     method: 'POST',
@@ -121,7 +130,7 @@ export async function judgeTranscript({
       // return a compact JSON envelope, not reasoning, and thinking tokens count
       // against max_tokens.
       thinking: { type: 'disabled' },
-      system: judgeMd,
+      system: rubric,
       messages: [{ role: 'user', content: transcript }],
     }),
   });

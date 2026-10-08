@@ -9,9 +9,9 @@ import { serializeMap, rasterize } from './mapExport.js';
 import { getPref, setPref } from '../adapters/uiPrefs.js';
 import ConfirmDialog from './ConfirmDialog.jsx';
 import { Logo, Plus, Download, Upload, Gauge, MapSketch } from './icons.jsx';
-import { createState, importState } from '../core/state.js';
-import { confirmAndAdvance, rejectConfirmation } from '../core/router.js';
-import { runTurn, generateStageOpener } from '../core/session.js';
+import { importState } from '../core/state.js';
+// The interview — pack, texts and model adapter, composed once (interview.js).
+import { interview } from './interview.js';
 import { rewriteTurn, buildRevision } from './rewriteTurn.js';
 
 // Opening turn. Ran's wording, revised 15.8.2026: the arc now ends on the
@@ -42,7 +42,7 @@ const GUIDE_MIN = 260;
 const CHAT_MIN = 360;
 
 export default function App({ onUnauthorized }) {
-  const [state, setState] = useState(() => createState());
+  const [state, setState] = useState(() => interview.createState());
   const [history, setHistory] = useState(() => [openingMessage()]);
   const [guideOpen, setGuideOpen] = useState(false);
   // Whether the case map is on screen. Ran, 6.9.2026: a button that hides and
@@ -196,7 +196,7 @@ export default function App({ onUnauthorized }) {
       setHistory((h) => [...h, { role: 'user', content: text, at: Date.now() }]);
       setLoading(true);
       try {
-        const { nextState, reply, unauthorized, failure } = await runTurn(state, history, text);
+        const { nextState, reply, unauthorized, failure } = await interview.runTurn(state, history, text);
         setState(nextState);
         if (failure) recordFailure(failure, nextState);
         if (unauthorized) {
@@ -220,11 +220,11 @@ export default function App({ onUnauthorized }) {
     // Advance first (drops the confirm UI), then generate a story-anchored opening
     // question for the new stage. addMessage runs OUTSIDE any setState updater, so it
     // fires once (a side effect inside an updater double-fires under StrictMode).
-    const advanced = confirmAndAdvance(state);
+    const advanced = interview.confirmAndAdvance(state);
     setState(advanced);
     setLoading(true);
     try {
-      const { nextState, message, failure } = await generateStageOpener(advanced, history);
+      const { nextState, message, failure } = await interview.generateStageOpener(advanced, history);
       setState(nextState);
       if (failure) recordFailure(failure, nextState);
       addMessage('assistant', message);
@@ -234,7 +234,7 @@ export default function App({ onUnauthorized }) {
   }, [state, history, loading]);
 
   const handleReject = useCallback(() => {
-    setState((s) => rejectConfirmation(s));
+    setState((s) => interview.rejectConfirmation(s));
     addMessage('assistant', 'בסדר — מה רצית לתקן?');
   }, []);
 
@@ -349,7 +349,7 @@ export default function App({ onUnauthorized }) {
   };
 
   const startNewSession = () => {
-    setState(createState());
+    setState(interview.createState());
     setHistory([openingMessage()]);
     setRevisions([]);
     setConfirmNew(false);
@@ -461,6 +461,7 @@ export default function App({ onUnauthorized }) {
           <StageRail
             stage={state.meta.currentStage}
             sessionComplete={state.meta.sessionComplete}
+            pack={interview.pack}
           />
         </div>
       </div>
