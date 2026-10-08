@@ -127,6 +127,20 @@ describe('Soft threshold', () => {
     expect(route(s).decision).toBe(Decision.REQUEST_CONFIRMATION);
   });
 
+  it('needs two quiet turns, not one', () => {
+    let s = createState();
+    s = fillStage(s, 1, 2);
+    s = { ...s, coverage: { ...s.coverage, stage1: { ...s.coverage.stage1, timeline: 1 } } };
+    expect(route(withSaturation(s, 1)).decision).toBe(Decision.STAY);
+  });
+
+  it('3/4 is under the threshold on a four-slot stage', () => {
+    let s = createState();
+    s = { ...s, meta: { ...s.meta, currentStage: 2 } };
+    s = { ...s, coverage: { ...s.coverage, stage2: { causal: 2, meaning: 2, wound: 1, adhd_pattern: 2 } } };
+    expect(route(withSaturation(s)).decision).toBe(Decision.STAY);
+  });
+
   it('stays when only 60% at 2', () => {
     let s = createState();
     // 3/5 at 2, 2/5 at 1 → 60% < 80%
@@ -150,6 +164,23 @@ describe('Load guard', () => {
     expect(r.reason).toBe('load_guard');
   });
 
+  // The limit is the number, not "some number": one question short still holds.
+  // Hard-coded on purpose — Think Twice's values live in its pack now, and a test
+  // that read them back from the pack would follow any edit (questions-for-natali §1).
+  it('holds at 19 questions', () => {
+    let s = createState();
+    s = { ...s, coverage: { ...s.coverage, stage1: { ...s.coverage.stage1, trigger: 1 } } };
+    expect(route(withQuestionCount(s, 19)).decision).toBe(Decision.STAY);
+  });
+
+  it('stage 5 holds at 14 questions', () => {
+    let s = createState();
+    s = { ...s, meta: { ...s.meta, currentStage: 5, questionCount: 14 } };
+    s = fillStage(s, 2);
+    s = { ...s, coverage: { ...s.coverage, stage5: { ...s.coverage.stage5, perspective: 1 } } };
+    expect(route(s).decision).toBe(Decision.STAY);
+  });
+
   it('stage 5 load guard triggers at 15 questions', () => {
     let s = createState();
     s = { ...s, meta: { ...s.meta, currentStage: 5, questionCount: 15 } };
@@ -164,6 +195,12 @@ describe('Load guard', () => {
 
 // ─── 5. Confirmation flow ────────────────────────────────────────────────────
 describe('Confirmation flow', () => {
+  // Interim value, questions-for-natali §13. The tests below are written in terms
+  // of REJECT_GRACE, so without this line any value would pass them.
+  it('the rejection grace is three turns', () => {
+    expect(REJECT_GRACE).toBe(3);
+  });
+
   it('confirm advances stage', () => {
     let s = createState();
     s = fillStage(s, 1);
@@ -265,13 +302,10 @@ describe('Dependency: stage 5 requires stage 2', () => {
     s = { ...s, meta: { ...s.meta, currentStage: 4 } };
     s = fillStage(s, 4);
     s = withSaturation(s);
-    // stage 2 NOT filled → dependency fails
+    // stage 2 NOT filled → dependency fails. Strict: this test used to accept
+    // REQUEST_CONFIRMATION as well, so deleting the dependency could never fail it.
     const r = route(s);
-    // should stay because dependency not met
-    expect([Decision.STAY, Decision.REQUEST_CONFIRMATION]).toContain(r.decision);
-    if (r.decision === Decision.STAY) {
-      expect(r.reason).toBe('dependency_not_met');
-    }
+    expect(r).toEqual({ decision: Decision.STAY, reason: 'dependency_not_met' });
   });
 
   it('allows stage 5 when stage 2 is satisfied', () => {
@@ -281,6 +315,18 @@ describe('Dependency: stage 5 requires stage 2', () => {
     s = fillStage(s, 4);
     s = withSaturation(s);
     expect(route(s).decision).toBe(Decision.REQUEST_CONFIRMATION);
+  });
+
+  // Stage 7 requires stage 6 exhausted (transition protocol: "שלב 7 דורש את שלב 6").
+  // The load guard cannot buy past it: 2/3 at 2 is under 0.8.
+  // NOTE: with a legitimate U in stage 6 this is a dead end — the guard never
+  // overrides a dependency. Known as docs/next-version-changes.md ‏D; this test pins
+  // the dependency, and changes deliberately when D is fixed.
+  it('blocks stage 7 while stage 6 falls short, even at the load guard', () => {
+    let s = createState();
+    s = { ...s, meta: { ...s.meta, currentStage: 6, questionCount: 20 } };
+    s = { ...s, coverage: { ...s.coverage, stage6: { alternatives: 2, zero_action: 2, alt_from_transform: 1 } } };
+    expect(route(s)).toEqual({ decision: Decision.STAY, reason: 'dependency_not_met' });
   });
 
   it('stage 6 → 7 does not require a goal (goal gates the board, not entry)', () => {
