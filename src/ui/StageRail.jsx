@@ -11,25 +11,19 @@
 // brief.md §65 also rules out progress pressure, so there is no "3 מתוך 7",
 // no percentage and no timer — position only, never pace.
 //
-// Labels are plain user-facing Hebrew, matching the register of
-// content/signposting.js (Natali's wording). They must never carry stage
-// numbers or clinical terms — "שלב 3" is jargon under the turn-lint rules.
+// Labels are plain user-facing Hebrew, matching the register of the signposts
+// (Natali's wording), and they come from the interview pack — each stage's
+// `label`. They must never carry stage numbers or clinical terms — "שלב 3" is
+// jargon under the turn-lint rules.
 
-const STAGES = [
-  { n: 1, label: 'מה קרה' },
-  { n: 2, label: 'איך הבנת את זה' },
-  { n: 3, label: 'מה הרגשת' },
-  { n: 4, label: 'איך הגבת' },
-  { n: 5, label: 'זווית אחרת' },
-  { n: 6, label: 'מה אפשר לעשות' },
-  { n: 7, label: 'מה תבחר' },
-];
+import { DEFAULT_PACK } from '../core/pack.js';
 
-export default function StageRail({ stage = 1, sessionComplete = false }) {
+export default function StageRail({ stage = 1, sessionComplete = false, pack = DEFAULT_PACK }) {
   return (
     <nav className="rail" aria-label="מיקום בתהליך">
       <ol className="rail-list">
-        {STAGES.map(({ n, label }) => {
+        {pack.stages.map(({ label }, i) => {
+          const n = i + 1;
           // On a Re-open the Router moves currentStage backwards; stages ahead
           // of it correctly revert to 'upcoming' rather than staying ticked.
           const done = sessionComplete || n < stage;

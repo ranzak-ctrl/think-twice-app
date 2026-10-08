@@ -14,10 +14,19 @@ import { createEventRecord } from './eventRecord.js';
 import {
   EDGE_KINDS, GROUP_KINDS, NODE_SCALES, NEVER_SHOW_SLOTS, LABEL_MAX, MENTAL_SLOTS,
 } from './vocabulary.js';
+// The pack decides the stages and their slots; `coverage` is laid out from it in
+// the pack's order (key order reaches the prompt — tests/core/prompt-fingerprint).
+import { DEFAULT_PACK, slotIds } from './pack.js';
 export { EDGE_KINDS, GROUP_KINDS, NODE_SCALES, NEVER_SHOW_SLOTS };
 export const MAP_LABEL_MAX = LABEL_MAX;
 
-export function createState() {
+function emptyCoverage(pack) {
+  return Object.fromEntries(
+    pack.stages.map((stage) => [stage.key, Object.fromEntries(slotIds(stage).map((id) => [id, 0]))])
+  );
+}
+
+export function createState(pack = DEFAULT_PACK) {
   return {
     // `facts` / `thoughts` / `feelings` / `reactions` used to sit here. They were
     // declared when the document was designed and NOTHING EVER WROTE TO THEM: the
@@ -37,15 +46,7 @@ export function createState() {
     // scenes — never surfaced to the user. docs/gap-management-implementation.md.
     gaps: { byTarget: {}, log: [] },
 
-    coverage: {
-      stage1: { trigger: 0, timeline: 0, actors: 0, status: 0, auto_reaction: 0 },
-      stage2: { causal: 0, meaning: 0, wound: 0, adhd_pattern: 0 },
-      stage3: { emotion: 0, intensity: 0, past_echo: 0 },
-      stage4: { auto_reaction: 0, planned_reaction: 0 },
-      stage5: { perspective: 0, intention: 0, alt_formulation: 0, re_emotion: 0 },
-      stage6: { alternatives: 0, zero_action: 0, alt_from_transform: 0 },
-      stage7: { goal: 0, board_presented: 0, sharp_decision: 0, package_test: 0 },
-    },
+    coverage: emptyCoverage(pack),
 
     // Per-slot findings (guide-mode display) — short textual info items the model
     // extracts per slot, accumulated parallel to coverage and keyed stageN.slot.
