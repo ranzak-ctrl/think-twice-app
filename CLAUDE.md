@@ -40,7 +40,7 @@
 - docs/architecture-dashboard.html — דשבורד הארכיטקטורה (v1 · 15.8.2026 · **ללא הרשם**)
 - docs/architecture-dashboard-v2.html — **דשבורד v2** — ארבעה מבטים: ארכיטקטורה (כולל הרשם) · מחזור-תור דו-שלבי · צירי Router · **מילון יישויות וקשתות**
 - docs/workspace.html — מרכז העבודה
-- docs/interview-platform-plan.md — תכנית רעיונית: תשתית ראיונות גנרית (מנוע · חבילות ראיון · מעטפת) + ראיון ההורים כמופע ראשון (טיוטה · 3.10.2026)
+- docs/interview-platform-plan.md — תכנית רעיונית: תשתית ראיונות גנרית (מנוע · חבילות ראיון · מעטפת אחת עם כניסה לפי משתמש · עורך ראיונות) + ראיון ההורים כמופע ראשון (טיוטה v2 · 8.10.2026 · שלב 1 בביצוע)
 
 אם קובץ ב-`/docs` נוגד את הקוד — הקוד הוא העובדה, המסמך הוא הבאג. אם `/docs` נוגד את הדרייב בעניין קליני — לעצור ולשאול את רן.
 
@@ -66,6 +66,7 @@
 - דיווח המודל (evaluation): `evaluation` **לפני** `message` ("חלץ, אז שאל"); כולל `slot_findings` · `actor_map` · `nodes` · `edges` · `groups` · `open_forks` · `map_labels` · `gap_observations`. כל אלה **דלתא** — רק מה שהשתנה, לפי `id` יציב
 - **שכבת המפה (visualization):** `nodes` · `edges` · `groups` הם **תצוגה בלבד** — ה-Router לא קורא אותם לעולם. קובייה אינה slot: ה-slot הוא יחידת ה-Router, הקובייה היא מה שהאיור מצייר, ו-slot מחזיק כמה. לכל קובייה `scale`: `episode` (פעימה של האירוע) או `ongoing` (מצב עומד — מצויר ברצועת רקע, לא על ציר הזמן). האיור: שלוש עמודות — דמויות · פעולות · משמעות — מתחת לרצועת הרקע (רן, 5.9.2026). מה שאינו מאושר (`confirmed:false`) אינו מצויר; הוא נכנס לתור הבירור
 - src/content — prompts/ (דמות גלובלית, 7 סוכנים, מעריך), forbidden.js (רשימה שחורה)
+- src/packs — **חבילות ראיון** (תצורה כנתונים בלבד): `think-twice-adult/pack.js` — שלבים, slots, תלויות, רכיבי קטלוג, ספי ה-Router, תוויות ו-signposts. המנוע קורא אותן דרך `src/core/pack.js` (`validatePack` · קטלוג רכיבים סגור). ה-Router לא מכיר עוד את שבעת השלבים — הוא מנתב לפי החבילה (docs/interview-platform-plan.md)
 - src/adapters — model.js (ממשק complete() יחיד; קורא ל-`/api/anthropic/v1/messages` **בלי מפתח** — ה-proxy מזריק אותו. חי/מדומה נקבע ע"י `VITE_USE_MOCK`), appAuth.js (סיסמת הגישה, ב-sessionStorage לכל טאב)
 - api/ — `anthropic/v1/messages.js` (ה-proxy: מזריק `ANTHROPIC_API_KEY`, בודק `APP_PASSWORD`), `ping.js` (בדיקת חיים)
 - src/safety — בדיקת קדם + פרוטוקול עצירה
