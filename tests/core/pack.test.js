@@ -15,8 +15,8 @@ import { signpostForStage } from '../../src/content/signposting.js';
 const clone = (v) => JSON.parse(JSON.stringify(v));
 
 describe('the Think Twice pack', () => {
-  it('is valid', () => {
-    expect(validatePack(thinkTwiceAdult)).toEqual({ ok: true, errors: [] });
+  it('is valid, and runnable by this engine', () => {
+    expect(validatePack(thinkTwiceAdult)).toEqual({ ok: true, errors: [], limits: [] });
   });
 
   it('is plain data — it survives JSON unchanged', () => {
@@ -58,6 +58,60 @@ describe('validatePack refuses what the engine cannot run', () => {
   it('a decision stage missing its slots', () => fails((p) => { p.stages[6].slots.pop(); }, 'package_test'));
   it('an interview that cannot close', () => fails((p) => { p.stages[6].components = []; }, 'last stage'));
   it('a threshold outside (0, 1]', () => fails((p) => { p.routing.softThreshold = 1.5; }, 'softThreshold'));
+  it('a threshold JSON cannot carry', () => fails((p) => { p.routing.softThreshold = NaN; }, 'plain data'));
+  // The backstop must stay reachable — out of reach is the same as switched off.
+  it('a load guard set out of reach', () => fails((p) => { p.routing.loadGuard = 1e9; }, 'loadGuard'));
+  it('a stage load guard set out of reach', () => fails((p) => { p.stages[4].loadGuard = 1e15; }, 'loadGuard'));
+  it('a decision with no collector before it', () => fails((p) => { p.stages[5].components = []; }, 'collector'));
+  it('a collector on the decision stage itself', () => fails((p) => {
+    p.stages[5].components = [];
+    p.stages[6].components.push({ type: 'collector' });
+  }, 'collector'));
+});
+
+// An editor hands validatePack whatever a person typed; it reports, it never throws.
+describe('validatePack never throws on malformed input', () => {
+  const shapes = {
+    'requires as an object': (p) => { p.stages[4].requires = { stage2: true }; },
+    'requires as a number': (p) => { p.stages[4].requires = 2; },
+    'components as an object': (p) => { p.stages[0].components = { type: 'castClarity' }; },
+    'components as a string': (p) => { p.stages[0].components = 'collector'; },
+    'slots as a string': (p) => { p.stages[2].slots = 'emotion'; },
+    'a null slot': (p) => { p.stages[2].slots.push(null); },
+    'a null stage': (p) => { p.stages.splice(3, 0, null); },
+    'a null component': (p) => { p.stages[0].components.push(null); },
+    'routing missing': (p) => { delete p.routing; },
+  };
+  for (const [name, mutate] of Object.entries(shapes)) {
+    it(name, () => {
+      const p = clone(thinkTwiceAdult);
+      mutate(p);
+      let result;
+      expect(() => { result = validatePack(p); }).not.toThrow();
+      expect(result.ok).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
+    });
+  }
+  for (const v of [null, undefined, 7, 'pack', []]) {
+    it(`a pack that is ${JSON.stringify(v) ?? 'undefined'}`, () => {
+      expect(validatePack(v)).toMatchObject({ ok: false });
+    });
+  }
+});
+
+// The contract allows these; the turn loop does not yet (session.js still assumes
+// Think Twice's shape). They are reported apart from errors, and phase 1 slice 2
+// lifts them. router-guard F2/F3: until then, "valid" must not mean "runnable".
+describe('engine limits — valid packs this engine cannot run yet', () => {
+  it('a cast gate anywhere but stage 1 / actors', () => {
+    const p = clone(thinkTwiceAdult);
+    p.stages[0].components = [];
+    p.stages[2].components = [{ type: 'castClarity', slot: 'emotion' }];
+    const r = validatePack(p);
+    expect(r.errors).toEqual([]);
+    expect(r.ok).toBe(false);
+    expect(r.limits.join(' ')).toContain('castClarity');
+  });
 });
 
 // ── A pack that is not Think Twice ──
@@ -91,8 +145,13 @@ const at = (pack, stage, patch = {}, meta = {}) => {
 };
 
 describe('the Router routes by the pack it is handed', () => {
-  it('the mini pack is valid', () => {
-    expect(validatePack(mini)).toEqual({ ok: true, errors: [] });
+  // The Router is pure and routes it fine — that is what this block proves. The
+  // turn loop cannot run it yet (seven stages assumed), and validatePack says so.
+  it('the mini pack keeps the contract; the turn loop cannot run it yet', () => {
+    const r = validatePack(mini);
+    expect(r.errors).toEqual([]);
+    expect(r.ok).toBe(false);
+    expect(r.limits.join(' ')).toContain('7 stages');
   });
 
   it('coverage is laid out from that pack', () => {

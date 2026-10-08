@@ -46,6 +46,20 @@ function awaiting(state, nextStage = 2) {
   return { ...state, meta: { ...state.meta, awaitingConfirmation: true, pendingNextStage: nextStage } };
 }
 
+// ─── 0. An unknown stage fails loudly ───────────────────────────────────────
+// Before the pack, CORE_SLOTS[n] was undefined and route() threw. Moving the
+// slots into the pack briefly made an unknown stage read as "0 of 0 covered" —
+// full coverage — and route it somewhere plausible (router-guard, F4). No code
+// path produces these values; a hand-edited import could.
+describe('Unknown stage', () => {
+  for (const stage of [0, 8, 1.5, -1, '7', null, undefined, NaN]) {
+    it(`throws on currentStage ${String(stage)}`, () => {
+      const s = createState();
+      expect(() => route({ ...s, meta: { ...s.meta, currentStage: stage } })).toThrow(/Unknown stage/);
+    });
+  }
+});
+
 // ─── 1. Entry: new state stays in stage 1 ───────────────────────────────────
 describe('Entry', () => {
   it('fresh state stays in stage 1', () => {

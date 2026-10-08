@@ -26,9 +26,9 @@ export const Decision = {
 
 // The numbers this module routes by — the soft threshold, the saturation limit,
 // the load guard and the rejection grace — are the PACK's (pack.routing, and a
-// stage's own `loadGuard`). Think Twice's values and the reasoning behind each
-// live in src/packs/think-twice-adult/pack.js. What they mean is still decided
-// here:
+// stage's own `loadGuard`); Think Twice's values are in
+// src/packs/think-twice-adult/pack.js. What they mean, and why two of them exist
+// at all, stays here with the code that acts on them:
 //
 // LOAD GUARD — a TEMPORARY BACKSTOP, not the real mechanism. Counting questions is
 // the wrong proxy for user load (see docs/questions-for-natali.md §1): it can't
@@ -52,8 +52,14 @@ export const REJECT_GRACE = DEFAULT_PACK.routing.rejectGrace;
 
 // Returns { allAtLeastOne, softThresholdMet, missingSlots }
 export function evaluateStage(coverage, stage, pack = DEFAULT_PACK) {
+  const def = stageAt(pack, stage);
+  // An unknown stage is a bug upstream, never a stage with nothing left to cover:
+  // with no slots, 0 of 0 at 2 would read as full coverage and wave the interview
+  // on. It threw before the pack existed (CORE_SLOTS[n] was undefined), and it
+  // still does — loudly, rather than routing somewhere plausible.
+  if (!def) throw new Error(`Unknown stage: ${String(stage)}`);
   const slots = coverage[stageKey(stage)] ?? {};
-  const cores = slotIds(stageAt(pack, stage));
+  const cores = slotIds(def);
 
   const missingSlots = cores.filter(
     (k) => (slots[k] ?? 0) === 0
