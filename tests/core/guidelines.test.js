@@ -84,6 +84,40 @@ describe('composing the guidelines', () => {
     expect(r.errors.join(' ')).toContain('appears twice');
   });
 
+  // router-guard, 9.10.2026 — inputs that used to compose "ok" and were wrong.
+  it('refuses an empty override — it would delete the super rule in silence', () => {
+    // The realistic cause: a line forgotten between two markers.
+    const r = checkGuidelines({ super: SUPER, specific: ADULT + '<!-- @warmth -->\n<!-- @voice -->\nNew voice.\n' });
+    expect(r.ok).toBe(false);
+    expect(r.errors.join(' ')).toContain('"warmth" overrides the super file with nothing');
+  });
+
+  for (const [name, bad] of [
+    ['a note split over two lines', '<!-- # v2 ·\n9.10 -->\n'],
+    ['a note with text after it', '<!-- # v2 --> real text\n'],
+    ['a note that would swallow text between two comments', '<!-- # a --> real text <!-- b -->\n'],
+    ['a marker without its @', '<!-- warmth -->\nWarm.\n'],
+    ['a marker with an extra dash', '<!--- @warmth -->\nWarm.\n'],
+    ['a marker split over two lines', '<!-- @warmth\n-->\nWarm.\n'],
+  ]) {
+    it(`refuses ${name} — no comment may reach the model`, () => {
+      const r = checkGuidelines({ super: SUPER, specific: ADULT + bad });
+      expect(r.ok).toBe(false);
+    });
+  }
+
+  it('refuses a comment in the middle of a line, as the last line of defence', () => {
+    const r = checkGuidelines({ super: SUPER, specific: '<!-- @identity -->\nYou interview adults. <!-- hidden -->\n' });
+    expect(r.ok).toBe(false);
+    expect(r.errors.join(' ')).toContain('would reach the model');
+  });
+
+  it('refuses a block that does not end its last line — it would glue onto the next', () => {
+    const r = checkGuidelines({ super: SUPER, specific: '<!-- @identity -->\nYou interview adults.' });
+    expect(r.ok).toBe(false);
+    expect(r.errors.join(' ')).toContain('must end with a newline');
+  });
+
   it('reports instead of throwing on a missing file, and throws only when asked to compose', () => {
     expect(checkGuidelines(undefined).ok).toBe(false);
     expect(checkGuidelines({ super: SUPER }).ok).toBe(false);
