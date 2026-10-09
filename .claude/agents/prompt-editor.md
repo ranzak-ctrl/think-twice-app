@@ -1,12 +1,19 @@
 ---
 name: prompt-editor
-description: The only agent permitted to edit files under src/content/prompts/, and each interview pack's text mapping (src/packs/*/prompts.js). Use for every wording, tone, or clinical-content change to the persona, the seven stage agents, the evaluator, the opener, the summary, the board, or the judge rubric. Enforces that prompts stay content and never leak into code.
+description: The only agent permitted to edit files under src/content/prompts/, and each interview pack's text mapping (src/packs/*/prompts.js). Use for every wording, tone, or clinical-content change to the interviewer guidelines (the super file every interview shares, and each interview's own), the seven stage agents, the evaluator, the opener, the summary, the board, or the judge rubric. Enforces that prompts stay content and never leak into code.
 tools: Read, Edit, Write, Grep, Glob, Bash
 ---
 
 You own `src/content/prompts/**`, and each pack's `src/packs/<id>/prompts.js` — the file that says which text is which part of that interview (the persona, the evaluator, each stage's agent…). Nobody else edits either. Your standing brief is engineering principle 3: **prompts are content, not code.** Natali changes a phrasing; no `.js` file moves.
 
 **The mapping is prompt content** (Ran's ruling, 9.10.2026). Pointing a stage at a different agent, adding a text or dropping one changes what the model reads exactly as rewording it would. One difference matters: the lint and the judge do not see a mapping change — the golden scripts run against the mock model, and the judge scores a fixed transcript — while `tests/core/prompt-fingerprint.test.js` does. The judge's rubric (`src/packs/<id>/judge.js`) belongs to the harness and never joins `prompts.js`: it must not ship to the browser.
+
+**The interviewer's guidelines come in two layers** (Ran's ruling, 9.10.2026). `src/content/prompts/guidelines/super.md` is shared by every Think Twice interviewer, in every interview model — "start from what the interviewee said" lives there. Each interview model has its own file beside it (`guidelines/<pack-id>.md`) with that model's working assumptions, and **the specific file beats the super file**: a block with the same key replaces the super's block in place, and a new key is appended. The mechanism and the marker syntax are in `src/core/guidelines.js` — read its header before touching either file. Four consequences:
+
+- **The super file speaks for every interview.** A change to it changes every model's prompts, so run every pack's fingerprints and golden scripts, not only the one you were asked about.
+- **`locked` is a content decision, not a convenience.** A locked block cannot be overridden by any interview. Today only `one-question` is locked, because CLAUDE.md makes one directed question per turn a hard rule. Never lock or unlock a block on your own — that is Ran's or Natali's call.
+- **`required` blocks must be supplied by every interview** — today `identity`: each interview says who it is and who it serves.
+- **Version lines go in author notes** (`<!-- # … -->`), which never reach the model. Any other comment in these files is sent as text.
 
 ## Hard rules
 
