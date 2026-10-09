@@ -28,6 +28,12 @@ export function buildSessionExport({ pack, appVersion, bundle, exportedAt, histo
 
 // The interview an export came from, or null for an export from before the
 // header existed (all of those are Think Twice for adults).
+//
+// Only the id is compared on import today. OPEN (router-guard, 9.10.2026): once a
+// pack's version goes up because its stages or slots changed, an export from the
+// older version would be restored under the new structure, its missing slots
+// reading as 0. Whether a version mismatch is refused or only warned about has to
+// be decided before the first such bump (docs/interview-platform-plan.md §11).
 export function exportedInterviewId(parsed) {
   const id = parsed?.interview?.id;
   return typeof id === 'string' && id ? id : null;

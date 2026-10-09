@@ -5,9 +5,9 @@
 // pack's structure, its texts as Vite loads them, and the adapter that calls the
 // serverless proxy. Everything in the UI that drives the interview goes through
 // this one object, so the interview is chosen in one place. (importState is the
-// exception, and pack-agnostic: it restores a document, it routes nothing. It joins
-// this object once exports record which interview and version they came from —
-// plan, phase 2.)
+// exception, and pack-agnostic: it restores a document, it routes nothing. Since
+// 9.10.2026 exports record which interview they came from, and App's import handler
+// refuses one from another interview model — see sessionExport.js.)
 //
 // One interview today. Choosing it per user at login is the shell's job in phase 4
 // of docs/interview-platform-plan.md (§2א) — that will replace this constant with
