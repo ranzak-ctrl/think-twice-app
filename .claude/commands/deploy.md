@@ -14,6 +14,7 @@ Unless `$ARGUMENTS` contains `--skip-checks`, run `/ship-check` first and stop i
 - Pick the bump: **patch** (1.1.0 → 1.1.1) when the release only fixes things; **minor** (1.1.0 → 1.2.0) when a tester will notice something — interview wording or behaviour, a new screen, a new interview model. Never major without Ran.
 - Identity first, positively: `git config user.email` must print `ranzak@gmail.com` (CLAUDE.md, iron rule — on Ran's Mac the global identity is the work address, and Vercel blocks a commit by an unrecognised author with no error at all).
 - `npm version <patch|minor> --no-git-tag-version` (updates package.json and package-lock.json), then commit them alone as `release: vX.Y.Z`, tag `vX.Y.Z`, and push the branch and the tag.
+- These steps are why the command may run `npm version` and `git config` / `add` / `commit` / `tag` / `push` (its `allowed-tools`). Ran confirmed that permission himself on 9.10.2026 — it covers this version step and nothing else.
 - Deploy **that** commit. The version is burned into the bundle at build time, so it changes the bundle's name: `/ship-check` gate 6 must compare the deployed name with a local build of this same commit, after the bump — never with a build from before it.
 
 **1 · Authentication.** `npx vercel whoami`. If it fails, stop and ask Ran to run `npx vercel login` himself — it is interactive and browser-based, and you cannot complete it. Do not attempt a workaround.
