@@ -51,7 +51,8 @@
 //      landed in the two user-facing ones.
 //
 // Nothing downstream would have stopped it: forbidden.js has no wound rule, and
-// neither summary.md nor opener.md nor persona.md mentions the מוגלה. The stage-2
+// neither summary.md nor opener.md nor the interviewer guidelines (guidelines/*.md,
+// formerly persona.md) mention the מוגלה. The stage-2
 // agent prompt, the one place the rule lives, is not part of the summary call.
 //
 // So `full` defaults to FALSE and redacts, and only buildSystemPrompt — the probe,

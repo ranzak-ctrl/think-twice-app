@@ -1,5 +1,17 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
+import { readFileSync } from 'node:fs';
+
+// The app's version, from package.json, burned into the bundle so an export and an
+// error report can say which version produced them (Ran, 9.10.2026).
+//
+// DELIBERATELY NOTHING THAT VARIES BETWEEN BUILDS OF THE SAME COMMIT — no build
+// time, no git hash. /ship-check gate 6 proves the deployed configuration by
+// building the same commit locally and comparing the bundle's file name, which is
+// a hash of its contents; a timestamp would make every build's name different and
+// the gate would fail on every release. The bundle name itself, read at runtime
+// (App.jsx bundleName), is what pins the exact build.
+const APP_VERSION = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version;
 
 // The dev server stands in for the serverless proxy.
 //
@@ -28,6 +40,9 @@ export default defineConfig(({ mode }) => {
 
   return {
     plugins: [react()],
+    define: {
+      __APP_VERSION__: JSON.stringify(APP_VERSION),
+    },
     server: {
       proxy: {
         '/api/anthropic': {

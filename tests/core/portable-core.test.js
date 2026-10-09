@@ -110,7 +110,11 @@ describe('the run: the core works in plain Node, and reaches no platform', () =>
       const { thinkTwiceAdult } = await import(${JSON.stringify(url('src/packs/think-twice-adult/pack.js'))});
       const t = (k) => '[' + k + ']';
       const prompts = {
-        persona: t('persona'), resistance: t('resistance'), evaluator: t('evaluator'),
+        guidelines: {
+          super: '<!-- @identity required -->\\n<!-- @rules -->\\n[super]\\n',
+          specific: '<!-- @identity -->\\n[identity]\\n',
+        },
+        resistance: t('resistance'), evaluator: t('evaluator'),
         registrar: t('registrar'), summary: t('summary'), opener: t('opener'),
         board: t('board'), judge: t('judge'), forbidden: ['[forbidden]'],
         stages: Object.fromEntries(thinkTwiceAdult.stages.map((s) => [s.key, t(s.key)])),
@@ -138,7 +142,9 @@ describe('the run: the core works in plain Node, and reaches no platform', () =>
     expect(result.trigger).toBe(1);
     // The texts the model received are the ones handed in, not Think Twice's.
     const probe = result.calls.find((c) => c.mode === 'probe');
-    expect(probe.sys).toContain('[persona]');
+    // The super file and the interview's own, composed — markers gone.
+    expect(probe.sys).toContain('[identity]\n[super]');
+    expect(probe.sys).not.toContain('<!--');
     expect(probe.sys).toContain('[stage1]');
     expect(probe.sys).toContain('[forbidden]');
     expect(result.judge).toBe('[judge]');
@@ -189,9 +195,26 @@ describe('the engine refuses an incomplete composition', async () => {
     ).toThrow(/stage4/);
   });
 
-  it('without the persona', () => {
-    const { persona, ...rest } = thinkTwiceAdultPrompts;
-    expect(() => createEngine({ pack: thinkTwiceAdult, prompts: rest, complete })).toThrow(/persona/);
+  it('without the interviewer guidelines', () => {
+    const { guidelines, ...rest } = thinkTwiceAdultPrompts;
+    expect(() => createEngine({ pack: thinkTwiceAdult, prompts: rest, complete })).toThrow(/guidelines/);
+  });
+
+  // The specific file beats the super file — except where the super file locks a
+  // rule. One directed question per turn is a hard rule for every interview.
+  it('with a specific file that overrides a locked rule', () => {
+    const { guidelines } = thinkTwiceAdultPrompts;
+    const prompts = {
+      ...thinkTwiceAdultPrompts,
+      guidelines: { ...guidelines, specific: guidelines.specific + '<!-- @one-question -->\nשתי שאלות זה בסדר.\n' },
+    };
+    expect(() => createEngine({ pack: thinkTwiceAdult, prompts, complete })).toThrow(/locked/);
+  });
+
+  it('with a specific file that does not say who the interview is', () => {
+    const { guidelines } = thinkTwiceAdultPrompts;
+    const prompts = { ...thinkTwiceAdultPrompts, guidelines: { ...guidelines, specific: '<!-- @extra -->\nx\n' } };
+    expect(() => createEngine({ pack: thinkTwiceAdult, prompts, complete })).toThrow(/identity/);
   });
 
   it('with an empty blacklist', () => {

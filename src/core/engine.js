@@ -19,6 +19,7 @@
 
 import { validatePack, validatePrompts } from './pack.js';
 import { REGISTRAR_ENABLED } from './promptBuilder.js';
+import { checkGuidelines } from './guidelines.js';
 import { createState } from './state.js';
 import { route, confirmAndAdvance, rejectConfirmation } from './router.js';
 import { runTurn, generateStageOpener } from './session.js';
@@ -31,6 +32,12 @@ export function createEngine({ pack, prompts, complete } = {}) {
   const promptCheck = validatePrompts(pack, prompts);
   if (!promptCheck.ok) {
     throw new Error(`createEngine: the pack's texts are incomplete — ${promptCheck.errors.join('; ')}`);
+  }
+  // The super file and this interview's specific file must compose: nothing
+  // locked overridden, nothing required missing, no stray text outside a block.
+  const g = checkGuidelines(prompts.guidelines);
+  if (!g.ok) {
+    throw new Error(`createEngine: the interviewer's guidelines do not compose — ${g.errors.join('; ')}`);
   }
   // Conditional on the switch, which is why it is checked here and not in pack.js:
   // with the registrar on, every turn starts with its call.

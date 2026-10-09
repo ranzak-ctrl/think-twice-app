@@ -47,6 +47,9 @@ describe('validatePack refuses what the engine cannot run', () => {
   };
 
   it('a function inside the pack', () => fails((p) => { p.stages[0].label = () => 'x'; }, 'plain data'));
+  // Every export opens with which interview it was (Ran, 9.10.2026).
+  it('an interview with no name', () => fails((p) => { delete p.name; }, 'pack.name'));
+  it('an interview with no version', () => fails((p) => { p.version = 0; }, 'pack.version'));
   it('a stage key out of order', () => fails((p) => { p.stages[1].key = 'stage9'; }, 'keys follow order'));
   it('a duplicate slot', () => fails((p) => { p.stages[2].slots.push({ id: 'emotion' }); }, 'unique'));
   it('a slot id the gap store cannot address', () => fails((p) => { p.stages[2].slots[0].id = 'Emotion-1'; }, 'lowercase'));
@@ -120,6 +123,7 @@ describe('engine limits — valid packs this engine cannot run yet', () => {
 // stage 1's cast gate or stage 5's guard, one of these fails.
 const mini = {
   id: 'mini',
+  name: 'ראיון ניסיון',
   version: 1,
   routing: { softThreshold: 0.5, saturationLimit: 1, loadGuard: 6, rejectGrace: 2 },
   stages: [

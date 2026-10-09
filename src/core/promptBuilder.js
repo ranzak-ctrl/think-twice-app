@@ -1,11 +1,13 @@
 import { renderEvent } from './eventView.js';
 import { stageKey } from './pack.js';
+import { composeGuidelines } from './guidelines.js';
 
 // ── THE CORE IMPORTS NO PROMPT ──
 // Every text the model reads belongs to the interview pack and arrives here as
 // `prompts`, injected by whoever composed the engine:
 //
-//   { persona, resistance, evaluator, registrar, summary, opener, board, judge,
+//   { guidelines: { super, specific },             // who the interviewer is (guidelines.js)
+//     resistance, evaluator, registrar, summary, opener, board, judge,
 //     stages: { stage1: '…', stage2: '…', … },   // one agent prompt per stage key
 //     forbidden: ['…', …] }                       // the blacklist, one line each
 //
@@ -17,12 +19,24 @@ import { stageKey } from './pack.js';
 // the core in plain Node to keep it that way.
 //
 // A missing text throws rather than dropping out of the prompt: `.filter(Boolean)`
-// below would otherwise assemble a prompt without, say, the persona, and nothing
-// would notice but the person being interviewed.
+// below would otherwise assemble a prompt without, say, the interviewer's
+// guidelines, and nothing would notice but the person being interviewed.
 function text(prompts, key) {
   const v = prompts?.[key];
   if (typeof v !== 'string' || !v) throw new Error(`Interview prompts are missing "${key}"`);
   return v;
+}
+
+// The interviewer's guidelines: the super file every Think Twice interviewer
+// shares, overridden block by block by this interview's specific file (Ran,
+// 9.10.2026; guidelines.js). It stands where the persona always stood, first in
+// every prompt the interviewer speaks from.
+function guidelines(prompts) {
+  const g = prompts?.guidelines;
+  if (!g || typeof g.super !== 'string' || typeof g.specific !== 'string') {
+    throw new Error('Interview prompts are missing "guidelines"');
+  }
+  return composeGuidelines(g);
 }
 
 // The blacklist rides in every prompt. An empty one would still print its heading
@@ -81,7 +95,7 @@ export function buildSystemPromptParts({ stage, state, prompts }) {
     // turn re-sending 46KB. Pulling it out would cache more, at the cost of moving
     // it after the evaluator, which is a change to how the prompt reads.
     stable: [
-      text(prompts, 'persona'),
+      guidelines(prompts),
       text(prompts, 'resistance'),
       stagePrompt,
       text(prompts, 'evaluator'),
@@ -133,10 +147,10 @@ export function buildRegistrarPrompt({ state, prompts }) {
 }
 
 // Summary mode — built when the Router decides a stage transition is due.
-// Persona + summary instruction + state only; no probing agent, no evaluator.
+// Guidelines + summary instruction + state only; no probing agent, no evaluator.
 export function buildSummaryPrompt({ state, prompts }) {
   return [
-    text(prompts, 'persona'),
+    guidelines(prompts),
     text(prompts, 'summary'),
     forbiddenBlock(prompts),
     summarizeState(state),
@@ -175,7 +189,7 @@ export function buildOpenerPrompt({ stage, state, situation, prompts }) {
   const stagePrompt = stagePromptFor(prompts, stage);
   const situationBlock = situation ? `## הקשר המעבר\n${situation}` : '';
   return [
-    text(prompts, 'persona'),
+    guidelines(prompts),
     stagePrompt,
     text(prompts, 'opener'),
     situationBlock,
@@ -202,7 +216,7 @@ export function buildOpenerMessages(messages) {
 export function buildBoardPrompt({ state, prompts }) {
   const basket = `## BASKET (חלופות שנאספו)\n${JSON.stringify(state.basket ?? [])}`;
   return [
-    text(prompts, 'persona'),
+    guidelines(prompts),
     text(prompts, 'board'),
     forbiddenBlock(prompts),
     basket,

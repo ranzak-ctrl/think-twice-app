@@ -5,19 +5,22 @@ description: Export the latest Think Twice conversation transcript to Google Dri
 Export the most recent Think Twice interview transcript to Google Drive as a `.docx`. Work through these steps; do not skip the verification.
 
 ## 1. Locate the export file
-Glob `~/Downloads/think-twice-session-*.json` and pick the **most recently modified** match. This file is produced by the app's "ייצא" button and has the shape `{ exportedAt, history, state }`.
+Glob `~/Downloads/think-twice-session-*.json` and pick the **most recently modified** match. This file is produced by the app's "ייצא" button and has the shape `{ interview, app, exportedAt, history, state, … }`.
 
 - If no match exists: tell the user to click **"ייצא"** in the app first (it now exports the full transcript), then stop.
 
 ## 2. Parse it
 Read the JSON.
+- `interview` — which interview model this run was: `{ id, name, version }`. Absent in exports from before 9.10.2026; those are all Think Twice for adults.
+- `app` — which version of the app produced it: `{ version, bundle }` (`bundle` is the build's file name, the exact build).
 - `history` — the transcript: an array of `{ role, content }`, where `role` is `assistant` (the interviewer) or `user` (the interviewee).
 - `state` — the StateDocument: `meta` (currentStage, kpi, …), `decision`, `board`, `coverage`.
 
 ## 3. Build a Hebrew, right-to-left `.docx` (use the `anthropic-skills:docx` skill)
 Structure:
+- **First line, before anything else** (Ran, 9.10.2026 — the first thing on the page says which interview and which app version): `מודל ראיון: <interview.name> (<interview.id>, גרסה <interview.version>) · גרסת אפליקציה: <app.version> (<app.bundle>)`. For an export without the header: `מודל ראיון: לא נרשם (ייצוא מלפני 9.10.2026 — Think Twice למבוגרים) · גרסת אפליקציה: לא נרשמה`.
 - **Title:** `Think Twice — תמלול שיחה`
-- **Sub-line:** export date (from `exportedAt`) + שלב שהגיע: `state.meta.currentStage`/7.
+- **Sub-line:** export date (from `exportedAt`) + שלב שהגיע: `state.meta.currentStage` מתוך מספר השלבים של המודל (7 ב-Think Twice למבוגרים).
 - **Transcript** (in order): label each `assistant` turn **מראיין:** and each `user` turn **משתמש:**, with the message text after the label. Every paragraph right-to-left.
 - **לוח ההכרעה** — only if `state.board` is non-empty: a 3-column table (אפשרות | יתרון | חיסרון) from the board rows.
 - **סיכום** appendix: סוג הכרעה (`state.meta.kpi.decisionType`) and the decision package (`state.decision`) if present.

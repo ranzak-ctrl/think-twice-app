@@ -37,7 +37,13 @@
 // docs/transition-protocol.md for the slots and the transition rules.
 
 export const thinkTwiceAdult = {
+  // Who this interview is. The id is fixed: exports and code refer to it, so it
+  // never changes. The name is for people — it heads every export, and the guide's
+  // interview picker will show it (plan §2א). Ran can rename it freely. The
+  // version goes up whenever this file or the interview's texts change in a way an
+  // analysis of a run would need to know about.
   id: 'think-twice-adult',
+  name: 'עיבוד אירוע טעון — מבוגרים עם הפרעת קשב',
   version: 1,
 
   // The Router's numbers. Each is a pack decision; none is clinically validated

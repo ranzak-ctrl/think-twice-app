@@ -15,10 +15,19 @@
 // mock model and the judge scores a fixed transcript, so neither would notice two
 // stages' agents swapped.
 //
+// The interviewer's guidelines are two texts, not one: the super file every Think
+// Twice interviewer shares, and this interview's specific file, which overrides it
+// block by block (Ran, 9.10.2026). They are handed over separately because which
+// block wins — and what the super file locks or requires — is decided in code, by
+// src/core/guidelines.js, not by whoever loads the files. They replaced persona.md
+// (prompt-editor, 9.10.2026): a split with no wording change, which composes back
+// to persona.md byte for byte.
+//
 // The judge's rubric is not here: it scores an interview, it is not part of one,
 // and it stays out of the browser bundle (judge.js beside this file).
 
-import persona from '../../content/prompts/persona.md?raw';
+import guidelinesSuper from '../../content/prompts/guidelines/super.md?raw';
+import guidelinesSpecific from '../../content/prompts/guidelines/think-twice-adult.md?raw';
 import resistance from '../../content/prompts/resistance.md?raw';
 import evaluator from '../../content/prompts/evaluator.md?raw';
 import registrar from '../../content/prompts/registrar.md?raw';
@@ -35,7 +44,7 @@ import stage7 from '../../content/prompts/agents/stage7-decision.md?raw';
 import { FORBIDDEN_PATTERNS } from '../../content/forbidden.js';
 
 export const thinkTwiceAdultPrompts = {
-  persona,
+  guidelines: { super: guidelinesSuper, specific: guidelinesSpecific },
   resistance,
   evaluator,
   registrar,

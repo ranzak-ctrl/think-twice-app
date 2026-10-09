@@ -12,6 +12,8 @@ import { Logo, Plus, Download, Upload, Gauge, MapSketch } from './icons.jsx';
 import { importState } from '../core/state.js';
 // The interview — pack, texts and model adapter, composed once (interview.js).
 import { interview } from './interview.js';
+import { buildSessionExport, exportedInterviewId, interviewHeader } from './sessionExport.js';
+import { APP_VERSION } from '../adapters/appVersion.js';
 import { rewriteTurn, buildRevision } from './rewriteTurn.js';
 
 // Opening turn. Ran's wording, revised 15.8.2026: the arc now ends on the
@@ -257,7 +259,9 @@ export default function App({ onUnauthorized }) {
   const handleErrorReport = () => {
     const payload = {
       reportedAt: new Date().toISOString(),
+      interview: interviewHeader(interview.pack),
       app: {
+        version: APP_VERSION,
         bundle: bundleName(),
         userAgent: navigator.userAgent,
         href: window.location.origin,
@@ -303,14 +307,18 @@ export default function App({ onUnauthorized }) {
       mapSvg = null;
     }
 
-    const payload = {
+    // Opens with which interview and which app version (Ran, 9.10.2026).
+    const payload = buildSessionExport({
+      pack: interview.pack,
+      appVersion: APP_VERSION,
+      bundle: bundleName(),
       exportedAt: new Date().toISOString(),
       history,
       state,
       revisions,
       map,
       mapSvg,
-    };
+    });
     const json = URL.createObjectURL(
       new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
     );
@@ -331,9 +339,17 @@ export default function App({ onUnauthorized }) {
     reader.onload = (ev) => {
       try {
         const raw = ev.target.result;
+        const parsed = JSON.parse(raw);
+        // An export of another interview model cannot be loaded into this one:
+        // its stages and slots are not these. Older exports carry no header and
+        // are all Think Twice for adults, so they load as before.
+        const from = exportedInterviewId(parsed);
+        if (from && from !== interview.pack.id) {
+          alert(`הקובץ הזה הוא ייצוא של ראיון אחר (${parsed.interview.name ?? from}), ולכן אי אפשר לטעון אותו כאן.`);
+          return;
+        }
         setState(importState(raw));
         // Restore the transcript too, if the export carried it (faithful re-entry).
-        const parsed = JSON.parse(raw);
         setRevisions(Array.isArray(parsed.revisions) ? parsed.revisions : []);
         if (Array.isArray(parsed.history) && parsed.history.length) {
           setHistory(parsed.history);

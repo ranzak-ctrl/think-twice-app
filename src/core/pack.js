@@ -100,6 +100,10 @@ export function validatePack(pack) {
   }
 
   if (typeof pack.id !== 'string' || !pack.id.trim()) err('pack.id is required');
+  // Every export opens with which interview it was (Ran, 9.10.2026), so an
+  // interview without a name or a version cannot say what it is.
+  if (typeof pack.name !== 'string' || !pack.name.trim()) err('pack.name is required');
+  if (!isPosInt(pack.version)) err('pack.version must be a positive integer');
 
   const r = isObj(pack.routing) ? pack.routing : {};
   if (!(typeof r.softThreshold === 'number' && r.softThreshold > 0 && r.softThreshold <= 1)) {
@@ -203,13 +207,21 @@ export function validatePack(pack) {
 // they are used: `registrar` only while the registrar is switched on (engine.js
 // knows the switch; this module must import nothing from core), and `judge`, which
 // belongs to the acceptance harness and not to the interview (judge.js).
-export const REQUIRED_PROMPTS = ['persona', 'resistance', 'evaluator', 'summary', 'opener', 'board'];
+export const REQUIRED_PROMPTS = ['resistance', 'evaluator', 'summary', 'opener', 'board'];
 
 export function validatePrompts(pack, prompts) {
   const errors = [];
   if (!isObj(prompts)) return { ok: false, errors: ['prompts is not an object'] };
   for (const k of REQUIRED_PROMPTS) {
     if (typeof prompts[k] !== 'string' || !prompts[k].trim()) errors.push(`prompts.${k} is missing`);
+  }
+  // The interviewer's guidelines: the shared super file and this interview's own.
+  // Only the shape is checked here; how the two compose (locked and required
+  // blocks) is checked by createEngine through guidelines.js — this module imports
+  // nothing from core.
+  const g = prompts.guidelines;
+  if (!isObj(g) || typeof g.super !== 'string' || !g.super.trim() || typeof g.specific !== 'string' || !g.specific.trim()) {
+    errors.push('prompts.guidelines must be { super, specific }, both non-empty');
   }
   // At least one real line: every prompt prints this list under its own heading.
   if (
