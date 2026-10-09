@@ -39,11 +39,12 @@
 export const thinkTwiceAdult = {
   // Who this interview is. The id is fixed: exports and code refer to it, so it
   // never changes. The name is for people — it heads every export, and the guide's
-  // interview picker will show it (plan §2א). Ran can rename it freely. The
+  // interview picker will show it (plan §2א). Ran named both models on 9.10.2026:
+  // "Think Twice · אישי" for this one, "Think Twice · הורים" for the parents'. The
   // version goes up whenever this file or the interview's texts change in a way an
   // analysis of a run would need to know about.
   id: 'think-twice-adult',
-  name: 'עיבוד אירוע טעון — מבוגרים עם הפרעת קשב',
+  name: 'Think Twice · אישי',
   version: 1,
 
   // The Router's numbers. Each is a pack decision; none is clinically validated

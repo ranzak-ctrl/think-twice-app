@@ -12,9 +12,16 @@ import { Logo, Plus, Download, Upload, Gauge, MapSketch } from './icons.jsx';
 import { importState } from '../core/state.js';
 // The interview — pack, texts and model adapter, composed once (interview.js).
 import { interview } from './interview.js';
-import { buildSessionExport, exportedInterviewId, interviewHeader } from './sessionExport.js';
+import { buildSessionExport, importCompatibility, interviewHeader } from './sessionExport.js';
 import { APP_VERSION } from '../adapters/appVersion.js';
 import { rewriteTurn, buildRevision } from './rewriteTurn.js';
+
+// Why an export was not loaded — said plainly to whoever chose the file.
+const IMPORT_REFUSAL = {
+  'other-interview': (f) => `הקובץ הזה הוא ייצוא של ראיון אחר (${f.name}), ולכן אי אפשר לטעון אותו כאן.`,
+  'other-version': (f) => `הקובץ הזה נוצר בגרסה אחרת של הראיון (גרסה ${f.from}, והנוכחית ${f.current}), ולכן אי אפשר לטעון אותו.`,
+  'no-header': () => 'הקובץ הזה נוצר בגרסה ישנה של האפליקציה, ולכן אי אפשר לטעון אותו.',
+};
 
 // Opening turn. Ran's wording, revised 15.8.2026: the arc now ends on the
 // person choosing rather than on a response being arrived at, and the close
@@ -340,12 +347,11 @@ export default function App({ onUnauthorized }) {
       try {
         const raw = ev.target.result;
         const parsed = JSON.parse(raw);
-        // An export of another interview model cannot be loaded into this one:
-        // its stages and slots are not these. Older exports carry no header and
-        // are all Think Twice for adults, so they load as before.
-        const from = exportedInterviewId(parsed);
-        if (from && from !== interview.pack.id) {
-          alert(`הקובץ הזה הוא ייצוא של ראיון אחר (${parsed.interview.name ?? from}), ולכן אי אפשר לטעון אותו כאן.`);
+        // Only an export of this interview model at this version loads (Ran,
+        // 9.10.2026: old exports are not supported). See sessionExport.js.
+        const fit = importCompatibility(parsed, interview.pack);
+        if (!fit.ok) {
+          alert(IMPORT_REFUSAL[fit.reason](fit));
           return;
         }
         setState(importState(raw));
