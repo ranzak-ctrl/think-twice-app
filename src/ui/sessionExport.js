@@ -26,12 +26,6 @@ export function buildSessionExport({ pack, appVersion, bundle, exportedAt, histo
   };
 }
 
-// The interview an export came from, or null for an export from before the
-// header existed (all of those are Think Twice for adults).
-export function exportedInterviewId(parsed) {
-  const id = parsed?.interview?.id;
-  return typeof id === 'string' && id ? id : null;
-}
 
 // Whether an export can be loaded into this interview. Ran, 9.10.2026: old export
 // files are not supported — "a negligible number". So an export loads only into

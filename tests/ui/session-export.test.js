@@ -2,7 +2,7 @@
 // (Ran, 9.10.2026) — the first lines of the file, before anything else.
 
 import { describe, it, expect } from 'vitest';
-import { buildSessionExport, exportedInterviewId, interviewHeader } from '../../src/ui/sessionExport.js';
+import { buildSessionExport, interviewHeader } from '../../src/ui/sessionExport.js';
 import { thinkTwiceAdult } from '../../src/packs/think-twice-adult/pack.js';
 import { APP_VERSION } from '../../src/adapters/appVersion.js';
 
@@ -38,7 +38,7 @@ describe('session export', () => {
   });
 
   it('names the interview the export came from', () => {
-    expect(exportedInterviewId(build())).toBe('think-twice-adult');
+    expect(build().interview.id).toBe('think-twice-adult');
     expect(interviewHeader(thinkTwiceAdult)).toEqual({
       id: 'think-twice-adult',
       name: thinkTwiceAdult.name,
@@ -46,8 +46,5 @@ describe('session export', () => {
     });
   });
 
-  it('reads an export from before the header as unnamed, not as an error', () => {
-    expect(exportedInterviewId({ exportedAt: 'x', history: [], state: {} })).toBeNull();
-    expect(exportedInterviewId(null)).toBeNull();
-  });
+  // An export from before the header is refused on import — tests/ui/import-guard.test.js.
 });
