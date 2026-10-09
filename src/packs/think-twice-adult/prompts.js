@@ -9,9 +9,11 @@
 // The files themselves stay in src/content/prompts/, owned by prompt-editor; this
 // only says which file is which part of the interview. That mapping is prompt
 // content all the same — pointing a stage at a different agent changes what the
-// model reads — so a change here goes through the same gates as a change to a
-// prompt: golden scripts and the judge. The assembled prompts are pinned byte for
-// byte by tests/core/prompt-fingerprint.test.js.
+// model reads — so only prompt-editor changes this file (Ran, 9.10.2026; CLAUDE.md).
+// What catches a wrong mapping is tests/core/prompt-fingerprint.test.js, which
+// pins the assembled prompts byte for byte. The golden scripts run against the
+// mock model and the judge scores a fixed transcript, so neither would notice two
+// stages' agents swapped.
 //
 // The judge's rubric is not here: it scores an interview, it is not part of one,
 // and it stays out of the browser bundle (judge.js beside this file).

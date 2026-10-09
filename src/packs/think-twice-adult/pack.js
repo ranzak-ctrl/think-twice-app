@@ -30,7 +30,8 @@
 // Two kinds of content share this file. The labels and signposts are Natali's
 // wording. The routing numbers, `requires` and the components are the Router's
 // rules — tests/transitions/router.test.js pins every one of them, so an edit
-// here fails the matrix until the change is made on purpose.
+// here fails the matrix until the change is made on purpose. Any change to this
+// file gets router-guard's review, as a change to router.js would (Ran, 9.10.2026).
 //
 // Clinical source of truth: the "Think Twice" Drive folder, and
 // docs/transition-protocol.md for the slots and the transition rules.
