@@ -235,9 +235,9 @@ export async function runTurn(state, history, userText, deps) {
   // replaces the stored map and DERIVES the cast's slot from its clarity (overriding
   // whatever the model put in that slot). A muddled cast can't reach 2, so the
   // Router won't advance the gated stage on it. The stage and the slot are the
-  // pack's castClarity component — stage 1 and `actors` in Think Twice. Only when a
-  // map is reported — otherwise the reported slot score stands (back-compat). The
-  // code decides.
+  // pack's castClarity component — stage 1 and `actors` in Think Twice. The
+  // interviewer's map is merged only on that stage; the derivation below runs on
+  // every turn. The code decides.
   // The cast is the REGISTRAR's (applyRegistrar merges it at any stage, which is
   // what unfreezes it past the gated stage). This path stays for as long as the
   // interviewer still reports a cast too; once `actor_map` leaves evaluator.md,
