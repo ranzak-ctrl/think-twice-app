@@ -37,8 +37,8 @@ export function createState(pack = DEFAULT_PACK) {
     // instead of anyone assembling the event. `eventRecord` is what finally sits
     // in it, so the four are removed rather than left as decoys.
     eventRecord: createEventRecord(),
-    basket: [],     // alternative responses (stage 6)
-    board: [],      // decision board rows (stage 7, built from basket)
+    basket: [],     // alternative responses (the collector stage; Think Twice: 6)
+    board: [],      // decision board rows (the decision stage; Think Twice: 7), built from basket
     decision: {},   // { type, choice, rationale, package_gain, package_cost }
 
     // Gap-management (Build 1): graded consistency records keyed by target.
@@ -55,11 +55,12 @@ export function createState(pack = DEFAULT_PACK) {
     // scores, never from findings. See addFindings below.
     findings: {},
 
-    // Actor map (מפת שחקנים) — stage-1 resolved cast, keyed by id. Each entry:
+    // Actor map (מפת שחקנים) — the resolved cast, keyed by id. Each entry:
     // { label, role, relation, clear }. The model maintains one coherent cast; the
-    // CODE derives the `actors` slot score from its clarity and the Router refuses
-    // to advance stage 1 while any actor is unclear (transition-protocol §1: "מפת
-    // שחקנים — לכל דמות תפקיד ברור"). See setActorMap / deriveActorsScore below.
+    // CODE derives the cast slot's score from its clarity and the Router refuses to
+    // advance the gated stage while any actor is unclear — the pack's castClarity
+    // component, `actors` on stage 1 in Think Twice (transition-protocol §1: "מפת
+    // שחקנים — לכל דמות תפקיד ברור"). See mergeActorMap / deriveActorsScore below.
     actorMap: {},
 
     // Open forks (פיצולים לא-מוכרעים) — questions the STORY leaves open, keyed by id.
@@ -115,7 +116,7 @@ export function createState(pack = DEFAULT_PACK) {
       signals: { overflow: false, avoidance: false, flight: false, cynicism: false, contradiction: false },
       savedThreads: [],        // topics user drifted to — may contain useful info
       decisionLog: [],         // recent Router decisions (guide mode) — capped
-      mergeAttempt: null,      // stage-7 either-or: 'real' | 'avoidance' | null (transient)
+      mergeAttempt: null,      // the decision stage's either-or: 'real' | 'avoidance' | null (transient)
       awaitingConfirmation: false,
       // questionCount below which the summary is not offered again. Set when the
       // user rejects a summary, so "לתקן" buys turns to actually correct it. See
@@ -536,12 +537,14 @@ export function mergeGroups(state, reported, pack = DEFAULT_PACK) {
   return { ...state, groups: byId };
 }
 
-// ── Actor map (מפת שחקנים) — stage-1 resolved cast ──
+// ── Actor map (מפת שחקנים) — the resolved cast ──
 // The model reports DELTAS (new/changed characters this turn), not the full cast —
 // re-emitting the whole cast every turn was the main latency cost. The CODE MERGES
-// by id and derives the `actors` slot score from clarity (the gate). A character that
-// is ambiguous or contradicted (clear:false) keeps actors below 2, and the Router
-// refuses to advance stage 1 while it stands. Model proposes; the code owns the gate.
+// by id and derives the cast slot's score from clarity (the gate — the pack's
+// castClarity component; `actors` on stage 1 in Think Twice). A character that is
+// ambiguous or contradicted (clear:false) keeps that score below 2, and the Router
+// refuses to advance the gated stage while it stands. Model proposes; the code owns
+// the gate.
 export const ACTOR_ACTIONS_MAX = 12;
 
 export function mergeActorMap(state, reported) {
@@ -579,7 +582,7 @@ export function deriveActorsScore(actorMap) {
 }
 
 // True when at least one character is explicitly unclear/contradicted — the Router
-// reads this to refuse a stage-1 advance.
+// reads this to refuse to advance the stage that carries the cast gate.
 export function hasUnclearActor(actorMap) {
   return Object.values(actorMap ?? {}).some((a) => a && a.clear === false);
 }

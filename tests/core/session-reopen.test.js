@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createState } from '../../src/core/state.js';
 import { runTurn } from '../helpers/engine.js';
 import { signpostForStage } from '../../src/content/signposting.js';
+import { createEngine } from '../../src/core/engine.js';
+import { pack, prompts } from '../helpers/engine.js';
 
 // Re-open: a stage-7 "real" merge sends production back to stage 6. The reply must be
 // an anchored Re-open opener (core-assumptions §2), not the raw stage-7 probe. Offline
@@ -52,5 +54,27 @@ describe('session — Re-open opener (stage 7 → 6 merge)', () => {
   it('clears the summary-correction floor on re-open', async () => {
     const { nextState } = await runStage7Turn({ merge_attempt: 'real' });
     expect(nextState.meta.confirmationFloor).toBe(0);
+  });
+
+  // The framing the opener is written from, word for word. Its stage number comes
+  // from the pack since 10.10.2026 (the collector's position — 6 here), and the
+  // prompt fingerprints pin the opener with a fixed situation, not this one, so
+  // this is the line that would catch it drifting (router-guard F3).
+  it('frames the re-open as a return to the alternatives stage, 6', async () => {
+    const calls = [];
+    const complete = async (req) => {
+      calls.push(req);
+      if (req.mode === 'registrar') return { ok: true, raw: '{}' };
+      if (req.mode === 'opener') return { ok: true, message: 'פתיח' };
+      return { ok: true, message: 'תגובת שלב 7', evaluation: { mergeAttempt: 'real' } };
+    };
+    const engine = createEngine({ pack, prompts, complete });
+    const base = engine.createState();
+    await engine.runTurn({ ...base, meta: { ...base.meta, currentStage: 7 } }, [], 'גם וגם');
+    const opener = calls.find((c) => c.mode === 'opener');
+    expect(opener.stage).toBe(6);
+    expect(opener.systemPrompt).toContain(
+      '## הקשר המעבר\nחזרה לשלב החלופות (6): המשתמש העלה פעולת "גם וגם" ממשית וברת-ביצוע. עגן את הפתיח בפעולה שהוא העלה — הוסף אותה לסל האפשרויות והזמן אותו להמשיך לבחון חלופות. אל תתייחס לזה כסגירה.'
+    );
   });
 });

@@ -24,7 +24,8 @@ Since 8.10.2026 the Router routes by an interview pack (`docs/interview-platform
 
 **2 · The Router never delegates navigation to the user.** Exactly two user decision points exist: summary confirmation, and the decision on the pack's decision stage (Think Twice: stage 7). Any third — a menu, a "which topic next", a permission request — is a violation.
 
-**3 · The actor-map gate is code-derived.** The slot the pack's `castClarity` component names — Think Twice: `actors` on stage 1 — must be derived by `deriveActorsScore` from `actorMap` clarity (empty→0 / any `clear:false`→1 / all clear→2), in the turn loop and in the registrar alike. It must never be taken from the number the model reports. The gated stage must not advance while `hasUnclearActor` is true.
+**3 · The actor-map gate is code-derived.** The slot the pack's `castClarity` component names — Think Twice: `actors` on stage 1 — must be derived by `deriveActorsScore` from `actorMap` clarity (empty→0 / any `clear:false`→1 / all clear→2), in the turn loop and in the registrar alike. It must never be taken from the number the model reports once a cast exists. The gated stage must not advance while `hasUnclearActor` is true.
+  One exception stands in the code, and it is open (10.10.2026): while no cast has been reported at all — `actorMap` empty and no `actor_map` this turn — the model's own number for that slot stands (the back-compat case pinned in `tests/core/session-actors.test.js`). CLAUDE.md's rule reads "ריק→0". Deriving 0 there would stall a story with no other character in stage 1 until the load guard, so which is right is a clinical question, filed for Natali. Until it is decided, report any change to that exception as a finding.
 
 **4 · Slot scale integrity.** Values are `0 | 1 | 2 | 'U'`. `U` is a legitimate terminal value and must count as satisfied, never as missing. Cross-stage capture seeds a later stage's slot to `1` — never `2`.
 

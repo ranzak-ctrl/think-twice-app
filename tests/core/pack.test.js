@@ -148,6 +148,23 @@ describe('what slice 3 lifted, and what it validates instead', () => {
   it('a map is optional', () => {
     expect(broken((p) => { delete p.map; }).ok).toBe(true);
   });
+
+  // router-guard F1/F2, 10.10.2026 — what lifting the limits let through.
+  it('a cast gate on the decision stage, which never reads the cast', () => fails((p) => {
+    p.stages[0].components = [];
+    p.stages[6].components.push({ type: 'castClarity', slot: 'sharp_decision' });
+  }, 'castClarity cannot sit on the decision stage'));
+  it('one component listed twice on a stage', () => fails((p) => {
+    p.stages[0].components.push({ type: 'castClarity', slot: 'trigger' });
+  }, '"castClarity" is listed twice'));
+  // The closed fields. A typo here fails silently, and in `barred` that is the
+  // wound drawn on the person's screen.
+  it('a misspelled barred flag', () => fails((p) => { p.stages[1].slots[2] = { id: 'wound', bared: true }; }, 'unknown field "bared"'));
+  it('a misspelled dependency', () => fails((p) => { p.stages[4].require = p.stages[4].requires; delete p.stages[4].requires; }, 'unknown field "require"'));
+  it('a field a component does not take', () => fails((p) => { p.stages[5].components[0].slot = 'alternatives'; }, 'collector has an unknown field "slot"'));
+  it('a misspelled routing number', () => fails((p) => { p.routing.saturationLimt = 3; }, 'unknown field "saturationLimt"'));
+  it('a misspelled map field', () => fails((p) => { p.map.timelime = p.map.timeline; }, 'unknown field "timelime"'));
+  it('an unknown field at the top', () => fails((p) => { p.mapp = p.map; }, 'pack: unknown field "mapp"'));
 });
 
 // Think Twice's own rules, written by hand. The flags, the cast gate, the intensity

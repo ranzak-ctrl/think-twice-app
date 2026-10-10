@@ -163,6 +163,22 @@ const isPosInt = (v) => Number.isInteger(v) && v >= 1;
 const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const isGuard = (v) => isPosInt(v) && v <= LOAD_GUARD_MAX;
 
+// THE FIELDS ARE CLOSED. A field the engine does not read is an error, not an
+// extra: the realistic one is a typo, and a typo in this file fails silently —
+// `bared: true` leaves a slot unbarred and the wound on the person's screen,
+// `require` drops a dependency (router-guard F2, 10.10.2026). A new field is an
+// engine change, so it is added here on purpose.
+const FIELDS = {
+  pack: ['id', 'name', 'version', 'routing', 'stages', 'map'],
+  routing: ['softThreshold', 'saturationLimit', 'loadGuard', 'rejectGrace'],
+  stage: ['key', 'name', 'label', 'signpost', 'slots', 'requires', 'loadGuard', 'components'],
+  slot: ['id', ...SLOT_FLAGS],
+  map: ['narrative', 'timeline'],
+  mapRow: ['kind', 'slots'],
+};
+const COMPONENT_FIELDS = { castClarity: ['type', 'slot'], collector: ['type'], decision: ['type'], intensity: ['type'] };
+const unknownFields = (obj, allowed) => Object.keys(obj).filter((k) => !allowed.includes(k));
+
 export function validatePack(pack) {
   const errors = [];
   const limits = [];
@@ -184,6 +200,7 @@ export function validatePack(pack) {
     err('pack must be plain data — it does not serialise');
   }
 
+  for (const k of unknownFields(pack, FIELDS.pack)) err(`pack: unknown field "${k}"`);
   if (typeof pack.id !== 'string' || !pack.id.trim()) err('pack.id is required');
   // Every export opens with which interview it was (Ran, 9.10.2026), so an
   // interview without a name or a version cannot say what it is.
@@ -191,6 +208,7 @@ export function validatePack(pack) {
   if (!isPosInt(pack.version)) err('pack.version must be a positive integer');
 
   const r = isObj(pack.routing) ? pack.routing : {};
+  for (const k of unknownFields(r, FIELDS.routing)) err(`routing: unknown field "${k}"`);
   if (!(typeof r.softThreshold === 'number' && r.softThreshold > 0 && r.softThreshold <= 1)) {
     err('routing.softThreshold must be a number in (0, 1]');
   }
@@ -214,6 +232,7 @@ export function validatePack(pack) {
   stages.forEach((stage, i) => {
     const n = i + 1;
     const where = `stage ${n}`;
+    for (const k of unknownFields(stage, FIELDS.stage)) err(`${where}: unknown field "${k}"`);
     if (stage.key !== stageKey(n)) err(`${where}: key must be "${stageKey(n)}" (keys follow order)`);
     if (typeof stage.label !== 'string' || !stage.label.trim()) err(`${where}: label is required`);
     if (stage.name !== undefined && (typeof stage.name !== 'string' || !stage.name.trim())) {
@@ -233,6 +252,9 @@ export function validatePack(pack) {
     }
     const ids = Array.isArray(stage.slots) ? stage.slots.filter(isObj).map((s) => s.id) : [];
     for (const s of Array.isArray(stage.slots) ? stage.slots.filter(isObj) : []) {
+      for (const k of unknownFields(s, FIELDS.slot)) {
+        err(`${where}: slot "${s.id}" has an unknown field "${k}" — a slot carries only ${FIELDS.slot.join(', ')}`);
+      }
       for (const flag of SLOT_FLAGS) {
         if (s[flag] !== undefined && typeof s[flag] !== 'boolean') err(`${where}: slot "${s.id}" — ${flag} must be true or false`);
       }
@@ -250,15 +272,28 @@ export function validatePack(pack) {
     if (stage.components !== undefined && !Array.isArray(stage.components)) {
       err(`${where}: components must be a list`);
     }
+    const listed = new Set();
     for (const c of Array.isArray(stage.components) ? stage.components : []) {
       if (!isObj(c) || !COMPONENT_TYPES.has(c.type)) {
         err(`${where}: unknown component "${isObj(c) ? c.type : c}"`);
         continue;
       }
+      // The engine reads the first of a type (componentOf), so a second is ignored
+      // in silence — two cast gates on one stage would gate on only one of them.
+      if (listed.has(c.type)) err(`${where}: "${c.type}" is listed twice`);
+      listed.add(c.type);
+      for (const k of unknownFields(c, COMPONENT_FIELDS[c.type])) err(`${where}: ${c.type} has an unknown field "${k}"`);
       if (c.type === 'castClarity' && !ids.includes(c.slot)) err(`${where}: castClarity.slot must be one of this stage's slots`);
       if (c.type === 'decision') {
         for (const s of DECISION_SLOTS) if (!ids.includes(s)) err(`${where}: the decision component needs slot "${s}"`);
       }
+    }
+    // The decision stage routes by its own rules (board, sharpness, close) and the
+    // Router returns before it reads the cast, so a cast gate there would never
+    // gate — and deriving a decision slot from the cast would let the cast close
+    // the session (router-guard F1, 10.10.2026).
+    if (hasComponent(stage, 'castClarity') && hasComponent(stage, 'decision')) {
+      err(`${where}: castClarity cannot sit on the decision stage — the decision never reads the cast`);
     }
   });
 
@@ -322,6 +357,7 @@ function validateMap(pack, err) {
     return true;
   };
 
+  for (const k of unknownFields(pack.map, FIELDS.map)) err(`map: unknown field "${k}"`);
   const { narrative, timeline } = pack.map;
   if (narrative !== undefined && !Array.isArray(narrative)) err('map.narrative must be a list');
   const seen = new Set();
@@ -331,6 +367,7 @@ function validateMap(pack, err) {
       err(`${at}: kind must be one of ${[...MAP_KINDS].join(', ')}`);
       return;
     }
+    for (const k of unknownFields(row, FIELDS.mapRow)) err(`${at}: unknown field "${k}"`);
     if (!Array.isArray(row.slots) || !row.slots.length) {
       err(`${at}: slots must list at least one slot`);
       return;
