@@ -17,9 +17,15 @@ import { createEngine } from '../core/engine.js';
 import { complete } from '../adapters/model.js';
 import { thinkTwiceAdult } from '../packs/think-twice-adult/pack.js';
 import { thinkTwiceAdultPrompts } from '../packs/think-twice-adult/prompts.js';
+import { thinkTwiceAdultMigrations } from '../packs/think-twice-adult/migrations.js';
 
 export const interview = createEngine({
   pack: thinkTwiceAdult,
   prompts: thinkTwiceAdultPrompts,
   complete,
 });
+
+// How a person's interview file from an earlier version of this interview is
+// brought up to this one (sessionExport.js, upgradeSession). Chosen with the
+// interview, in the same place, so the two can never belong to different packs.
+export const interviewMigrations = thinkTwiceAdultMigrations;

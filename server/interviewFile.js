@@ -28,7 +28,7 @@
 // `data` is AES-256-GCM over the gzip of the payload's JSON. The header is bound
 // as additional authenticated data, so changing any field of it fails the open.
 // `v` is the ENVELOPE version — how the bytes are wrapped. What is inside, and its
-// own backward compatibility, is the client's (src/ui/interviewFile.js).
+// own backward compatibility, is the client's (src/ui/sessionExport.js).
 
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 import { gzipSync, gunzipSync } from 'node:zlib';

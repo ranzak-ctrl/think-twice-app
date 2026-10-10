@@ -1,0 +1,210 @@
+{
+  "interview": {
+    "id": "think-twice-adult",
+    "name": "Think Twice · אישי",
+    "version": 1
+  },
+  "app": {
+    "version": "0.0.0-fixture",
+    "bundle": null
+  },
+  "format": 1,
+  "exportedAt": "2026-10-10T12:00:00.000Z",
+  "history": [
+    {
+      "role": "assistant",
+      "content": "אז ספר לי — מה קרה?",
+      "at": 1760000000000
+    },
+    {
+      "role": "user",
+      "content": "קניתי בשר לא איכותי בשוק, והאורחים כבר היו בדרך.",
+      "at": 1760000060000
+    },
+    {
+      "role": "assistant",
+      "content": "ספר לי — מה קרה?",
+      "at": 1760000065000
+    },
+    {
+      "role": "user",
+      "content": "בעלי אמר שזה תמיד קורה לי.",
+      "at": 1760000120000
+    },
+    {
+      "role": "assistant",
+      "content": "מי עוד היה שם באותו רגע?",
+      "at": 1760000125000
+    },
+    {
+      "role": "user",
+      "content": "הרגשתי שאני לא מסוגלת לעשות שום דבר כמו שצריך.",
+      "at": 1760000180000
+    },
+    {
+      "role": "assistant",
+      "content": "ומה קרה מיד אחרי?",
+      "at": 1760000185000
+    }
+  ],
+  "state": {
+    "eventRecord": {
+      "setting": {
+        "place": "",
+        "time": "",
+        "precedent": "",
+        "conditions": []
+      },
+      "beats": {},
+      "stances": {},
+      "emotions": {}
+    },
+    "basket": [],
+    "board": [],
+    "decision": {},
+    "gaps": {
+      "byTarget": {},
+      "log": []
+    },
+    "coverage": {
+      "stage1": {
+        "trigger": 2,
+        "timeline": 1,
+        "actors": 2,
+        "status": 1,
+        "auto_reaction": 0
+      },
+      "stage2": {
+        "causal": 0,
+        "meaning": 0,
+        "wound": 0,
+        "adhd_pattern": 0
+      },
+      "stage3": {
+        "emotion": 0,
+        "intensity": 0,
+        "past_echo": 0
+      },
+      "stage4": {
+        "auto_reaction": 0,
+        "planned_reaction": 0
+      },
+      "stage5": {
+        "perspective": 0,
+        "intention": 0,
+        "alt_formulation": 0,
+        "re_emotion": 0
+      },
+      "stage6": {
+        "alternatives": 0,
+        "zero_action": 0,
+        "alt_from_transform": 0
+      },
+      "stage7": {
+        "goal": 0,
+        "board_presented": 0,
+        "sharp_decision": 0,
+        "package_test": 0
+      }
+    },
+    "findings": {
+      "stage1": {
+        "trigger": [
+          "הבשר שהזמנת הגיע למטבח"
+        ],
+        "timeline": [
+          "בתחילת המשמרת, כשהמשלוח הגיע"
+        ],
+        "status": [
+          "יצאת מהמשמרת באמצע"
+        ]
+      }
+    },
+    "actorMap": {
+      "user": {
+        "label": "המשתמש",
+        "role": "הטבח שקיבל את הבשר",
+        "relation": "עצמו",
+        "clear": true,
+        "actions": [
+          "קיבל את משלוח הבשר",
+          "עזב את המשמרת באמצע"
+        ]
+      },
+      "manager": {
+        "label": "הממונה",
+        "role": "אמר שהבשר לא איכותי",
+        "relation": "הבוס במטבח",
+        "clear": true,
+        "actions": [
+          "אמר שהבשר לא איכותי"
+        ]
+      }
+    },
+    "openForks": {},
+    "mapLabels": {
+      "stage1": {
+        "trigger": "הבשר הגיע",
+        "timeline": "תחילת המשמרת",
+        "status": "יצאת באמצע"
+      }
+    },
+    "edges": {},
+    "nodes": {},
+    "groups": {},
+    "meta": {
+      "currentStage": 1,
+      "questionCount": 3,
+      "saturationCount": 0,
+      "questionAperture": "open",
+      "resistanceFlag": null,
+      "signals": {
+        "overflow": false,
+        "avoidance": false,
+        "flight": false,
+        "cynicism": false,
+        "contradiction": false
+      },
+      "savedThreads": [],
+      "decisionLog": [
+        {
+          "decision": "stay",
+          "reason": "",
+          "stage": 1
+        },
+        {
+          "decision": "stay",
+          "reason": "",
+          "stage": 1
+        },
+        {
+          "decision": "stay",
+          "reason": "",
+          "stage": 1
+        }
+      ],
+      "mergeAttempt": null,
+      "awaitingConfirmation": false,
+      "confirmationFloor": 0,
+      "safetyFlag": false,
+      "sessionComplete": false,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheWriteTokens": 0,
+        "cacheReadTokens": 0,
+        "calls": 0
+      },
+      "kpi": {
+        "emotionIntensityStage3": null,
+        "emotionIntensityStage5": null,
+        "decisionType": null,
+        "differsFromAutomatic": null,
+        "selfRefs": 3,
+        "otherRefs": 0,
+        "questionsPerStage": {}
+      }
+    }
+  },
+  "revisions": []
+}
