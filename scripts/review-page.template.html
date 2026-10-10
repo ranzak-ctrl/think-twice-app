@@ -1,0 +1,493 @@
+<title>%%TITLE%%</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&family=Secular+One&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
+<style>
+/* Layout: a review desk — the file list on the start (right) side, the open file beside it, its proposals under it. */
+:root {
+  --bg: #f2f4f7;
+  --surface: #ffffff;
+  --ink: #141b26;
+  --muted: #586276;
+  --line: #d6dce6;
+  --accent: %%ACCENT%%;
+  --accent-ink: #ffffff;
+  --accent-soft: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  --add: #dff3e6; --add-ink: #145c34;
+  --del: #fbe2e3; --del-ink: #8f1d24;
+  --open: #a35a06; --open-soft: #fbefdb;
+  --done: #1d7a4e; --done-soft: #dcf1e6;
+  --no: #8f1d24; --no-soft: #fbe2e3;
+  --code-bg: #eef1f6;
+  --font-display: "Secular One", "IBM Plex Sans Hebrew", "Arial Hebrew", "Noto Sans Hebrew", sans-serif;
+  --font-body: "IBM Plex Sans Hebrew", "Assistant", "Arial Hebrew", "Noto Sans Hebrew", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141d; --surface: #161d29; --ink: #e3e8f1; --muted: #9ba6ba; --line: #283244;
+    --accent: %%ACCENT_DARK%%; --accent-ink: #0f141d;
+    --add: #113222; --add-ink: #7fe0a8; --del: #3a1619; --del-ink: #ff9aa1;
+    --open: #f0aa58; --open-soft: #33240f; --done: #5fd39a; --done-soft: #12301f; --no: #ff9aa1; --no-soft: #3a1619;
+    --code-bg: #1e2635; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141d; --surface: #161d29; --ink: #e3e8f1; --muted: #9ba6ba; --line: #283244;
+  --accent: %%ACCENT_DARK%%; --accent-ink: #0f141d;
+  --add: #113222; --add-ink: #7fe0a8; --del: #3a1619; --del-ink: #ff9aa1;
+  --open: #f0aa58; --open-soft: #33240f; --done: #5fd39a; --done-soft: #12301f; --no: #ff9aa1; --no-soft: #3a1619;
+  --code-bg: #1e2635; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15.5px/1.65 var(--font-body); }
+.page { direction: rtl; max-width: 1380px; margin-inline: auto; padding-inline: 16px; padding-block: 22px 60px; display: grid; gap: 18px; }
+
+header { display: grid; gap: 10px; }
+.eyebrow { margin: 0; color: var(--accent); font-weight: 600; font-size: .9rem; }
+h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(1.8rem, 1.3rem + 2vw, 2.6rem); line-height: 1.15; }
+.lede { margin: 0; max-width: 75ch; }
+.how { margin: 0; max-width: 92ch; padding: 10px 14px; border-radius: 10px; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent); font-size: .93rem; }
+.meta { margin: 0; color: var(--muted); font-size: .85rem; }
+.models { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: inherit; font-size: .9rem; padding: 5px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.chip.notready { border-style: dashed; color: var(--muted); }
+
+.tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.tab { font: inherit; padding: 8px 14px; border: 0; border-bottom: 3px solid transparent; background: none; color: var(--muted); cursor: pointer; font-weight: 600; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.count { display: inline-block; min-width: 1.5em; padding: 0 6px; margin-inline-start: 4px; border-radius: 999px; background: var(--open-soft); color: var(--open); font-size: .8rem; text-align: center; font-variant-numeric: tabular-nums; }
+
+.desk { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (min-width: 960px) { .desk { grid-template-columns: 290px minmax(0, 1fr); } .filelist { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); max-height: calc(100vh - 24px) !important; } }
+.filelist { min-width: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px; overflow: auto; max-height: 42vh; display: grid; gap: 10px; align-content: start; }
+.group h2 { margin: 2px 6px 4px; font-size: .8rem; color: var(--muted); font-weight: 600; letter-spacing: .02em; }
+.group ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.file { width: 100%; text-align: start; font: inherit; font-size: .9rem; line-height: 1.35; padding: 6px 8px; border: 0; border-radius: 7px; background: none; color: var(--ink); cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
+.file:hover { background: var(--accent-soft); }
+.file[aria-current="true"] { background: var(--accent); color: var(--accent-ink); }
+.file small { opacity: .75; }
+
+.panel { min-width: 0; display: grid; gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; gap: 10px; min-width: 0; }
+.filehead h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.45rem; line-height: 1.25; }
+.facts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px 14px; margin: 0; font-size: .9rem; }
+@media (min-width: 640px) { .facts { grid-template-columns: 8.5em minmax(0, 1fr); } }
+.facts dt { color: var(--muted); font-weight: 600; }
+.facts dd { margin: 0; min-width: 0; }
+code { font-family: var(--font-mono); font-size: .86em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; direction: ltr; unicode-bidi: isolate; }
+
+.modes { display: flex; gap: 6px; flex-wrap: wrap; }
+.mode { font: inherit; font-size: .9rem; padding: 5px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.mode[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+
+.doc { min-width: 0; overflow-wrap: anywhere; }
+.doc h1, .doc h2, .doc h3, .doc h4 { line-height: 1.3; margin: 1.1em 0 .4em; font-family: var(--font-body); }
+.doc h1 { font-size: 1.35rem; } .doc h2 { font-size: 1.18rem; } .doc h3 { font-size: 1.05rem; }
+.doc p, .doc li { max-width: 80ch; }
+.doc pre { background: var(--code-bg); padding: 10px 12px; border-radius: 8px; overflow-x: auto; direction: ltr; text-align: left; }
+.doc pre code { background: none; padding: 0; }
+.doc table { border-collapse: collapse; display: block; overflow-x: auto; max-width: 100%; }
+.doc th, .doc td { border: 1px solid var(--line); padding: 5px 8px; text-align: start; vertical-align: top; }
+.doc blockquote { margin: 0; padding-inline-start: 12px; border-inline-start: 3px solid var(--line); color: var(--muted); }
+.mdnote { margin: 10px 0; padding: 8px 12px; border-radius: 8px; background: var(--open-soft); font-size: .88rem; }
+.mdnote pre { margin: 4px 0 0; white-space: pre-wrap; background: none; padding: 0; direction: rtl; text-align: start; font-family: var(--font-body); }
+
+.code { margin: 0; background: var(--code-bg); border-radius: 8px; padding: 10px 0; overflow-x: auto; direction: ltr; text-align: left; font: 13px/1.55 var(--font-mono); counter-reset: ln; }
+.code span { display: block; padding-inline: 12px 16px; white-space: pre; }
+.code span::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 3.2em; margin-inline-end: 12px; color: var(--muted); text-align: right; user-select: none; }
+
+textarea { width: 100%; font: inherit; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; resize: vertical; }
+textarea.body { min-height: 55vh; line-height: 1.6; }
+textarea.body.code-edit { font: 13px/1.55 var(--font-mono); direction: ltr; text-align: left; }
+textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+label { font-weight: 600; font-size: .9rem; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { font: inherit; font-size: .92rem; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.hint { color: var(--muted); font-size: .86rem; margin: 0; }
+.toast { padding: 8px 12px; border-radius: 8px; background: var(--done-soft); color: var(--done); font-size: .9rem; }
+.toast.err { background: var(--no-soft); color: var(--no); }
+
+.diff { margin: 0; border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; font: 13px/1.5 var(--font-mono); }
+.diff div { white-space: pre-wrap; padding: 1px 10px; overflow-wrap: anywhere; }
+.diff .add { background: var(--add); color: var(--add-ink); }
+.diff .del { background: var(--del); color: var(--del-ink); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--del-ink) 40%, transparent); }
+.diff .gap { color: var(--muted); background: var(--code-bg); text-align: center; }
+.diff .ctx { color: var(--muted); }
+.diff .sign { display: inline-block; width: 1.2em; }
+
+.props { display: grid; gap: 8px; }
+.prop { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; display: grid; gap: 6px; background: var(--surface); }
+.prop .top { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; font-size: .88rem; color: var(--muted); }
+.prop .note { white-space: pre-wrap; margin: 0; }
+.pill { font-size: .78rem; font-weight: 600; padding: 1px 9px; border-radius: 999px; }
+.pill.open { background: var(--open-soft); color: var(--open); }
+.pill.applied { background: var(--done-soft); color: var(--done); }
+.pill.rejected, .pill.withdrawn { background: var(--no-soft); color: var(--no); }
+.linkish { font: inherit; background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; text-decoration: underline; }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+table.pack { border-collapse: collapse; width: 100%; font-size: .88rem; }
+table.pack th, table.pack td { border-bottom: 1px solid var(--line); padding: 7px 10px; text-align: start; vertical-align: top; }
+table.pack th { background: var(--accent-soft); white-space: nowrap; }
+.slot { display: inline-block; margin: 1px 0; padding: 0 7px; border-radius: 6px; background: var(--code-bg); font-family: var(--font-mono); font-size: .82rem; direction: ltr; }
+.slot.barred { background: var(--no-soft); color: var(--no); }
+.pack-meta, .pack-note { margin: 0; font-size: .9rem; }
+.pack-note { color: var(--muted); }
+footer { color: var(--muted); font-size: .82rem; }
+@media (prefers-reduced-motion: no-preference) { .file, .btn, .chip { transition: background-color .12s ease; } }
+</style>
+
+<div class="page">
+  <header>
+    <p class="eyebrow" id="eyebrow"></p>
+    <h1 id="title"></h1>
+    <p class="lede" id="lede"></p>
+    <p class="how"><b>איך זה עובד:</b> עריכה כאן לא משנה את האפליקציה. כל שינוי, או הערה, נשמר כ<b>הצעה</b>. ‏Claude מעביר כל הצעה בדרך הרגילה — טקסטים דרך <code>prompt-editor</code>, מבנה עם <code>router-guard</code>, ואז הבדיקות — ומסמן כאן מה נעשה בה. כשיש הצעות פתוחות, אמרו ל-Claude "תחיל את ההצעות".</p>
+    <div class="models" id="models" hidden></div>
+    <p class="meta" id="meta"></p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-files" aria-selected="true">קבצים</button>
+    <button class="tab" role="tab" id="tab-props" aria-selected="false">כל ההצעות <span class="count" id="open-count">0</span></button>
+  </div>
+
+  <div class="desk" id="view-files">
+    <nav class="filelist" id="filelist" aria-label="קבצים"></nav>
+    <div class="panel" id="panel"></div>
+  </div>
+
+  <div class="panel" id="view-props" hidden></div>
+
+  <footer id="footer"></footer>
+</div>
+
+<script type="application/json" id="data">%%DATA%%</script>
+<script>
+(() => {
+  const DATA = JSON.parse(document.getElementById('data').textContent);
+  const FILES = DATA.groups.flatMap((g) => g.files.map((f) => ({ ...f, group: g.name })));
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  // Inline `code` and **bold** in the short fixed texts (roles, gates).
+  const inline = (s) => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+
+  const state = {
+    file: 0,
+    mode: 'read',
+    drafts: {},
+    notes: {},
+    model: DATA.models ? DATA.models[0].id : null,
+    proposals: [],
+    db: null,
+    user: null,
+    meId: null,
+    names: {},
+    readOnly: false,
+    storeState: 'connecting', // connecting | ready | absent
+    toast: null,
+    openDiff: null,
+  };
+
+  // ── Markdown, with the file's own comments shown rather than hidden ──
+  let mdReady = false;
+  function setupMarked() {
+    if (!window.marked || mdReady) return;
+    const renderer = new window.marked.Renderer();
+    renderer.html = (html) => {
+      const t = typeof html === 'string' ? html : html?.text ?? '';
+      const m = /^\s*<!--([\s\S]*?)-->\s*$/.exec(t);
+      if (m) return `<aside class="mdnote"><b>הערה בתוך הקובץ</b><pre>${esc(m[1].trim())}</pre></aside>`;
+      return esc(t); // tags in a prompt are text to read, not markup to run
+    };
+    window.marked.setOptions({ renderer, headerIds: false, mangle: false });
+    mdReady = true;
+  }
+  const md = (text) => {
+    setupMarked();
+    try {
+      if (mdReady) return window.marked.parse(text);
+    } catch { /* fall through */ }
+    return `<pre style="white-space:pre-wrap">${esc(text)}</pre>`;
+  };
+  const codeView = (text) => `<pre class="code">${text.split('\n').map((l) => `<span>${esc(l) || ' '}</span>`).join('')}</pre>`;
+
+  // ── A line diff (LCS), shown as changed lines with a little context ──
+  function lineDiff(a, b) {
+    const A = a.split('\n'), B = b.split('\n');
+    const n = A.length, m = B.length;
+    const W = m + 1;
+    const L = new Uint32Array((n + 1) * W);
+    for (let i = n - 1; i >= 0; i--) for (let j = m - 1; j >= 0; j--)
+      L[i * W + j] = A[i] === B[j] ? L[(i + 1) * W + j + 1] + 1 : Math.max(L[(i + 1) * W + j], L[i * W + j + 1]);
+    const out = [];
+    let i = 0, j = 0;
+    while (i < n && j < m) {
+      if (A[i] === B[j]) { out.push([' ', A[i]]); i++; j++; }
+      else if (L[(i + 1) * W + j] >= L[i * W + j + 1]) out.push(['-', A[i++]]);
+      else out.push(['+', B[j++]]);
+    }
+    while (i < n) out.push(['-', A[i++]]);
+    while (j < m) out.push(['+', B[j++]]);
+    return out;
+  }
+  function diffView(a, b) {
+    const d = lineDiff(a, b);
+    const changed = d.map((x) => x[0] !== ' ');
+    if (!changed.some(Boolean)) return '<p class="hint">אין הבדל מהקובץ.</p>';
+    const keep = d.map((_, k) => changed.slice(Math.max(0, k - 3), k + 4).some(Boolean));
+    let html = '', skipped = false;
+    d.forEach(([t, s], k) => {
+      if (!keep[k]) { skipped = true; return; }
+      if (skipped) { html += '<div class="gap">⋯</div>'; skipped = false; }
+      const cls = t === '+' ? 'add' : t === '-' ? 'del' : 'ctx';
+      html += `<div class="${cls}" dir="auto"><span class="sign">${t === ' ' ? '' : t}</span>${esc(s) || ' '}</div>`;
+    });
+    return `<div class="diff">${html}</div>`;
+  }
+  const changedLines = (a, b) => lineDiff(a, b).filter((x) => x[0] !== ' ').length;
+
+  // ── Proposals ──
+  const STATUS = { open: ['open', 'פתוחה'], applied: ['applied', 'הוחלה'], rejected: ['rejected', 'לא הוחלה'], withdrawn: ['withdrawn', 'בוטלה'] };
+  const when = (iso) => { try { return new Date(iso).toLocaleString('he-IL', { dateStyle: 'short', timeStyle: 'short' }); } catch { return ''; } };
+  const who = (id) => (id && id === state.meId ? 'שלך' : state.names[id] || 'מישהו');
+
+  function propCard(p, withFile) {
+    const [cls, label] = STATUS[p.status] || STATUS.open;
+    const f = FILES.find((x) => x.path === p.file);
+    const stale = f && p.baseHash && p.baseHash !== f.hash;
+    const fileBit = withFile
+      ? (f ? `<button class="linkish" data-goto="${esc(f.path)}">${esc(f.title)}</button>` : `<span>${p.model ? 'הערה כללית · ' + esc(modelName(p.model)) : 'הערה כללית'}</span>`)
+      : '';
+    const showDiff = p.kind === 'edit' && p.text != null && f;
+    return `<div class="prop">
+      <div class="top"><span class="pill ${cls}">${label}</span>${fileBit}<span>${p.kind === 'edit' ? 'שינוי בקובץ' : 'הערה'}</span><span>${esc(who(p.by))}</span><span>${esc(when(p.at))}</span>${stale ? '<span>· הקובץ השתנה מאז ההצעה</span>' : ''}</div>
+      ${p.note ? `<p class="note" dir="auto">${esc(p.note)}</p>` : ''}
+      ${p.resolution ? `<p class="hint">${esc(p.resolution)}</p>` : ''}
+      <div class="row">
+        ${showDiff ? `<button class="linkish" data-diff="${esc(p._id)}">${state.openDiff === p._id ? 'הסתרת השינוי' : 'הצגת השינוי'}</button>` : ''}
+        ${p.status === 'open' && p.by === state.meId && !state.readOnly ? `<button class="linkish" data-withdraw="${esc(p._id)}">ביטול ההצעה</button>` : ''}
+      </div>
+      ${showDiff && state.openDiff === p._id ? diffView(f.text, p.text) : ''}
+    </div>`;
+  }
+  const modelName = (id) => DATA.models?.find((m) => m.id === id)?.name ?? id;
+
+  async function save(body) {
+    if (!state.db) return false;
+    try {
+      await state.db.collection('proposals').add({ ...body, by: state.meId, at: new Date().toISOString(), status: 'open', resolution: '' });
+      state.toast = ['ההצעה נשמרה. Claude יעבור עליה ויסמן כאן מה נעשה בה.', false];
+      return true;
+    } catch (e) {
+      if (e?.code === 'invalid_argument') { state.readOnly = true; state.toast = ['אין לך הרשאה לשמור הצעות בעמוד הזה. אפשר לקרוא הכול.', true]; }
+      else if (e?.code === 'quota_exceeded') state.toast = ['המקום להצעות התמלא. בקשו מ-Claude לנקות הצעות ישנות.', true];
+      else state.toast = ['השמירה לא הצליחה. נסו שוב בעוד רגע.', true];
+      return false;
+    }
+  }
+
+  // ── Render ──
+  function renderHeader() {
+    $('eyebrow').textContent = `Think Twice · סקירה לפני עלייה לאוויר · ${DATA.built}`;
+    $('title').textContent = DATA.title;
+    $('lede').textContent = DATA.lede;
+    $('meta').innerHTML = `הקבצים כפי שהם בענף <code>${esc(DATA.branch)}</code>, קומיט <code>${esc(DATA.head)}</code>. ${FILES.length} קבצים.`;
+    $('footer').textContent = 'נבנה מהריפו על ידי scripts/build-review-pages.mjs. כשהקבצים משתנים, Claude בונה ומפרסם את העמוד מחדש; ההצעות נשמרות.';
+    if (DATA.models) {
+      const box = $('models');
+      box.hidden = false;
+      box.innerHTML = DATA.models.map((m) => `<button class="chip${m.ready ? '' : ' notready'}" data-model="${esc(m.id)}" aria-pressed="${state.model === m.id}">${esc(m.name)}${m.ready ? '' : ' · עוד לא נבנה'}</button>`).join('');
+    }
+  }
+
+  function renderList() {
+    const off = DATA.models && !DATA.models.find((m) => m.id === state.model)?.ready;
+    let k = 0;
+    $('filelist').innerHTML = DATA.groups.map((g) => `<div class="group"><h2>${esc(g.name)}</h2><ul>${g.files.map((f) => {
+      const idx = k++;
+      const open = state.proposals.filter((p) => p.file === f.path && p.status === 'open').length;
+      const dirty = state.drafts[f.path] != null && state.drafts[f.path] !== f.text;
+      return `<li><button class="file" data-file="${idx}" aria-current="${!off && idx === state.file}"${off ? ' disabled' : ''}><span>${esc(f.title)}${dirty ? ' •' : ''}</span>${open ? `<small>${open} פתוחות</small>` : ''}</button></li>`;
+    }).join('')}</ul></div>`).join('');
+  }
+
+  function noteForm(key, placeholder) {
+    const can = state.db && !state.readOnly;
+    return `<div class="card"><label for="note-${esc(key)}">הערה כללית</label>
+      <textarea id="note-${esc(key)}" data-notekey="${esc(key)}" rows="4" dir="auto" placeholder="${esc(placeholder)}">${esc(state.notes[key] ?? '')}</textarea>
+      <div class="row"><button class="btn primary" data-savenote="${esc(key)}"${can ? '' : ' disabled'}>שמירת ההערה</button>${can ? '' : `<span class="hint">${storeHint()}</span>`}</div></div>`;
+  }
+  const storeHint = () => state.storeState === 'connecting' ? 'מתחבר לשמירה…' : state.readOnly ? 'אפשר לקרוא בלבד.' : 'השמירה לא זמינה בתצוגה הזו. אפשר לקרוא הכול.';
+
+  function renderPanel() {
+    const panel = $('panel');
+    const model = DATA.models?.find((m) => m.id === state.model);
+    if (model && !model.ready) {
+      const props = state.proposals.filter((p) => p.model === model.id).map((p) => propCard(p, false)).join('');
+      panel.innerHTML = `<div class="card"><h2 style="margin:0;font-family:var(--font-display);font-weight:400">${esc(model.name)}</h2><p>${esc(model.why)}</p></div>
+        ${noteForm(model.id, 'למשל: מה השתנה במודל של נטלי, מה לבדוק כשהוא מגיע')}
+        ${props ? `<div class="props">${props}</div>` : ''}`;
+      return;
+    }
+    const f = FILES[state.file];
+    const draft = state.drafts[f.path] ?? f.text;
+    const dirty = draft !== f.text;
+    const can = state.db && !state.readOnly;
+    const modes = [['read', 'קריאה'], ['edit', 'עריכה'], ['diff', `השינויים שלי${dirty ? ' (' + changedLines(f.text, draft) + ')' : ''}`]];
+    if (f.structured) modes.unshift(['table', 'המבנה כטבלה']);
+    if (f.structured && state.mode === 'read' && !state._seenTable) { state.mode = 'table'; state._seenTable = true; }
+
+    let body = '';
+    if (state.mode === 'table') body = f.structured;
+    else if (state.mode === 'read') body = f.kind === 'md' ? `<div class="doc">${md(f.text)}</div>` : codeView(f.text);
+    else if (state.mode === 'edit') body = `<label for="ed">הטקסט, כפי שהוא בקובץ — ערכו ישירות</label>
+      <textarea id="ed" class="body${f.kind === 'code' ? ' code-edit' : ''}" dir="${f.kind === 'code' ? 'ltr' : 'auto'}" spellcheck="${f.kind === 'md'}">${esc(draft)}</textarea>`;
+    else body = dirty ? diffView(f.text, draft) : '<p class="hint">עוד לא שיניתם כלום בקובץ הזה. השינויים מופיעים כאן לפני שמירה.</p>';
+
+    const props = state.proposals.filter((p) => p.file === f.path).map((p) => propCard(p, false)).join('');
+    panel.innerHTML = `
+      <div class="card filehead">
+        <h2>${esc(f.title)}</h2>
+        <dl class="facts">
+          <dt>הקובץ</dt><dd><code>${esc(f.path)}</code></dd>
+          <dt>מה הוא</dt><dd>${inline(f.role)}</dd>
+          <dt>מי משנה</dt><dd>${inline(f.editor)}</dd>
+          <dt>מה נבדק אחרי שינוי</dt><dd>${inline(f.gates)}</dd>
+          ${f.last ? `<dt>שינוי אחרון</dt><dd>${/^[0-9a-f]{7,}$/.test(f.last.split(' · ')[0]) ? `<code>${esc(f.last.split(' · ')[0])}</code> ${esc(f.last.split(' · ').slice(1).join(' · '))}` : esc(f.last)}</dd>` : ''}
+        </dl>
+        <div class="modes" role="group" aria-label="תצוגה">${modes.map(([id, label]) => `<button class="mode" data-mode="${id}" aria-pressed="${state.mode === id}">${esc(label)}</button>`).join('')}</div>
+      </div>
+      <div class="card">${body}</div>
+      <div class="card">
+        <label for="pnote">ההצעה: מה ולמה</label>
+        <textarea id="pnote" rows="3" dir="auto" placeholder="${dirty ? 'למשל: ניסוח רך יותר לשאלה על הרגש, לפי השיחה עם נטלי' : 'אפשר לשמור הערה על הקובץ גם בלי לשנות בו כלום'}">${esc(state.notes[f.path] ?? '')}</textarea>
+        <div class="row">
+          <button class="btn primary" id="save"${can && (dirty || (state.notes[f.path] ?? '').trim()) ? '' : ' disabled'}>${dirty ? 'שמירת ההצעה' : 'שמירת ההערה'}</button>
+          ${dirty ? '<button class="btn" id="reset">ביטול השינויים</button>' : ''}
+          ${can ? '' : `<span class="hint">${storeHint()}</span>`}
+        </div>
+        ${state.toast ? `<div class="toast${state.toast[1] ? ' err' : ''}" role="status">${esc(state.toast[0])}</div>` : ''}
+      </div>
+      <div class="props">${props || '<p class="hint">אין עדיין הצעות לקובץ הזה.</p>'}</div>`;
+  }
+
+  function renderProps() {
+    const list = [...state.proposals].sort((a, b) => String(b.at).localeCompare(String(a.at)));
+    const open = list.filter((p) => p.status === 'open');
+    const rest = list.filter((p) => p.status !== 'open');
+    $('view-props').innerHTML = state.storeState !== 'ready'
+      ? `<div class="card"><p>${storeHint()}</p></div>`
+      : `<div class="card"><h2 style="margin:0;font-size:1.1rem">פתוחות (${open.length})</h2>${open.length ? '' : '<p class="hint">אין הצעות פתוחות.</p>'}</div>
+         <div class="props">${open.map((p) => propCard(p, true)).join('')}</div>
+         ${rest.length ? `<div class="card"><h2 style="margin:0;font-size:1.1rem">טופלו (${rest.length})</h2></div><div class="props">${rest.map((p) => propCard(p, true)).join('')}</div>` : ''}
+         ${DATA.models ? '' : noteForm('general', 'הערה שלא שייכת לקובץ אחד')}`;
+  }
+
+  function render() {
+    renderHeader();
+    renderList();
+    renderPanel();
+    renderProps();
+    $('open-count').textContent = state.proposals.filter((p) => p.status === 'open').length;
+  }
+
+  // ── Events ──
+  document.addEventListener('click', async (e) => {
+    const t = e.target.closest('button');
+    if (!t) return;
+    if (t.id === 'tab-files' || t.id === 'tab-props') {
+      const files = t.id === 'tab-files';
+      $('tab-files').setAttribute('aria-selected', files);
+      $('tab-props').setAttribute('aria-selected', !files);
+      $('view-files').hidden = !files;
+      $('view-props').hidden = files;
+      return;
+    }
+    if (t.dataset.model) { state.model = t.dataset.model; state.toast = null; render(); return; }
+    if (t.dataset.file != null) { state.file = Number(t.dataset.file); state.mode = 'read'; state._seenTable = false; state.toast = null; state.openDiff = null; render(); window.scrollTo({ top: 0 }); return; }
+    if (t.dataset.mode) { state.mode = t.dataset.mode; render(); return; }
+    if (t.dataset.goto) {
+      const idx = FILES.findIndex((f) => f.path === t.dataset.goto);
+      if (idx >= 0) { state.file = idx; state.mode = 'read'; state._seenTable = false; if (DATA.models) state.model = DATA.models[0].id; $('tab-files').click(); render(); }
+      return;
+    }
+    if (t.dataset.diff) { state.openDiff = state.openDiff === t.dataset.diff ? null : t.dataset.diff; render(); return; }
+    if (t.dataset.withdraw && state.db) {
+      try { await state.db.doc('proposals/' + t.dataset.withdraw).update({ status: 'withdrawn' }); } catch { state.toast = ['הביטול לא הצליח.', true]; render(); }
+      return;
+    }
+    if (t.dataset.savenote) {
+      const key = t.dataset.savenote;
+      const note = (state.notes[key] ?? '').trim();
+      if (!note) return;
+      t.disabled = true;
+      if (await save({ file: null, model: key === 'general' ? null : key, kind: 'note', text: null, baseHash: null, note })) state.notes[key] = '';
+      render();
+      return;
+    }
+    if (t.id === 'reset') { const f = FILES[state.file]; delete state.drafts[f.path]; render(); return; }
+    if (t.id === 'save') {
+      const f = FILES[state.file];
+      const draft = state.drafts[f.path] ?? f.text;
+      const dirty = draft !== f.text;
+      t.disabled = true;
+      const ok = await save({ file: f.path, model: DATA.models ? state.model : null, kind: dirty ? 'edit' : 'note', text: dirty ? draft : null, baseHash: f.hash, note: (state.notes[f.path] ?? '').trim() });
+      if (ok) { delete state.drafts[f.path]; state.notes[f.path] = ''; state.mode = f.structured ? 'table' : 'read'; }
+      render();
+    }
+  });
+  document.addEventListener('input', (e) => {
+    const f = FILES[state.file];
+    if (e.target.id === 'ed') {
+      state.drafts[f.path] = e.target.value;
+      const save = $('save');
+      if (save && state.db && !state.readOnly) save.disabled = false;
+      renderList();
+    } else if (e.target.id === 'pnote') {
+      state.notes[f.path] = e.target.value;
+      const save = $('save');
+      const dirty = (state.drafts[f.path] ?? f.text) !== f.text;
+      if (save && state.db && !state.readOnly) save.disabled = !(dirty || e.target.value.trim());
+    } else if (e.target.dataset.notekey) {
+      state.notes[e.target.dataset.notekey] = e.target.value;
+    }
+  });
+
+  // ── Start: the page is whole without the store; the store lights up proposals ──
+  const hash = location.hash.replace('#', '');
+  if (/^f\d+$/.test(hash) && FILES[Number(hash.slice(1))]) state.file = Number(hash.slice(1));
+  render();
+
+  (async () => {
+    const claude = window.claude;
+    if (!claude?.use) { state.storeState = 'absent'; render(); return; }
+    const [db, user] = await Promise.all([claude.use('db'), claude.use('user')]);
+    state.user = user;
+    if (user) {
+      try { state.meId = (await user.me())?.id ?? null; } catch { state.meId = null; }
+      try { if ((await user.can('data.write')) === false) state.readOnly = true; } catch { /* keep inputs */ }
+    }
+    if (!db) { state.storeState = 'absent'; render(); return; }
+    state.db = db;
+    state.storeState = 'ready';
+    render();
+    db.collection('proposals').onSnapshot(async (snap) => {
+      state.proposals = snap.docs.map((d) => ({ _id: d.id, ...d.data() }));
+      const ids = [...new Set(state.proposals.map((p) => p.by).filter(Boolean))];
+      if (user && ids.length) {
+        try {
+          const ps = await user.profiles(ids);
+          for (const id of ids) state.names[id] = ps[id]?.name || '';
+        } catch { /* names are a nicety */ }
+      }
+      render();
+    }, () => { state.storeState = 'absent'; render(); });
+  })();
+})();
+</script>
