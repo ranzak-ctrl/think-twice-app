@@ -448,7 +448,8 @@ export default function App({ onUnauthorized }) {
     setRevisions(Array.isArray(session.revisions) ? session.revisions : []);
     setHistory(Array.isArray(session.history) && session.history.length ? session.history : [openingMessage()]);
     // A file saved after a safety stop opens for reading only, like one that
-    // ended: continuing it would only meet the stop again (questions-for-natali §16).
+    // ended — an interim default until Natali decides what a later session on a
+    // stopped interview should be (questions-for-natali §16, question 3).
     const meta = session.state?.meta ?? {};
     setViewing(viewOnly ? { complete: Boolean(meta.sessionComplete), stopped: Boolean(meta.safetyFlag) } : null);
     setPendingOpen(null);
