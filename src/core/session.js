@@ -177,7 +177,7 @@ export async function runTurn(state, history, userText, deps) {
   // keys ("stageN.slot", N a stage of this pack) let the model capture info that
   // belongs to a later stage as it surfaces — pre-seeded to level 1 only; the owning
   // stage still explores it to 2 (Ran, 21.6). A slot the stage does not have is
-  // ignored, here or in another stage (test-plan §א.2 item 4). It used to be written
+  // ignored, here or in another stage (test-plan §א item 4). It used to be written
   // into the current stage as a key of its own — a hallucinated "stage8.x", or with
   // fewer stages any reference past the last one — and, read as progress, it reset
   // the saturation count (router-guard F4, 10.10.2026).
@@ -243,8 +243,17 @@ export async function runTurn(state, history, userText, deps) {
   // interviewer still reports a cast too; once `actor_map` leaves evaluator.md,
   // this block goes with it.
   const cast = castOf(pack);
-  if (cast && stage === cast.stage && ev.actorMap) {
-    nextState = mergeActorMap(nextState, ev.actorMap);
+  if (cast && stage === cast.stage && ev.actorMap) nextState = mergeActorMap(nextState, ev.actorMap);
+
+  // The derivation runs on EVERY turn once a cast exists, whoever reported it and
+  // whatever the stage — not only on a turn that carried an actor_map. The model
+  // scores the cast slot every turn (evaluator.md) and the slot loop above writes
+  // that number, so a turn with no actor_map used to leave the model's number
+  // standing over the cast, even over what the registrar derived this very turn
+  // (router-guard F5a, 10.10.2026). CLAUDE.md: "לא מהמספר שהמודל מדווח".
+  // An EMPTY cast is the one exception, and it is open: the model's number stands
+  // until someone is on the map — questions-for-natali §15.
+  if (cast && Object.keys(nextState.actorMap ?? {}).length) {
     nextState = {
       ...nextState,
       coverage: {
