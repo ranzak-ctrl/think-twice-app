@@ -19,7 +19,8 @@
 // of the protocol, and an arrow between two of them asserted "led to" on the
 // authority of a hardcoded array. Now the order comes from the edges the person
 // stated, and the stage order survives only as the FALLBACK for material he has
-// not related yet — which is also why it is renamed NARRATIVE below.
+// not related yet — which is also why it is called the narrative (the pack's
+// `map.narrative`, since 10.10.2026).
 //
 // The story as a MAP — redrawn whole on every new piece of information.
 //
@@ -82,7 +83,10 @@
 // which is visibly not the same thing, and is there so a cube is never empty rather
 // than because it is good.
 
-import { NEVER_MIRROR, buildCast } from './story.js';
+import { buildCast } from './story.js';
+// What the map may draw and where it puts it are the interview's: the pack's barred
+// slots, its narrative order and its timeline slot (pack.js, `map`).
+import { DEFAULT_PACK, barredSlots, mapNarrative, mapTimeline, parseSlotRef } from './pack.js';
 // One definition of which edges may order, guarded by a test that also checks every
 // other kind in the vocabulary stays out of it.
 import { ORDERING_EDGE_KINDS as ORDERING_KINDS } from './vocabulary.js';
@@ -106,28 +110,19 @@ export function shorten(raw) {
   return out || text.slice(0, LABEL_BUDGET);
 }
 
-// The interview's narrative order — event, interpretation, feeling, what was done.
-// This is the Router's spine, and here it is ONLY A FALLBACK: it gives a node its
-// default position for as long as the person has not said what a thing led to.
-// A confirmed edge always outranks it (see order() below), so as the graph fills
-// in, this list has less and less say over the drawing.
-const NARRATIVE = [
-  { kind: 'fact', slots: [['stage1', 'trigger'], ['stage1', 'timeline'], ['stage1', 'status']] },
-  { kind: 'thought', slots: [['stage2', 'causal'], ['stage2', 'meaning']] },
-  { kind: 'feeling', slots: [['stage3', 'emotion'], ['stage3', 'past_echo']] },
-  { kind: 'action', slots: [['stage1', 'auto_reaction'], ['stage4', 'auto_reaction']] },
-  { kind: 'plan', slots: [['stage4', 'planned_reaction']] },
-  {
-    kind: 'other',
-    slots: [['stage5', 'perspective'], ['stage5', 'intention'], ['stage5', 'alt_formulation']],
-  },
-];
+// The interview's narrative order is the pack's `map.narrative` — in Think Twice:
+// event, interpretation, feeling, what was done. It is the Router's spine, and
+// here it is ONLY A FALLBACK: it gives a node its default position for as long as
+// the person has not said what a thing led to. A confirmed edge always outranks it
+// (see order() below), so as the graph fills in, this list has less and less say
+// over the drawing. A pack with no narrative draws only what the model reports,
+// every cube as 'other', in the order it was said.
 
 // → { label, provisional } for a slot worth drawing, or null. See the certainty
 // rule in the header. Latest finding rather than first, so a correction replaces
 // what is drawn instead of piling up beside it.
-function slotCube(state, stageKey, slot) {
-  if (NEVER_MIRROR.has(slot)) return null;
+function slotCube(state, stageKey, slot, barred) {
+  if (barred.has(slot)) return null;
   const level = state?.coverage?.[stageKey]?.[slot];
   if (level !== CONFIRMED && level !== PROVISIONAL) return null;
   const provisional = level === PROVISIONAL;
@@ -151,29 +146,27 @@ function slotCube(state, stageKey, slot) {
 // Whether a slot is drawable at all, and how firmly. The certainty rule, in one
 // place, so the slot's own cube and the extra nodes hanging off that slot cannot
 // disagree about it.
-function certaintyOf(state, slotId) {
-  const m = /^stage([1-7])\.(.+)$/.exec(slotId ?? '');
-  if (!m) return null;
-  const [, digit, slot] = m;
-  if (NEVER_MIRROR.has(slot)) return null;
-  const level = state?.coverage?.[`stage${digit}`]?.[slot];
+function certaintyOf(state, slotId, pack, barred) {
+  const ref = parseSlotRef(pack, slotId ?? '');
+  if (!ref) return null;
+  const { key, slot } = ref;
+  if (barred.has(slot)) return null;
+  const level = state?.coverage?.[key]?.[slot];
   if (level !== CONFIRMED && level !== PROVISIONAL) return null;
   return { provisional: level === PROVISIONAL };
 }
 
 // The narrative kind of a slot — what colour of thing it is (a fact, a thought, a
 // feeling…) — and its default position, for as long as he has not said what led to
-// what. Falls back to 'other' and to the end of the line for a slot NARRATIVE does
-// not list, which is not an error: NARRATIVE is a default ordering, not the slot
-// registry.
-const SLOT_META = new Map(
-  NARRATIVE.flatMap(({ kind, slots }) => slots.map(([st, sl]) => [`${st}.${sl}`, kind])).map(
-    ([id, kind], rank) => [id, { kind, rank }],
-  ),
-);
-
-const kindOf = (slotId) => SLOT_META.get(slotId)?.kind ?? 'other';
-const rankOf = (slotId) => SLOT_META.get(slotId)?.rank ?? Number.MAX_SAFE_INTEGER;
+// what. Falls back to 'other' and to the end of the line for a slot the narrative
+// does not list, which is not an error: the narrative is a default ordering, not the
+// slot registry.
+const slotMeta = (narrative) =>
+  new Map(
+    narrative.flatMap(({ kind, slots }) => slots.map(([st, sl]) => [`${st}.${sl}`, kind])).map(
+      ([id, kind], rank) => [id, { kind, rank }],
+    ),
+  );
 
 // Every node the map will draw, in narrative order, before the graph re-orders them.
 //
@@ -186,18 +179,24 @@ const rankOf = (slotId) => SLOT_META.get(slotId)?.rank ?? Number.MAX_SAFE_INTEGE
 //
 // A reported node whose id IS "stageN.slot" is the ordinary case of that — it
 // simply names and scales the slot's own cube.
-function nodesOf(state) {
+function nodesOf(state, pack) {
+  const barred = barredSlots(pack);
+  const narrative = mapNarrative(pack);
+  const meta = slotMeta(narrative);
+  const kindOf = (slotId) => meta.get(slotId)?.kind ?? 'other';
+  const rankOf = (slotId) => meta.get(slotId)?.rank ?? Number.MAX_SAFE_INTEGER;
+
   const reported = Object.values(state?.nodes ?? {})
-    .filter((n) => certaintyOf(state, n.slot))
+    .filter((n) => certaintyOf(state, n.slot, pack, barred))
     .sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0));
   const claimed = new Set(reported.map((n) => n.slot));
 
   const items = [];
-  for (const { kind, slots } of NARRATIVE) {
+  for (const { kind, slots } of narrative) {
     for (const [stageKey, slot] of slots) {
       const id = `${stageKey}.${slot}`;
       if (claimed.has(id)) continue; // the model named this slot's contents itself
-      const cube = slotCube(state, stageKey, slot);
+      const cube = slotCube(state, stageKey, slot, barred);
       if (cube) items.push({ id, kind, slot: id, scale: 'episode', seq: -1, ...cube });
     }
   }
@@ -209,7 +208,7 @@ function nodesOf(state) {
       scale: n.scale === 'ongoing' ? 'ongoing' : 'episode',
       label: n.label,
       seq: n.seq ?? 0,
-      ...certaintyOf(state, n.slot),
+      ...certaintyOf(state, n.slot, pack, barred),
     });
   }
 
@@ -242,9 +241,9 @@ function nodesOf(state) {
 // because it does not have one, and the arrows BETWEEN the lanes are the
 // interesting part: "she has been trying to talk to me for a long time" is why she
 // answered the way she did in that minute.
-export function buildMap(state) {
+export function buildMap(state, pack = DEFAULT_PACK) {
   const cast = buildCast(state?.actorMap).map((a) => ({ ...a, label: shorten(a.label) }));
-  const all = nodesOf(state);
+  const all = nodesOf(state, pack);
   let stations = all.filter((n) => n.scale !== 'ongoing');
   const ground = all.filter((n) => n.scale === 'ongoing');
 
@@ -303,7 +302,7 @@ export function buildMap(state) {
   // places too early: he had said "אמרתי שחייב לנוח, אבל היא לא ויתרה… נתנה עצות",
   // and the model reported the edge into "לא ויתרה" but not the one into "נתנה
   // עצות". With nothing on it, that cube fell back to its SLOT's position in
-  // NARRATIVE, where stage1.timeline sits ahead of stage1.auto_reaction — so the
+  // the narrative, where stage1.timeline sits ahead of stage1.auto_reaction — so the
   // map put her advice before he had asked for anything.
   //
   // Its sibling in the same slot was already pinned after his refusal by an edge he
@@ -349,7 +348,7 @@ export function buildMap(state) {
   //
   // Ran's ruling of 5.9.2026 — the edges are the interviewee's — makes this the
   // honest part of the drawing. A link he actually stated is `sourced`; a link with
-  // nothing behind it is the fixed NARRATIVE order asserting "led to" on its own
+  // nothing behind it is the fixed narrative order asserting "led to" on its own
   // authority, which is what the ruling is against. Both are drawn for now, because
   // dropping the unsourced ones would leave a row of disconnected boxes until the
   // model starts reporting edges, but they are told apart: his arrows are drawn
@@ -426,7 +425,8 @@ export function buildMap(state) {
     containers.push({ ...g, members });
   }
 
-  const hasTime = [CONFIRMED, PROVISIONAL].includes(state?.coverage?.stage1?.timeline);
+  const timeline = mapTimeline(pack);
+  const hasTime = !!timeline && [CONFIRMED, PROVISIONAL].includes(state?.coverage?.[timeline.key]?.[timeline.slot]);
   const form = hasTime && stations.length + ground.length >= 2 ? 'journey' : 'scene';
 
   return {

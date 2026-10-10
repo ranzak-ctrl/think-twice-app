@@ -3,19 +3,15 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { formatSelfOther } from '../core/kpi.js';
-import { renderEvent } from '../core/eventView.js';
+import { castOf, intensityStages, intensityKey } from '../core/pack.js';
 import { Close } from './icons.jsx';
 import { DEFAULT_MODEL } from '../adapters/model.js';
 
-const STAGE_NAMES = {
-  1: 'עובדות',
-  2: 'פרשנות',
-  3: 'רגש',
-  4: 'תגובה',
-  5: 'פרשנות חלופית',
-  6: 'חלופות',
-  7: 'הכרעה',
-};
+// The stages, their working names, the cast's slot and where intensity is measured
+// are the interview's — read from its pack, so the panel shows whichever interview
+// is running. The name is the pack's `name` (clinical shorthand for testers), with
+// the person-facing label as the fallback.
+const stageName = (pack, n) => pack.stages[n - 1]?.name ?? pack.stages[n - 1]?.label ?? '';
 
 const SLOT_COLOR = (v) => {
   if (v === 2) return '#1a7a3c';
@@ -130,9 +126,13 @@ function formatCacheSaving(usage) {
   return `$${saved.toFixed(4)} (${Math.round((saved / uncachedUsd) * 100)}%)`;
 }
 
-export default function GuidePanel({ state, width = 320, notes = [], revisions = [], onClose }) {
+// `account` is the interview's own renderEvent (engine.js), bound to its pack, so
+// the panel shows the redacted account the summary and opener are built from.
+export default function GuidePanel({ state, pack, account, width = 320, notes = [], revisions = [], onClose }) {
   const { coverage, meta } = state;
-  const eventText = renderEvent(state);
+  const eventText = account(state);
+  const cast = castOf(pack);
+  const measured = intensityStages(pack);
   const gaps = state.gaps ?? { byTarget: {}, log: [] };
   const findings = state.findings ?? {};
   const actorMap = state.actorMap ?? {};
@@ -160,7 +160,7 @@ export default function GuidePanel({ state, width = 320, notes = [], revisions =
       </div>
 
       {/* Stage indicator */}
-      <Section title={`שלב ${meta.currentStage} — ${STAGE_NAMES[meta.currentStage]}`}>
+      <Section title={`שלב ${meta.currentStage} — ${stageName(pack, meta.currentStage)}`}>
         <Row label="פתח שאלה" value={meta.questionAperture} />
         <Row label="ממתין לאישור" value={meta.awaitingConfirmation ? 'כן' : 'לא'} />
       </Section>
@@ -238,7 +238,7 @@ export default function GuidePanel({ state, width = 320, notes = [], revisions =
       {/* Stage progression — each stage collapsible; current stage auto-open with its
           live stay-turn count; previous collapses on advance; manual toggle anytime. */}
       <Section title="התקדמות שלבים">
-        {[1, 2, 3, 4, 5, 6, 7].map((n) => {
+        {pack.stages.map((_, i) => i + 1).map((n) => {
           const isCurrent = n === meta.currentStage;
           const reached = n <= meta.currentStage;
           const open = !!openStages[n];
@@ -257,7 +257,7 @@ export default function GuidePanel({ state, width = 320, notes = [], revisions =
                   fontWeight: isCurrent ? 'bold' : 'normal',
                 }}
               >
-                {open ? '▾' : '▸'} {n}. {STAGE_NAMES[n]}
+                {open ? '▾' : '▸'} {n}. {stageName(pack, n)}
                 {isCurrent ? ' ●' : ''}
               </div>
               {open && (
@@ -303,12 +303,13 @@ export default function GuidePanel({ state, width = 320, notes = [], revisions =
           return (
             <div key={stageKey} style={{ marginBottom: 8 }}>
               <div style={{ fontWeight: 'bold', marginBottom: 2 }}>
-                {stageNum}. {STAGE_NAMES[stageNum]}
+                {stageNum}. {stageName(pack, stageNum)}
               </div>
               {Object.entries(slots).map(([slot, val]) => {
-                // Stage-1 actors shows the resolved cast (one entry per character,
-                // with a clarity badge) instead of the raw per-turn findings stream.
-                const isActors = stageKey === 'stage1' && slot === 'actors';
+                // The cast's slot (Think Twice: stage-1 actors) shows the resolved
+                // cast — one entry per character, with a clarity badge — instead of
+                // the raw per-turn findings stream.
+                const isActors = !!cast && stageKey === cast.key && slot === cast.slot;
                 const actors = isActors ? Object.values(actorMap) : [];
                 const slotFindings = isActors ? [] : findings[stageKey]?.[slot] ?? [];
                 const hasDetail = actors.length > 0 || slotFindings.length > 0;
@@ -421,17 +422,21 @@ export default function GuidePanel({ state, width = 320, notes = [], revisions =
 
       {/* KPIs */}
       <Section title="KPIs">
-        <Row label="רגש שלב 3" value={meta.kpi.emotionIntensityStage3 ?? '—'} />
-        <Row label="רגש שלב 5" value={meta.kpi.emotionIntensityStage5 ?? '—'} />
-        <Row
-          label="דלתא"
-          value={
-            meta.kpi.emotionIntensityStage3 != null &&
-            meta.kpi.emotionIntensityStage5 != null
-              ? meta.kpi.emotionIntensityStage3 - meta.kpi.emotionIntensityStage5
-              : '—'
-          }
-        />
+        {measured.map((n) => (
+          <Row key={n} label={`רגש שלב ${n}`} value={meta.kpi[intensityKey(n)] ?? '—'} />
+        ))}
+        {measured.length >= 2 && (
+          // Baseline minus re-measure: the first measured stage against the last.
+          <Row
+            label="דלתא"
+            value={
+              meta.kpi[intensityKey(measured[0])] != null &&
+              meta.kpi[intensityKey(measured[measured.length - 1])] != null
+                ? meta.kpi[intensityKey(measured[0])] - meta.kpi[intensityKey(measured[measured.length - 1])]
+                : '—'
+            }
+          />
+        )}
         <Row label="סוג הכרעה" value={meta.kpi.decisionType ?? '—'} />
         <Row
           label="מדד שינוי (≠ אוטומט)"

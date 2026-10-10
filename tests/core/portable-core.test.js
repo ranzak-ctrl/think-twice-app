@@ -235,12 +235,16 @@ describe('the engine refuses an incomplete composition', async () => {
     expect(() => createEngine({ pack: thinkTwiceAdult, prompts, complete })).toThrow(/stage8/);
   });
 
-  it('on a pack this engine cannot run yet', () => {
-    const mini = JSON.parse(JSON.stringify(thinkTwiceAdult));
-    mini.stages = mini.stages.slice(0, 6).map((s, i) => ({ ...s, key: `stage${i + 1}` }));
-    mini.stages[5] = { ...thinkTwiceAdult.stages[6], key: 'stage6', requires: ['stage5'] };
-    mini.stages[4] = { ...mini.stages[4], components: [{ type: 'collector' }] };
-    expect(() => createEngine({ pack: mini, prompts: thinkTwiceAdultPrompts, complete })).toThrow(/7 stages/);
+  // Until slice 3 (10.10.2026) a six-stage pack was refused as one this engine could
+  // not run. It runs now; what is refused is texts that do not match it.
+  it('on a pack of another length only when its texts do not match it', () => {
+    const six = JSON.parse(JSON.stringify(thinkTwiceAdult));
+    six.stages = six.stages.slice(0, 6).map((s, i) => ({ ...s, key: `stage${i + 1}` }));
+    six.stages[5] = { ...thinkTwiceAdult.stages[6], key: 'stage6', requires: ['stage5'] };
+    six.stages[4] = { ...six.stages[4], components: [{ type: 'collector' }] };
+    expect(() => createEngine({ pack: six, prompts: thinkTwiceAdultPrompts, complete })).toThrow(/stage7 names no stage/);
+    const { stage7, ...stages } = thinkTwiceAdultPrompts.stages;
+    expect(() => createEngine({ pack: six, prompts: { ...thinkTwiceAdultPrompts, stages }, complete })).not.toThrow();
   });
 
   it('and a direct runTurn without its dependencies says how to fix it', async () => {

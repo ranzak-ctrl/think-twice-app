@@ -34,7 +34,7 @@
 // see that it is empty. It is never shown to the person — see the note below.
 //
 // ── REDACTION: THE DEFAULT IS SAFE, AND buildSystemPrompt OPTS OUT ──
-// An earlier version of this header claimed NEVER_SHOW_SLOTS need not apply here
+// An earlier version of this header claimed the barred slots need not apply here
 // because "this text goes into the INTERVIEWER'S PROMPT, never to the person", and
 // because "findings already ships wound material into the prompt today". BOTH WERE
 // FALSE, and router-guard caught it before the registrar went live:
@@ -63,6 +63,7 @@
 // projection that needed it most.
 
 import { isSelf, displayable } from './eventRecord.js';
+import { DEFAULT_PACK, parseSlotRef } from './pack.js';
 
 // The interviewee is addressed, never described. Findings are already written in
 // the second person (evaluator.md: "נסח כל ממצא בפנייה אליו — גוף שני"), and an
@@ -236,7 +237,7 @@ const RELATION_LABEL = {
 // An endpoint's readable name. Endpoints are addressed four ways — a slot's own
 // cube, an actor, a fork, or a ledger entity — and an edge whose endpoint cannot be
 // resolved is dropped rather than printed as a raw id.
-function endpointText(state, record, actorMap, ref) {
+function endpointText(state, record, actorMap, ref, pack) {
   const id = String(ref ?? '').trim();
   const actor = /^actor:(.+)$/.exec(id);
   if (actor) return nameOf(actorMap, actor[1]);
@@ -252,23 +253,23 @@ function endpointText(state, record, actorMap, ref) {
     // where the redacted account has to stop it.
     return e ? (e.label?.trim() || e.text || e.name || '') : '';
   }
-  const slot = /^stage[1-7]\.(.+)$/.exec(id);
+  const slot = parseSlotRef(pack, id);
   if (slot) {
     const beats = Object.values(record.beats ?? {}).filter((b) => b.slot === id);
     if (beats.length) return beats[0].label?.trim() || beats[0].text;
-    return state?.mapLabels?.[id.split('.')[0]]?.[slot[1]] ?? '';
+    return state?.mapLabels?.[slot.key]?.[slot.slot] ?? '';
   }
   return '';
 }
 
-function relationsBlock(state, record, actorMap) {
+function relationsBlock(state, record, actorMap, pack) {
   const lines = [];
   for (const e of Object.values(state?.edges ?? {})) {
     if (!e?.confirmed) continue;
     const label = RELATION_LABEL[e.kind];
     if (!label) continue; // `then` and `agent` are already in the account
-    const from = endpointText(state, record, actorMap, e.from);
-    const to = endpointText(state, record, actorMap, e.to);
+    const from = endpointText(state, record, actorMap, e.from, pack);
+    const to = endpointText(state, record, actorMap, e.to, pack);
     if (!from || !to) continue; // unresolvable, or redacted away
     lines.push(`  ${from} ← ${label} ← ${to}`);
   }
@@ -297,7 +298,7 @@ const SEVERITY = (level) =>
 
 const DIMENSION_HE = { factual: 'עובדתי', emotional: 'רגשי', cognitive: 'קוגניטיבי' };
 
-function contradictionsBlock(state, record, actorMap) {
+function contradictionsBlock(state, record, actorMap, pack) {
   const lines = [];
   for (const rec of Object.values(state?.gaps?.byTarget ?? {})) {
     if (!rec || rec.status === 'resolved') continue;
@@ -307,7 +308,7 @@ function contradictionsBlock(state, record, actorMap) {
     // note, because a contradiction with unresolvable endpoints is still
     // intelligence the interviewer needs.
     const pair = (rec.between ?? [])
-      .map((r) => endpointText(state, record, actorMap, r))
+      .map((r) => endpointText(state, record, actorMap, r, pack))
       .filter(Boolean);
     const what = pair.length === 2
       ? `${pair[0]} ↮ ${pair[1]}`
@@ -324,7 +325,9 @@ function contradictionsBlock(state, record, actorMap) {
 // StateDocument → the event as an account for the interviewer's prompt.
 // Empty sections are omitted rather than printed as empty headings: an account with
 // blanks in it is a form, and a model handed a form fills the form.
-export function renderEvent(state, { full = false } = {}) {
+// `pack` says which slots are barred and which stage references are real; the
+// default is the transitional one (pack.js), and every builder passes its own.
+export function renderEvent(state, { full = false, pack = DEFAULT_PACK } = {}) {
   const raw = state?.eventRecord;
   if (!raw) return '';
 
@@ -344,7 +347,7 @@ export function renderEvent(state, { full = false } = {}) {
 
   // Redaction, unless the caller is the probe. See the header.
   const keep = (store) =>
-    full ? (store ?? {}) : Object.fromEntries(Object.entries(store ?? {}).filter(([, e]) => displayable(e)));
+    full ? (store ?? {}) : Object.fromEntries(Object.entries(store ?? {}).filter(([, e]) => displayable(e, pack)));
   const record = full
     ? raw
     : { ...raw, beats: keep(raw.beats), stances: keep(raw.stances), emotions: keep(raw.emotions) };
@@ -369,7 +372,7 @@ export function renderEvent(state, { full = false } = {}) {
 
   // `record` here is the REDACTED one when full is false, so a relation touching a
   // wound stance resolves to '' and the line is dropped with it.
-  const rel = relationsBlock(state, record, actorMap);
+  const rel = relationsBlock(state, record, actorMap, pack);
   if (rel) parts.push(rel);
 
   // The ground the incident ran on: standing conditions and ongoing beats, with no
@@ -390,7 +393,7 @@ export function renderEvent(state, { full = false } = {}) {
   // Last, and only for the probe. See the header: summary / opener / board are
   // spoken to the person, and this never goes near them.
   if (full) {
-    const clash = contradictionsBlock(state, record, actorMap);
+    const clash = contradictionsBlock(state, record, actorMap, pack);
     if (clash) parts.push(clash);
   }
 

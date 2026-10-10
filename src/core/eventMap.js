@@ -22,11 +22,12 @@
 // ── THE DISPLAY GUARD IS APPLIED HERE, AND ONLY HERE ──
 // The ledger stores the wound because coverage.stage2.wound cannot reach 2 without
 // it, and the interviewer's account carries it because stage 2 cannot probe what it
-// is not told. This is the projection where NEVER_SHOW_SLOTS finally bites —
+// is not told. This is the projection where the pack's barred slots finally bite —
 // `displayable()` is called on every entity, and that is the guard eventRecord.js
 // exports so no projection has to remember the rule itself.
 
 import { displayable, paceScale } from './eventRecord.js';
+import { DEFAULT_PACK } from './pack.js';
 
 // Fallback only. A cube is named by the registrar (`label`); trimming `text` is
 // there so a cube is never empty, and it is visibly not the same thing — the same
@@ -57,7 +58,7 @@ const scaleOf = (e, kind) =>
 // `fork:` and treats a bare "stageN.slot" as a slot's own cube, so an unprefixed
 // entity id could silently collide with one of those and steal its edges — the
 // same class of fault that once crashed the map (state.js mergeNodes).
-export function nodesFromRecord(state) {
+export function nodesFromRecord(state, pack = DEFAULT_PACK) {
   const record = state?.eventRecord;
   if (!record) return {};
   const out = {};
@@ -68,7 +69,7 @@ export function nodesFromRecord(state) {
     ['emotion', record.emotions],
   ]) {
     for (const e of Object.values(store ?? {}).sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0))) {
-      if (!displayable(e)) continue; // the wound and the ADHD pattern stop here
+      if (!displayable(e, pack)) continue; // the pack's barred slots stop here — the wound, the ADHD pattern
       const label = nameOf(e);
       if (!label) continue; // a cube with no name is not a cube
       out[`${kind}:${e.id}`] = { id: `${kind}:${e.id}`, label, slot: e.slot, scale: scaleOf(e, kind), seq: ++seq };

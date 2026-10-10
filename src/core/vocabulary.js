@@ -63,35 +63,26 @@ export const SOURCES = new Set(['stated', 'attributed', 'inferred', 'unknown']);
 // was corrected on exactly this.
 export const NODE_SCALES = new Set(['episode', 'ongoing']);
 
-// ── The barred slots ──
-// THE LINE THIS DRAWS, because it is easy to get backwards: these are barred from
+// ── The barred slots and the minds are not here any more ──
+// They name SLOTS, and slots are an interview's, not the graph's: which slots are
+// never drawn (the wound and the ADHD pattern) and which are minds that alone may be
+// `about` something are flags on the slots in each pack (`barred`, `mental` —
+// src/packs/think-twice-adult/pack.js), read through core/pack.js. Moved there on
+// 10.10.2026 so a second interview can bar its own sensitive slots (plan §3.1).
+//
+// THE LINE THE BARRED FLAG DRAWS, because it is easy to get backwards: barred from
 // being DRAWN, not from being stored. coverage.stage2.wound cannot reach 2 unless
 // the record holds the evidence, and stage 2 cannot probe a subject it is not told
 // about — so the ledger keeps them and the interviewer's account carries them.
+// Every PROJECTION applies it: setMapLabel and mergeNodes/Edges/Groups refuse them
+// at the write, eventMap.js filters on them, and renderEvent redacts them for every
+// builder whose output is recited to the person rather than used to ask a question.
 //
-// Every PROJECTION applies this set, and each one had to be made to: setMapLabel
-// and mergeNodes/Edges/Groups refuse them at the write, eventMap.js filters on
-// them, and renderEvent redacts them for every builder whose output is recited to
-// the person rather than used to ask a question.
-export const NEVER_SHOW_SLOTS = new Set(['wound', 'adhd_pattern']);
-
-// ── What the code enforces about `about` ──
-// `about` belongs to MINDS: a beat cannot be "about" anything. mergeEdges refuses
-// an `about` whose source is not one of these — refuses rather than flips, because
-// flipping would invent a relation.
-//
-// This is the half of the direction rule code can decide. It CANNOT decide whether
-// a given mind→fact pair is `about` or `because`; that is a reading of his wording
-// and lives in registrar.md. The hazard: an edge's identity is `from→to`, so
-// re-reporting ONE ORDERED PAIR under a second kind replaces the first silently,
-// and a pair that flipped to `because` starts asserting causation nobody stated.
-export const MENTAL_SLOTS = new Set([
-  'causal', 'meaning', 'wound', 'adhd_pattern',               // stage 2
-  'emotion', 'past_echo',                                      // stage 3
-  'planned_reaction',                                          // stage 4
-  'perspective', 'intention', 'alt_formulation', 're_emotion', // stage 5
-  'goal',                                                      // stage 7
-]);
+// What the code enforces about `about`: it belongs to MINDS — a beat cannot be
+// "about" anything — and mergeEdges refuses an `about` whose source is not a mind,
+// refusing rather than flipping, because flipping would invent a relation. That is
+// the half of the direction rule code can decide. Whether a mind→fact pair is
+// `about` or `because` is a reading of his wording and lives in registrar.md.
 
 // ── Shared limit ──
 // Over-long is REFUSED, never trimmed: a label that needs cutting is not a label,

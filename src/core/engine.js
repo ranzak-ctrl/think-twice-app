@@ -23,6 +23,8 @@ import { checkGuidelines } from './guidelines.js';
 import { createState } from './state.js';
 import { route, confirmAndAdvance, rejectConfirmation } from './router.js';
 import { runTurn, generateStageOpener } from './session.js';
+import { buildMap } from './storyMap.js';
+import { renderEvent } from './eventView.js';
 
 export function createEngine({ pack, prompts, complete } = {}) {
   const packCheck = validatePack(pack);
@@ -58,5 +60,10 @@ export function createEngine({ pack, prompts, complete } = {}) {
     rejectConfirmation: (state) => rejectConfirmation(state, pack),
     runTurn: (state, history, userText) => runTurn(state, history, userText, deps),
     generateStageOpener: (state, history, opts) => generateStageOpener(state, history, opts, deps),
+    // The two projections a shell shows, bound to this interview's pack: what the
+    // map may draw and the account may recite depends on which slots the pack bars,
+    // so a shell that drew through these cannot apply another interview's rules.
+    buildMap: (state) => buildMap(state, pack),
+    renderEvent: (state, opts = {}) => renderEvent(state, { ...opts, pack }),
   };
 }

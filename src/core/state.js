@@ -3,19 +3,21 @@
 
 export const SLOT_UNKNOWN = 'U';
 
-// The registrar's ledger. This import used to be circular (eventRecord.js read
-// NEVER_SHOW_SLOTS from here); both now read it from vocabulary.js, so it is not.
+// The registrar's ledger. This import used to be circular (eventRecord.js read the
+// barred slots from here); both now read them from the pack, so it is not.
 import { createEventRecord } from './eventRecord.js';
 // The graph's vocabulary lives in one module now — see vocabulary.js for why.
 // Re-exported here because story.js and the tests already import these names
 // from state.js, and moving a definition should not move an import path.
-import {
-  EDGE_KINDS, GROUP_KINDS, NODE_SCALES, NEVER_SHOW_SLOTS, LABEL_MAX, MENTAL_SLOTS,
-} from './vocabulary.js';
+import { EDGE_KINDS, GROUP_KINDS, NODE_SCALES, LABEL_MAX } from './vocabulary.js';
 // The pack decides the stages and their slots; `coverage` is laid out from it in
 // the pack's order (key order reaches the prompt — tests/core/prompt-fingerprint).
-import { DEFAULT_PACK, slotIds } from './pack.js';
-export { EDGE_KINDS, GROUP_KINDS, NODE_SCALES, NEVER_SHOW_SLOTS };
+// It also says which "stageN.slot" references are real, which slots are barred
+// from display, and which are minds — every write guard below asks it.
+import {
+  DEFAULT_PACK, slotIds, parseSlotRef, barredSlots, mentalSlots, intensityStages, intensityKey,
+} from './pack.js';
+export { EDGE_KINDS, GROUP_KINDS, NODE_SCALES };
 export const MAP_LABEL_MAX = LABEL_MAX;
 
 function emptyCoverage(pack) {
@@ -131,8 +133,9 @@ export function createState(pack = DEFAULT_PACK) {
         calls: 0,
       },
       kpi: {
-        emotionIntensityStage3: null,
-        emotionIntensityStage5: null,
+        // One per stage carrying the intensity component (pack.js): Think Twice's
+        // emotionIntensityStage3 (baseline) and emotionIntensityStage5 (re-measure).
+        ...Object.fromEntries(intensityStages(pack).map((n) => [intensityKey(n), null])),
         decisionType: null,    // 'sharp' | 'structured_deferral' | 'vague'
         differsFromAutomatic: null, // does the decision differ from the gut reaction?
         selfRefs: 0,           // running count of first-person markers (יחס אני/הוא)
@@ -230,9 +233,10 @@ export function addFindings(state, stageKey, slotKey, items) {
 // needs cutting is not a label, and silently trimming it would put the sentence
 // back in the cube this field exists to keep out.
 
-// Slots that may never be shown to the person: the wound (מוגלה) and the ADHD
-// pattern. CLAUDE.md and Natali's ruling of 14.8 — he reaches the wound himself,
-// and it is never reflected back at him as our reading of him.
+// Slots that may never be shown to the person — the pack's `barred` slots. In
+// Think Twice: the wound (מוגלה) and the ADHD pattern. CLAUDE.md and Natali's
+// ruling of 14.8 — he reaches the wound himself, and it is never reflected back at
+// him as our reading of him.
 //
 // This lives HERE, at the bottom of the stack, and refuses the WRITE. It used to be
 // enforced only in the projection that draws the map, which prompt-editor flagged
@@ -240,10 +244,16 @@ export function addFindings(state, stageKey, slotKey, items) {
 // barred slot, so the model will report a two-word naming of the מוגלה as soon as
 // stage 2 lands, and a single guard in a single consumer was the only thing between
 // that and the person's own screen. A label that is never stored cannot be drawn by
-// a consumer that forgets to check. story.js re-exports this as NEVER_MIRROR.
+// a consumer that forgets to check.
+//
+// Every guard here takes the pack, because which slots are barred is the
+// interview's (pack.js barredSlots). The default is the transitional Think Twice
+// pack, as everywhere in phase 1; the turn loop and the registrar always pass the
+// interview's own, and tests/core/pack-run.test.js runs a pack whose barred slot
+// has another name through every path that could leak it.
 
-export function setMapLabel(state, stageKey, slot, raw) {
-  if (NEVER_SHOW_SLOTS.has(slot)) return state;
+export function setMapLabel(state, stageKey, slot, raw, pack = DEFAULT_PACK) {
+  if (barredSlots(pack).has(slot)) return state;
   const label = typeof raw === 'string' ? raw.replace(/\s+/g, ' ').trim() : '';
   if (!label || label.length > MAP_LABEL_MAX) return state;
   const byStage = state.mapLabels ?? {};
@@ -305,8 +315,9 @@ export const NODES_PER_STAGE_MAX = 8;
 // anything, and it is here so a runaway report cannot grow the store without limit.
 export const NODES_MAX = 48;
 
-export function mergeNodes(state, reported) {
+export function mergeNodes(state, reported, pack = DEFAULT_PACK) {
   const byId = { ...(state.nodes ?? {}) };
+  const barred = barredSlots(pack);
   let seq = Math.max(0, ...Object.values(byId).map((n) => n.seq ?? 0));
 
   // Counted from `byId`, which is written inside the loop, so several nodes
@@ -336,11 +347,10 @@ export function mergeNodes(state, reported) {
     // to let the model fix a cube it named badly.
     const reportedSlot = typeof n?.slot === 'string' ? n.slot.trim() : '';
     const slot = reportedSlot || prev?.slot || '';
-    const m = /^stage([1-7])\.(.+)$/.exec(slot);
-    if (!m) continue;
-    const [, digit, slotKey] = m;
-    if (NEVER_SHOW_SLOTS.has(slotKey)) continue;
-    const stageKey = `stage${digit}`;
+    const ref = parseSlotRef(pack, slot);
+    if (!ref) continue;
+    const { key: stageKey, slot: slotKey } = ref;
+    if (barred.has(slotKey)) continue;
     if (!state.coverage?.[stageKey] || !(slotKey in state.coverage[stageKey])) continue;
 
     // The fourth reserved id shape, and the one that used to be missing. A cube's
@@ -354,8 +364,8 @@ export function mergeNodes(state, reported) {
     // slot's own cube. Only a real slot key collides — an id like
     // "stage2.causal#2" names nothing the map already draws, and refusing the whole
     // prefix would have taken a natural id shape away from the model for nothing.
-    const idAsSlot = /^stage([1-7])\.(.+)$/.exec(id);
-    if (idAsSlot && state.coverage?.[`stage${idAsSlot[1]}`]?.[idAsSlot[2]] !== undefined && id !== slot) {
+    const idAsSlot = parseSlotRef(pack, id);
+    if (idAsSlot && state.coverage?.[idAsSlot.key]?.[idAsSlot.slot] !== undefined && id !== slot) {
       continue;
     }
 
@@ -411,23 +421,22 @@ const edgeNode = (v) => (typeof v === 'string' ? v.trim() : '');
 // barred slot out of the graph entirely — a wound with an edge attached is still a
 // wound on the drawing, and refusing it at the write is cheaper than trusting every
 // future reader to check (the same reasoning as setMapLabel).
-const endpointSlot = (node) => {
-  const m = /^stage[1-7]\.(.+)$/.exec(node);
-  return m ? m[1] : '';
-};
+const endpointSlot = (pack, node) => parseSlotRef(pack, node)?.slot ?? '';
 
 // `about` runs mind → target, always. A beat is not about anything; only a reading,
 // a want or a feeling points at something. Accepts a ledger entity (`stance:` /
 // `emotion:`) or a mental slot's own cube, so an edge reported before the registrar
-// entified the thought is not silently lost. See vocabulary.js MENTAL_SLOTS.
-function isMentalRef(ref) {
+// entified the thought is not silently lost. The minds are the pack's `mental`
+// slots (pack.js).
+function isMentalRef(pack, ref) {
   if (/^(stance|emotion):/.test(ref)) return true;
-  const slot = /^stage[1-7]\.(.+)$/.exec(ref);
-  return !!slot && MENTAL_SLOTS.has(slot[1]);
+  const slot = parseSlotRef(pack, ref)?.slot;
+  return !!slot && mentalSlots(pack).has(slot);
 }
 
-export function mergeEdges(state, reported) {
+export function mergeEdges(state, reported, pack = DEFAULT_PACK) {
   const byId = { ...(state.edges ?? {}) };
+  const barred = barredSlots(pack);
   for (const e of Array.isArray(reported) ? reported : []) {
     const from = edgeNode(e?.from);
     const to = edgeNode(e?.to);
@@ -436,9 +445,9 @@ export function mergeEdges(state, reported) {
     if (!EDGE_KINDS.has(kind)) continue;              // unknown relation — dropped
     // The one direction rule code can decide. Refused rather than flipped: flipping
     // would invent a relation, and this contract's whole point is that it never does.
-    if (kind === 'about' && !isMentalRef(from)) continue;
-    if (NEVER_SHOW_SLOTS.has(endpointSlot(from))) continue;
-    if (NEVER_SHOW_SLOTS.has(endpointSlot(to))) continue;
+    if (kind === 'about' && !isMentalRef(pack, from)) continue;
+    if (barred.has(endpointSlot(pack, from))) continue;
+    if (barred.has(endpointSlot(pack, to))) continue;
 
     const id = `${from}→${to}`;
     const prev = byId[id];
@@ -487,8 +496,9 @@ export function mergeEdges(state, reported) {
 // report it unconfirmed, ask, and draw only once he has said so.
 export const GROUP_MEMBERS_MAX = 12;
 
-export function mergeGroups(state, reported) {
+export function mergeGroups(state, reported, pack = DEFAULT_PACK) {
   const byId = { ...(state.groups ?? {}) };
+  const barred = barredSlots(pack);
   for (const g of Array.isArray(reported) ? reported : []) {
     const label = typeof g?.label === 'string' ? g.label.replace(/\s+/g, ' ').trim() : '';
     const id = typeof g?.id === 'string' && g.id.trim() ? g.id.trim() : label;
@@ -507,8 +517,7 @@ export function mergeGroups(state, reported) {
       // A barred slot cannot be a member for the same reason it cannot be an edge
       // endpoint: a box drawn around the wound still puts the wound on the paper.
       if (!m || members.includes(m)) continue;
-      const slot = /^stage[1-7]\.(.+)$/.exec(m)?.[1] ?? '';
-      if (NEVER_SHOW_SLOTS.has(slot)) continue;
+      if (barred.has(endpointSlot(pack, m))) continue;
       members.push(m);
     }
     // A container of one contains nothing — it is just that node with a box on it.

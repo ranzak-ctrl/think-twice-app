@@ -19,7 +19,9 @@ import { thinkTwiceAdultJudge } from '../../src/packs/think-twice-adult/judge.js
 export const engine = interview;
 export const { pack, prompts, runTurn, generateStageOpener } = engine;
 
-const withPrompts = (fn) => (args = {}) => fn({ prompts, ...args });
+// The pack rides along for the account's redaction (promptBuilder.js): which slots a
+// summary may recite is the interview's to say.
+const withPrompts = (fn) => (args = {}) => fn({ prompts, pack, ...args });
 export const buildSystemPromptParts = withPrompts(builders.buildSystemPromptParts);
 export const buildSystemPrompt = withPrompts(builders.buildSystemPrompt);
 export const buildRegistrarPrompt = withPrompts(builders.buildRegistrarPrompt);

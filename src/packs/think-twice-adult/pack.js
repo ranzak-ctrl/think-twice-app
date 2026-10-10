@@ -13,18 +13,15 @@
 // model proposes, the code decides", one level up: the pack configures, the
 // engine decides. tests/core/pack.test.js fails if this stops being plain data.
 //
-// ── WHAT IS NOT HERE YET ──
-// Phase 1 moves the configuration out in slices, each guarded by
-// tests/core/prompt-fingerprint.test.js. Still written for these seven stages, and
-// still to move (the same list as docs/interview-platform-plan.md, phase 1):
-//   session.js — the /^stage([1-7])\./ routing of slots, findings and labels; the
-//                stage-1 cast merge and `actors` derivation; the board and close
-//                written into coverage.stage7; the stage-3/5 intensity KPI; the
-//                Hebrew re-open framing (reopenSituation)
-//   vocabulary.js — the barred and mental slot sets
-//   story.js / storyMap.js — the map layers
-//   state.js — the /^stage([1-7])\./ guards in mergeNodes / edges / groups
-// validatePack reports the turn loop's assumptions as engine limits until then.
+// ── EVERYTHING THE ENGINE KNOWS ABOUT THESE SEVEN STAGES IS HERE ──
+// Phase 1 moved the configuration out in three slices, each guarded by
+// tests/core/prompt-fingerprint.test.js (docs/interview-platform-plan.md, phase 1).
+// The last one (10.10.2026) took the turn loop off the number seven: which slot is
+// barred or a mind, where the cast is gated, where intensity is measured and how
+// the map lays the story out used to be constants in session.js, vocabulary.js,
+// state.js and storyMap.js, and are now the flags, components and `map` below.
+// What the engine still holds in Hebrew is its own craft — the summary and opener
+// mechanics, the fallbacks — and it moves with the craft/content split of phase 2.
 //
 // ── WHO OWNS WHAT HERE ──
 // Two kinds of content share this file. The labels and signposts are Natali's
@@ -62,10 +59,18 @@ export const thinkTwiceAdult = {
   //
   // `label` is what the stage rail shows the person; `signpost` is the static
   // fallback when a generated opener fails. Both are Natali's register and must
-  // never carry a stage number or a clinical term.
+  // never carry a stage number or a clinical term. `name` is the stage's working
+  // name for the guide panel — clinical shorthand a tester reads, never the person.
+  //
+  // A slot's flags are clinical rules, not display settings:
+  //   barred — the wound and the ADHD pattern are never drawn or recited to the
+  //            person (CLAUDE.md "כללים קליניים — שלב 2"; Natali, 14.8.2026). They
+  //            are still stored, scored and probed — stage 2 needs them.
+  //   mental — a mind, which alone can be "about" something (docs/event-vocabulary.md).
   stages: [
     {
       key: 'stage1',
+      name: 'עובדות',
       label: 'מה קרה',
       slots: [
         { id: 'trigger' },
@@ -79,32 +84,51 @@ export const thinkTwiceAdult = {
     },
     {
       key: 'stage2',
+      name: 'פרשנות',
       label: 'איך הבנת את זה',
       signpost: 'מיפינו את מה שקרה. עכשיו אני רוצה להבין איך אתה רואה את זה.',
-      slots: [{ id: 'causal' }, { id: 'meaning' }, { id: 'wound' }, { id: 'adhd_pattern' }],
+      slots: [
+        { id: 'causal', mental: true },
+        { id: 'meaning', mental: true },
+        { id: 'wound', mental: true, barred: true },
+        { id: 'adhd_pattern', mental: true, barred: true },
+      ],
     },
     {
       key: 'stage3',
+      name: 'רגש',
       label: 'מה הרגשת',
       signpost: 'הבנו איך אתה רואה את זה. עכשיו בוא נראה מה הרגשת.',
-      slots: [{ id: 'emotion' }, { id: 'intensity' }, { id: 'past_echo' }],
+      slots: [{ id: 'emotion', mental: true }, { id: 'intensity' }, { id: 'past_echo', mental: true }],
+      // The baseline of the emotion delta (רף הקבלה: "דלתא רגש נרשמת בכל ראיון מלא").
+      components: [{ type: 'intensity' }],
     },
     {
       key: 'stage4',
+      name: 'תגובה',
       label: 'איך הגבת',
       signpost: 'זיהינו את הרגש. עכשיו בוא נדבר על מה עשית ומה אתה שוקל לעשות.',
-      slots: [{ id: 'auto_reaction' }, { id: 'planned_reaction' }],
+      slots: [{ id: 'auto_reaction' }, { id: 'planned_reaction', mental: true }],
     },
     {
       key: 'stage5',
+      name: 'פרשנות חלופית',
       label: 'זווית אחרת',
       signpost: 'הבנו את התגובה. עכשיו בוא ננסה לראות את זה מנקודת מבט אחרת.',
-      slots: [{ id: 'perspective' }, { id: 'intention' }, { id: 'alt_formulation' }, { id: 're_emotion' }],
+      slots: [
+        { id: 'perspective', mental: true },
+        { id: 'intention', mental: true },
+        { id: 'alt_formulation', mental: true },
+        { id: 're_emotion', mental: true },
+      ],
       requires: ['stage2'],
       loadGuard: 15, // TEMPORARY backstop — placeholder, questions-for-natali §1
+      // The re-measure: the same feeling, after the move out of self.
+      components: [{ type: 'intensity' }],
     },
     {
       key: 'stage6',
+      name: 'חלופות',
       label: 'מה אפשר לעשות',
       signpost: 'יש לנו תמונה רחבה יותר. בוא נחשוב מה עוד אפשר לעשות.',
       slots: [{ id: 'alternatives' }, { id: 'zero_action' }, { id: 'alt_from_transform' }],
@@ -112,12 +136,38 @@ export const thinkTwiceAdult = {
     },
     {
       key: 'stage7',
+      name: 'הכרעה',
       label: 'מה תבחר',
       signpost: 'יש לנו אפשרויות על השולחן. הגיע הזמן לבחור.',
-      slots: [{ id: 'goal' }, { id: 'board_presented' }, { id: 'sharp_decision' }, { id: 'package_test' }],
+      slots: [
+        { id: 'goal', mental: true },
+        { id: 'board_presented' },
+        { id: 'sharp_decision' },
+        { id: 'package_test' },
+      ],
       // The goal gates the board, not entry here — it is this stage's first question.
       requires: ['stage6'],
       components: [{ type: 'decision' }],
     },
   ],
+
+  // The story map (storyMap.js). `narrative` is the order slots are laid out in
+  // until the person says what led to what — the interview's own arc, event →
+  // interpretation → feeling → what was done, and only a fallback: an edge he
+  // stated always outranks it. Stages 6 and 7 are not on it: the alternatives and
+  // the decision belong to the decision board, which has rules of its own
+  // (design/brief.md:62 — nothing ranks, stars or pre-selects an option).
+  // `timeline` is the slot whose certainty re-forms the map from a scene into a
+  // journey — "then timing arrives" (Ran, 4.9.2026).
+  map: {
+    narrative: [
+      { kind: 'fact', slots: ['stage1.trigger', 'stage1.timeline', 'stage1.status'] },
+      { kind: 'thought', slots: ['stage2.causal', 'stage2.meaning'] },
+      { kind: 'feeling', slots: ['stage3.emotion', 'stage3.past_echo'] },
+      { kind: 'action', slots: ['stage1.auto_reaction', 'stage4.auto_reaction'] },
+      { kind: 'plan', slots: ['stage4.planned_reaction'] },
+      { kind: 'other', slots: ['stage5.perspective', 'stage5.intention', 'stage5.alt_formulation'] },
+    ],
+    timeline: 'stage1.timeline',
+  },
 };

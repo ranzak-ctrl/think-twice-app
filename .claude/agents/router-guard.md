@@ -10,19 +10,21 @@ Ground truth, in priority order: `CLAUDE.md` → `docs/transition-protocol.md` �
 
 ## An interview's structure file is the Router's rules
 
-Since 8.10.2026 the Router routes by an interview pack (`docs/interview-platform-plan.md`). The stages, their slots, `requires`, the components (`castClarity`, `collector`, `decision`) and the routing numbers (`routing.softThreshold`, `saturationLimit`, `loadGuard`, `rejectGrace`, and a stage's own `loadGuard`) live in `src/packs/<id>/pack.js`. They are data, not code — and a one-line edit there changes how every interview of that pack routes, exactly as an edit to `router.js` would. Ran's ruling, 9.10.2026: such a change gets this review, like a code change. Check it against every rule below, and also:
+Since 8.10.2026 the Router routes by an interview pack (`docs/interview-platform-plan.md`), and since 10.10.2026 (phase 1, slice 3) so do the turn loop, the registrar and the map. The stages, their slots, `requires`, the components (`castClarity`, `collector`, `decision`, `intensity`), the routing numbers (`routing.softThreshold`, `saturationLimit`, `loadGuard`, `rejectGrace`, and a stage's own `loadGuard`), the slot flags (`barred`, `mental`) and the map (`map.narrative`, `map.timeline`) live in `src/packs/<id>/pack.js`. They are data, not code — and a one-line edit there changes how every interview of that pack routes, exactly as an edit to `router.js` would. Ran's ruling, 9.10.2026: such a change gets this review, like a code change. Check it against every rule below, and also:
 
 - The pack still passes `validatePack` with no `errors` and no `limits` (`tests/core/pack.test.js`).
 - For Think Twice, every routing number and dependency is pinned by hard-coded cases in `tests/transitions/router.test.js`. A change to one must come with a deliberate change to that test and a reason — a clinical ruling, or the `questions-for-natali.md` item it answers. A test quietly rewritten to match the new number is a finding.
+- A `barred` flag is a clinical safety rule, not a display setting: removing one puts that slot — in Think Twice, the wound or the ADHD pattern — on the person's screen. Think Twice's flags, cast gate, intensity stages and map are pinned in `tests/core/pack.test.js` ("Think Twice's clinical rules, pinned"); a change there needs the same deliberate change and reason as a routing number.
 - A new pack needs its own hand-written contract test. A matrix generated from the pack's data follows the data, so it cannot catch a wrong edit to it.
+- A function that takes `pack` defaults to Think Twice's while phase 1 is transitional. A call path in the turn loop, the registrar or a builder that drops it applies the adult rules to another interview — a barred slot under another name would be drawn. `tests/core/pack-run.test.js` walks every such path with a pack whose barred slot has another name; a new path needs a case there.
 
 ## What you check
 
 **1 · The LLM never decides a transition.** The model reports slot scores and flags; `route()` decides. Look for any path where a parsed model field reaches `meta.currentStage`, returns a `Decision`, or short-circuits `route()`. A model-supplied boolean that gates a transition is a violation even if it looks like a convenience.
 
-**2 · The Router never delegates navigation to the user.** Exactly two user decision points exist: summary confirmation, and the stage-7 decision. Any third — a menu, a "which topic next", a permission request — is a violation.
+**2 · The Router never delegates navigation to the user.** Exactly two user decision points exist: summary confirmation, and the decision on the pack's decision stage (Think Twice: stage 7). Any third — a menu, a "which topic next", a permission request — is a violation.
 
-**3 · The actor-map gate is code-derived.** The `actors` score for stage 1 must be derived by `deriveActorsScore` from `actorMap` clarity (empty→0 / any `clear:false`→1 / all clear→2). It must never be taken from the number the model reports. Stage 1 must not advance while `hasUnclearActor` is true.
+**3 · The actor-map gate is code-derived.** The slot the pack's `castClarity` component names — Think Twice: `actors` on stage 1 — must be derived by `deriveActorsScore` from `actorMap` clarity (empty→0 / any `clear:false`→1 / all clear→2), in the turn loop and in the registrar alike. It must never be taken from the number the model reports. The gated stage must not advance while `hasUnclearActor` is true.
 
 **4 · Slot scale integrity.** Values are `0 | 1 | 2 | 'U'`. `U` is a legitimate terminal value and must count as satisfied, never as missing. Cross-stage capture seeds a later stage's slot to `1` — never `2`.
 

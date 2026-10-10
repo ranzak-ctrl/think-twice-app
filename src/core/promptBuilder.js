@@ -1,5 +1,5 @@
 import { renderEvent } from './eventView.js';
-import { stageKey } from './pack.js';
+import { DEFAULT_PACK, stageKey } from './pack.js';
 import { composeGuidelines } from './guidelines.js';
 
 // ── THE CORE IMPORTS NO PROMPT ──
@@ -10,6 +10,11 @@ import { composeGuidelines } from './guidelines.js';
 //     resistance, evaluator, registrar, summary, opener, board, judge,
 //     stages: { stage1: '…', stage2: '…', … },   // one agent prompt per stage key
 //     forbidden: ['…', …] }                       // the blacklist, one line each
+//
+// Every builder also takes the interview's `pack`, for one reason: the account of
+// the event is redacted by the pack's barred slots (eventView.js), so which slots a
+// summary may recite is the interview's to say. The default is the transitional
+// Think Twice pack, as everywhere in phase 1; the turn loop passes its own.
 //
 // It used to import fourteen .md files with Vite's `?raw` — syntax plain Node
 // cannot load, which is exactly what principle 4 forbids, and which welded one
@@ -82,12 +87,12 @@ const SEP = '\n\n---\n\n';
 // The split is described in plain data — `stable` and `volatile` — and NOT in the
 // API's cache_control vocabulary. Which of the two is cacheable is a fact about the
 // content; how a provider expresses caching belongs to the adapter (principle 4).
-export function buildSystemPromptParts({ stage, state, prompts }) {
+export function buildSystemPromptParts({ stage, state, prompts, pack = DEFAULT_PACK }) {
   const stagePrompt = stagePromptFor(prompts, stage);
   // The ONLY caller that gets the unredacted account — its output is a question
   // to the person, never a text spoken verbatim, and stage 2 must see the מוגלה to
   // probe it. Summary / opener / board keep the safe default.
-  const stateSummary = summarizeState(state, { full: true });
+  const stateSummary = summarizeState(state, { full: true, pack });
 
   return {
     // The stage prompt sits inside the cached half deliberately. It changes seven
@@ -129,7 +134,7 @@ export const REGISTRAR_ENABLED = true;
 
 // The registrar gets the UNREDACTED account, and that is not an oversight.
 // prompt-editor caught it while writing registrar.md: `full` defaults to redacting
-// NEVER_SHOW_SLOTS, and a redacted account hides the ids of the wound stances THE
+// the barred slots, and a redacted account hides the ids of the wound stances THE
 // REGISTRAR ITSELF recorded. It reports deltas keyed by id, so it can only leave an
 // entity alone — or correct it — if it can see the id it minted. Hand it a redacted
 // account and it mints a fresh id for the מוגלה every single turn, filling the
@@ -141,19 +146,19 @@ export const REGISTRAR_ENABLED = true;
 // Returns '' when the switch is off — runRegistrar reads that as "not configured"
 // and skips the call, so the falsy string is load-bearing. When on, it returns the
 // two halves, for the reason in buildSystemPromptParts above.
-export function buildRegistrarPrompt({ state, prompts }) {
+export function buildRegistrarPrompt({ state, prompts, pack = DEFAULT_PACK }) {
   if (!REGISTRAR_ENABLED) return '';
-  return { stable: text(prompts, 'registrar'), volatile: summarizeState(state, { full: true }) };
+  return { stable: text(prompts, 'registrar'), volatile: summarizeState(state, { full: true, pack }) };
 }
 
 // Summary mode — built when the Router decides a stage transition is due.
 // Guidelines + summary instruction + state only; no probing agent, no evaluator.
-export function buildSummaryPrompt({ state, prompts }) {
+export function buildSummaryPrompt({ state, prompts, pack = DEFAULT_PACK }) {
   return [
     guidelines(prompts),
     text(prompts, 'summary'),
     forbiddenBlock(prompts),
-    summarizeState(state),
+    summarizeState(state, { pack }),
   ]
     .filter(Boolean)
     .join('\n\n---\n\n');
@@ -185,7 +190,7 @@ export function buildSummaryMessages(messages, probeMessage) {
 // `situation` (optional) frames the transition — e.g. a Re-open back to an earlier
 // stage to complete info — so the opener can explain why we returned. Forward
 // transitions omit it.
-export function buildOpenerPrompt({ stage, state, situation, prompts }) {
+export function buildOpenerPrompt({ stage, state, situation, prompts, pack = DEFAULT_PACK }) {
   const stagePrompt = stagePromptFor(prompts, stage);
   const situationBlock = situation ? `## הקשר המעבר\n${situation}` : '';
   return [
@@ -194,7 +199,7 @@ export function buildOpenerPrompt({ stage, state, situation, prompts }) {
     text(prompts, 'opener'),
     situationBlock,
     forbiddenBlock(prompts),
-    summarizeState(state),
+    summarizeState(state, { pack }),
   ]
     .filter(Boolean)
     .join('\n\n---\n\n');
@@ -211,16 +216,17 @@ export function buildOpenerMessages(messages) {
   return [...messages, { role: 'user', content: OPENER_NUDGE }];
 }
 
-// Board mode — built when the Router returns SHOW_BOARD (stage 7). The code owns
-// the board: the model synthesises rows from the collected basket; we render them.
-export function buildBoardPrompt({ state, prompts }) {
+// Board mode — built when the Router returns SHOW_BOARD (the decision stage; stage 7
+// in Think Twice). The code owns the board: the model synthesises rows from the
+// collected basket; we render them.
+export function buildBoardPrompt({ state, prompts, pack = DEFAULT_PACK }) {
   const basket = `## BASKET (חלופות שנאספו)\n${JSON.stringify(state.basket ?? [])}`;
   return [
     guidelines(prompts),
     text(prompts, 'board'),
     forbiddenBlock(prompts),
     basket,
-    summarizeState(state),
+    summarizeState(state, { pack }),
   ]
     .filter(Boolean)
     .join('\n\n---\n\n');
@@ -237,8 +243,9 @@ export function formatHistory(history) {
 }
 
 // `full` reaches renderEvent: the probe needs the whole account (stage 2 cannot
-// explore a wound it is not told about); every user-facing builder gets it redacted.
-function summarizeState(state, { full = false } = {}) {
+// explore a wound it is not told about); every user-facing builder gets it redacted,
+// by the pack's barred slots.
+function summarizeState(state, { full = false, pack } = {}) {
   const { coverage, meta } = state;
   const threads = (meta.savedThreads ?? []).length
     ? `\nsaved_threads: ${JSON.stringify(meta.savedThreads)}`
@@ -281,7 +288,7 @@ function summarizeState(state, { full = false } = {}) {
   // key-value pairs answers about key-value pairs; a model handed an account asks
   // its next question about the story. Empty until the registrar is wired, so this
   // is a no-op for now — `renderEvent` returns '' for an untouched record.
-  const event = renderEvent(state, { full });
+  const event = renderEvent(state, { full, pack });
 
   return `${event ? `${event}\n\n` : ''}## STATE SUMMARY (hidden from user)
 stage: ${meta.currentStage}

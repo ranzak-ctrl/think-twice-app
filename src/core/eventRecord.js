@@ -49,24 +49,22 @@
 // the DISPLAY stores (mapLabels, nodes, edges, groups) refuse it.
 //
 // So: the ledger stores everything the Router needs, and every projection of it
-// applies NEVER_SHOW_SLOTS. `displayable()` below is that guard, exported here so
-// a future projection cannot forget to ask.
+// applies the pack's barred slots. `displayable()` below is that guard, exported
+// here so a future projection cannot forget to ask.
 
-// From vocabulary.js, not state.js — which is what removes the import cycle that
-// used to run between these two files. The TDZ trap warned about below is gone
-// with it; the warning stays as the reason not to reintroduce one.
-import { NEVER_SHOW_SLOTS, STANCE_TYPES, EMOTION_PACES, SOURCES, LABEL_MAX } from './vocabulary.js';
+// From vocabulary.js and pack.js, never state.js — which is what removed the import
+// cycle that used to run between these two files. A cycle here would put a module-
+// scope read of a `const` in the TDZ in ONE import order only, the nastiest shape
+// that bug can take; pack.js imports nothing from core, so it cannot close one.
+import { STANCE_TYPES, EMOTION_PACES, SOURCES, LABEL_MAX } from './vocabulary.js';
+import { DEFAULT_PACK, parseSlotRef, barredSlots } from './pack.js';
 export { STANCE_TYPES, EMOTION_PACES, SOURCES };
 export const ENTITY_LABEL_MAX = LABEL_MAX;
 
-// An entity names the slot it feeds. That reference is what makes derivation
-// possible at all, and it is also what the display guard checks.
-// ⚠ NEVER dereference NEVER_SHOW_SLOTS at module scope in this file. The import
-// from state.js is circular, and it is a `const`: hoisting saves the FUNCTIONS here,
-// not that binding. A module-scope read (e.g. `const BARRED = [...NEVER_SHOW_SLOTS]`)
-// would sit in the TDZ and throw a ReferenceError in ONE import order only — the
-// nastiest shape this bug can take. Read it inside a function, as displayable does.
-const SLOT_RE = /^stage([1-7])\.(.+)$/;
+// An entity names the slot it feeds, as "stageN.slot" with N a stage of the pack.
+// That reference is what makes derivation possible at all, and it is also what the
+// display guard checks. The default pack is the transitional one (pack.js); the
+// registrar passes the interview's own.
 
 
 // The three timescales of feeling, in Ran's own words (18.9.2026): "תחושות
@@ -124,17 +122,17 @@ const clean = (v, max = TEXT_MAX) => {
 // The slot an entity feeds, or '' when it names none. An entity with no valid slot
 // is not stored: it has no way to be scored and no way to be display-checked, which
 // is the same contract mergeNodes runs.
-function slotOf(raw) {
+function slotOf(raw, pack) {
   const s = clean(raw, 40);
-  const m = SLOT_RE.exec(s);
-  return m ? s : '';
+  return parseSlotRef(pack, s) ? s : '';
 }
 
-// The one guard every projection of this ledger must call. The wound and the ADHD
-// pattern are stored (the Router needs them) and never drawn.
-export function displayable(entity) {
-  const m = SLOT_RE.exec(entity?.slot ?? '');
-  return !!m && !NEVER_SHOW_SLOTS.has(m[2]);
+// The one guard every projection of this ledger must call. The pack's barred slots
+// — in Think Twice the wound and the ADHD pattern — are stored (the Router needs
+// them) and never drawn.
+export function displayable(entity, pack = DEFAULT_PACK) {
+  const ref = parseSlotRef(pack, entity?.slot ?? '');
+  return !!ref && !barredSlots(pack).has(ref.slot);
 }
 
 // Shared merge: delta-reported, keyed by a stable id, first-in keeps its seq.
@@ -169,11 +167,11 @@ function mergeInto(store, reported, cap, build) {
 // a generalisation or a reading ("he had a go at me"). The registrar judges it;
 // the interviewer acts on it. An omission IS a beat — "she didn't answer the
 // messages" is a step taken, and it is already the example in evaluator.md.
-export function mergeBeats(record, reported) {
+export function mergeBeats(record, reported, pack = DEFAULT_PACK) {
   return {
     ...record,
     beats: mergeInto(record.beats, reported, BEATS_MAX, (b, prev) => {
-      const slot = slotOf(b?.slot) || prev?.slot || '';
+      const slot = slotOf(b?.slot, pack) || prev?.slot || '';
       const text = clean(b?.text);
       if (!slot || (!text && !prev)) return null;
       return {
@@ -206,11 +204,11 @@ export function mergeBeats(record, reported) {
 // `inferred` and stays worth 1 until he adopts it in his own words, at which point
 // the registrar re-reports the same id as `stated`. That is the protocol's rule,
 // executed rather than hoped for.
-export function mergeStances(record, reported) {
+export function mergeStances(record, reported, pack = DEFAULT_PACK) {
   return {
     ...record,
     stances: mergeInto(record.stances, reported, STANCES_MAX, (s, prev) => {
-      const slot = slotOf(s?.slot) || prev?.slot || '';
+      const slot = slotOf(s?.slot, pack) || prev?.slot || '';
       const type = STANCE_TYPES.has(s?.type) ? s.type : prev?.type;
       const text = clean(s?.text);
       if (!slot || !type || (!text && !prev)) return null;
@@ -242,11 +240,11 @@ export function mergeStances(record, reported) {
 // timescales. `intensity` is the 1–10 scale that stage 5's delta is measured
 // against — the same entity read at two points in time, instead of two slots
 // somebody has to remember to compare.
-export function mergeEmotions(record, reported) {
+export function mergeEmotions(record, reported, pack = DEFAULT_PACK) {
   return {
     ...record,
     emotions: mergeInto(record.emotions, reported, EMOTIONS_MAX, (e, prev) => {
-      const slot = slotOf(e?.slot) || prev?.slot || '';
+      const slot = slotOf(e?.slot, pack) || prev?.slot || '';
       const name = clean(e?.name, 40);
       if (!slot || (!name && !prev)) return null;
       const n = Number(e?.intensity);

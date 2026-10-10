@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { buildStory, LAYERS, NEVER_MIRROR } from '../../src/core/story.js';
+import { buildStory } from '../../src/core/story.js';
+// The layers and the barred slots are the pack's since 10.10.2026 (map.narrative,
+// the `barred` slot flag); these tests read them from where the drawing does.
+import { mapNarrative, barredSlots, MAP_KINDS } from '../../src/core/pack.js';
+import { thinkTwiceAdult } from '../../src/packs/think-twice-adult/pack.js';
 import { buildMap } from '../../src/core/storyMap.js';
 import {
   createState,
@@ -43,10 +47,11 @@ describe('story mirror — the clinical exclusions', () => {
   });
 
   it('excludes the barred slots by construction, not by the layer list', () => {
-    for (const layer of LAYERS) {
-      for (const [, slot] of layer.slots) expect(NEVER_MIRROR.has(slot)).toBe(false);
+    const barred = barredSlots(thinkTwiceAdult);
+    for (const layer of mapNarrative(thinkTwiceAdult)) {
+      for (const [, slot] of layer.slots) expect(barred.has(slot)).toBe(false);
     }
-    expect([...NEVER_MIRROR]).toEqual(['wound', 'adhd_pattern']);
+    expect([...barred]).toEqual(['wound', 'adhd_pattern']);
   });
 
   it('draws the cast as names, never a clarity flag or a role', () => {
@@ -157,8 +162,10 @@ describe('story mirror — the chain', () => {
   });
 
   it('types every node so the UI can draw it as the right shape', () => {
-    const kinds = new Set(LAYERS.map((l) => l.kind));
+    const kinds = new Set(mapNarrative(thinkTwiceAdult).map((l) => l.kind));
     expect(kinds).toEqual(new Set(['fact', 'thought', 'feeling', 'action', 'plan', 'other']));
+    // And the catalog a pack chooses from is exactly the shapes StoryMap.jsx draws.
+    expect(MAP_KINDS).toEqual(kinds);
   });
 
   it('gives a node an id that survives an earlier layer landing in front of it', () => {

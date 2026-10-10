@@ -18,6 +18,11 @@ import {
 } from './promptBuilder.js';
 import { signpostForStage } from '../content/signposting.js';
 import { countSelfOther } from './kpi.js';
+// Everything this loop knows about the interview's shape — which "stageN.slot"
+// references are real, where the cast is gated, which stage decides, where
+// intensity is measured — it asks the pack. Until 10.10.2026 it was written for
+// Think Twice's seven stages (plan, phase 1 slice 3).
+import { stageAt, stageWith, hasComponent, parseSlotRef, castOf, intensityKey } from './pack.js';
 import {
   appendDecisionLog,
   recordGapObservation,
@@ -131,9 +136,10 @@ export async function runTurn(state, history, userText, deps) {
     state,
     stage,
     messages,
-    systemPrompt: buildRegistrarPrompt({ state, prompts }),
+    systemPrompt: buildRegistrarPrompt({ state, prompts, pack }),
     completeImpl: complete,
     turn,
+    pack,
   });
   usage = addUsage(usage, registrar.usage);
   const probeState = registrar.state;
@@ -144,7 +150,7 @@ export async function runTurn(state, history, userText, deps) {
     // where the serial order actually pays.
     // The split form, so the adapter can cache the unchanging half. buildSystemPrompt
     // still returns the joined text for anything that wants one string.
-    systemPrompt: buildSystemPromptParts({ stage, state: probeState, prompts }),
+    systemPrompt: buildSystemPromptParts({ stage, state: probeState, prompts, pack }),
     messages,
   });
   usage = addUsage(usage, result.usage);
@@ -168,16 +174,16 @@ export async function runTurn(state, history, userText, deps) {
   const ev = result.evaluation ?? {};
 
   // Slot updates. Bare slot names → the current stage (set as reported). Cross-stage
-  // keys ("stageN.slot") let the model capture info that belongs to a later stage as
-  // it surfaces — pre-seeded to level 1 only; the owning stage still explores it to 2
-  // (Ran, 21.6). Out-of-range / unknown cross-stage slots are ignored.
+  // keys ("stageN.slot", N a stage of this pack) let the model capture info that
+  // belongs to a later stage as it surfaces — pre-seeded to level 1 only; the owning
+  // stage still explores it to 2 (Ran, 21.6). Unknown cross-stage slots are ignored.
+  const currentKey = stageAt(pack, stage).key;
   if (ev.slots && Object.keys(ev.slots).length) {
-    const currentKey = `stage${stage}`;
     let coverage = nextState.coverage;
     for (const [rawKey, value] of Object.entries(ev.slots)) {
-      const m = /^stage([1-7])\.(.+)$/.exec(rawKey);
-      const stageKey = m ? `stage${m[1]}` : currentKey;
-      const slot = m ? m[2] : rawKey;
+      const ref = parseSlotRef(pack, rawKey);
+      const stageKey = ref ? ref.key : currentKey;
+      const slot = ref ? ref.slot : rawKey;
       if (stageKey === currentKey) {
         coverage = { ...coverage, [stageKey]: { ...coverage[stageKey], [slot]: value } };
       } else {
@@ -197,11 +203,10 @@ export async function runTurn(state, history, userText, deps) {
   // state, parallel to slots. Bare names → current stage; "stageN.slot" → that stage.
   // Guarded to known slots. Observability only — findings never affect the Router.
   if (ev.slotFindings && Object.keys(ev.slotFindings).length) {
-    const currentKey = `stage${stage}`;
     for (const [rawKey, items] of Object.entries(ev.slotFindings)) {
-      const m = /^stage([1-7])\.(.+)$/.exec(rawKey);
-      const stageKey = m ? `stage${m[1]}` : currentKey;
-      const slot = m ? m[2] : rawKey;
+      const ref = parseSlotRef(pack, rawKey);
+      const stageKey = ref ? ref.key : currentKey;
+      const slot = ref ? ref.slot : rawKey;
       if (!nextState.coverage[stageKey] || !(slot in nextState.coverage[stageKey])) continue;
       nextState = addFindings(nextState, stageKey, slot, items);
     }
@@ -211,32 +216,34 @@ export async function runTurn(state, history, userText, deps) {
   // same way as findings — bare names to the current stage, "stageN.slot" to that
   // stage — and guarded to known slots. Display only; the Router never reads them.
   if (ev.mapLabels && Object.keys(ev.mapLabels).length) {
-    const currentKey = `stage${stage}`;
     for (const [rawKey, label] of Object.entries(ev.mapLabels)) {
-      const m = /^stage([1-7])\.(.+)$/.exec(rawKey);
-      const stageKey = m ? `stage${m[1]}` : currentKey;
-      const slot = m ? m[2] : rawKey;
+      const ref = parseSlotRef(pack, rawKey);
+      const stageKey = ref ? ref.key : currentKey;
+      const slot = ref ? ref.slot : rawKey;
       if (!nextState.coverage[stageKey] || !(slot in nextState.coverage[stageKey])) continue;
-      nextState = setMapLabel(nextState, stageKey, slot, label);
+      nextState = setMapLabel(nextState, stageKey, slot, label, pack);
     }
   }
 
   // Actor map (מפת שחקנים): the model reports the full resolved cast; the code
-  // replaces the stored map and DERIVES the stage-1 `actors` score from its clarity
-  // (overriding whatever the model put in slots.actors). A muddled cast can't reach
-  // 2, so the Router won't advance stage 1 on it. Only when a map is reported —
-  // otherwise the reported slot score stands (back-compat). The code decides.
+  // replaces the stored map and DERIVES the cast's slot from its clarity (overriding
+  // whatever the model put in that slot). A muddled cast can't reach 2, so the
+  // Router won't advance the gated stage on it. The stage and the slot are the
+  // pack's castClarity component — stage 1 and `actors` in Think Twice. Only when a
+  // map is reported — otherwise the reported slot score stands (back-compat). The
+  // code decides.
   // The cast is the REGISTRAR's (applyRegistrar merges it at any stage, which is
-  // what unfreezes it past stage 1). This path stays for as long as the registrar
-  // is inert and the interviewer is still the only reporter; once registrar.md
-  // lands, `actor_map` leaves evaluator.md and this block goes with it.
-  if (stage === 1 && ev.actorMap) {
+  // what unfreezes it past the gated stage). This path stays for as long as the
+  // interviewer still reports a cast too; once `actor_map` leaves evaluator.md,
+  // this block goes with it.
+  const cast = castOf(pack);
+  if (cast && stage === cast.stage && ev.actorMap) {
     nextState = mergeActorMap(nextState, ev.actorMap);
     nextState = {
       ...nextState,
       coverage: {
         ...nextState.coverage,
-        stage1: { ...nextState.coverage.stage1, actors: deriveActorsScore(nextState.actorMap) },
+        [cast.key]: { ...nextState.coverage[cast.key], [cast.slot]: deriveActorsScore(nextState.actorMap) },
       },
     };
   }
@@ -245,17 +252,17 @@ export async function runTurn(state, history, userText, deps) {
   // the current stage the way findings are — each node names its own slot, because
   // material belonging to stage 3 routinely surfaces in stage 1 and the map draws
   // it where it belongs rather than where the interview happens to be standing.
-  if (ev.nodes) nextState = mergeNodes(nextState, ev.nodes);
+  if (ev.nodes) nextState = mergeNodes(nextState, ev.nodes, pack);
 
   // Story edges: the relations between the case's entities. Merged at any stage —
   // an edge routinely joins a beat in one stage to a beat in another, which is also
   // why gating on them is not the same problem as gating on the actor map
   // (questions-for-natali §10). Display only; the Router never reads them.
-  if (ev.edges) nextState = mergeEdges(nextState, ev.edges);
+  if (ev.edges) nextState = mergeEdges(nextState, ev.edges, pack);
 
   // Containers: groups of nodes drawn as a box around them. Display only, like
   // the edges — the Router never reads them.
-  if (ev.groups) nextState = mergeGroups(nextState, ev.groups);
+  if (ev.groups) nextState = mergeGroups(nextState, ev.groups, pack);
 
   // Open forks (פיצולים לא-מוכרעים): what the STORY left undecided. Merged in at any
   // stage — unlike the actor map this is not stage-1 only, because a story can leave
@@ -266,8 +273,8 @@ export async function runTurn(state, history, userText, deps) {
   // Counters + per-turn signals. Saturation tracks real coverage progress, not the
   // model's "new_info" self-report (which over-reports — Ran, live testing: saturation
   // stuck at 0). A turn that raised no current-stage slot counts toward saturation.
-  const beforeCov = state.coverage[`stage${stage}`] ?? {};
-  const afterCov = nextState.coverage[`stage${stage}`] ?? {};
+  const beforeCov = state.coverage[currentKey] ?? {};
+  const afterCov = nextState.coverage[currentKey] ?? {};
   const newInfo = Object.keys(afterCov).some((k) => slotLevel(afterCov[k]) > slotLevel(beforeCov[k]));
   nextState = {
     ...nextState,
@@ -333,7 +340,8 @@ export async function runTurn(state, history, userText, deps) {
     }
   }
 
-  // Stage 6: accumulate generated alternatives into the basket (deduped).
+  // The collector (Think Twice: stage 6): accumulate generated alternatives into
+  // the basket (deduped).
   if (ev.alternatives?.length) {
     const current = nextState.basket ?? [];
     const seen = new Set(current.map((b) => b.text));
@@ -343,7 +351,8 @@ export async function runTurn(state, history, userText, deps) {
     if (added.length) nextState = { ...nextState, basket: [...current, ...added] };
   }
 
-  // Stage 7: sharpness classification (KPI; a vague decision never closes).
+  // The decision (Think Twice: stage 7): sharpness classification (KPI; a vague
+  // decision never closes).
   if (ev.decisionType) {
     nextState = {
       ...nextState,
@@ -351,7 +360,7 @@ export async function runTurn(state, history, userText, deps) {
     };
   }
 
-  // Stage 7: change measure (מדד שינוי) — did the decision diverge from the gut reaction?
+  // The decision: change measure (מדד שינוי) — did it diverge from the gut reaction?
   if (typeof ev.differsFromAutomatic === 'boolean') {
     nextState = {
       ...nextState,
@@ -362,23 +371,18 @@ export async function runTurn(state, history, userText, deps) {
     };
   }
 
-  // Emotion intensity (1-10) for the delta KPI: stage 3 baseline vs stage 5.
-  if (typeof ev.emotionIntensity === 'number') {
-    const kpiKey =
-      nextState.meta.currentStage === 3
-        ? 'emotionIntensityStage3'
-        : nextState.meta.currentStage === 5
-        ? 'emotionIntensityStage5'
-        : null;
-    if (kpiKey) {
-      nextState = {
-        ...nextState,
-        meta: { ...nextState.meta, kpi: { ...nextState.meta.kpi, [kpiKey]: ev.emotionIntensity } },
-      };
-    }
+  // Emotion intensity (1-10) for the delta KPI, recorded only while standing in a
+  // stage that carries the intensity component — Think Twice: stage 3 baseline
+  // against stage 5.
+  const measuring = nextState.meta.currentStage;
+  if (typeof ev.emotionIntensity === 'number' && hasComponent(stageAt(pack, measuring), 'intensity')) {
+    nextState = {
+      ...nextState,
+      meta: { ...nextState.meta, kpi: { ...nextState.meta.kpi, [intensityKey(measuring)]: ev.emotionIntensity } },
+    };
   }
 
-  // Stage 7: capture the chosen option and its package (gain/cost) into state.
+  // The decision: capture the chosen option and its package (gain/cost) into state.
   if (ev.decision) {
     nextState = { ...nextState, decision: { ...nextState.decision, ...ev.decision } };
   }
@@ -386,11 +390,15 @@ export async function runTurn(state, history, userText, deps) {
   // The code decides transitions, never the model.
   const decision = route(nextState, pack);
   let reply = result.message ?? PARSE_FALLBACK;
+  // The stage that decides — where the board is shown and the session closes. One
+  // per pack, and always the last (validatePack). Think Twice: stage 7.
+  const decisionStage = stageWith(pack, 'decision');
+  const decisionKey = stageAt(pack, decisionStage).key;
 
   if (decision.decision === Decision.REQUEST_CONFIRMATION) {
     const summaryResult = await complete({
       stage: nextState.meta.currentStage,
-      systemPrompt: buildSummaryPrompt({ state: nextState, prompts }),
+      systemPrompt: buildSummaryPrompt({ state: nextState, prompts, pack }),
       // Anchor with the model's probe + an explicit "summarize now" turn so the reply
       // is a recap, not a continuation of the dialogue (the dissonance Ran hit).
       messages: buildSummaryMessages(messages, result.message),
@@ -412,8 +420,8 @@ export async function runTurn(state, history, userText, deps) {
 
   if (decision.decision === Decision.SHOW_BOARD) {
     const boardResult = await complete({
-      stage: 7,
-      systemPrompt: buildBoardPrompt({ state: nextState, prompts }),
+      stage: decisionStage,
+      systemPrompt: buildBoardPrompt({ state: nextState, prompts, pack }),
       messages,
       mode: 'board',
     });
@@ -422,7 +430,7 @@ export async function runTurn(state, history, userText, deps) {
       board: boardResult.evaluation?.board ?? [],
       coverage: {
         ...nextState.coverage,
-        stage7: { ...nextState.coverage.stage7, board_presented: 2 },
+        [decisionKey]: { ...nextState.coverage[decisionKey], board_presented: 2 },
       },
     };
     usage = addUsage(usage, boardResult.usage);
@@ -446,7 +454,7 @@ export async function runTurn(state, history, userText, deps) {
       },
       coverage: {
         ...nextState.coverage,
-        stage7: { ...nextState.coverage.stage7, board_presented: 0 },
+        [decisionKey]: { ...nextState.coverage[decisionKey], board_presented: 0 },
       },
     };
     // Anchored Re-open opener: the question must explain why we returned and tie to
@@ -469,7 +477,7 @@ export async function runTurn(state, history, userText, deps) {
           ...nextState.meta.kpi,
           questionsPerStage: {
             ...nextState.meta.kpi.questionsPerStage,
-            stage7: nextState.meta.questionCount,
+            [decisionKey]: nextState.meta.questionCount,
           },
         },
       },
@@ -506,7 +514,7 @@ async function completeStageOpener(state, history, opts = {}, deps) {
   const stage = state.meta.currentStage;
   const result = await complete({
     stage,
-    systemPrompt: buildOpenerPrompt({ stage, state, situation: opts.situation, prompts }),
+    systemPrompt: buildOpenerPrompt({ stage, state, situation: opts.situation, prompts, pack }),
     // Must end with a user turn (no assistant prefill); buildOpenerMessages appends
     // the user's confirmation only when the history ends on an assistant turn.
     messages: buildOpenerMessages(formatHistory(history)),
@@ -534,10 +542,11 @@ export async function generateStageOpener(state, history, opts = {}, deps) {
 }
 
 // Frame a Re-open so the opener explains why we returned to an earlier stage and
-// anchors in what the user just raised.
+// anchors in what the user just raised. A merge always re-opens the collector
+// stage (router.js), so its number is the decision's target — 6 in Think Twice.
 function reopenSituation(decision) {
   if (decision.reason === 'merge') {
-    return 'חזרה לשלב החלופות (6): המשתמש העלה פעולת "גם וגם" ממשית וברת-ביצוע. עגן את הפתיח בפעולה שהוא העלה — הוסף אותה לסל האפשרויות והזמן אותו להמשיך לבחון חלופות. אל תתייחס לזה כסגירה.';
+    return `חזרה לשלב החלופות (${decision.targetStage}): המשתמש העלה פעולת "גם וגם" ממשית וברת-ביצוע. עגן את הפתיח בפעולה שהוא העלה — הוסף אותה לסל האפשרויות והזמן אותו להמשיך לבחון חלופות. אל תתייחס לזה כסגירה.`;
   }
   return `חזרה לשלב ${decision.targetStage} כדי להשלים מידע שהתברר כחסר או סותר. עגן את הפתיח במה שעלה זה עתה, והבהר מה נשלים כאן.`;
 }

@@ -2,10 +2,16 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
   STANCE_TYPES, EMOTION_PACES, EDGE_KINDS, GROUP_KINDS,
-  SOURCES, NODE_SCALES, NEVER_SHOW_SLOTS, LABEL_MAX,
+  SOURCES, NODE_SCALES, LABEL_MAX,
 } from '../../src/core/vocabulary.js';
+import * as vocabulary from '../../src/core/vocabulary.js';
 import * as state from '../../src/core/state.js';
 import * as record from '../../src/core/eventRecord.js';
+// The barred slots name slots, and slots are an interview's: since 10.10.2026 they
+// are a flag in each pack, not a set in the graph's vocabulary.
+import { barredSlots } from '../../src/core/pack.js';
+import { thinkTwiceAdult } from '../../src/packs/think-twice-adult/pack.js';
+const NEVER_SHOW_SLOTS = barredSlots(thinkTwiceAdult);
 
 // docs/event-vocabulary.md and the מילון tab of the v2 dashboard are the list Ran
 // manages. This file is what stops them from drifting apart from the code — the
@@ -26,6 +32,13 @@ const SETS = {
   NODE_SCALES: [NODE_SCALES, ['episode', 'ongoing']],
   NEVER_SHOW_SLOTS: [NEVER_SHOW_SLOTS, ['wound', 'adhd_pattern']],
 };
+
+describe('slot sets are not vocabulary', () => {
+  it('vocabulary.js no longer names any slot', () => {
+    expect(vocabulary.NEVER_SHOW_SLOTS).toBeUndefined();
+    expect(vocabulary.MENTAL_SLOTS).toBeUndefined();
+  });
+});
 
 describe('the vocabulary is exactly what is documented', () => {
   // Hardcoded rather than derived, deliberately: an addition should have to be
@@ -89,7 +102,6 @@ describe('one definition, however it is imported', () => {
     expect(state.EDGE_KINDS).toBe(EDGE_KINDS);
     expect(state.GROUP_KINDS).toBe(GROUP_KINDS);
     expect(state.NODE_SCALES).toBe(NODE_SCALES);
-    expect(state.NEVER_SHOW_SLOTS).toBe(NEVER_SHOW_SLOTS);
     expect(record.STANCE_TYPES).toBe(STANCE_TYPES);
     expect(record.EMOTION_PACES).toBe(EMOTION_PACES);
     expect(record.SOURCES).toBe(SOURCES);

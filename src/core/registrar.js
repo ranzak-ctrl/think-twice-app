@@ -16,9 +16,11 @@
 // transition: the Router reads `coverage` and `meta`, neither of which this writes.
 //
 // The one exception is the one that already existed and that CLAUDE.md blesses:
-// the code derives `actors` from the cast's clarity (deriveActorsScore) and the
-// Router refuses to advance stage 1 on a muddled cast. The registrar now holds the
-// cast, so it feeds that gate — the model still does not score it, the code does.
+// the code derives the cast's slot from the cast's clarity (deriveActorsScore) and
+// the Router refuses to advance the gated stage on a muddled cast — `actors` and
+// stage 1 in Think Twice, wherever a pack puts its castClarity component. The
+// registrar now holds the cast, so it feeds that gate — the model still does not
+// score it, the code does.
 //
 // ── RAW MATERIAL: THE TRANSCRIPT, NOT THE INTERVIEWER'S EXTRACTION ──
 // Settled 18.9.2026. Extract-then-assemble is a lossy relay — a graph built from a
@@ -60,6 +62,7 @@ import {
   deriveActorsScore,
   recordGapObservation,
 } from './state.js';
+import { DEFAULT_PACK, castOf } from './pack.js';
 
 // Parse the registrar's reply. Deliberately NOT responseParser.parseResponse: that
 // one requires a `message` field and fails without one. The registrar has no
@@ -98,14 +101,16 @@ export function parseRegistrarResponse(raw) {
 }
 
 // Fold one registrar report into the StateDocument. Every store it writes already
-// owns its own validation — this routes, it does not re-validate.
-export function applyRegistrar(state, deltas, turn = 0) {
+// owns its own validation — this routes, it does not re-validate. The pack says
+// which slot references are real, which slots are barred from display, and where
+// the cast is gated; runRegistrar passes the interview's own.
+export function applyRegistrar(state, deltas, turn = 0, pack = DEFAULT_PACK) {
   if (!deltas) return state;
   let record = state.eventRecord ?? createEventRecord();
   if (deltas.setting) record = mergeSetting(record, deltas.setting);
-  if (deltas.beats?.length) record = mergeBeats(record, deltas.beats);
-  if (deltas.stances?.length) record = mergeStances(record, deltas.stances);
-  if (deltas.emotions?.length) record = mergeEmotions(record, deltas.emotions);
+  if (deltas.beats?.length) record = mergeBeats(record, deltas.beats, pack);
+  if (deltas.stances?.length) record = mergeStances(record, deltas.stances, pack);
+  if (deltas.emotions?.length) record = mergeEmotions(record, deltas.emotions, pack);
 
   let next = { ...state, eventRecord: record };
 
@@ -115,23 +120,29 @@ export function applyRegistrar(state, deltas, turn = 0) {
   // anyone, with nowhere to write it back. The registrar holds the cast for the
   // whole interview, so the freeze goes.
   //
-  // The derivation stays code-side and unchanged: `actors` comes from the cast's
-  // clarity, never from a number a model reported. Deriving it outside stage 1 is
-  // harmless — the Router reads a stage's coverage only while standing in it — and
-  // is correct if a Re-open ever brings the interview back to stage 1.
+  // The derivation stays code-side and unchanged: the cast's slot — the one the
+  // pack's castClarity component names, `stage1.actors` in Think Twice — comes from
+  // the cast's clarity, never from a number a model reported. Deriving it outside
+  // that stage is harmless — the Router reads a stage's coverage only while standing
+  // in it — and is correct if a Re-open ever brings the interview back there. An
+  // interview with no cast gate keeps the cast for the map and the account, and
+  // derives nothing.
   if (deltas.actors?.length) {
     next = mergeActorMap(next, deltas.actors);
-    next = {
-      ...next,
-      coverage: {
-        ...next.coverage,
-        stage1: { ...next.coverage.stage1, actors: deriveActorsScore(next.actorMap) },
-      },
-    };
+    const cast = castOf(pack);
+    if (cast) {
+      next = {
+        ...next,
+        coverage: {
+          ...next.coverage,
+          [cast.key]: { ...next.coverage[cast.key], [cast.slot]: deriveActorsScore(next.actorMap) },
+        },
+      };
+    }
   }
 
-  if (deltas.edges?.length) next = mergeEdges(next, deltas.edges);
-  if (deltas.groups?.length) next = mergeGroups(next, deltas.groups);
+  if (deltas.edges?.length) next = mergeEdges(next, deltas.edges, pack);
+  if (deltas.groups?.length) next = mergeGroups(next, deltas.groups, pack);
   if (deltas.openForks?.length) next = mergeOpenForks(next, deltas.openForks);
 
   // Contradiction against past versions of the story. Ran raised this as a Router
@@ -154,7 +165,7 @@ export function applyRegistrar(state, deltas, turn = 0) {
 // interview without one instead of stopping it. The error is returned for the
 // guide trail. (A missing registrar TEXT is not a runtime failure any more: the
 // engine refuses to be composed without it while the switch is on — engine.js.)
-export async function runRegistrar({ state, messages, systemPrompt, completeImpl, turn = 0, stage }) {
+export async function runRegistrar({ state, messages, systemPrompt, completeImpl, turn = 0, stage, pack = DEFAULT_PACK }) {
   if (!systemPrompt || !messages?.length || typeof completeImpl !== 'function') {
     return { state, usage: null, error: 'not_configured' };
   }
@@ -169,5 +180,5 @@ export async function runRegistrar({ state, messages, systemPrompt, completeImpl
   const parsed = parseRegistrarResponse(result.raw ?? result.message ?? '');
   if (!parsed.ok) return { state, usage: result.usage ?? null, error: parsed.error };
 
-  return { state: applyRegistrar(state, parsed.deltas, turn), usage: result.usage ?? null, error: null };
+  return { state: applyRegistrar(state, parsed.deltas, turn, pack), usage: result.usage ?? null, error: null };
 }

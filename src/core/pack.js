@@ -30,7 +30,23 @@ export const COMPONENT_TYPES = new Set([
   'castClarity', // block advance while an actor is unclear; derive the named slot from the cast
   'collector',   // the production stage: options accumulate in the basket, never ranked
   'decision',    // board from the basket, sharpness, package test; a vague decision never closes
+  'intensity',   // record the reported emotion intensity (1–10) while standing here — the delta KPI
 ]);
+
+// What a slot may say about itself, beyond its id. Both are matched BY NAME,
+// wherever the slot is referenced — see barredSlots below.
+//   barred — never drawn or recited to the person: stored, scored, probed, and
+//            refused by every display store and projection (plan §3.1). Think
+//            Twice: the wound and the ADHD pattern (CLAUDE.md, Natali 14.8.2026).
+//   mental — a mind: a reading, a want or a feeling. Only a mind can be "about"
+//            something, and mergeEdges refuses an `about` edge from anything else.
+export const SLOT_FLAGS = ['barred', 'mental'];
+
+// The shapes the story map draws a slot's cube as. StoryMap.jsx places fact,
+// action and plan in the events column and the rest in the meaning column. A pack
+// puts its slots on the map by naming one of these; a new shape is a change to the
+// map, not to a pack.
+export const MAP_KINDS = new Set(['fact', 'thought', 'feeling', 'action', 'plan', 'other']);
 
 // The decision component reads these slots by name — they are the engine's, not
 // the pack's, for as long as the component is written against them.
@@ -44,6 +60,7 @@ export const LOAD_GUARD_MAX = 50;
 
 // ── Accessors. Stages are addressed by position, 1-based, as meta.currentStage is.
 // Anything that is not a whole number names no stage — the engine never guesses.
+// They expect a pack validatePack accepted, except where marked tolerant.
 export const stageCount = (pack) => pack.stages.length;
 export const stageAt = (pack, n) => (Number.isInteger(n) ? pack.stages[n - 1] : undefined);
 export const stageKey = (n) => `stage${n}`;
@@ -64,15 +81,83 @@ export function stageNumberOf(pack, key) {
   return i === -1 ? null : i + 1;
 }
 
+// ── Slot references. "stageN.slot" is how the StateDocument, the model's reports
+// and every store address a slot. A reference names a stage of THIS pack or it is
+// not a reference: N is a whole number from 1 to the pack's stage count, written
+// without a leading zero. For Think Twice's seven stages that is exactly the
+// /^stage([1-7])\.(.+)$/ that nine places in the core used to repeat.
+const SLOT_REF = /^stage([1-9]\d*)\.(.+)$/;
+
+export function parseSlotRef(pack, ref) {
+  const m = typeof ref === 'string' ? SLOT_REF.exec(ref) : null;
+  if (!m) return null;
+  const stage = Number(m[1]);
+  if (stage > stageCount(pack)) return null;
+  return { stage, key: stageKey(stage), slot: m[2] };
+}
+
+// A reference to a slot the pack actually has.
+export function isSlotOf(pack, ref) {
+  const r = parseSlotRef(pack, ref);
+  return !!r && slotIds(stageAt(pack, r.stage)).includes(r.slot);
+}
+
+// Slot ids carrying a flag anywhere in the pack. Matched by NAME, as the guards
+// always matched them: "stage3.wound" is refused although stage 3 has no such
+// slot, which is the safe direction for a rule whose failure is the wound drawn on
+// someone's screen. validatePack holds a name to the same flags in every stage
+// that uses it, so matching by name is never ambiguous.
+const flagged = (pack, flag) =>
+  new Set(
+    pack.stages.flatMap((s) =>
+      (Array.isArray(s?.slots) ? s.slots : []).filter((x) => x?.[flag] === true).map((x) => x.id)
+    )
+  );
+export const barredSlots = (pack) => flagged(pack, 'barred');
+export const mentalSlots = (pack) => flagged(pack, 'mental');
+
+// The castClarity component: the stage it gates, and the slot the code derives
+// from the cast's clarity instead of taking the model's number. One per pack
+// (validatePack) — an interview has one cast.
+export function castOf(pack) {
+  const n = stageWith(pack, 'castClarity');
+  return n == null ? null : { stage: n, key: stageKey(n), slot: componentOf(stageAt(pack, n), 'castClarity').slot };
+}
+
+// The stages carrying the intensity component, in order, and the KPI key each one
+// records into. The first is the baseline, the last the re-measure; the delta
+// between them is the KPI. Think Twice: stage 3 against stage 5.
+export const intensityStages = (pack) =>
+  pack.stages.flatMap((s, i) => (hasComponent(s, 'intensity') ? [i + 1] : []));
+export const intensityKey = (n) => `emotionIntensityStage${n}`;
+
+// The story map's fallback order, as [stageKey, slot] pairs per kind — the shape
+// storyMap.js lays out. Only for a validated pack: every reference parses.
+export function mapNarrative(pack) {
+  const rows = Array.isArray(pack.map?.narrative) ? pack.map.narrative : [];
+  return rows.map(({ kind, slots }) => ({
+    kind,
+    slots: slots.map((ref) => {
+      const r = parseSlotRef(pack, ref);
+      return [r.key, r.slot];
+    }),
+  }));
+}
+
+// The slot whose certainty turns the map from a scene into a journey, or null.
+export const mapTimeline = (pack) => parseSlotRef(pack, pack.map?.timeline);
+
 // ── Validation ──
 // Returns { ok, errors, limits }, and never throws: an editor hands this whatever
 // a person typed. Every entry is a sentence a pack author can act on.
 //
 //   errors — the pack breaks the contract. No engine could run it as written.
-//   limits — the contract allows it, but THIS engine cannot run it yet: parts of
-//            the turn loop (session.js) are still written for Think Twice's seven
-//            stages. Each limit names what lifts it; phase 1 removes them as the
-//            loop moves onto the pack. A pack is runnable only when both are empty.
+//   limits — the contract allows it, but THIS engine cannot run it yet. Each limit
+//            names what lifts it. A pack is runnable only when both are empty.
+//            None stands today: the two that did (exactly seven stages; the cast
+//            gate only on stage 1) were lifted by phase 1, slice 3 (10.10.2026),
+//            when the turn loop moved onto the pack. The channel stays for the next
+//            thing the contract allows before the engine can do it.
 const SLOT_ID = /^[a-z_]+$/; // gap targets are normalised against this shape (state.js normalizeTarget)
 const isPosInt = (v) => Number.isInteger(v) && v >= 1;
 const isObj = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -131,6 +216,9 @@ export function validatePack(pack) {
     const where = `stage ${n}`;
     if (stage.key !== stageKey(n)) err(`${where}: key must be "${stageKey(n)}" (keys follow order)`);
     if (typeof stage.label !== 'string' || !stage.label.trim()) err(`${where}: label is required`);
+    if (stage.name !== undefined && (typeof stage.name !== 'string' || !stage.name.trim())) {
+      err(`${where}: name must be text`);
+    }
     if (stage.signpost !== undefined && typeof stage.signpost !== 'string') err(`${where}: signpost must be text`);
     if (stage.loadGuard !== undefined && !isGuard(stage.loadGuard)) {
       err(`${where}: loadGuard must be a whole number from 1 to ${LOAD_GUARD_MAX}`);
@@ -144,6 +232,11 @@ export function validatePack(pack) {
       err(`${where}: slot ids must be unique`);
     }
     const ids = Array.isArray(stage.slots) ? stage.slots.filter(isObj).map((s) => s.id) : [];
+    for (const s of Array.isArray(stage.slots) ? stage.slots.filter(isObj) : []) {
+      for (const flag of SLOT_FLAGS) {
+        if (s[flag] !== undefined && typeof s[flag] !== 'boolean') err(`${where}: slot "${s.id}" — ${flag} must be true or false`);
+      }
+    }
 
     if (stage.requires !== undefined && !Array.isArray(stage.requires)) {
       err(`${where}: requires must be a list of stage keys`);
@@ -172,7 +265,9 @@ export function validatePack(pack) {
   const carriers = (type) => stages.map((s, i) => (hasComponent(s, type) ? i + 1 : null)).filter(Boolean);
   const collectors = carriers('collector');
   const decisions = carriers('decision');
-  for (const [type, at] of [['collector', collectors], ['decision', decisions]]) {
+  // One cast per interview, so one gate on it: the derived slot is the cast's one
+  // score, and two stages deriving it would be two scores of the same thing.
+  for (const [type, at] of [['castClarity', carriers('castClarity')], ['collector', collectors], ['decision', decisions]]) {
     if (at.length > 1) err(`only one stage may carry "${type}"`);
   }
   // Today the decision is the only way an interview closes, so it must be last.
@@ -187,18 +282,67 @@ export function validatePack(pack) {
     err('the decision component needs a "collector" stage before it');
   }
 
-  // ── Engine limits (phase 1). session.js still routes material by
-  // /^stage([1-7])\./, derives `stage1.actors` from the cast, and writes the board
-  // and the session's close into `coverage.stage7`. Lifted by phase 1, slice 3.
-  if (stages.length !== 7) {
-    limits.push('the turn loop still assumes exactly 7 stages (session.js, until phase 1 slice 3)');
-  }
-  const cast = stages.flatMap((s, i) => (hasComponent(s, 'castClarity') ? [[i + 1, componentOf(s, 'castClarity')]] : []));
-  if (cast.some(([n, c]) => n !== 1 || c.slot !== 'actors')) {
-    limits.push('castClarity can only sit on stage 1 with slot "actors" (session.js, until phase 1 slice 3)');
+  // A slot name means one thing. The barred and mental guards match by name (see
+  // barredSlots), so a name barred in one stage and not in another would be barred
+  // in both — or, read the other way, unbarred where someone meant it barred.
+  const flagsOf = new Map();
+  for (const s of stages.flatMap((st) => (Array.isArray(st.slots) ? st.slots.filter(isObj) : []))) {
+    const sig = SLOT_FLAGS.map((f) => s[f] === true).join();
+    if (flagsOf.has(s.id) && flagsOf.get(s.id) !== sig) {
+      err(`slot "${s.id}" appears in two stages with different flags — the guards match slots by name`);
+    }
+    flagsOf.set(s.id, sig);
   }
 
+  validateMap(pack, err);
   return done();
+}
+
+// The story map: where each slot's cube goes until the person relates the pieces
+// himself, and which slot turns the scene into a journey. Optional — a pack with
+// no map still draws what the model reports, every cube as 'other', in report order.
+function validateMap(pack, err) {
+  if (pack.map === undefined) return;
+  if (!isObj(pack.map)) {
+    err('map must be an object');
+    return;
+  }
+  const barred = barredSlots(pack);
+  // A reference the map can draw: a real slot, and never a barred one — a barred
+  // slot listed here would be drawn by the one consumer told where to put it.
+  const drawable = (at, ref) => {
+    if (!isSlotOf(pack, ref)) {
+      err(`${at}: "${ref}" is not a slot of this pack`);
+      return false;
+    }
+    if (barred.has(parseSlotRef(pack, ref).slot)) {
+      err(`${at}: "${ref}" is barred and is never drawn`);
+      return false;
+    }
+    return true;
+  };
+
+  const { narrative, timeline } = pack.map;
+  if (narrative !== undefined && !Array.isArray(narrative)) err('map.narrative must be a list');
+  const seen = new Set();
+  (Array.isArray(narrative) ? narrative : []).forEach((row, i) => {
+    const at = `map.narrative[${i}]`;
+    if (!isObj(row) || !MAP_KINDS.has(row.kind)) {
+      err(`${at}: kind must be one of ${[...MAP_KINDS].join(', ')}`);
+      return;
+    }
+    if (!Array.isArray(row.slots) || !row.slots.length) {
+      err(`${at}: slots must list at least one slot`);
+      return;
+    }
+    for (const ref of row.slots) {
+      if (!drawable(at, ref)) continue;
+      // One place per cube: listed twice, the later rank would silently win.
+      if (seen.has(ref)) err(`${at}: "${ref}" is already placed on the map`);
+      seen.add(ref);
+    }
+  });
+  if (timeline !== undefined) drawable('map.timeline', timeline);
 }
 
 // ── The pack's texts ──

@@ -7,7 +7,10 @@
 
 import { describe, it, expect } from 'vitest';
 import { thinkTwiceAdult } from '../../src/packs/think-twice-adult/pack.js';
-import { validatePack, DEFAULT_PACK, stageWith } from '../../src/core/pack.js';
+import {
+  validatePack, DEFAULT_PACK, stageWith, parseSlotRef, barredSlots, mentalSlots, castOf,
+  intensityStages, mapNarrative, mapTimeline,
+} from '../../src/core/pack.js';
 import { route, evaluateStage, rejectConfirmation, confirmAndAdvance, Decision } from '../../src/core/router.js';
 import { createState, mergeActorMap } from '../../src/core/state.js';
 import { signpostForStage } from '../../src/content/signposting.js';
@@ -102,18 +105,116 @@ describe('validatePack never throws on malformed input', () => {
   }
 });
 
-// The contract allows these; the turn loop does not yet (session.js still assumes
-// Think Twice's shape). They are reported apart from errors, and phase 1 slice 3
-// lifts them. router-guard F2/F3: until then, "valid" must not mean "runnable".
-describe('engine limits — valid packs this engine cannot run yet', () => {
-  it('a cast gate anywhere but stage 1 / actors', () => {
+// Phase 1 slice 3 (10.10.2026) moved the turn loop onto the pack, and the two
+// limits validatePack reported until then — exactly seven stages, and the cast gate
+// only on stage 1 / actors — are gone. What a pack may now say about its slots, its
+// cast and its map is validated instead.
+describe('what slice 3 lifted, and what it validates instead', () => {
+  const broken = (mutate) => {
     const p = clone(thinkTwiceAdult);
-    p.stages[0].components = [];
-    p.stages[2].components = [{ type: 'castClarity', slot: 'emotion' }];
-    const r = validatePack(p);
-    expect(r.errors).toEqual([]);
+    mutate(p);
+    return validatePack(p);
+  };
+  const fails = (mutate, fragment) => {
+    const r = broken(mutate);
     expect(r.ok).toBe(false);
-    expect(r.limits.join(' ')).toContain('castClarity');
+    expect(r.errors.join(' | ')).toContain(fragment);
+  };
+
+  it('runs a cast gate on any stage and slot', () => {
+    expect(broken((p) => {
+      p.stages[0].components = [];
+      p.stages[2].components = [{ type: 'castClarity', slot: 'emotion' }, { type: 'intensity' }];
+    })).toEqual({ ok: true, errors: [], limits: [] });
+  });
+
+  it('one cast gate per interview — there is one cast', () => fails((p) => {
+    p.stages[2].components.push({ type: 'castClarity', slot: 'emotion' });
+  }, 'only one stage may carry "castClarity"'));
+  it('a slot flag that is not true or false', () => fails((p) => { p.stages[1].slots[2].barred = 'yes'; }, 'barred must be true or false'));
+  // The guards match by name: barred here and not there would leak, or over-bar.
+  it('one slot name with two sets of flags', () => fails((p) => { p.stages[3].slots[0].barred = true; }, 'different flags'));
+  it('a stage name that is not text', () => fails((p) => { p.stages[0].name = 7; }, 'name must be text'));
+  it('a map that is not an object', () => fails((p) => { p.map = []; }, 'map must be an object'));
+  it('a map kind the drawing has no shape for', () => fails((p) => { p.map.narrative[0].kind = 'cloud'; }, 'kind must be one of'));
+  it('a map row with no slots', () => fails((p) => { p.map.narrative[0].slots = []; }, 'at least one slot'));
+  it('a map slot the pack does not have', () => fails((p) => { p.map.narrative[0].slots.push('stage1.weather'); }, 'not a slot of this pack'));
+  it('a map slot past the last stage', () => fails((p) => { p.map.narrative[0].slots.push('stage8.trigger'); }, 'not a slot of this pack'));
+  // The wound on the map is the failure every barred guard exists to prevent.
+  it('a barred slot placed on the map', () => fails((p) => { p.map.narrative[1].slots.push('stage2.wound'); }, 'barred'));
+  it('a slot placed twice', () => fails((p) => { p.map.narrative[5].slots.push('stage1.trigger'); }, 'already placed'));
+  it('a timeline the pack does not have', () => fails((p) => { p.map.timeline = 'stage1.clock'; }, 'map.timeline'));
+  it('a barred timeline', () => fails((p) => { p.map.timeline = 'stage2.adhd_pattern'; }, 'barred'));
+  it('a map is optional', () => {
+    expect(broken((p) => { delete p.map; }).ok).toBe(true);
+  });
+});
+
+// Think Twice's own rules, written by hand. The flags, the cast gate, the intensity
+// measure and the map moved from code into pack.js on 10.10.2026; a one-line edit
+// there must fail here until it is made on purpose (router-guard F1 of 8.10.2026,
+// the same contract tests/transitions/router.test.js keeps for the routing numbers).
+describe("Think Twice's clinical rules, pinned", () => {
+  it('bars exactly the wound and the ADHD pattern from display', () => {
+    expect([...barredSlots(thinkTwiceAdult)].sort()).toEqual(['adhd_pattern', 'wound']);
+  });
+
+  it('counts exactly these slots as minds', () => {
+    expect([...mentalSlots(thinkTwiceAdult)].sort()).toEqual([
+      'adhd_pattern', 'alt_formulation', 'causal', 'emotion', 'goal', 'intention',
+      'meaning', 'past_echo', 'perspective', 'planned_reaction', 're_emotion', 'wound',
+    ]);
+  });
+
+  it('gates the cast on stage 1 and derives `actors`', () => {
+    expect(castOf(thinkTwiceAdult)).toEqual({ stage: 1, key: 'stage1', slot: 'actors' });
+  });
+
+  it('measures intensity in stage 3 and again in stage 5', () => {
+    expect(intensityStages(thinkTwiceAdult)).toEqual([3, 5]);
+    expect(Object.keys(createState().meta.kpi).slice(0, 2)).toEqual(['emotionIntensityStage3', 'emotionIntensityStage5']);
+  });
+
+  it('lays the map out in the narrative it always had', () => {
+    expect(mapNarrative(thinkTwiceAdult)).toEqual([
+      { kind: 'fact', slots: [['stage1', 'trigger'], ['stage1', 'timeline'], ['stage1', 'status']] },
+      { kind: 'thought', slots: [['stage2', 'causal'], ['stage2', 'meaning']] },
+      { kind: 'feeling', slots: [['stage3', 'emotion'], ['stage3', 'past_echo']] },
+      { kind: 'action', slots: [['stage1', 'auto_reaction'], ['stage4', 'auto_reaction']] },
+      { kind: 'plan', slots: [['stage4', 'planned_reaction']] },
+      { kind: 'other', slots: [['stage5', 'perspective'], ['stage5', 'intention'], ['stage5', 'alt_formulation']] },
+    ]);
+    expect(mapTimeline(thinkTwiceAdult)).toEqual({ stage: 1, key: 'stage1', slot: 'timeline' });
+  });
+
+  it('names its stages for the guide panel as the panel always did', () => {
+    expect(thinkTwiceAdult.stages.map((s) => s.name)).toEqual([
+      'עובדות', 'פרשנות', 'רגש', 'תגובה', 'פרשנות חלופית', 'חלופות', 'הכרעה',
+    ]);
+  });
+});
+
+// The reference grammar replaced /^stage([1-7])\.(.+)$/ in nine places. On Think
+// Twice's seven stages it must accept and reject exactly what that did.
+describe('a slot reference names a stage of the pack', () => {
+  const OLD = /^stage([1-7])\.(.+)$/;
+  const inputs = [
+    'stage1.trigger', 'stage7.goal', 'stage2.wound', 'stage3.x.y', 'stage1.', 'stage0.x', 'stage8.x',
+    'stage10.x', 'stage01.x', 'stage1x', 'Stage1.x', ' stage1.x', 'stage1.x ', 'stage1', 'trigger', '',
+    'stage9999999999999999999.x', 'actor:wife', 'stage2.causal#2',
+  ];
+  for (const input of inputs) {
+    it(`"${input}" reads as it always did`, () => {
+      const m = OLD.exec(input);
+      expect(parseSlotRef(thinkTwiceAdult, input)).toEqual(m ? { stage: Number(m[1]), key: `stage${m[1]}`, slot: m[2] } : null);
+    });
+  }
+  it('follows the pack’s length — stage 3 of 3 is real, stage 4 is not', () => {
+    expect(parseSlotRef(mini, 'stage3.goal')).toEqual({ stage: 3, key: 'stage3', slot: 'goal' });
+    expect(parseSlotRef(mini, 'stage4.goal')).toBeNull();
+  });
+  it('is not fooled by a non-string', () => {
+    for (const v of [null, undefined, 7, {}, ['stage1.x']]) expect(parseSlotRef(thinkTwiceAdult, v)).toBeNull();
   });
 });
 
@@ -149,13 +250,11 @@ const at = (pack, stage, patch = {}, meta = {}) => {
 };
 
 describe('the Router routes by the pack it is handed', () => {
-  // The Router is pure and routes it fine — that is what this block proves. The
-  // turn loop cannot run it yet (seven stages assumed), and validatePack says so.
-  it('the mini pack keeps the contract; the turn loop cannot run it yet', () => {
-    const r = validatePack(mini);
-    expect(r.errors).toEqual([]);
-    expect(r.ok).toBe(false);
-    expect(r.limits.join(' ')).toContain('7 stages');
+  // The Router is pure and routes it fine — that is what this block proves. Since
+  // slice 3 the turn loop runs it too: tests/core/pack-run.test.js takes a pack
+  // like it through a whole interview.
+  it('the mini pack keeps the contract, and this engine can run it', () => {
+    expect(validatePack(mini)).toEqual({ ok: true, errors: [], limits: [] });
   });
 
   it('coverage is laid out from that pack', () => {

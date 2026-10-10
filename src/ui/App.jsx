@@ -4,7 +4,6 @@ import { reportFailure } from '../adapters/errorReport.js';
 import GuidePanel from './GuidePanel.jsx';
 import StageRail from './StageRail.jsx';
 import StoryMap from './StoryMap.jsx';
-import { buildMap } from '../core/storyMap.js';
 import { serializeMap, rasterize } from './mapExport.js';
 import { getPref, setPref } from '../adapters/uiPrefs.js';
 import ConfirmDialog from './ConfirmDialog.jsx';
@@ -95,7 +94,7 @@ export default function App({ onUnauthorized }) {
 
   // Built once and used twice: the drawing itself, and the header toggle, which
   // only appears once there is something on the map to hide.
-  const map = useMemo(() => buildMap(state), [state]);
+  const map = useMemo(() => interview.buildMap(state), [state]);
 
   // Nothing is persisted anywhere (no server, no storage — see CLAUDE.md), so
   // anything past the opening message is lost for good unless it is exported.
@@ -506,6 +505,8 @@ export default function App({ onUnauthorized }) {
           />
           <GuidePanel
             state={state}
+            pack={interview.pack}
+            account={interview.renderEvent}
             width={guideWidth}
             revisions={revisions}
             notes={history

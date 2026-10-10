@@ -53,8 +53,8 @@
 //    person or reflecting it back as our interpretation — Natali's ruling of
 //    14.8: he arrives at it himself, through directed questions. `adhd_pattern`
 //    is likewise barred from appearing as a diagnosis. Both are excluded by
-//    construction (NEVER_MIRROR, asserted in tests), not by whoever writes the
-//    next entry in LAYERS.
+//    construction — the pack marks them `barred`, and validatePack refuses a
+//    barred slot on the map — not by whoever writes the next row of the map.
 //
 // 3. The cast is shown, its clarity is not. `actorMap` carries `clear:false` for
 //    a character the interviewer is still disambiguating. That flag is the
@@ -67,34 +67,23 @@
 //    projection carries no actions; the drawing has no buttons and nothing to
 //    click. A correction is made by saying so in the chat.
 
-import { NEVER_SHOW_SLOTS as NEVER_MIRROR } from './state.js';
+// Which slots are withheld from the drawing under rule 2, and where each slot sits
+// in the chain, are the interview's — the pack's `barred` flags and its `map` (see
+// src/packs/think-twice-adult/pack.js). The store refuses a barred slot as well
+// (state.js), so a value that is never stored cannot be drawn by a consumer that
+// forgets to check; this projection checks again anyway.
+import { DEFAULT_PACK, barredSlots, mapNarrative } from './pack.js';
 
-// Slots withheld from the drawing under rule 2. The set is defined in state.js so
-// that the STORE can refuse a barred slot as well — a value that is never stored
-// cannot be drawn by a consumer that forgets to check. Re-exported here under the
-// name this projection and its tests already use.
-export { NEVER_MIRROR };
-
-// The story's chain, in the order it happened. `kind` is what the UI draws the
-// node AS — the shapes differ because the things differ, and seeing that the
+// The story's chain, in the order it happened, is the pack's `map.narrative`: each
+// row a `kind` — what the UI draws the node AS — and the slots that are that kind
+// of thing. The shapes differ because the things differ, and seeing that the
 // interpretation is a different KIND of object from the event is most of the
 // clinical work this picture does. A fact is a box; a thought is not.
 //
-// Scope stops at stage 5. Stage 6 alternatives and the stage-7 decision belong to
-// the decision board, which has rules of its own (design/brief.md:62 — nothing may
-// rank, star or pre-select an option). The drawing is the case; the board is the
-// choice.
-export const LAYERS = [
-  { kind: 'fact', slots: [['stage1', 'trigger'], ['stage1', 'timeline'], ['stage1', 'status']] },
-  { kind: 'thought', slots: [['stage2', 'causal'], ['stage2', 'meaning']] },
-  { kind: 'feeling', slots: [['stage3', 'emotion'], ['stage3', 'past_echo']] },
-  { kind: 'action', slots: [['stage1', 'auto_reaction'], ['stage4', 'auto_reaction']] },
-  { kind: 'plan', slots: [['stage4', 'planned_reaction']] },
-  {
-    kind: 'other',
-    slots: [['stage5', 'perspective'], ['stage5', 'intention'], ['stage5', 'alt_formulation']],
-  },
-];
+// In Think Twice the chain stops at stage 5. Stage 6 alternatives and the stage-7
+// decision belong to the decision board, which has rules of its own
+// (design/brief.md:62 — nothing may rank, star or pre-select an option). The
+// drawing is the case; the board is the choice.
 
 // ── CERTAINTY (Ran, 28.8): "before adding an item, weigh how certain it is —
 // maybe another question is needed first." ──
@@ -195,16 +184,17 @@ export function buildCast(actorMap) {
 // for. De-duplication is global rather than per layer because the same fact is
 // genuinely reported twice — stage 4 revisits the reaction stage 1 already
 // recorded — and drawing it twice would say the person did it twice.
-export function buildStory(state) {
+export function buildStory(state, pack = DEFAULT_PACK) {
   const findings = state?.findings ?? {};
   const coverage = state?.coverage ?? {};
   const cast = buildCast(state?.actorMap);
+  const barred = barredSlots(pack);
   const nodes = [];
   const seen = new Set();
 
-  for (const { kind, slots } of LAYERS) {
+  for (const { kind, slots } of mapNarrative(pack)) {
     for (const [stageKey, slot] of slots) {
-      if (NEVER_MIRROR.has(slot)) continue;
+      if (barred.has(slot)) continue;
       if (coverage?.[stageKey]?.[slot] !== CONFIRMED) continue; // not solid yet
       const items = findings?.[stageKey]?.[slot] ?? [];
       let label = '';
