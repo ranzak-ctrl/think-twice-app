@@ -76,3 +76,35 @@ describe('the app around it', () => {
     expect(app).not.toMatch(/localStorage|sessionStorage|indexedDB|document\.cookie/);
   });
 });
+
+describe('after a safety stop (principle 7; questions-for-natali §16)', () => {
+  const renderStopped = (reason) =>
+    renderToString(
+      createElement(EndScreen, {
+        reason,
+        fileName: 'x.thinktwice',
+        seal: async () => ({ ok: false, error: 'network' }),
+        onReturn: () => {},
+        onExit: () => {},
+        safetyStop: true,
+      })
+    ).replace(/<!-- -->/g, '');
+
+  it('keeps the help line on screen, word for word as the stop said it', async () => {
+    const { HELP_LINE, preCheck } = await import('../../src/safety/index.js');
+    expect(preCheck('אני רוצה למות').stopMessage).toContain(HELP_LINE);
+    for (const reason of ['complete', 'leave']) {
+      expect(renderStopped(reason)).toContain(HELP_LINE.replace(/"/g, '&quot;'));
+    }
+  });
+
+  it('does not close by itself', () => {
+    const html = renderStopped('leave');
+    expect(html).toContain('המסך לא ייסגר מעצמו');
+    expect(html).not.toContain('המסך ייסגר בעוד');
+  });
+
+  it('a file saved after a stop opens for reading only', () => {
+    expect(app).toMatch(/stopped: Boolean\(meta\.safetyFlag\)/);
+  });
+});

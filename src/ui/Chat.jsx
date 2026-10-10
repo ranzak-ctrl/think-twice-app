@@ -185,6 +185,8 @@ export default function Chat({
         <div className="banner viewing">
           {viewing.complete ? (
             <span>צפייה בראיון שנשמר. הראיון הזה הסתיים, ואפשר רק לקרוא אותו.</span>
+          ) : viewing.stopped ? (
+            <span>צפייה בראיון שנשמר. אפשר רק לקרוא אותו.</span>
           ) : (
             <>
               <span>צפייה בראיון שנשמר.</span>

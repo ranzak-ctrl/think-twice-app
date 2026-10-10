@@ -447,7 +447,10 @@ export default function App({ onUnauthorized }) {
     setState(importState(JSON.stringify(session)));
     setRevisions(Array.isArray(session.revisions) ? session.revisions : []);
     setHistory(Array.isArray(session.history) && session.history.length ? session.history : [openingMessage()]);
-    setViewing(viewOnly ? { complete: Boolean(session.state?.meta?.sessionComplete) } : null);
+    // A file saved after a safety stop opens for reading only, like one that
+    // ended: continuing it would only meet the stop again (questions-for-natali §16).
+    const meta = session.state?.meta ?? {};
+    setViewing(viewOnly ? { complete: Boolean(meta.sessionComplete), stopped: Boolean(meta.safetyFlag) } : null);
     setPendingOpen(null);
   };
 
@@ -638,6 +641,7 @@ export default function App({ onUnauthorized }) {
                   seal={sealCurrent}
                   onReturn={() => setEnd(null)}
                   onExit={exitApp}
+                  safetyStop={Boolean(state.meta.safetyFlag)}
                 />
               )
             }
