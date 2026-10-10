@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Think Twice Architecture v3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&family=Secular+One&display=swap">
+<style>
+/* Layout: a technical reference — contents rail on the start side, one reading column, layered diagrams drawn as stacked bands. */
+:root {
+  --bg: #f2f4f8;
+  --surface: #ffffff;
+  --ink: #141c2b;
+  --muted: #56617a;
+  --line: #d5dbe7;
+  --accent: #2f4fb3;
+  --accent-soft: #e2e8f8;
+  --warm: #b8640b;
+  --warm-soft: #fbeedb;
+  --ok: #1d7a4e;
+  --ok-soft: #dcf1e6;
+  --plan: #6d5a9e;
+  --plan-soft: #ece7f7;
+  --danger: #b4232c;
+  --danger-soft: #fbe3e4;
+  --code-bg: #e8ecf4;
+  --font-display: "Secular One", "IBM Plex Sans Hebrew", "Arial Hebrew", "Noto Sans Hebrew", sans-serif;
+  --font-body: "IBM Plex Sans Hebrew", "Assistant", "Arial Hebrew", "Noto Sans Hebrew", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1320; --surface: #151c2c; --ink: #e2e7f2; --muted: #9aa6bf; --line: #27314a;
+    --accent: #8aa6ff; --accent-soft: #1c2747; --warm: #f0aa58; --warm-soft: #33240f;
+    --ok: #5fd39a; --ok-soft: #12301f; --plan: #b9a7ec; --plan-soft: #261f3d;
+    --danger: #ff8f96; --danger-soft: #3a1619; --code-bg: #1d2538; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1320; --surface: #151c2c; --ink: #e2e7f2; --muted: #9aa6bf; --line: #27314a;
+  --accent: #8aa6ff; --accent-soft: #1c2747; --warm: #f0aa58; --warm-soft: #33240f;
+  --ok: #5fd39a; --ok-soft: #12301f; --plan: #b9a7ec; --plan-soft: #261f3d;
+  --danger: #ff8f96; --danger-soft: #3a1619; --code-bg: #1d2538; color-scheme: dark;
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.7 var(--font-body); }
+.page { direction: rtl; max-width: 1200px; margin-inline: auto; padding-inline: 16px; padding-block: 28px 80px;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+@media (min-width: 1000px) { .page { grid-template-columns: 230px minmax(0, 1fr); } .rail { display: block !important; } }
+
+header.mast { grid-column: 1 / -1; display: grid; gap: 12px; padding-block-end: 22px; border-bottom: 1px solid var(--line); }
+.eyebrow { margin: 0; color: var(--accent); font-weight: 600; font-size: .92rem; letter-spacing: .02em; }
+h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(2rem, 1.4rem + 2.4vw, 3rem); line-height: 1.15; text-wrap: balance; }
+.lede { margin: 0; max-width: 72ch; color: var(--ink); }
+.mast .meta { margin: 0; color: var(--muted); font-size: .9rem; max-width: 90ch; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; padding: 0; list-style: none; font-size: .85rem; }
+.legend li { display: inline-flex; align-items: center; gap: 6px; padding: 3px 11px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); }
+.sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.sw.built { background: var(--accent); } .sw.new { background: var(--ok); } .sw.plan { background: var(--plan); } .sw.safe { background: var(--danger); }
+
+.rail { display: none; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 18px); align-self: start; max-height: calc(100vh - 36px); overflow: auto; font-size: .87rem; }
+.rail p { margin: 0 0 8px; color: var(--muted); font-weight: 600; font-size: .82rem; }
+.rail ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; counter-reset: s; }
+.rail a { display: flex; gap: 8px; padding: 4px 8px; border-radius: 6px; color: var(--ink); text-decoration: none; line-height: 1.4; }
+.rail a::before { counter-increment: s; content: counter(s); color: var(--muted); min-width: 1.4em; font-variant-numeric: tabular-nums; }
+.rail a:hover, .rail a:focus-visible { background: var(--accent-soft); outline: none; }
+
+main { min-width: 0; display: grid; gap: 40px; }
+section { min-width: 0; display: grid; gap: 14px; scroll-margin-top: 16px; }
+h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(1.45rem, 1.2rem + .9vw, 1.85rem); line-height: 1.25; text-wrap: balance; }
+h3 { margin: 6px 0 0; font-size: 1.05rem; font-weight: 700; }
+p { margin: 0; max-width: 75ch; }
+ul, ol { margin: 0; padding-inline-start: 1.3em; max-width: 78ch; }
+li { margin-block: 3px; }
+code { font-family: var(--font-mono); font-size: .86em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; direction: ltr; unicode-bidi: isolate; overflow-wrap: anywhere; }
+a { color: var(--accent); }
+.note { padding: 12px 16px; border-radius: 10px; background: var(--warm-soft); border: 1px solid color-mix(in srgb, var(--warm) 35%, transparent); max-width: 80ch; }
+.note.safe { background: var(--danger-soft); border-color: color-mix(in srgb, var(--danger) 35%, transparent); }
+.note strong { color: var(--ink); }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+th, td { text-align: start; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 600; }
+
+/* The stack diagram */
+.stack { display: grid; gap: 10px; }
+.band { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 12px 14px; display: grid; gap: 10px; }
+.band-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.band-name { font-weight: 700; }
+.band-sub { color: var(--muted); font-size: .88rem; }
+.band.where { border-inline-start: 5px solid var(--accent); }
+.band.fn { border-inline-start: 5px solid var(--warm); }
+.band.ext { border-inline-start: 5px solid var(--muted); }
+.band.plan { border-inline-start: 5px dashed var(--plan); background: var(--plan-soft); }
+.boxes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); gap: 8px; }
+.box { min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--bg); font-size: .88rem; line-height: 1.45; display: grid; gap: 2px; }
+.box b { font-size: .93rem; }
+.box code { white-space: normal; word-break: break-all; }
+.box.new { border-color: var(--ok); background: var(--ok-soft); }
+.box.safe { border-color: var(--danger); background: var(--danger-soft); }
+.box.plan { border-style: dashed; border-color: var(--plan); background: transparent; }
+.arrow { text-align: center; color: var(--muted); font-size: .88rem; }
+
+/* Turn sequence */
+.steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; counter-reset: st; max-width: none; }
+.steps li { counter-increment: st; display: grid; grid-template-columns: 2.1em minmax(0, 1fr); gap: 10px; align-items: start; margin: 0;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.steps li::before { content: counter(st); display: grid; place-items: center; width: 2.1em; height: 2.1em; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
+.steps li.safe::before { background: var(--danger-soft); color: var(--danger); }
+.steps li > div { min-width: 0; display: grid; gap: 2px; }
+.steps .who { color: var(--muted); font-size: .85rem; }
+
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 12px; }
+.card { min-width: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 12px 14px; display: grid; gap: 6px; align-content: start; }
+.card h3 { margin: 0; }
+.tag { display: inline-block; font-size: .78rem; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--ok-soft); color: var(--ok); }
+.tag.plan { background: var(--plan-soft); color: var(--plan); }
+.tag.open { background: var(--warm-soft); color: var(--warm); }
+footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); padding-top: 16px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="mast">
+  <p class="eyebrow">מסמך ארכיטקטורה · v3 · 10.10.2026 · ענף <code>claude/youthful-hamilton-40ef4m</code></p>
+  <h1>Think Twice — ארכיטקטורת האפליקציה כולה</h1>
+  <p class="lede">איך האפליקציה בנויה היום, מקצה לקצה: מה רץ בדפדפן, מה רץ בשרת, איך תור אחד עובר במנוע, איפה תוכן הראיון נמצא בכל רגע, ומה מתוכנן ועוד לא בנוי.</p>
+  <p class="meta">מחליף את v1 (<a href="architecture-dashboard.html">architecture-dashboard.html</a>, 15.8.2026) ואת v2 (<a href="architecture-dashboard-v2.html">architecture-dashboard-v2.html</a>, הרשם), שנשארים כמו שהם. מה חדש מאז v2: המנוע נפרד מחבילת הראיון (8–10.10.2026), הנחיות המראיין בשתי שכבות (9.10), ומסך הסיום עם הקובץ המוצפן (10.10). אם המסמך נוגד את הקוד, הקוד הוא העובדה (CLAUDE.md).</p>
+  <ul class="legend" aria-label="מקרא">
+    <li><span class="sw built"></span>בנוי ורץ</li>
+    <li><span class="sw new"></span>חדש ב-10.10.2026</li>
+    <li><span class="sw plan"></span>מתוכנן, לא בנוי</li>
+    <li><span class="sw safe"></span>שכבת הבטיחות</li>
+  </ul>
+</header>
+
+<nav class="rail" aria-label="תוכן העניינים">
+  <p>תוכן העניינים</p>
+  <ol>
+    <li><a href="#glance">במבט אחד</a></li>
+    <li><a href="#layers">מנוע · חבילה · מעטפת</a></li>
+    <li><a href="#turn">תור אחד</a></li>
+    <li><a href="#state">ה-StateDocument</a></li>
+    <li><a href="#router">ה-Router</a></li>
+    <li><a href="#pack">חבילת ראיון</a></li>
+    <li><a href="#texts">הטקסטים</a></li>
+    <li><a href="#map">שכבת המפה</a></li>
+    <li><a href="#safety">שכבת הבטיחות</a></li>
+    <li><a href="#data">איפה התוכן נמצא</a></li>
+    <li><a href="#lifecycle">סיום, קובץ, פתיחה</a></li>
+    <li><a href="#deploy">פריסה וזהות</a></li>
+    <li><a href="#tests">בדיקות ושערים</a></li>
+    <li><a href="#machine">מכונת העבודה</a></li>
+    <li><a href="#planned">מתוכנן</a></li>
+    <li><a href="#docs">מסמכים</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<section id="glance" aria-labelledby="h-glance">
+  <h2 id="h-glance">במבט אחד</h2>
+  <p>שלוש קומות: הדפדפן מחזיק את הראיון ומריץ את המנוע. פונקציות ב-Vercel מחזיקות את הסודות ולא שומרות דבר. Anthropic מריץ את המודל. מעליהן, בקו מקווקו, מה שמתוכנן לשלב 4.</p>
+  <div class="stack" role="img" aria-label="תרשים שכבות: דפדפן, פונקציות Vercel, שירותים חיצוניים, ותוכנית החשבונות">
+    <div class="band plan">
+      <div class="band-head"><span class="band-name">חשבונות ומייל</span><span class="band-sub">שלב 4 · לא בנוי · ממתין להכרעה על מסד נתונים ושירות מייל</span></div>
+      <div class="boxes">
+        <div class="box plan"><b>מסד נתונים</b>אימייל מוצפן · הרשאות · מכסה. אף פעם לא תוכן ראיון</div>
+        <div class="box plan"><b>שירות מייל</b>הזמנה · קוד אימות · ברוך הבא · שחזור · הקובץ המוצפן בסיום</div>
+        <div class="box plan"><b>מסך ניהול משתמשים</b>מנהל בלבד, עם יומן פעולות</div>
+        <div class="box plan"><b>מסך בחירת מודל</b>אישי · הורים · שניהם</div>
+      </div>
+    </div>
+    <div class="band where">
+      <div class="band-head"><span class="band-name">הדפדפן</span><span class="band-sub">React + Vite · עברית RTL · כל הראיון בזיכרון הטאב בלבד</span></div>
+      <div class="boxes">
+        <div class="box"><b>מעטפת</b><code>src/ui/</code> צ'אט · מפה · פס שלבים · מצב מדריך · שער סיסמה</div>
+        <div class="box new"><b>מסך הסיום</b><code>EndScreen.jsx</code> שמירה מוצפנת · 5 דקות · רענון</div>
+        <div class="box"><b>הרכבת הראיון</b><code>src/ui/interview.js</code> חבילה + טקסטים + קריאת מודל + הסבות</div>
+        <div class="box"><b>המנוע</b><code>src/core/</code> Router · State · לולאת התור · רשם · מפה</div>
+        <div class="box"><b>חבילת ראיון</b><code>src/packs/think-twice-adult/</code></div>
+        <div class="box safe"><b>בטיחות</b><code>src/safety/</code> לפני כל דבר אחר בתור</div>
+        <div class="box"><b>מתאמים</b><code>src/adapters/</code> מודל · קובץ · סיסמה · דוח תקלה</div>
+      </div>
+    </div>
+    <div class="arrow" aria-hidden="true">↓ ‏HTTPS, עם <code>x-app-password</code> ובלי שום מפתח ↓</div>
+    <div class="band fn">
+      <div class="band-head"><span class="band-name">פונקציות Vercel</span><span class="band-sub">חסרות state · לא כותבות · לא מתעדות תוכן · team <code>think-twice1</code></span></div>
+      <div class="boxes">
+        <div class="box"><b>ה-proxy למודל</b><code>api/anthropic/v1/messages.js</code> מזריק <code>ANTHROPIC_API_KEY</code></div>
+        <div class="box new"><b>קובץ הראיון</b><code>api/interview-file.js</code> מצפין ופותח עם <code>INTERVIEW_FILE_KEYS</code></div>
+        <div class="box"><b>דוח תקלה</b><code>api/report.js</code> מטא-דאטה מסוננת ללוג</div>
+        <div class="box"><b>בדיקת חיים</b><code>api/ping.js</code></div>
+      </div>
+    </div>
+    <div class="arrow" aria-hidden="true">↓</div>
+    <div class="band ext">
+      <div class="band-head"><span class="band-name">חיצוני</span><span class="band-sub">ספקים שמעבדים עבורנו</span></div>
+      <div class="boxes">
+        <div class="box"><b>Anthropic API</b><code>claude-haiku-4-5</code> · מדיניות שמירה: רן בודק "אפס שמירה"</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="layers" aria-labelledby="h-layers">
+  <h2 id="h-layers">שלוש שכבות: מנוע · חבילה · מעטפת</h2>
+  <p>ההפרדה של שלב 1 בתכנית הפלטפורמה, שהושלמה בקוד ב-10.10.2026. המנוע לא יודע איזה ראיון הוא מריץ: הכול מוזרק לו.</p>
+  <div class="two">
+    <div class="card">
+      <h3>המנוע — "איך"</h3>
+      <p><code>src/core/</code> · משותף לכל הראיונות.</p>
+      <ul>
+        <li><code>engine.js</code> · ‏<code>createEngine({ pack, prompts, complete })</code></li>
+        <li><code>router.js</code> · מכונת המצבים</li>
+        <li><code>state.js</code> · ה-StateDocument והמיזוגים</li>
+        <li><code>session.js</code> · לולאת התור ופתיח השלב</li>
+        <li><code>registrar.js</code> · הרשם, שמפרק את הסיפור לגרף</li>
+        <li><code>promptBuilder.js</code> · <code>guidelines.js</code> · הרכבת הפרומפטים</li>
+        <li><code>storyMap.js</code> · <code>eventMap.js</code> · היטל המפה</li>
+        <li><code>pack.js</code> · <code>validatePack</code>, קטלוג סגור</li>
+      </ul>
+      <p><strong>אסור לו לייבא</strong> פרומפט, מתאם או <code>import.meta</code>. ‏<code>tests/core/portable-core.test.js</code> נכשל אם זה חוזר (עיקרון 4).</p>
+    </div>
+    <div class="card">
+      <h3>החבילה — "מה"</h3>
+      <p><code>src/packs/&lt;id&gt;/</code> · אחת לכל מודל ראיון.</p>
+      <ul>
+        <li><code>pack.js</code> · המבנה, נתונים בלבד</li>
+        <li><code>prompts.js</code> · איזה טקסט הוא איזה חלק</li>
+        <li><code>judge.js</code> · רובריקת השופט, לבדיקות בלבד</li>
+        <li><code>migrations.js</code> · הסבת קבצים בין גרסאות <span class="tag">חדש</span></li>
+      </ul>
+      <p>היום חבילה אחת: <code>think-twice-adult</code>, ששמה "Think Twice · אישי", גרסה 1.</p>
+    </div>
+    <div class="card">
+      <h3>המעטפת — "למי"</h3>
+      <p><code>src/ui/</code> · אחת לכולם.</p>
+      <ul>
+        <li><code>interview.js</code> · המקום היחיד שבו בוחרים ראיון</li>
+        <li><code>App.jsx</code> · <code>Chat.jsx</code> · <code>StoryMap.jsx</code> · <code>StageRail.jsx</code></li>
+        <li><code>GuidePanel.jsx</code> · מצב מדריך, וייצוא קריא לבודקים</li>
+        <li><code>EndScreen.jsx</code> · מסך הסיום <span class="tag">חדש</span></li>
+        <li><code>PasswordGate.jsx</code> · נפתח מעל הראיון, לא במקומו <span class="tag">תוקן</span></li>
+      </ul>
+      <p>בשלב 4 הבחירה ב-<code>interview.js</code> תהפוך לבחירה לפי משתמש.</p>
+    </div>
+  </div>
+</section>
+
+<section id="turn" aria-labelledby="h-turn">
+  <h2 id="h-turn">תור אחד, מההודעה ועד התשובה</h2>
+  <p>הסדר הוא העיקר: הרשם כותב קודם, והמראיין שואל על מה שהרשם כתב ("הרשם מוסר את הסיפור המעודכן", רן, 18.9.2026). ‏<code>runTurn</code> ב-<code>src/core/session.js</code>.</p>
+  <ol class="steps">
+    <li class="safe"><div><b>בדיקת בטיחות</b><span>‏<code>preCheck</code> על הודעת המשתמש. אזכור מצוקה חריפה ← עצירה מיד, עם הודעת העצירה וקו העזרה. שום מודל לא נקרא.</span><span class="who">src/safety · רץ לפני כל דבר, גם לפני בדיקת התלויות</span></div></li>
+    <li><div><b>הרשם</b><span>קריאת מודל אחת שמפרקת את התור לגרף: פעימות, עמדות, רגשות, דמויות, קשתות, קבוצות, פיצולים ותצפיות פערים. דלתא בלבד, לפי <code>id</code> יציב.</span><span class="who">registrar.js · דלוק (<code>REGISTRAR_ENABLED</code>) · כישלון לא עולה למשתמש בתור</span></div></li>
+    <li><div><b>המראיין</b><span>קריאת מודל עם הנחיות המראיין (על + ייחודי), סוכן השלב, המעריך והרשימה השחורה. מחזיר <code>evaluation</code> <strong>לפני</strong> <code>message</code>: "חלץ, אז שאל".</span><span class="who">promptBuilder.js · חלק יציב לקאשינג, חלק משתנה</span></div></li>
+    <li><div><b>פענוח ומיזוג</b><span>ציוני slots, ממצאים, מפת שחקנים, קוביות, קשתות, תוויות ופערים נכנסים ל-State. slot שהמודל המציא — מתעלמים ממנו.</span><span class="who">responseParser.js · state.js</span></div></li>
+    <li><div><b>גזירה בקוד</b><span>ציון הקאסט נגזר מבהירות מפת השחקנים בכל תור שיש בו מפה (ריק ← 0, עמום ← 1, כולם ברורים ← 2). עוצמת הרגש נרשמת בשלבים שהחבילה מסמנת.</span><span class="who">session.js · לפי <code>castClarity</code> ו-<code>intensity</code> בחבילה</span></div></li>
+    <li><div><b>ה-Router מחליט</b><span>להישאר · לבקש אישור סיכום · לפתוח מחדש · להציג לוח · לסגור · לעצור. <strong>המודל מציע, הקוד מכריע.</strong></span><span class="who">router.js · לפי ספי החבילה</span></div></li>
+    <li><div><b>סינתזה לפי ההחלטה</b><span>סיכום לאישור, לוח הכרעה, או בסגירה. במעבר שלב: פתיח שהמודל מנסח ומעוגן בסיפור; ה-signpost הסטטי רק כגיבוי.</span><span class="who">summary.md · board.md · opener.md</span></div></li>
+    <li><div><b>התשובה מוצגת</b><span>שאלה מכוונת אחת. האפליקציה מוסיפה אותה לתמליל, והמפה מצוירת מחדש מה-State.</span><span class="who">App.jsx · Chat.jsx · StoryMap.jsx</span></div></li>
+  </ol>
+</section>
+
+<section id="state" aria-labelledby="h-state">
+  <h2 id="h-state">ה-StateDocument — מי כותב ומי קורא</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>שדה</th><th>מה בו</th><th>כותב</th><th>קורא</th></tr></thead>
+    <tbody>
+      <tr><td><code>coverage</code></td><td>ציון לכל slot בכל שלב: 0 · 1 · 2 · U</td><td>המעריך, והגזירה בקוד</td><td><strong>ה-Router</strong>, מצב מדריך</td></tr>
+      <tr><td><code>meta</code></td><td>שלב נוכחי, מונים, ממתין לאישור, דגל בטיחות, סיום, KPI, יומן החלטות</td><td>הקוד</td><td>ה-Router, המעטפת</td></tr>
+      <tr><td><code>findings</code></td><td>ממצאים מילוליים לכל slot</td><td>המעריך</td><td>המראיין, הסיכום, מצב מדריך. <strong>חסומים לא מגיעים לתצוגה</strong></td></tr>
+      <tr><td><code>actorMap</code></td><td>הקאסט הפתור: מי, תפקיד, קשר, ברור או לא, פעולות</td><td>המעריך, הרשם</td><td>הגזירה, המפה</td></tr>
+      <tr><td><code>gaps</code></td><td>סתירות ופערים שנרשמו</td><td>הקוד, מתצפיות</td><td>המראיין בלבד. <strong>לעולם לא מוצג למשתמש</strong> (gap-management §1)</td></tr>
+      <tr><td><code>nodes</code> · <code>edges</code> · <code>groups</code></td><td>קוביות, קשתות ומכלים של האיור</td><td>המעריך, הרשם</td><td><strong>המפה בלבד.</strong> ה-Router לא קורא אותם לעולם</td></tr>
+      <tr><td><code>openForks</code> · <code>mapLabels</code></td><td>פיצולים פתוחים, תוויות</td><td>המעריך</td><td>המפה</td></tr>
+      <tr><td><code>eventRecord</code></td><td>רישום המאורע: תפאורה, פעימות, עמדות, רגשות</td><td>הרשם</td><td>המראיין, המפה</td></tr>
+      <tr><td><code>board</code> · <code>basket</code> · <code>decision</code></td><td>לוח ההכרעה, סל החלופות וההכרעה</td><td>הסל: המעריך. הלוח: קריאת מודל (<code>board.md</code>) מתוך הסל, כשה-Router מחליט להציג אותו</td><td>המעטפת (לוח ההכרעה)</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="router" aria-labelledby="h-router">
+  <h2 id="h-router">ה-Router — הכללים הקשיחים</h2>
+  <ul>
+    <li><strong>מעבר שלב:</strong> כל ה-slots של הליבה ב-2 מעבירים לבד. אחרת: כולם לפחות 1, רובם (~80%) ב-2, ושני תורות בלי מידע חדש. ואז אישור המשתמש לסיכום.</li>
+    <li><strong>שער מפת השחקנים:</strong> לא עוברים כל עוד דמות לא ברורה. חריג פתוח: מפה ריקה לגמרי (questions-for-natali §15).</li>
+    <li><strong>מגן עומס:</strong> 20 שאלות, 15 בשלב 5. ערכי ביניים, עד גלאי עייפות (§1).</li>
+    <li><strong>תלויות:</strong> שלב 5 דורש את שלב 2 ממוצה; שלב 7 דורש את שלב 6 ויעד מנוסח. שיפוט לא חוזר לייצור.</li>
+    <li><strong>פתיחה מחדש:</strong> מידע סותר או מרחיב מוריד ציון ופותח נושא סגור, עם פתיח שמסביר למה חזרנו.</li>
+    <li><strong>שלב 7:</strong> חדה · דחייה מובנית · עמומה. עמומה לעולם לא סוגרת.</li>
+    <li><strong>אין ניווט למשתמש.</strong> נקודות ההחלטה ב-UI: אישור סיכום וההכרעה. ומסך הסיום, שהוא יציאה, לא ניווט בראיון.</li>
+  </ul>
+  <p>כל הספים, התלויות והתוויות יושבים ב-<code>pack.js</code>, ושינוי בהם הוא שינוי Router: ‏<code>router-guard</code> ומטריצת המעברים (הכרעת רן, 9.10.2026).</p>
+</section>
+
+<section id="pack" aria-labelledby="h-pack">
+  <h2 id="h-pack">חבילת ראיון</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>שדה ב-<code>pack.js</code></th><th>מה הוא</th></tr></thead>
+    <tbody>
+      <tr><td><code>id</code> · <code>name</code> · <code>version</code></td><td><code>think-twice-adult</code> · "Think Twice · אישי" · 1. פותחים כל קובץ ייצוא</td></tr>
+      <tr><td><code>stages</code></td><td>שלבים, slots לכל שלב, ספים, signposts, שם לכל שלב</td></tr>
+      <tr><td>דגלי slot</td><td><code>barred</code> (חסום לתצוגה: המוגלה והנרמול) · <code>mental</code> (תודעה)</td></tr>
+      <tr><td>רכיבים מהקטלוג</td><td><code>castClarity</code> · <code>intensity</code> · אוסף · הכרעה. הקטלוג סגור</td></tr>
+      <tr><td><code>routing</code></td><td>מגן עומס, מיצוי, חסד תיקון</td></tr>
+      <tr><td><code>map</code></td><td>סדר המפה, וה-slot שהופך אותה למסלול בזמן</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>השדות סגורים:</strong> שדה שהמנוע לא קורא הוא שגיאה ב-<code>validatePack</code>, כי שגיאת כתיב נכשלת בשקט. שדה חדש, כמו פרופיל בטיחות להורים, הוא שינוי מנוע.</p>
+</section>
+
+<section id="texts" aria-labelledby="h-texts">
+  <h2 id="h-texts">הטקסטים — תוכן, לא קוד</h2>
+  <p>כל הטקסטים ב-<code>src/content/prompts/</code>, ורק <code>prompt-editor</code> עורך אותם. ‏<code>prompts.js</code> של החבילה אומר איזה קובץ הוא איזה חלק, ו-Vite טוען אותם שם (<code>?raw</code>), במקום היחיד שבו טקסט פוגש את ה-bundler.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>טקסט</th><th>תפקיד</th><th>שייך ל</th></tr></thead>
+    <tbody>
+      <tr><td><code>guidelines/super.md</code></td><td>הנחיות-העל לכל מראייני Think Twice. בלוק <code>locked</code> לא נדרס: "שאלה אחת בכל תור"</td><td>כל המודלים</td></tr>
+      <tr><td><code>guidelines/think-twice-adult.md</code></td><td>הנחיות ייחודיות, שגוברות על העל בלוק מול בלוק (<code>guidelines.js</code>)</td><td>המודל</td></tr>
+      <tr><td><code>agents/stage1–7</code></td><td>סוכן לכל שלב</td><td>המודל</td></tr>
+      <tr><td><code>evaluator.md</code></td><td>חוזה הדיווח, והגדרות ה-slots</td><td>מעורב: יפוצל (תכנית 3.4)</td></tr>
+      <tr><td><code>registrar.md</code></td><td>הרשם</td><td>מעורב: יפוצל</td></tr>
+      <tr><td><code>resistance.md</code> · <code>summary.md</code> · <code>opener.md</code> · <code>board.md</code></td><td>התנגדויות, סיכום, פתיח מעוגן, לוח</td><td>כל המודלים</td></tr>
+      <tr><td><code>forbidden.js</code></td><td>הרשימה השחורה, בכל פרומפט</td><td>כל המודלים. שורת הז'רגון — רק למבוגרים</td></tr>
+      <tr><td><code>judge.md</code></td><td>רובריקת השופט. לא נשלחת לדפדפן</td><td>המודל</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>טביעות האצבע</strong> (<code>tests/core/prompt-fingerprint.test.js</code>) מצמידות כל פרומפט מורכב בייט לבייט. כך מיפוי שגוי, או בלוק שזז, נתפסים גם כשכל הבדיקות האחרות ירוקות.</p>
+</section>
+
+<section id="map" aria-labelledby="h-map">
+  <h2 id="h-map">שכבת המפה</h2>
+  <ul>
+    <li><code>nodes</code> · <code>edges</code> · <code>groups</code> הם <strong>תצוגה בלבד</strong>. קובייה אינה slot: ה-slot הוא יחידת ה-Router, והקובייה היא מה שהאיור מצייר.</li>
+    <li>לכל קובייה <code>scale</code>: ‏<code>episode</code> (פעימה באירוע) או <code>ongoing</code> (מצב עומד, ברצועת רקע).</li>
+    <li>שלוש עמודות, דמויות · פעולות · משמעות, מתחת לרצועת הרקע (רן, 5.9.2026).</li>
+    <li>מה שלא אושר (<code>confirmed:false</code>) לא מצויר. ‏slot חסום לא מגיע למפה לעולם (<code>validatePack</code>).</li>
+  </ul>
+</section>
+
+<section id="safety" aria-labelledby="h-safety">
+  <h2 id="h-safety">שכבת הבטיחות</h2>
+  <div class="note safe"><p><strong>אסור להסיר, לעקוף או להחליש</strong> (עיקרון 7). ‏<code>src/safety/index.js</code> בודק כל הודעה לפני כל דבר אחר, וגם בלי תלויות מוזרקות. אזכור מצוקה ← עצירה, הודעת עצירה וקו העזרה (<code>HELP_LINE</code>: ער"ן 1201).</p></div>
+  <ul>
+    <li><strong>חדש ב-10.10.2026:</strong> אחרי עצירה, מסך הסיום מציג שוב את קו העזרה, <strong>ולא נסגר מעצמו</strong>, כדי שהרענון לא ימחק את קו העזרה מהמסך. קובץ שנשמר אחרי עצירה נפתח לקריאה בלבד. ברירת מחדל זמנית עד הכרעת נטלי (questions-for-natali §16).</li>
+    <li><strong>נמצא ב-10.10.2026, לא שונה:</strong> אחרי עצירה, הודעה בלי מילת מצוקה עוברת את הבדיקה, והמראיין עונה כרגיל. אף שלב לא מתקדם. מה צריך לקרות במקום זה — §16, שאלה 5.</li>
+    <li>תבניות הבטיחות הן של מבוגר על עצמו. לראיון ההורים נדרש פרופיל בטיחות משלו (סיכון לילד).</li>
+  </ul>
+</section>
+
+<section id="data" aria-labelledby="h-data">
+  <h2 id="h-data">איפה תוכן הראיון נמצא, בכל רגע</h2>
+  <p>עיקרון 6 ומינימום הנתונים (רן, 10.10.2026): תוכן הראיון לא נשמר לא בשרת ולא בדפדפן, ובסיום הכול נמחק.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>מקום</th><th>מה</th><th>כמה זמן</th></tr></thead>
+    <tbody>
+      <tr><td>זיכרון הטאב</td><td>הראיון כולו</td><td>עד הרענון של מסך הסיום, או סגירת הטאב</td></tr>
+      <tr><td>אחסון הדפדפן</td><td><strong>שום תוכן.</strong> רק סיסמת הגישה (לטאב) והעדפת המפה</td><td>—</td></tr>
+      <tr><td>ה-proxy והפונקציות</td><td>בקשה אחת, בזיכרון. לוג טכני בלבד, בלי גוף</td><td>זמן הבקשה</td></tr>
+      <tr><td>Anthropic</td><td>כל תור</td><td>לפי מדיניות החשבון. רן בודק "אפס שמירה"</td></tr>
+      <tr><td>הקובץ אצל המשתמש</td><td>הראיון כולו, <strong>מוצפן</strong>, כולל הפערים והממצאים החסומים</td><td>באחריות המשתמש</td></tr>
+      <tr><td>הייצוא הקריא</td><td>בודקים בלבד, במצב מדריך</td><td>עד שמצב מדריך יהפוך להרשאה</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="lifecycle" aria-labelledby="h-lifecycle">
+  <h2 id="h-lifecycle">מחזור חיי ראיון: סיום, קובץ, פתיחה</h2>
+  <ol class="steps">
+    <li><div><b>סוף</b><span>הראיון הסתיים (מסך הסיום נפתח לבד), או "סיום" באמצע (עם "חזרה לראיון").</span><span class="who">App.jsx</span></div></li>
+    <li><div><b>חתימה</b><span><code>buildInterviewFile</code> ← POST ל-<code>/api/interview-file</code> ← AES-256-GCM על gzip של ה-JSON, הכותרת (format, v, kid) כ-AAD.</span><span class="who">sessionExport.js · adapters/interviewFile.js · server/interviewFile.js</span></div></li>
+    <li><div><b>הורדה</b><span><code>think-twice-YYYY-MM-DD-HHMM.thinktwice</code>, אוטומטית ובכפתור. אין בקובץ שום טקסט קריא.</span><span class="who">EndScreen.jsx</span></div></li>
+    <li><div><b>מחיקה</b><span>"יציאה", או 5 דקות לפי השעון ← <code>location.reload()</code>, בלי אזהרת "לעזוב?". לא לפני שהשמירה הסתיימה או נכשלה.</span><span class="who">EndScreen.jsx · App.jsx</span></div></li>
+    <li><div><b>פתיחה</b><span>"פתיחת קובץ" ← השרת מפענח ← <code>upgradeSession</code> מריץ הסבות: קודם פורמט, אחר כך גרסת המודל ← צפייה.</span><span class="who">sessionExport.js · packs/*/migrations.js</span></div></li>
+    <li><div><b>המשך</b><span>ראיון שלא הסתיים: "להמשיך את הראיון". שהסתיים, או שנעצר בבטיחות: קריאה בלבד.</span><span class="who">Chat.jsx</span></div></li>
+  </ol>
+  <div class="two">
+    <div class="card"><h3>המפתחות</h3><p><code>INTERVIEW_FILE_KEYS="k1:&lt;b64&gt;,k2:&lt;b64&gt;"</code>. האחרון מצפין, כולם פותחים. <strong>מפתח לא נמחק לעולם.</strong> מפתח חדש: <code>node scripts/new-file-key.mjs k2</code>, וגיבוי במנהל הסיסמאות של רן.</p><p><span class="tag open">⏸️ טרם הוגדר ב-Vercel</span></p></div>
+    <div class="card"><h3>תאימות לאחור</h3><p><code>SESSION_FORMAT</code> + <code>FORMAT_MIGRATIONS</code>, וצעד ב-<code>migrations.js</code> לכל העלאת גרסת מודל. קובץ קפוא לכל גרסה שיצאה ב-<code>tests/fixtures/interview-files/</code>. בדיקה נכשלת אם חסר צעד או קובץ.</p></div>
+  </div>
+  <p>פירוט מלא, כולל מסלול המטפל המתוכנן: <a href="end-flow-plan.md">end-flow-plan.md</a>.</p>
+</section>
+
+<section id="deploy" aria-labelledby="h-deploy">
+  <h2 id="h-deploy">פריסה, סביבה וזהות</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>משתנה</th><th>איפה</th><th>תפקיד</th></tr></thead>
+    <tbody>
+      <tr><td><code>ANTHROPIC_API_KEY</code></td><td>Vercel, שרת בלבד</td><td>מפתח המודל. ה-proxy מזריק אותו</td></tr>
+      <tr><td><code>APP_PASSWORD</code></td><td>Vercel, שרת בלבד</td><td>הסיסמה המשותפת. ייכבה בשלב 4</td></tr>
+      <tr><td><code>VITE_REQUIRE_PASSWORD</code></td><td>build</td><td>רק אם לשאול מראש. השרת מחליט אם הדלת נעולה</td></tr>
+      <tr><td><code>INTERVIEW_FILE_KEYS</code></td><td>Vercel, שרת בלבד</td><td>מפתחות קובץ הראיון. <strong>חסר היום</strong></td></tr>
+      <tr><td><code>VITE_USE_MOCK</code></td><td>פיתוח ובדיקות</td><td><code>true</code> ← מודל מדומה. שרת הפיתוח מריץ גם את פונקציית הקובץ, עם מפתח זמני</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note"><p><strong>אסור סוד בקידומת <code>VITE_</code></strong>: כל משתנה כזה נצרב ל-bundle ומוגש לכל דפדפן. <strong>עיקרון הברזל:</strong> כל השירותים תחת <code>ranzak@gmail.com</code>, וכל קומיט מ-<code>ranzak@gmail.com</code>. ‏Vercel חוסם בשקט build של קומיט שמחברו לא מזוהה.</p></div>
+</section>
+
+<section id="tests" aria-labelledby="h-tests">
+  <h2 id="h-tests">בדיקות ושערים</h2>
+  <p>989 בדיקות ב-10.10.2026 (986 עוברות, 3 מדולגות — הרצות חיות). המרכזיות, ומה כל אחת שומרת:</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>בדיקה</th><th>שומרת על</th></tr></thead>
+    <tbody>
+      <tr><td><code>tests/transitions/router.test.js</code></td><td>מטריצת המעברים, והחוזה הכתוב ביד במספרים קשיחים</td></tr>
+      <tr><td><code>tests/core/prompt-fingerprint.test.js</code></td><td>כל פרומפט מורכב, בייט לבייט</td></tr>
+      <tr><td><code>tests/core/portable-core.test.js</code></td><td>עיקרון 4: הליבה לא מייבאת UI, מתאם או טקסט</td></tr>
+      <tr><td><code>tests/core/pack.test.js</code> · <code>pack-run.test.js</code></td><td><code>validatePack</code>, וראיון שלם על חבילה בת ארבעה שלבים</td></tr>
+      <tr><td><code>tests/lint/turn-lint.test.js</code></td><td>שאלה אחת, אורך, אפס תפריטים, רשות, המלצות וז'רגון</td></tr>
+      <tr><td><code>tests/e2e/</code></td><td>ארבעת תסריטי הזהב מגיעים לסגירה</td></tr>
+      <tr><td><code>tests/safety/</code></td><td>100% מתסריטי הבטיחות</td></tr>
+      <tr><td><code>tests/api/interview-file.test.js</code></td><td>שום טקסט קריא בקובץ, חסימה של שינוי, החלפת מפתח, אין תוכן בלוג</td></tr>
+      <tr><td><code>tests/ui/interview-file.test.js</code></td><td>קובץ מכל גרסה שיצאה נפתח, ואין גרסה בלי צעד הסבה</td></tr>
+      <tr><td><code>tests/ui/end-screen.test.js</code></td><td>מסך הסיום, ההתנהגות אחרי עצירה, ואין אחסון בדפדפן</td></tr>
+    </tbody>
+  </table></div>
+  <p><code>/ship-check</code> לפני כל שחרור: build, גבול הסודות (אין <code>sk-ant</code> ב-bundle), ארבע הפונקציות קיימות, ותור חי אחד בדפדפן.</p>
+</section>
+
+<section id="machine" aria-labelledby="h-machine">
+  <h2 id="h-machine">מכונת העבודה <code>.claude/</code></h2>
+  <div class="two">
+    <div class="card"><h3>סוכנים</h3><ul>
+      <li><code>router-guard</code> · סוקר כל שינוי בליבה ובכל <code>pack.js</code>. קריאה בלבד</li>
+      <li><code>prompt-editor</code> · היחיד שעורך טקסטים ומיפוי טקסטים</li>
+      <li><code>clinical-triage</code> · כותב שאלה לנטלי, לא מכריע</li>
+      <li><code>live-run-analyst</code> · מנתח ייצוא קריא של הרצה חיה</li>
+    </ul></div>
+    <div class="card"><h3>פקודות</h3><p><code>/resume</code> · <code>/ship-check</code> · <code>/deploy</code> · <code>/tester-brief</code> · <code>/live-test</code> · <code>/ask-natali</code> · <code>/natali-decided</code> · <code>/sync-board</code> · <code>/export-conversation</code></p>
+    <p>כלל: שאלה קלינית ← <code>clinical-triage</code>. שינוי טקסט ← <code>prompt-editor</code>. שינוי Router או מבנה ← <code>router-guard</code> אחרי.</p></div>
+  </div>
+</section>
+
+<section id="planned" aria-labelledby="h-planned">
+  <h2 id="h-planned">מה מתוכנן ולא בנוי</h2>
+  <div class="two">
+    <div class="card"><h3>חשבונות <span class="tag plan">שלב 4</span></h3><p>מנהל מוסיף משתמשים · הרשאה לכל מודל · כניסה באימייל וסיסמה · תנאי שימוש · קוד אימות · שחזור · מכסה. האימייל המוצפן הוא הנתון המזהה היחיד. תכנית בדיקות: <a href="onboarding-test-plan.md">onboarding-test-plan.md</a>.</p></div>
+    <div class="card"><h3>מייל ומטפל <span class="tag plan">שלב 4.7</span></h3><p>הקובץ המוצפן נשלח לכתובת שבחשבון, ולכתובת נוספת לבחירה. חשבון מטפל פותח לקריאה בלבד רק קובץ שנשלח אליו (טביעת HMAC בתוך ההצפנה).</p></div>
+    <div class="card"><h3>ראיון ההורים <span class="tag plan">שלב 3</span></h3><p>חבילה שנייה, <code>think-twice-parent</code>. נטלי שולחת השבוע מודל מעודכן. צרכי מנוע: "self" כפרמטר, מגדר פנייה, פרופיל בטיחות, ז'רגון לפי מודל. תכנית: <a href="model-update-test-plan.md">model-update-test-plan.md</a>.</p></div>
+    <div class="card"><h3>עורך ראיונות <span class="tag plan">שלב 5</span></h3><p>ממשק מעל החבילה, עם <code>validatePack</code> כשער שמירה. תנאים מוקדמים: הגדרות slot כנתונים, ומזהי שלב יציבים.</p></div>
+  </div>
+</section>
+
+<section id="docs" aria-labelledby="h-docs">
+  <h2 id="h-docs">מסמכים</h2>
+  <ul>
+    <li><a href="interview-platform-plan.md">interview-platform-plan.md</a> · התכנית, עם סטטוס לכל סעיף</li>
+    <li><a href="end-flow-plan.md">end-flow-plan.md</a> · מהלך הסיום, למשתמש ולמטפל</li>
+    <li><a href="onboarding-test-plan.md">onboarding-test-plan.md</a> · הצטרפות, לכל סוגי ההרשאות</li>
+    <li><a href="model-update-test-plan.md">model-update-test-plan.md</a> · עדכון מודל, ועדכון קבצים משותפים</li>
+    <li><a href="privacy-security-research.md">privacy-security-research.md</a> · פרטיות ואבטחה (לאימות משפטי)</li>
+    <li><a href="architecture-dashboard-v2.html">architecture-dashboard-v2.html</a> · הרשם, מחזור התור, צירי ה-Router, המילון</li>
+    <li><a href="../DEPLOY-STATUS.md">DEPLOY-STATUS.md</a> · מצב הפריסה, והגדרת <code>INTERVIEW_FILE_KEYS</code></li>
+  </ul>
+</section>
+
+</main>
+
+<footer>Think Twice · מסמך ארכיטקטורה v3 · נכתב מתוך הקוד בענף <code>claude/youthful-hamilton-40ef4m</code>, 10.10.2026. אם הוא נוגד את הקוד, הקוד הוא העובדה.</footer>
+</div>
+</body>
+</html>
