@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { readFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 
 // The app's version, from package.json, burned into the bundle so an export and an
 // error report can say which version produced them (Ran, 9.10.2026).
@@ -12,6 +13,45 @@ import { readFileSync } from 'node:fs';
 // the gate would fail on every release. The bundle name itself, read at runtime
 // (App.jsx bundleName), is what pins the exact build.
 const APP_VERSION = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version;
+
+// The dev server stands in for the interview-file function too
+// (api/interview-file.js), which seals and opens the downloaded interview. It
+// runs the same handler in the Vite process. Its key comes from
+// INTERVIEW_FILE_KEYS in .env, never VITE_-prefixed; without one, a throwaway key
+// is made for this run, and the files sealed with it will not open after a
+// restart. Nothing here reaches the bundle.
+function interviewFileDev(env) {
+  return {
+    name: 'interview-file-dev',
+    configureServer(server) {
+      if (!env.INTERVIEW_FILE_KEYS && !process.env.INTERVIEW_FILE_KEYS) {
+        process.env.INTERVIEW_FILE_KEYS = `dev:${randomBytes(32).toString('base64')}`;
+        console.warn(
+          '\n[dev-file] INTERVIEW_FILE_KEYS is not set — using a throwaway key for this run.\n' +
+            '           Interview files sealed now will not open after a restart.\n'
+        );
+      } else if (env.INTERVIEW_FILE_KEYS) {
+        process.env.INTERVIEW_FILE_KEYS = env.INTERVIEW_FILE_KEYS;
+      }
+      server.middlewares.use('/api/interview-file', async (req, res) => {
+        const chunks = [];
+        for await (const chunk of req) chunks.push(chunk);
+        req.body = Buffer.concat(chunks).toString('utf8');
+        // The Vercel response helpers the handler uses.
+        res.status = (code) => {
+          res.statusCode = code;
+          return res;
+        };
+        res.json = (obj) => {
+          res.setHeader('Content-Type', 'application/json');
+          res.end(JSON.stringify(obj));
+        };
+        const { default: handler } = await import('./api/interview-file.js');
+        await handler(req, res);
+      });
+    },
+  };
+}
 
 // The dev server stands in for the serverless proxy.
 //
@@ -39,7 +79,7 @@ export default defineConfig(({ mode }) => {
   const apiKey = env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
 
   return {
-    plugins: [react()],
+    plugins: [react(), interviewFileDev(env)],
     define: {
       __APP_VERSION__: JSON.stringify(APP_VERSION),
     },
