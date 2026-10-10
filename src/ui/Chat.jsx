@@ -26,6 +26,12 @@ export default function Chat({
   onSend,
   onConfirm,
   onReject,
+  // In place of the composer: the end screen while it is open (EndScreen.jsx),
+  // and an interview opened from a file, for reading — `viewing` says whether it
+  // ended, and `onContinue` takes an unfinished one up again.
+  endPanel = null,
+  viewing = null,
+  onContinue,
 }) {
   const [input, setInput] = useState('');
   const [showJump, setShowJump] = useState(false);
@@ -169,11 +175,26 @@ export default function Chat({
         )}
       </div>
 
-      {awaitingConfirmation && (
+      {awaitingConfirmation && !endPanel && !viewing && (
         <ConfirmButtons onConfirm={onConfirm} onReject={onReject} />
       )}
 
-      {sessionComplete ? (
+      {endPanel ? (
+        endPanel
+      ) : viewing ? (
+        <div className="banner viewing">
+          {viewing.complete ? (
+            <span>צפייה בראיון שנשמר. הראיון הזה הסתיים, ואפשר רק לקרוא אותו.</span>
+          ) : (
+            <>
+              <span>צפייה בראיון שנשמר.</span>
+              <button className="btn btn-primary" onClick={onContinue}>
+                להמשיך את הראיון
+              </button>
+            </>
+          )}
+        </div>
+      ) : sessionComplete ? (
         <div className="banner done">הראיון הסתיים. ההחלטה — שלך.</div>
       ) : (
         <div className="composer">

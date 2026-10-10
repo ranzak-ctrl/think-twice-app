@@ -6,7 +6,7 @@ allowed-tools: Bash(ls:*), Bash(npx vitest run:*), Read, Write, Edit, Glob, Grep
 
 Take a real run and make it permanent. Every bug that mattered here was found live and would have been found again if the run had been captured the first time.
 
-Source: `$ARGUMENTS` if given, otherwise the most recently modified `~/Downloads/think-twice-session-*.json`. If none exists, say so and stop — tell Ran to press ייצוא in the app first.
+Source: `$ARGUMENTS` if given, otherwise the most recently modified `~/Downloads/think-twice-session-*.json`. If none exists, say so and stop — tell Ran to open מדריך and press "ייצוא קריא לבדיקה" in the app first (the header's שמירה writes the encrypted file, which is not readable here).
 
 Hand the file to the `live-run-analyst` agent and let it do the analysis in its own context. The transcripts are long, and reading one inline is what fills a session's context window.
 

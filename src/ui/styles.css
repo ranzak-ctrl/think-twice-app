@@ -1192,6 +1192,95 @@ button {
   font-weight: 600;
 }
 
+/* An interview opened from a file, for reading. */
+.banner.viewing {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}
+
+.guide-export {
+  padding: 10px 14px 0;
+}
+
+.guide-export .btn {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ---------------------------------------------------------- end screen -- */
+/* Docked where the composer was, so the interview's last words stay readable
+   above it (EndScreen.jsx). */
+.endscreen {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: 16px 20px 18px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.endscreen > * {
+  max-width: var(--column-content);
+  margin-inline: auto;
+}
+
+.endscreen h2 {
+  font-size: 16px;
+  margin-top: 0;
+  margin-bottom: 6px;
+}
+
+.endscreen p {
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin-top: 0;
+  margin-bottom: 6px;
+}
+
+.endscreen-erase {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.endscreen-file {
+  color: var(--text-muted);
+}
+
+.endscreen-file.is-saved {
+  color: var(--ok);
+}
+
+.endscreen-hint {
+  color: var(--text-muted);
+}
+
+.endscreen-warn {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.endscreen-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  margin-bottom: 10px;
+}
+
+.endscreen-actions .btn {
+  height: 36px;
+}
+
+.endscreen-timer {
+  color: var(--text-faint);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Summary confirmation — one of only two decision points shown to the user. */
 .confirm {
   border-top: 1px solid var(--border);
@@ -1511,6 +1600,14 @@ button {
   justify-content: center;
   padding: 20px;
   background: var(--bg);
+}
+
+/* Over a live interview the server just refused: on top of it, not instead of it. */
+.gate.is-over {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(17, 24, 39, 0.55);
 }
 
 /* Carries the interviewer's edge — white card, accent outline — because that

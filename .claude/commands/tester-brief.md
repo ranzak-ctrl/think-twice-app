@@ -20,7 +20,7 @@ Everything the tester reads is Hebrew, RTL, and free of implementation vocabular
 
 **גבולות הכלי** — it does not diagnose and does not treat. If something heavy comes up, the tool will stop the interview and point to help, and that is the correct behaviour rather than a bug.
 
-**איך מסיימים** — press ייצוא, save the file, send it to Ran. Explain that the export is the whole test result and an unexported run is lost.
+**איך מסיימים** — before ending: open מדריך and press "ייצוא קריא לבדיקה", save the file, send it to Ran. Explain that this readable export is the whole test result and a run without it is lost. Then סיום: the end screen saves an encrypted `.thinktwice` file too (only the app opens it — not useful to Ran for analysis) and reloads the page, which erases the interview.
 
 **מה מדווחים** — where it felt like it was listening, where it did not; where a question felt off; where it got stuck or repeated itself; whether it reached a decision that felt like the tester's own.
 

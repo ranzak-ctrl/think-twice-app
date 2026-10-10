@@ -34,8 +34,8 @@ export default function PasswordGate({ children, locked, onUnlock }) {
     onUnlock?.();
   };
 
-  return (
-    <div className="gate" dir="rtl">
+  const gate = (
+    <div className={`gate${unlocked ? ' is-over' : ''}`} dir="rtl">
       <form onSubmit={submit}>
         {/* The gate is the first thing anyone sees, so it carries the whole
             lockup in the board's own stacked composition rather than a heading
@@ -62,4 +62,17 @@ export default function PasswordGate({ children, locked, onUnlock }) {
       </form>
     </div>
   );
+
+  // Refused mid-interview: the gate covers the app, it does not replace it. The
+  // interview lives only in this tab's memory (principle 8), so unmounting the
+  // app here would erase it — on a door that only needed the password again.
+  if (unlocked) {
+    return (
+      <>
+        {children}
+        {gate}
+      </>
+    );
+  }
+  return gate;
 }

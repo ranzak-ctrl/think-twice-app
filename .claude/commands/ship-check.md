@@ -13,7 +13,7 @@ Run every gate before a deployment reaches testers. Report each as PASS or FAIL 
 
 **3 · No API key in the bundle.** Grep `dist/` for `sk-ant`, for `ANTHROPIC_API_KEY`, and for any long base64-ish literal. The browser must call `/api/anthropic/v1/messages` with no key; the serverless function injects it. This gate is the one that must never be waived — a leaked key in a public bundle is unrecoverable.
 
-**4 · Serverless functions actually built.** The known failure is that `api/` was never compiled into functions at all, which surfaced as every `/api/*` returning 404. Confirm all three of `api/ping.js`, `api/anthropic/v1/messages.js` and `api/report.js` exist, and that the last deployment log shows a functions build step.
+**4 · Serverless functions actually built.** The known failure is that `api/` was never compiled into functions at all, which surfaced as every `/api/*` returning 404. Confirm all four of `api/ping.js`, `api/anthropic/v1/messages.js`, `api/report.js` and `api/interview-file.js` exist, and that the last deployment log shows a functions build step. `api/interview-file.js` answers 500 `not-configured` until `INTERVIEW_FILE_KEYS` is set in Vercel — that is a blocking finding, not a warning: without it no person can save their interview at the end, and the end screen tells them the file failed.
 
 **5 · Live endpoints respond, and one real interview turn runs.** `curl -s -o /dev/null -w "%{http_code}" https://think-twice-nine.vercel.app/api/ping` must return 200. Then the proxy with an `x-app-password` header — it must reject a wrong password and accept the right one. Ask Ran for the password rather than reading it from any env file.
 

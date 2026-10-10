@@ -7,11 +7,19 @@ import StoryMap from './StoryMap.jsx';
 import { serializeMap, rasterize } from './mapExport.js';
 import { getPref, setPref } from '../adapters/uiPrefs.js';
 import ConfirmDialog from './ConfirmDialog.jsx';
-import { Logo, Plus, Download, Upload, Gauge, MapSketch } from './icons.jsx';
+import EndScreen from './EndScreen.jsx';
+import { Logo, Download, Upload, Gauge, MapSketch, Exit } from './icons.jsx';
 import { importState } from '../core/state.js';
 // The interview — pack, texts and model adapter, composed once (interview.js).
-import { interview } from './interview.js';
-import { buildSessionExport, importCompatibility, interviewHeader } from './sessionExport.js';
+import { interview, interviewMigrations } from './interview.js';
+import {
+  buildSessionExport,
+  buildInterviewFile,
+  importCompatibility,
+  interviewHeader,
+  upgradeSession,
+} from './sessionExport.js';
+import { sealInterview, openInterviewFile, isSealedFile, interviewFileName, FILE_EXTENSION } from '../adapters/interviewFile.js';
 import { APP_VERSION } from '../adapters/appVersion.js';
 import { rewriteTurn, buildRevision } from './rewriteTurn.js';
 
@@ -21,6 +29,25 @@ const IMPORT_REFUSAL = {
   'other-version': (f) => `הקובץ הזה נוצר בגרסה אחרת של הראיון (גרסה ${f.from}, והנוכחית ${f.current}), ולכן אי אפשר לטעון אותו.`,
   'no-header': () => 'הקובץ הזה נוצר בגרסה ישנה של האפליקציה, ולכן אי אפשר לטעון אותו.',
 };
+
+// Why a person's encrypted file did not open. Theirs is the only copy, so each
+// message says what is wrong with the file — or that the fault is ours.
+const OPEN_REFUSAL = {
+  // The function (api/interview-file.js)
+  tampered: () => 'הקובץ הזה פגום או ששונה, ולכן אי אפשר לפתוח אותו.',
+  'not-a-file': () => 'הקובץ הזה פגום או ששונה, ולכן אי אפשר לפתוח אותו.',
+  'unknown-key': () => 'הקובץ הזה לא נוצר באפליקציה הזו, ולכן אי אפשר לפתוח אותו כאן.',
+  'newer-file': () => 'הקובץ הזה נוצר בגרסה חדשה יותר של האפליקציה. רענן את הדף ונסה שוב.',
+  'not-configured': () => 'פתיחת קבצים לא זמינה כרגע. נסה שוב מאוחר יותר.',
+  'too-large': () => 'הקובץ גדול מדי, ולכן אי אפשר לפתוח אותו.',
+  network: () => 'בעיית תקשורת. בדוק את החיבור לאינטרנט ונסה שוב.',
+  // What is inside (sessionExport.js, upgradeSession)
+  'other-interview': (f) => `הקובץ הזה הוא ראיון אחר (${f.name}), ולכן אי אפשר לפתוח אותו כאן.`,
+  'newer-version': () => 'הקובץ הזה נוצר בגרסה חדשה יותר של הראיון. רענן את הדף ונסה שוב.',
+  'no-migration': () => 'הקובץ הזה נוצר בגרסה קודמת, ועדיין אי אפשר לפתוח אותו כאן. זו תקלה אצלנו, ולא בקובץ.',
+  'no-header': () => 'הקובץ הזה פגום, ולכן אי אפשר לפתוח אותו.',
+};
+const openRefusal = (r) => (OPEN_REFUSAL[r.reason ?? r.error] ?? (() => 'לא הצלחנו לפתוח את הקובץ.'))(r);
 
 // Opening turn. Ran's wording, revised 15.8.2026: the arc now ends on the
 // person choosing rather than on a response being arrived at, and the close
@@ -60,7 +87,16 @@ export default function App({ onUnauthorized }) {
   const [mapOpen, setMapOpen] = useState(() => getPref('mapOpen', true));
   const [guideWidth, setGuideWidth] = useState(340); // resizable via the divider
   const [loading, setLoading] = useState(false);
-  const [confirmNew, setConfirmNew] = useState(false);
+  // The end screen, while it is open: { reason: 'complete' | 'leave', fileName }.
+  const [end, setEnd] = useState(null);
+  // An interview opened from a person's file, shown for reading: { complete }.
+  // Null while an interview is live.
+  const [viewing, setViewing] = useState(null);
+  // A file that opened, waiting for "replace the interview on screen?".
+  const [pendingOpen, setPendingOpen] = useState(null);
+  // Set the moment the page reloads on purpose, so the browser's "leave site?"
+  // does not stand between the person and the erasing they just chose.
+  const exitingRef = useRef(false);
   // Append-only log of every tester rewrite, including the turns each one
   // discarded. Separate from `history` precisely because history gets cut.
   const [revisions, setRevisions] = useState([]);
@@ -97,14 +133,17 @@ export default function App({ onUnauthorized }) {
   const map = useMemo(() => interview.buildMap(state), [state]);
 
   // Nothing is persisted anywhere (no server, no storage — see CLAUDE.md), so
-  // anything past the opening message is lost for good unless it is exported.
-  const isDirty = history.length > 1;
+  // anything past the opening message is lost for good unless it is saved to a
+  // file. An interview opened for reading is not: the person holds its file.
+  const isDirty = history.length > 1 && !viewing;
 
   // The browser only allows its own generic "leave site?" prompt here — the text
-  // cannot be customised and no download button can be attached to it.
+  // cannot be customised and no download button can be attached to it. Leaving
+  // through the end screen is not "leaving by accident", so it is let through.
   useEffect(() => {
     if (!isDirty) return;
     const onBeforeUnload = (e) => {
+      if (exitingRef.current) return;
       e.preventDefault();
       e.returnValue = '';
     };
@@ -283,7 +322,10 @@ export default function App({ onUnauthorized }) {
     URL.revokeObjectURL(json);
   };
 
-  const handleExport = async () => {
+  // The testers' readable export — guide mode only (GuidePanel). A person's own
+  // file is the encrypted one below; this one carries the interview in the clear,
+  // gaps and barred findings included, for /live-test and the analyst.
+  const handleExportPlain = async () => {
     // Full session: the transcript (history) + the StateDocument. The
     // /export-conversation command turns this file into a Drive .docx.
     // history + state is the interview; revisions is what the tester wanted
@@ -338,48 +380,137 @@ export default function App({ onUnauthorized }) {
     }
   };
 
+  // ── A person's file ──
+  //
+  // Sealed on the server and handed to the person; nothing is kept anywhere else
+  // (plan 2ב, stage 4.7). The same payload whether it is saved midway, from the
+  // header, or by the end screen.
+  const sealCurrent = useCallback(async () => {
+    const out = await sealInterview(
+      buildInterviewFile({
+        pack: interview.pack,
+        appVersion: APP_VERSION,
+        bundle: bundleName(),
+        savedAt: new Date().toISOString(),
+        history,
+        state,
+        revisions,
+      })
+    );
+    if (out.unauthorized) onUnauthorized?.();
+    return out;
+  }, [history, state, revisions, onUnauthorized]);
+
+  const [saving, setSaving] = useState(false);
+  const handleSave = async () => {
+    if (saving) return;
+    setSaving(true);
+    try {
+      const out = await sealCurrent();
+      if (!out.ok) {
+        if (!out.unauthorized) alert('לא הצלחנו לשמור את הקובץ. נסה שוב.');
+        return;
+      }
+      const url = URL.createObjectURL(new Blob([JSON.stringify(out.file)], { type: 'application/octet-stream' }));
+      download(url, interviewFileName());
+      URL.revokeObjectURL(url);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Leaving reloads the page: the one way to be sure the interview is gone from
+  // the tab's memory. The access password stays — it is per tab, and not content.
+  const exitApp = useCallback(() => {
+    exitingRef.current = true;
+    window.location.reload();
+  }, []);
+
+  // The interview ended by itself: the end screen opens with it. Not for an
+  // interview opened for reading — the person already holds that file.
+  useEffect(() => {
+    if (state.meta.sessionComplete && !viewing && !end) {
+      setEnd({ reason: 'complete', fileName: interviewFileName() });
+    }
+  }, [state.meta.sessionComplete, viewing, end]);
+
+  const handleLeave = () => {
+    if (viewing) {
+      // Nothing new to save: close the file, and the page with it.
+      exitApp();
+      return;
+    }
+    setEnd({ reason: 'leave', fileName: interviewFileName() });
+  };
+
+  const applyOpened = ({ session, viewOnly }) => {
+    setState(importState(JSON.stringify(session)));
+    setRevisions(Array.isArray(session.revisions) ? session.revisions : []);
+    setHistory(Array.isArray(session.history) && session.history.length ? session.history : [openingMessage()]);
+    setViewing(viewOnly ? { complete: Boolean(session.state?.meta?.sessionComplete) } : null);
+    setPendingOpen(null);
+  };
+
+  // Replacing a live interview with a file erases it, so it asks first.
+  const offerOpened = (opened) => {
+    if (isDirty) setPendingOpen(opened);
+    else applyOpened(opened);
+  };
+
   const handleImport = (e) => {
     const file = e.target.files?.[0];
+    e.target.value = ''; // re-choosing the same file must fire change again
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    reader.onload = async (ev) => {
+      let parsed;
       try {
-        const raw = ev.target.result;
-        const parsed = JSON.parse(raw);
-        // Only an export of this interview model at this version loads (Ran,
-        // 9.10.2026: old exports are not supported). See sessionExport.js.
-        const fit = importCompatibility(parsed, interview.pack);
-        if (!fit.ok) {
-          alert(IMPORT_REFUSAL[fit.reason](fit));
-          return;
-        }
-        setState(importState(raw));
-        // Restore the transcript too, if the export carried it (faithful re-entry).
-        setRevisions(Array.isArray(parsed.revisions) ? parsed.revisions : []);
-        if (Array.isArray(parsed.history) && parsed.history.length) {
-          setHistory(parsed.history);
-        } else {
-          addMessage('assistant', 'המשך מהנקודה שעצרנו. מה היה לנו?');
-        }
+        parsed = JSON.parse(ev.target.result);
       } catch {
         alert('קובץ לא תקין.');
+        return;
       }
+
+      // A person's encrypted file: opened by the server, brought up to this
+      // version, and shown for reading first.
+      if (isSealedFile(parsed)) {
+        const opened = await openInterviewFile(parsed);
+        if (!opened.ok) {
+          if (opened.unauthorized) onUnauthorized?.();
+          else alert(openRefusal(opened));
+          return;
+        }
+        const up = upgradeSession(opened.payload, interview.pack, interviewMigrations);
+        if (!up.ok) {
+          alert(openRefusal(up));
+          return;
+        }
+        try {
+          importState(JSON.stringify(up.session));
+        } catch {
+          alert(openRefusal({ reason: 'no-header' }));
+          return;
+        }
+        offerOpened({ session: up.session, viewOnly: true });
+        return;
+      }
+
+      // A testers' readable export: only this interview model at this version
+      // (Ran, 9.10.2026: old exports are not supported). See sessionExport.js.
+      const fit = importCompatibility(parsed, interview.pack);
+      if (!fit.ok) {
+        alert(IMPORT_REFUSAL[fit.reason](fit));
+        return;
+      }
+      try {
+        importState(JSON.stringify(parsed));
+      } catch {
+        alert('קובץ לא תקין.');
+        return;
+      }
+      offerOpened({ session: parsed, viewOnly: false });
     };
     reader.readAsText(file);
-    e.target.value = ''; // re-importing the same file must fire change again
-  };
-
-  const startNewSession = () => {
-    setState(interview.createState());
-    setHistory([openingMessage()]);
-    setRevisions([]);
-    setConfirmNew(false);
-  };
-
-  // Warn before discarding a live interview; a fresh one resets straight away.
-  const handleNewSession = () => {
-    if (isDirty) setConfirmNew(true);
-    else startNewSession();
   };
 
   return (
@@ -393,15 +524,32 @@ export default function App({ onUnauthorized }) {
           <div className="header-spacer" />
 
           <div className="header-actions">
-            <button className="btn" onClick={handleNewSession} title="ראיון חדש">
-              <Plus />
-              <span className="btn-label">ראיון חדש</span>
-            </button>
+            {/* Leaving midway opens the end screen (Ran, 10.10.2026). There is
+                no "new interview" any more: the next one starts after the page
+                reloads, which is what erases this one. */}
+            {(isDirty || viewing) && (
+              <button
+                className="btn"
+                onClick={handleLeave}
+                disabled={loading || Boolean(end)}
+                title={viewing ? 'סגירת הקובץ' : 'סיום ויציאה'}
+              >
+                <Exit />
+                <span className="btn-label">{viewing ? 'סגירה' : 'סיום'}</span>
+              </button>
+            )}
 
-            <button className="btn" onClick={handleExport} title="ייצוא">
-              <Download />
-              <span className="btn-label">ייצוא</span>
-            </button>
+            {isDirty && !end && (
+              <button
+                className="btn"
+                onClick={handleSave}
+                disabled={saving}
+                title="שמירת הראיון בקובץ מוצפן"
+              >
+                <Download />
+                <span className="btn-label">{saving ? 'שומר…' : 'שמירה'}</span>
+              </button>
+            )}
 
             {/* Appears only once something has actually failed, so a clean run
                 never shows a button about errors. */}
@@ -415,14 +563,17 @@ export default function App({ onUnauthorized }) {
               </button>
             )}
 
-            <button className="btn" onClick={() => fileRef.current?.click()} title="ייבוא">
-              <Upload />
-              <span className="btn-label">ייבוא</span>
-            </button>
+            {!end && (
+              <button className="btn" onClick={() => fileRef.current?.click()} title="פתיחת קובץ ראיון">
+                <Upload />
+                <span className="btn-label">פתיחת קובץ</span>
+              </button>
+            )}
+            {/* A person's encrypted file, or a testers' readable export. */}
             <input
               ref={fileRef}
               type="file"
-              accept=".json"
+              accept={`${FILE_EXTENSION},.json`}
               hidden
               onChange={handleImport}
             />
@@ -477,6 +628,19 @@ export default function App({ onUnauthorized }) {
             onSend={handleUserMessage}
             onConfirm={handleConfirm}
             onReject={handleReject}
+            viewing={viewing}
+            onContinue={() => setViewing(null)}
+            endPanel={
+              end && (
+                <EndScreen
+                  reason={end.reason}
+                  fileName={end.fileName}
+                  seal={sealCurrent}
+                  onReturn={() => setEnd(null)}
+                  onExit={exitApp}
+                />
+              )
+            }
           />
           {mapOpen && <StoryMap map={map} />}
           <StageRail
@@ -513,31 +677,23 @@ export default function App({ onUnauthorized }) {
               .map((m, i) => (m.feedback ? { i, question: m.content, ...m.feedback } : null))
               .filter(Boolean)}
             onClose={() => setGuideOpen(false)}
+            onExportPlain={handleExportPlain}
           />
         </>
       )}
 
-      {confirmNew && (
+      {pendingOpen && (
         <ConfirmDialog
-          title="להתחיל ראיון חדש?"
-          body="הראיון הנוכחי — התמלול, הערות הבודק והמצב — יימחק. אין שמירה אוטומטית ואי אפשר לשחזר."
-          onClose={() => setConfirmNew(false)}
+          title="לפתוח את הקובץ?"
+          body="הראיון שעל המסך יוחלף בזה שבקובץ, וכל מה שנאמר בו יימחק. כדי לשמור אותו קודם, בטל ולחץ על 'שמירה'."
+          onClose={() => setPendingOpen(null)}
           actions={
             <>
-              <button
-                className="btn btn-primary"
-                onClick={() => {
-                  handleExport();
-                  startNewSession();
-                }}
-              >
-                <Download />
-                הורד קובץ והתחל ראיון חדש
+              <button className="btn btn-primary" onClick={() => applyOpened(pendingOpen)}>
+                <Upload />
+                לפתוח את הקובץ
               </button>
-              <button className="btn" onClick={startNewSession}>
-                התחל בלי לשמור
-              </button>
-              <button className="btn" onClick={() => setConfirmNew(false)}>
+              <button className="btn" onClick={() => setPendingOpen(null)}>
                 ביטול
               </button>
             </>

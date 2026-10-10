@@ -178,7 +178,15 @@ curl -s https://<url>/assets/<bundle>.js | grep -c "sk-ant"       # 0 = אין �
 
 > **הערה:** טריק `mv .env .env.bak` לפני הבנייה בוטל ואין להחזיר אותו. הוא היה דרוש רק כל עוד קוד הלקוח קרא `VITE_ANTHROPIC_API_KEY`; היום אין שום סוד עם קידומת `VITE_`, והבנייה בטוחה כברירת מחדל. `VITE_LIVE` הפך ל-no-op — המצב נקבע ע"י `VITE_USE_MOCK`.
 
-**משתני סביבה נדרשים ב-Vercel** (Production + Preview): `ANTHROPIC_API_KEY` · `APP_PASSWORD` · `VITE_REQUIRE_PASSWORD=1`.
+**משתני סביבה נדרשים ב-Vercel** (Production + Preview): `ANTHROPIC_API_KEY` · `APP_PASSWORD` · `VITE_REQUIRE_PASSWORD=1` · `INTERVIEW_FILE_KEYS`.
+
+**`INTERVIEW_FILE_KEYS` (נוסף 10.10.2026; טרם הוגדר).** המפתח שמצפין את קובץ הראיון של המשתמש. בלעדיו מסך הסיום לא מצליח לשמור קובץ. ההגדרה, פעם אחת:
+1. במחשב שלך: `node scripts/new-file-key.mjs k1`. השורה שמודפסת (`k1:...`) היא המפתח.
+2. ב-Vercel ‏(team `think-twice1`) ← Settings ← Environment Variables: שם `INTERVIEW_FILE_KEYS`, הערך השורה, ל-Production ול-Preview. **לא** `VITE_`.
+3. לשמור את אותה שורה במנהל הסיסמאות. **אובדן המפתח = כל הקבצים שהוצפנו בו לא ייפתחו לעולם.**
+4. Redeploy.
+
+החלפת מפתח בעתיד: מוסיפים `,k2:...` **אחרי** הקיים, ולעולם לא מוחקים מפתח ישן.
 
 ---
 

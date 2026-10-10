@@ -11,7 +11,7 @@ Every bug that mattered in this project was found in a live run, not by the mock
 
 ## Input
 
-An export file, shape `{ exportedAt, history, state }`, written by the app's ייצוא button. `history` is `[{ role, content }]` with `assistant` for the interviewer and `user` for the interviewee; `state` is the full StateDocument. Default to the most recently modified `~/Downloads/think-twice-session-*.json` unless given a specific path.
+An export file, shape `{ exportedAt, history, state }`, written by the guide panel's "ייצוא קריא לבדיקה" button (מדריך → ייצוא קריא לבדיקה; since 10.10.2026 the header's "שמירה" writes the person's encrypted `.thinktwice` file instead, which this agent cannot read). `history` is `[{ role, content }]` with `assistant` for the interviewer and `user` for the interviewee; `state` is the full StateDocument. Default to the most recently modified `~/Downloads/think-twice-session-*.json` unless given a specific path.
 
 Note what the export does *not* contain: the per-turn `evaluation`. You can see what the model said, not what it scored. Never present an inferred slot score as observed — say the export cannot show it.
 

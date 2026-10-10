@@ -184,3 +184,14 @@ export function Close({ size = 16 }) {
     </svg>
   );
 }
+
+// Leaving: a door, and the way out of it. Drawn for RTL — the arrow leaves
+// toward the left, the direction the reader's eye moves on.
+export function Exit({ size = 16 }) {
+  return (
+    <svg {...base(size)}>
+      <path d="M14 4h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4" />
+      <path d="M14 12H4m0 0 4-4m-4 4 4 4" />
+    </svg>
+  );
+}

@@ -128,7 +128,7 @@ function formatCacheSaving(usage) {
 
 // `account` is the interview's own renderEvent (engine.js), bound to its pack, so
 // the panel shows the redacted account the summary and opener are built from.
-export default function GuidePanel({ state, pack, account, width = 320, notes = [], revisions = [], onClose }) {
+export default function GuidePanel({ state, pack, account, width = 320, notes = [], revisions = [], onClose, onExportPlain }) {
   const { coverage, meta } = state;
   const eventText = account(state);
   const cast = castOf(pack);
@@ -158,6 +158,19 @@ export default function GuidePanel({ state, pack, account, width = 320, notes = 
           <Close />
         </button>
       </div>
+
+      {/* The testers' readable export — the interview in the clear, with the map,
+          for /live-test and the live-run analyst. It lives here, with the rest of
+          what only a tester should see: a person's own file is the encrypted one
+          (header, and the end screen). Moves with guide mode when guide mode
+          becomes a permission (plan 2ב, item 8). */}
+      {onExportPlain && (
+        <div className="guide-export">
+          <button className="btn" onClick={onExportPlain} title="ייצוא קריא — לבדיקה בלבד">
+            ייצוא קריא לבדיקה
+          </button>
+        </div>
+      )}
 
       {/* Stage indicator */}
       <Section title={`שלב ${meta.currentStage} — ${stageName(pack, meta.currentStage)}`}>
