@@ -40,6 +40,15 @@ describe('session — slot routing', () => {
     expect(nextState.coverage.stage2.causal).toBe(0);
     expect(nextState.coverage.stage5).not.toHaveProperty('bogus');
   });
+
+  // router-guard F4, 10.10.2026: an unknown name in the current stage, and a
+  // reference past the last stage, used to be written into the current stage as
+  // keys of their own.
+  it('ignores an unknown slot in the current stage, and a stage past the last', async () => {
+    const { nextState } = await runWithSlots({ bogus: 2, 'stage8.trigger': 2, trigger: 1 });
+    expect(Object.keys(nextState.coverage.stage1)).toEqual(['trigger', 'timeline', 'actors', 'status', 'auto_reaction']);
+    expect(nextState.coverage.stage1.trigger).toBe(1);
+  });
 });
 
 describe('session — saturation from slot progress', () => {
@@ -53,6 +62,11 @@ describe('session — saturation from slot progress', () => {
   it('resets saturation when a current-stage slot advances', async () => {
     const { nextState } = await runWithSlots({ trigger: 2 });
     expect(nextState.meta.saturationCount).toBe(0);
+  });
+
+  it('an unknown slot is not progress', async () => {
+    const { nextState } = await runWithSlots({ bogus: 2, 'stage8.trigger': 2 });
+    expect(nextState.meta.saturationCount).toBe(1);
   });
 
   it('cross-stage-only progress still counts toward saturation', async () => {

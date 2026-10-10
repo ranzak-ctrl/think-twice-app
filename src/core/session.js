@@ -22,7 +22,7 @@ import { countSelfOther } from './kpi.js';
 // references are real, where the cast is gated, which stage decides, where
 // intensity is measured — it asks the pack. Until 10.10.2026 it was written for
 // Think Twice's seven stages (plan, phase 1 slice 3).
-import { stageAt, stageWith, hasComponent, parseSlotRef, castOf, intensityKey } from './pack.js';
+import { stageAt, stageWith, hasComponent, slotIds, parseSlotRef, castOf, intensityKey } from './pack.js';
 import {
   appendDecisionLog,
   recordGapObservation,
@@ -176,8 +176,13 @@ export async function runTurn(state, history, userText, deps) {
   // Slot updates. Bare slot names → the current stage (set as reported). Cross-stage
   // keys ("stageN.slot", N a stage of this pack) let the model capture info that
   // belongs to a later stage as it surfaces — pre-seeded to level 1 only; the owning
-  // stage still explores it to 2 (Ran, 21.6). Unknown cross-stage slots are ignored.
+  // stage still explores it to 2 (Ran, 21.6). A slot the stage does not have is
+  // ignored, here or in another stage (test-plan §א.2 item 4). It used to be written
+  // into the current stage as a key of its own — a hallucinated "stage8.x", or with
+  // fewer stages any reference past the last one — and, read as progress, it reset
+  // the saturation count (router-guard F4, 10.10.2026).
   const currentKey = stageAt(pack, stage).key;
+  const currentSlots = slotIds(stageAt(pack, stage));
   if (ev.slots && Object.keys(ev.slots).length) {
     let coverage = nextState.coverage;
     for (const [rawKey, value] of Object.entries(ev.slots)) {
@@ -185,6 +190,7 @@ export async function runTurn(state, history, userText, deps) {
       const stageKey = ref ? ref.key : currentKey;
       const slot = ref ? ref.slot : rawKey;
       if (stageKey === currentKey) {
+        if (!currentSlots.includes(slot)) continue; // unknown slot — ignore
         coverage = { ...coverage, [stageKey]: { ...coverage[stageKey], [slot]: value } };
       } else {
         const stageSlots = coverage[stageKey];
@@ -272,10 +278,11 @@ export async function runTurn(state, history, userText, deps) {
 
   // Counters + per-turn signals. Saturation tracks real coverage progress, not the
   // model's "new_info" self-report (which over-reports — Ran, live testing: saturation
-  // stuck at 0). A turn that raised no current-stage slot counts toward saturation.
+  // stuck at 0). A turn that raised no current-stage slot counts toward saturation —
+  // the stage's own slots, as the pack lists them, and nothing else.
   const beforeCov = state.coverage[currentKey] ?? {};
   const afterCov = nextState.coverage[currentKey] ?? {};
-  const newInfo = Object.keys(afterCov).some((k) => slotLevel(afterCov[k]) > slotLevel(beforeCov[k]));
+  const newInfo = currentSlots.some((k) => slotLevel(afterCov[k]) > slotLevel(beforeCov[k]));
   nextState = {
     ...nextState,
     meta: {
