@@ -168,6 +168,18 @@ describe('api/interview-file', () => {
     const res = await call({ action: 'seal', payload });
     expect(res.statusCode).toBe(500);
     expect(res.body.error).toBe('not-configured');
+    expect(res.body.reason).toBe('no-keys');
+  });
+
+  it('says when the key is there but malformed — and never echoes it', async () => {
+    const bad = 'k1:not-a-real-key';
+    vi.stubEnv('INTERVIEW_FILE_KEYS', bad);
+    vi.stubEnv('APP_PASSWORD', '');
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const res = await call({ action: 'seal', payload });
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({ error: 'not-configured', reason: 'malformed-keys' });
+    expect(JSON.stringify(res.body)).not.toContain('not-a-real-key');
   });
 
   it('refuses a tampered file, another method and an unknown action', async () => {

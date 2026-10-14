@@ -56,14 +56,16 @@ export default async function handler(req, res) {
   try {
     keys = parseKeys(process.env.INTERVIEW_FILE_KEYS);
   } catch {
+    // `reason` tells whoever set the variable which mistake it was — missing from
+    // this environment, or there but malformed. It names no key and no value.
     log('rejected', { status: 500, reason: 'bad_keys' });
-    res.status(500).json({ error: 'not-configured', rid });
+    res.status(500).json({ error: 'not-configured', reason: 'malformed-keys', rid });
     return;
   }
   if (!keys.current) {
     // Pure misconfiguration: the deployment has no file key (DEPLOY-STATUS.md).
     log('rejected', { status: 500, reason: 'missing_file_keys' });
-    res.status(500).json({ error: 'not-configured', rid });
+    res.status(500).json({ error: 'not-configured', reason: 'no-keys', rid });
     return;
   }
 

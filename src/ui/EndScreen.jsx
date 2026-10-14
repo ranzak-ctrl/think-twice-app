@@ -70,7 +70,7 @@ export default function EndScreen({ reason, seal, fileName, onReturn, onExit, sa
     const out = await sealRef.current();
     savingRef.current = false;
     if (!out.ok) {
-      setSave({ status: 'failed', url: null, error: out.error });
+      setSave({ status: 'failed', url: null, error: out.error, reason: out.reason ?? null });
       return;
     }
     const url = URL.createObjectURL(
@@ -155,6 +155,10 @@ export default function EndScreen({ reason, seal, fileName, onReturn, onExit, sa
             </p>
             <p className="endscreen-warn">
               אם תצא בלי קובץ, הראיון יימחק ולא יישאר ממנו עותק.
+            </p>
+            {/* For whoever set the deployment up: which mistake it was. */}
+            <p className="endscreen-hint" dir="ltr">
+              {[save.error, save.reason].filter(Boolean).join(' · ')}
             </p>
           </>
         )}

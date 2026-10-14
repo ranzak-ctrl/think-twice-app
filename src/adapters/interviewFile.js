@@ -52,7 +52,11 @@ async function call(body, { fetchImpl = fetch, apiUrl = API_URL } = {}) {
   } catch {
     json = null;
   }
-  if (!res.ok || !json) return { ok: false, error: json?.error ?? `http-${res.status}` };
+  if (!res.ok || !json) {
+    const out = { ok: false, error: json?.error ?? `http-${res.status}` };
+    if (typeof json?.reason === 'string') out.reason = json.reason;
+    return out;
+  }
   return { ok: true, ...json };
 }
 

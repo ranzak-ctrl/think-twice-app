@@ -285,6 +285,11 @@ describe('src/adapters/interviewFile.js', () => {
     withPassword('');
     expect(await openInterviewFile(envelope, stubFetch(400, { error: 'tampered' }))).toEqual({ ok: false, error: 'tampered' });
     expect(await sealInterview({}, stubFetch(500, { error: 'not-configured' }))).toEqual({ ok: false, error: 'not-configured' });
+    expect(await sealInterview({}, stubFetch(500, { error: 'not-configured', reason: 'no-keys' }))).toEqual({
+      ok: false,
+      error: 'not-configured',
+      reason: 'no-keys',
+    });
     expect(await sealInterview({}, stubFetch(502, null))).toEqual({ ok: false, error: 'http-502' });
     const down = { fetchImpl: async () => { throw new Error('offline'); } };
     expect(await sealInterview({}, down)).toEqual({ ok: false, error: 'network' });
