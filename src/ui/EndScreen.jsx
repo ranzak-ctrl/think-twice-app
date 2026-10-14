@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Download } from './icons.jsx';
+import { Download, Close } from './icons.jsx';
 import { HELP_LINE } from '../safety/index.js';
 
 // The end screen — when the interview ends, and when the person leaves it midway.
@@ -20,8 +20,11 @@ import { HELP_LINE } from '../safety/index.js';
 // The page reloads only after the file is ready or preparing it has failed and
 // the person has been told so. Never in between.
 //
-// Docked in place of the composer rather than over the conversation: the
-// interview's last words, and the board, stay readable above it.
+// A modal in the middle of the screen, in the app's own dialog style (Ran,
+// 14.10.2026). The X in its top-right corner — and Escape — take the person back
+// to the interview; there is no separate "back" button. After an interview that
+// ended, that is how they read its last words and the board again; the header's
+// "סיום" opens this screen once more.
 //
 // Not here yet: the copy to the account's email and to an address the person
 // adds. Both need accounts and a mail service (plan stage 4).
@@ -50,7 +53,7 @@ const SAVE_FAILED = {
   'not-configured': 'שמירת קבצים לא זמינה כרגע.',
 };
 
-export default function EndScreen({ reason, seal, fileName, onReturn, onExit, safetyStop = false }) {
+export default function EndScreen({ reason, seal, fileName, onClose, onExit, safetyStop = false }) {
   // saving → saved (the file is ready) | failed; a failed save can be tried again.
   const [save, setSave] = useState({ status: 'saving', url: null, error: null });
   // Whether the person has taken the file; and whether "יציאה" is asking first.
@@ -66,7 +69,13 @@ export default function EndScreen({ reason, seal, fileName, onReturn, onExit, sa
   // The interview as it stood when the screen opened. Held, so that a new `seal`
   // from a re-render can never start a second save.
   const sealRef = useRef(seal);
+  const cardRef = useRef(null);
   const leaving = reason === 'leave';
+
+  // The dialog takes the focus as it opens, so the keyboard starts inside it.
+  useEffect(() => {
+    cardRef.current?.focus();
+  }, []);
 
   const download = (url) => {
     const a = document.createElement('a');
@@ -143,13 +152,30 @@ export default function EndScreen({ reason, seal, fileName, onReturn, onExit, sa
     else exit();
   };
 
+  const onKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      if (confirmExit) setConfirmExit(false);
+      else onClose();
+      return;
+    }
+    restart();
+  };
+
   return (
+    <div className="dialog-backdrop">
     <section
-      className="endscreen"
+      className="endscreen endmodal"
+      role="dialog"
+      aria-modal="true"
       aria-labelledby="endscreen-title"
-      onKeyDown={restart}
+      tabIndex={-1}
+      ref={cardRef}
+      onKeyDown={onKeyDown}
       onInput={restart}
     >
+      <button className="endmodal-close" onClick={onClose} aria-label="חזרה לראיון" title="חזרה לראיון">
+        <Close />
+      </button>
       <h2 id="endscreen-title">{leaving ? 'יציאה מהראיון' : 'הראיון הסתיים'}</h2>
 
       {safetyStop && <p className="endscreen-help">{HELP_LINE}</p>}
@@ -231,11 +257,6 @@ export default function EndScreen({ reason, seal, fileName, onReturn, onExit, sa
           <button className="btn" onClick={askExit} disabled={saving}>
             {saving ? 'מכין…' : 'יציאה'}
           </button>
-          {leaving && (
-            <button className="btn" onClick={onReturn}>
-              חזרה לראיון
-            </button>
-          )}
         </div>
       )}
 
@@ -247,5 +268,6 @@ export default function EndScreen({ reason, seal, fileName, onReturn, onExit, sa
             : `המסך ייסגר בעוד ${clock(left)}.`}
       </p>
     </section>
+    </div>
   );
 }

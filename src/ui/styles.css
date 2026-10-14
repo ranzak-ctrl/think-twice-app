@@ -1213,25 +1213,49 @@ button {
 }
 
 /* ---------------------------------------------------------- end screen -- */
-/* Docked where the composer was, so the interview's last words stay readable
-   above it (EndScreen.jsx). */
-.endscreen {
-  border-top: 1px solid var(--border);
+/* A modal in the middle of the screen, in the dialog's own skin (Ran,
+   14.10.2026). The X sits in the top-right corner — the start corner in RTL. */
+.endmodal {
+  position: relative;
   background: var(--surface);
-  padding: 16px 20px 18px;
-  max-height: 60vh;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 22px 24px 18px;
+  width: 100%;
+  max-width: 500px;
+  max-height: calc(100dvh - 40px);
   overflow-y: auto;
+  outline: none;
 }
 
-.endscreen > * {
-  max-width: var(--column-content);
-  margin-inline: auto;
+.endmodal-close {
+  position: absolute;
+  top: 16px;
+  inset-inline-start: 16px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.endmodal-close:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
 }
 
 .endscreen h2 {
   font-size: 16px;
-  margin-top: 0;
-  margin-bottom: 6px;
+  margin-top: 4px;
+  margin-bottom: 10px;
+  /* clear of the X */
+  padding-inline-start: 44px;
 }
 
 .endscreen p {

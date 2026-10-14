@@ -42,10 +42,15 @@ describe('the end screen', () => {
     expect(render('complete')).toMatch(/<button class="btn" disabled="">מכין…<\/button>/);
   });
 
-  it('offers the way back only to someone leaving midway', () => {
-    expect(render('leave')).toContain('חזרה לראיון');
+  it('is a modal whose X goes back to the interview — no separate back button (Ran, 14.10.2026)', () => {
+    for (const reason of ['leave', 'complete']) {
+      const html = render(reason);
+      expect(html).toContain('role="dialog"');
+      expect(html).toContain('aria-modal="true"');
+      expect(html).toMatch(/<button class="endmodal-close"[^>]*aria-label="חזרה לראיון"/);
+      expect(html).not.toMatch(/>חזרה לראיון</);
+    }
     expect(render('leave')).toContain('יציאה מהראיון');
-    expect(render('complete')).not.toContain('חזרה לראיון');
     expect(render('complete')).toContain('הראיון הסתיים');
   });
 
@@ -91,7 +96,7 @@ describe('the app around it', () => {
   });
 
   it('opens the end screen when the interview ends by itself', () => {
-    expect(app).toMatch(/state\.meta\.sessionComplete && !viewing && !end/);
+    expect(app).toMatch(/state\.meta\.sessionComplete && !viewing && !end && !endDismissed/);
   });
 
   it('gives a person the encrypted file; the readable one is the testers\', in the guide panel', () => {
@@ -107,6 +112,12 @@ describe('the app around it', () => {
     // and the composer is there.
     expect(app).toMatch(/setViewing\(viewOnly && \(complete \|\| stopped\) \? \{ complete, stopped \} : null\)/);
     expect(app).not.toContain('onContinue');
+  });
+
+  it('closing the browser meets the person the way "סיום" does, as far as a browser allows (Ran, 14.10.2026)', () => {
+    // The browser's own "leave site?" prompt; staying opens the end screen.
+    expect(app).toMatch(/e\.preventDefault\(\);\s*e\.returnValue = '';\s*setTimeout\(\(\) => openEndRef\.current\?\.\(\), 0\);/);
+    expect(app).toMatch(/openEndRef\.current = \(\) => \{/);
   });
 
   it('keeps no interview content in browser storage', () => {

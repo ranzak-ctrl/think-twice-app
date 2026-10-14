@@ -89,6 +89,9 @@ export default function App({ onUnauthorized }) {
   const [loading, setLoading] = useState(false);
   // The end screen, while it is open: { reason: 'complete' | 'leave', fileName }.
   const [end, setEnd] = useState(null);
+  // Closed with its X after the interview ended: it does not open by itself again
+  // (the header's "סיום" does).
+  const [endDismissed, setEndDismissed] = useState(false);
   // An interview opened from a person's file, shown for reading: { complete }.
   // Null while an interview is live.
   const [viewing, setViewing] = useState(null);
@@ -137,15 +140,21 @@ export default function App({ onUnauthorized }) {
   // file. An interview opened for reading is not: the person holds its file.
   const isDirty = history.length > 1 && !viewing;
 
-  // The browser only allows its own generic "leave site?" prompt here — the text
-  // cannot be customised and no download button can be attached to it. Leaving
-  // through the end screen is not "leaving by accident", so it is let through.
+  // Closing the browser should meet the person the way "סיום" does (Ran,
+  // 14.10.2026). No browser lets a page show its own screen as it closes: it
+  // allows only its generic "leave site?" prompt — no text of ours, no button.
+  // So the prompt asks, and if the person stays, the end screen is already open
+  // behind it: the timer below runs only once the prompt is answered "stay"; on
+  // "leave" the page is gone and nothing runs. Leaving through the end screen is
+  // not "leaving by accident", so it is let through.
+  const openEndRef = useRef(null);
   useEffect(() => {
     if (!isDirty) return;
     const onBeforeUnload = (e) => {
       if (exitingRef.current) return;
       e.preventDefault();
       e.returnValue = '';
+      setTimeout(() => openEndRef.current?.(), 0);
     };
     window.addEventListener('beforeunload', onBeforeUnload);
     return () => window.removeEventListener('beforeunload', onBeforeUnload);
@@ -429,10 +438,23 @@ export default function App({ onUnauthorized }) {
   // The interview ended by itself: the end screen opens with it. Not for an
   // interview opened for reading — the person already holds that file.
   useEffect(() => {
-    if (state.meta.sessionComplete && !viewing && !end) {
+    if (state.meta.sessionComplete && !viewing && !end && !endDismissed) {
       setEnd({ reason: 'complete', fileName: interviewFileName() });
     }
-  }, [state.meta.sessionComplete, viewing, end]);
+  }, [state.meta.sessionComplete, viewing, end, endDismissed]);
+
+  // The X: back to the interview — to read it, after one that ended.
+  const closeEnd = () => {
+    if (end?.reason === 'complete') setEndDismissed(true);
+    setEnd(null);
+  };
+
+  // Opened by the "leave site?" prompt above, when the person chose to stay.
+  openEndRef.current = () => {
+    if (end || loading || !isDirty) return;
+    setEndDismissed(false);
+    setEnd({ reason: state.meta.sessionComplete ? 'complete' : 'leave', fileName: interviewFileName() });
+  };
 
   const handleLeave = () => {
     if (viewing) {
@@ -440,7 +462,7 @@ export default function App({ onUnauthorized }) {
       exitApp();
       return;
     }
-    setEnd({ reason: 'leave', fileName: interviewFileName() });
+    setEnd({ reason: state.meta.sessionComplete ? 'complete' : 'leave', fileName: interviewFileName() });
   };
 
   const applyOpened = ({ session, viewOnly }) => {
@@ -638,18 +660,6 @@ export default function App({ onUnauthorized }) {
             onConfirm={handleConfirm}
             onReject={handleReject}
             viewing={viewing}
-            endPanel={
-              end && (
-                <EndScreen
-                  reason={end.reason}
-                  fileName={end.fileName}
-                  seal={sealCurrent}
-                  onReturn={() => setEnd(null)}
-                  onExit={exitApp}
-                  safetyStop={Boolean(state.meta.safetyFlag)}
-                />
-              )
-            }
           />
           {mapOpen && <StoryMap map={map} />}
           <StageRail
@@ -689,6 +699,17 @@ export default function App({ onUnauthorized }) {
             onExportPlain={handleExportPlain}
           />
         </>
+      )}
+
+      {end && (
+        <EndScreen
+          reason={end.reason}
+          fileName={end.fileName}
+          seal={sealCurrent}
+          onClose={closeEnd}
+          onExit={exitApp}
+          safetyStop={Boolean(state.meta.safetyFlag)}
+        />
       )}
 
       {pendingOpen && (
