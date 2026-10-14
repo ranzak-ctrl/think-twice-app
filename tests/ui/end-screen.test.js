@@ -71,6 +71,12 @@ describe('the file downloads only from the button (Ran, 14.10.2026)', () => {
     expect(take).toContain('download(save.url)');
   });
 
+  it('tells the person not to edit the file — one changed character and it never opens', () => {
+    expect(src).toContain('אל תפתח את הקובץ לעריכה: שינוי בו, אפילו של תו אחד, ימנע את פתיחתו.');
+    // Shown while the file is ready and after it is taken, both.
+    expect(src.match(/\{DO_NOT_EDIT\}/g)?.length).toBe(2);
+  });
+
   it('leaving with the file not taken asks first, and says what is lost', () => {
     expect(src).toMatch(/save\.status === 'saved' && !downloaded\) setConfirmExit\(true\)/);
     expect(src).toContain('לא הורדת את הקובץ. אם תצא עכשיו, הראיון יימחק ולא יישאר ממנו עותק.');

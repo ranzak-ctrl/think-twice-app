@@ -35,6 +35,11 @@ import { HELP_LINE } from '../safety/index.js';
 
 export const END_SECONDS = 5 * 60;
 
+// The file is sealed: one changed character and it no longer opens
+// (server/interviewFile.js). It cannot be locked on the person's computer, so it
+// says so (Ran, 14.10.2026).
+const DO_NOT_EDIT = 'אל תפתח את הקובץ לעריכה: שינוי בו, אפילו של תו אחד, ימנע את פתיחתו.';
+
 const clock = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
 // What a failed save says. The person is about to lose the interview, so the
@@ -164,6 +169,7 @@ export default function EndScreen({ reason, seal, fileName, onReturn, onExit, sa
             <p className="endscreen-warn">
               כדי לשמור אותו אצלך, לחץ על "הורדת הקובץ". אם לא תוריד אותו, הראיון יימחק כשהמסך ייסגר, ולא יישאר ממנו עותק.
             </p>
+            <p className="endscreen-hint">{DO_NOT_EDIT}</p>
           </>
         )}
         {save.status === 'saved' && downloaded && (
@@ -172,6 +178,7 @@ export default function EndScreen({ reason, seal, fileName, onReturn, onExit, sa
               הקובץ ירד לתיקיית ההורדות. אפשר לפתוח אותו רק כאן, באפליקציה —{' '}
               {leaving && !safetyStop ? 'כדי לקרוא אותו שוב או להמשיך ממנו.' : 'כדי לקרוא אותו שוב.'}
             </p>
+            <p className="endscreen-hint">{DO_NOT_EDIT}</p>
             <p className="endscreen-hint">לא מוצא את הקובץ? אפשר להוריד אותו שוב.</p>
           </>
         )}
