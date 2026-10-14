@@ -102,6 +102,13 @@ describe('the app around it', () => {
     expect(header).toContain('handleSave');
   });
 
+  it('opens an unfinished interview straight into the chat — no extra click (Ran, 14.10.2026)', () => {
+    // Read-only only when it ended or was stopped; otherwise `viewing` stays null
+    // and the composer is there.
+    expect(app).toMatch(/setViewing\(viewOnly && \(complete \|\| stopped\) \? \{ complete, stopped \} : null\)/);
+    expect(app).not.toContain('onContinue');
+  });
+
   it('keeps no interview content in browser storage', () => {
     expect(app).not.toMatch(/localStorage|sessionStorage|indexedDB|document\.cookie/);
   });
@@ -135,6 +142,7 @@ describe('after a safety stop (principle 7; questions-for-natali §16)', () => {
   });
 
   it('a file saved after a stop opens for reading only', () => {
-    expect(app).toMatch(/stopped: Boolean\(meta\.safetyFlag\)/);
+    expect(app).toMatch(/const stopped = Boolean\(meta\.safetyFlag\)/);
+    expect(app).toMatch(/viewOnly && \(complete \|\| stopped\)/);
   });
 });

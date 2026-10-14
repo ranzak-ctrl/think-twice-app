@@ -447,11 +447,16 @@ export default function App({ onUnauthorized }) {
     setState(importState(JSON.stringify(session)));
     setRevisions(Array.isArray(session.revisions) ? session.revisions : []);
     setHistory(Array.isArray(session.history) && session.history.length ? session.history : [openingMessage()]);
-    // A file saved after a safety stop opens for reading only, like one that
-    // ended — an interim default until Natali decides what a later session on a
-    // stopped interview should be (questions-for-natali §16, question 3).
+    // A person's file of an unfinished interview opens straight into it, the
+    // composer open: opening it is wanting to go on (Ran, 14.10.2026 — "הצ'אט
+    // פשוט צריך להיות פתוח. זו לחיצה מיותרת"). One that ended opens for reading,
+    // and so does one saved after a safety stop — an interim default until
+    // Natali decides what a later session on a stopped interview should be
+    // (questions-for-natali §16, question 3).
     const meta = session.state?.meta ?? {};
-    setViewing(viewOnly ? { complete: Boolean(meta.sessionComplete), stopped: Boolean(meta.safetyFlag) } : null);
+    const complete = Boolean(meta.sessionComplete);
+    const stopped = Boolean(meta.safetyFlag);
+    setViewing(viewOnly && (complete || stopped) ? { complete, stopped } : null);
     setPendingOpen(null);
   };
 
@@ -633,7 +638,6 @@ export default function App({ onUnauthorized }) {
             onConfirm={handleConfirm}
             onReject={handleReject}
             viewing={viewing}
-            onContinue={() => setViewing(null)}
             endPanel={
               end && (
                 <EndScreen

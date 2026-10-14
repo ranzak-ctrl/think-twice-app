@@ -27,11 +27,10 @@ export default function Chat({
   onConfirm,
   onReject,
   // In place of the composer: the end screen while it is open (EndScreen.jsx),
-  // and an interview opened from a file, for reading — `viewing` says whether it
-  // ended, and `onContinue` takes an unfinished one up again.
+  // and an interview opened from a file that can only be read — `viewing` says
+  // whether it ended or was stopped. An unfinished one opens with the composer.
   endPanel = null,
   viewing = null,
-  onContinue,
 }) {
   const [input, setInput] = useState('');
   const [showJump, setShowJump] = useState(false);
@@ -185,15 +184,8 @@ export default function Chat({
         <div className="banner viewing">
           {viewing.complete ? (
             <span>צפייה בראיון שנשמר. הראיון הזה הסתיים, ואפשר רק לקרוא אותו.</span>
-          ) : viewing.stopped ? (
-            <span>צפייה בראיון שנשמר. אפשר רק לקרוא אותו.</span>
           ) : (
-            <>
-              <span>צפייה בראיון שנשמר.</span>
-              <button className="btn btn-primary" onClick={onContinue}>
-                להמשיך את הראיון
-              </button>
-            </>
+            <span>צפייה בראיון שנשמר. אפשר רק לקרוא אותו.</span>
           )}
         </div>
       ) : sessionComplete ? (
