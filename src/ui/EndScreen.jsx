@@ -5,16 +5,20 @@ import { HELP_LINE } from '../safety/index.js';
 // The end screen — when the interview ends, and when the person leaves it midway.
 //
 // Ran, 10.10.2026 (docs/interview-platform-plan.md 2ב, stage 4.7): it says
-// plainly that what was said here is about to be erased; it saves the whole
-// interview to an encrypted file on the person's computer, which only this app
-// opens; and leaving it reloads the page, which is what erases the interview from
-// the browser. If nobody leaves, it reloads by itself after five minutes, with
-// the time left on screen (Ran: "5 דק + counter"). Typing in it starts the five
-// minutes again.
+// plainly that what was said here is about to be erased; it makes the whole
+// interview into an encrypted file, which only this app opens; and leaving it
+// reloads the page, which is what erases the interview from the browser. If
+// nobody leaves, it reloads by itself after five minutes, with the time left on
+// screen (Ran: "5 דק + counter"). Typing in it starts the five minutes again.
 //
-// The order is the point: the page reloads only after the file has been saved,
-// or saving it has failed and the person has been told so. Never in between —
-// the file is the only copy there will be.
+// The file downloads ONLY when the person presses "הורדת הקובץ" (Ran, 14.10.2026:
+// "הפעולה הזו אמורה להתרחש רק כאשר אני משתמש בכפתור"). It is prepared as the
+// screen opens, so the press downloads at once — and a download born of a click
+// is one no browser blocks. Leaving without it asks first, and says the interview
+// will be gone with no copy.
+//
+// The page reloads only after the file is ready or preparing it has failed and
+// the person has been told so. Never in between.
 //
 // Docked in place of the composer rather than over the conversation: the
 // interview's last words, and the board, stay readable above it.
@@ -42,8 +46,11 @@ const SAVE_FAILED = {
 };
 
 export default function EndScreen({ reason, seal, fileName, onReturn, onExit, safetyStop = false }) {
-  // saving → saved | failed; a failed save can be tried again.
+  // saving → saved (the file is ready) | failed; a failed save can be tried again.
   const [save, setSave] = useState({ status: 'saving', url: null, error: null });
+  // Whether the person has taken the file; and whether "יציאה" is asking first.
+  const [downloaded, setDownloaded] = useState(false);
+  const [confirmExit, setConfirmExit] = useState(false);
   // Counted against the clock, not in ticks: a browser slows the timers of a
   // background tab (to once a minute, after a while), and five minutes must
   // stay five minutes when the person has switched tabs.
@@ -52,7 +59,7 @@ export default function EndScreen({ reason, seal, fileName, onReturn, onExit, sa
   const urlRef = useRef(null);
   const savingRef = useRef(false);
   // The interview as it stood when the screen opened. Held, so that a new `seal`
-  // from a re-render can never start a second save and a second download.
+  // from a re-render can never start a second save.
   const sealRef = useRef(seal);
   const leaving = reason === 'leave';
 
@@ -78,13 +85,17 @@ export default function EndScreen({ reason, seal, fileName, onReturn, onExit, sa
     );
     urlRef.current = url;
     setSave({ status: 'saved', url, error: null });
-    // A download not born of a click may be blocked, or on a phone open instead
-    // of saving — so the button below stays, and this is only the first try.
-    download(url);
   }, []);
 
-  // Save once, as the screen opens. (StrictMode mounts twice in development;
-  // savingRef keeps that to one file.)
+  const takeFile = () => {
+    if (!save.url) return;
+    download(save.url);
+    setDownloaded(true);
+    setConfirmExit(false);
+  };
+
+  // Prepare the file once, as the screen opens. (StrictMode mounts twice in
+  // development; savingRef keeps that to one.)
   useEffect(() => {
     runSave();
   }, [runSave]);
@@ -121,6 +132,11 @@ export default function EndScreen({ reason, seal, fileName, onReturn, onExit, sa
   };
 
   const saving = save.status === 'saving';
+  // Leaving with a file ready and not taken asks first: it is the last copy.
+  const askExit = () => {
+    if (save.status === 'saved' && !downloaded) setConfirmExit(true);
+    else exit();
+  };
 
   return (
     <section
@@ -137,12 +153,23 @@ export default function EndScreen({ reason, seal, fileName, onReturn, onExit, sa
         כשהמסך ייסגר, כל מה שנאמר כאן יימחק מהדפדפן. אצלנו לא נשמר ממנו דבר.
       </p>
 
-      <div className={`endscreen-file is-${save.status}`} aria-live="polite">
-        {saving && <p>שומר את הראיון בקובץ מוצפן…</p>}
-        {save.status === 'saved' && (
+      <div className={`endscreen-file is-${save.status === 'saved' && !downloaded ? 'ready' : save.status}`} aria-live="polite">
+        {saving && <p>מכין את הראיון כקובץ מוצפן…</p>}
+        {save.status === 'saved' && !downloaded && (
           <>
             <p>
-              הראיון נשמר אצלך בקובץ מוצפן, בתיקיית ההורדות. אפשר לפתוח אותו רק כאן, באפליקציה —{' '}
+              הראיון מוכן כקובץ מוצפן. אפשר לפתוח אותו רק כאן, באפליקציה —{' '}
+              {leaving && !safetyStop ? 'כדי לקרוא אותו שוב או להמשיך ממנו.' : 'כדי לקרוא אותו שוב.'}
+            </p>
+            <p className="endscreen-warn">
+              כדי לשמור אותו אצלך, לחץ על "הורדת הקובץ". אם לא תוריד אותו, הראיון יימחק כשהמסך ייסגר, ולא יישאר ממנו עותק.
+            </p>
+          </>
+        )}
+        {save.status === 'saved' && downloaded && (
+          <>
+            <p>
+              הקובץ ירד לתיקיית ההורדות. אפשר לפתוח אותו רק כאן, באפליקציה —{' '}
               {leaving && !safetyStop ? 'כדי לקרוא אותו שוב או להמשיך ממנו.' : 'כדי לקרוא אותו שוב.'}
             </p>
             <p className="endscreen-hint">לא מוצא את הקובץ? אפשר להוריד אותו שוב.</p>
@@ -164,36 +191,52 @@ export default function EndScreen({ reason, seal, fileName, onReturn, onExit, sa
         )}
       </div>
 
-      <div className="endscreen-actions">
-        {save.status === 'failed' ? (
-          <button className="btn btn-primary" onClick={runSave}>
-            נסה לשמור שוב
+      {confirmExit ? (
+        <div className="endscreen-confirm" role="alertdialog" aria-labelledby="endscreen-confirm-text">
+          <p id="endscreen-confirm-text" className="endscreen-warn">
+            לא הורדת את הקובץ. אם תצא עכשיו, הראיון יימחק ולא יישאר ממנו עותק.
+          </p>
+          <div className="endscreen-actions">
+            <button className="btn btn-primary" onClick={takeFile}>
+              <Download />
+              הורדת הקובץ
+            </button>
+            <button className="btn" onClick={exit}>
+              יציאה בלי קובץ
+            </button>
+            <button className="btn" onClick={() => setConfirmExit(false)}>
+              ביטול
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="endscreen-actions">
+          {save.status === 'failed' ? (
+            <button className="btn btn-primary" onClick={runSave}>
+              נסה לשמור שוב
+            </button>
+          ) : (
+            <button className="btn btn-primary" onClick={takeFile} disabled={!save.url}>
+              <Download />
+              הורדת הקובץ
+            </button>
+          )}
+          <button className="btn" onClick={askExit} disabled={saving}>
+            {saving ? 'מכין…' : 'יציאה'}
           </button>
-        ) : (
-          <button
-            className="btn btn-primary"
-            onClick={() => save.url && download(save.url)}
-            disabled={!save.url}
-          >
-            <Download />
-            הורדת הקובץ
-          </button>
-        )}
-        <button className="btn" onClick={exit} disabled={saving}>
-          {saving ? 'שומר…' : 'יציאה'}
-        </button>
-        {leaving && (
-          <button className="btn" onClick={onReturn}>
-            חזרה לראיון
-          </button>
-        )}
-      </div>
+          {leaving && (
+            <button className="btn" onClick={onReturn}>
+              חזרה לראיון
+            </button>
+          )}
+        </div>
+      )}
 
       <p className="endscreen-timer" aria-live="off">
         {safetyStop
           ? 'המסך לא ייסגר מעצמו.'
           : saving && left === 0
-            ? 'המסך ייסגר מיד כשהקובץ יישמר.'
+            ? 'המסך ייסגר מיד כשהקובץ יהיה מוכן.'
             : `המסך ייסגר בעוד ${clock(left)}.`}
       </p>
     </section>

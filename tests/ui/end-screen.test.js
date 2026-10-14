@@ -31,15 +31,15 @@ describe('the end screen', () => {
     }
   });
 
-  it('opens by saving the file, and counts down five minutes', () => {
+  it('opens by preparing the file, and counts down five minutes', () => {
     const html = render('complete');
-    expect(html).toContain('שומר את הראיון בקובץ מוצפן');
+    expect(html).toContain('מכין את הראיון כקובץ מוצפן');
     expect(END_SECONDS).toBe(5 * 60);
     expect(html).toContain('המסך ייסגר בעוד 5:00');
   });
 
   it('cannot be left while the file is being saved', () => {
-    expect(render('complete')).toMatch(/<button class="btn" disabled="">שומר…<\/button>/);
+    expect(render('complete')).toMatch(/<button class="btn" disabled="">מכין…<\/button>/);
   });
 
   it('offers the way back only to someone leaving midway', () => {
@@ -51,6 +51,30 @@ describe('the end screen', () => {
 
   it('promises no email — there is none until accounts exist (plan stage 4)', () => {
     for (const reason of ['complete', 'leave']) expect(render(reason)).not.toMatch(/מייל|אימייל/);
+  });
+});
+
+describe('the file downloads only from the button (Ran, 14.10.2026)', () => {
+  const src = readFileSync(new URL('../../src/ui/EndScreen.jsx', import.meta.url), 'utf8');
+
+  it('preparing the file never downloads it', () => {
+    const prepare = src.slice(src.indexOf('const runSave'), src.indexOf('const takeFile'));
+    expect(prepare).toContain('sealRef.current()');
+    expect(prepare).not.toMatch(/download\(/);
+  });
+
+  it('the only download is the button\'s', () => {
+    const calls = src.match(/\bdownload\(/g) ?? [];
+    // One call, in takeFile, which only the two "הורדת הקובץ" buttons run.
+    expect(calls.length).toBe(1);
+    const take = src.slice(src.indexOf('const takeFile'), src.indexOf('const takeFile') + 200);
+    expect(take).toContain('download(save.url)');
+  });
+
+  it('leaving with the file not taken asks first, and says what is lost', () => {
+    expect(src).toMatch(/save\.status === 'saved' && !downloaded\) setConfirmExit\(true\)/);
+    expect(src).toContain('לא הורדת את הקובץ. אם תצא עכשיו, הראיון יימחק ולא יישאר ממנו עותק.');
+    expect(src).toContain('יציאה בלי קובץ');
   });
 });
 

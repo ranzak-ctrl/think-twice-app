@@ -381,7 +381,7 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
   <ol class="steps">
     <li><div><b>סוף</b><span>הראיון הסתיים (מסך הסיום נפתח לבד), או "סיום" באמצע (עם "חזרה לראיון").</span><span class="who">App.jsx</span></div></li>
     <li><div><b>חתימה</b><span><code>buildInterviewFile</code> ← POST ל-<code>/api/interview-file</code> ← AES-256-GCM על gzip של ה-JSON, הכותרת (format, v, kid) כ-AAD.</span><span class="who">sessionExport.js · adapters/interviewFile.js · server/interviewFile.js</span></div></li>
-    <li><div><b>הורדה</b><span><code>think-twice-YYYY-MM-DD-HHMM.thinktwice</code>, אוטומטית ובכפתור. אין בקובץ שום טקסט קריא.</span><span class="who">EndScreen.jsx</span></div></li>
+    <li><div><b>הורדה</b><span><code>think-twice-YYYY-MM-DD-HHMM.thinktwice</code>, <strong>רק בלחיצה על "הורדת הקובץ"</strong> (רן, 14.10.2026). יציאה בלי להוריד שואלת קודם. אין בקובץ שום טקסט קריא.</span><span class="who">EndScreen.jsx</span></div></li>
     <li><div><b>מחיקה</b><span>"יציאה", או 5 דקות לפי השעון ← <code>location.reload()</code>, בלי אזהרת "לעזוב?". לא לפני שהשמירה הסתיימה או נכשלה.</span><span class="who">EndScreen.jsx · App.jsx</span></div></li>
     <li><div><b>פתיחה</b><span>"פתיחת קובץ" ← השרת מפענח ← <code>upgradeSession</code> מריץ הסבות: קודם פורמט, אחר כך גרסת המודל ← צפייה.</span><span class="who">sessionExport.js · packs/*/migrations.js</span></div></li>
     <li><div><b>המשך</b><span>ראיון שלא הסתיים: "להמשיך את הראיון". שהסתיים, או שנעצר בבטיחות: קריאה בלבד.</span><span class="who">Chat.jsx</span></div></li>
