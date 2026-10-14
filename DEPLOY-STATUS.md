@@ -184,7 +184,7 @@ curl -s https://<url>/assets/<bundle>.js | grep -c "sk-ant"       # 0 = אין �
 **בלי מחשב ובלי טרמינל** (רן לא מריץ דבר במחשב שלו): עמוד [מפתח לקובץ הראיון](https://claude.ai/artifact/Uh3xzBR4Moovp4LxuHN9mJ) יוצר את המפתח בדפדפן, ומראה את ארבעת הצעדים. העמוד לא שולח את המפתח לשום מקום ולא שומר אותו. המקור: `docs/file-key-generator.html`.
 1. בעמוד: "יצירת מפתח" (השם `k1`) ← "העתקה". השורה (`k1:...`) היא המפתח.
 2. לשמור את השורה במנהל הסיסמאות, **לפני** כל דבר אחר. **אובדן המפתח = כל הקבצים שהוצפנו בו לא ייפתחו לעולם.**
-3. ב-Vercel ‏(team `think-twice1`) ← Settings ← Environment Variables: שם `INTERVIEW_FILE_KEYS`, הערך השורה, ל-Production ול-Preview. **לא** `VITE_`. אפשר לסמן Sensitive.
+3. ב-Vercel, בחשבון (team) `think-twice1`, בפרויקט **`think-twice`** — זה שמגיש את `think-twice-nine.vercel.app`, לא אחד מהעותקים הנטושים — ← Settings ← Environment Variables: שם `INTERVIEW_FILE_KEYS`, הערך השורה, ל-Production ול-Preview. **לא** `VITE_`. אפשר לסמן Sensitive.
 4. Redeploy.
 
 מי שיש לו טרמינל יכול גם `node scripts/new-file-key.mjs k1`. אותו פורמט בדיוק.
