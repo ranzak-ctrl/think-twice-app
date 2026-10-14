@@ -1,0 +1,156 @@
+<title>מפתח לקובץ הראיון</title>
+<style>
+/* Layout: one narrow column — a single job, done in four steps, top to bottom. */
+:root {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --ink: #151c27;
+  --muted: #5a6476;
+  --line: #d7dde7;
+  --accent: #2f4fb3;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3e9f8;
+  --warn: #9a5306;
+  --warn-soft: #fbefdb;
+  --ok: #1d7a4e;
+  --code-bg: #eef1f6;
+  --font-body: "IBM Plex Sans Hebrew", "Assistant", "Arial Hebrew", "Noto Sans Hebrew", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f141d; --surface: #161d29; --ink: #e3e8f1; --muted: #9ba6ba; --line: #283244;
+    --accent: #8aa6ff; --accent-ink: #0f141d; --accent-soft: #1c2747; --warn: #f0aa58; --warn-soft: #33240f;
+    --ok: #5fd39a; --code-bg: #1e2635; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f141d; --surface: #161d29; --ink: #e3e8f1; --muted: #9ba6ba; --line: #283244;
+  --accent: #8aa6ff; --accent-ink: #0f141d; --accent-soft: #1c2747; --warn: #f0aa58; --warn-soft: #33240f;
+  --ok: #5fd39a; --code-bg: #1e2635; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.65 var(--font-body); }
+.page { direction: rtl; max-width: 720px; margin-inline: auto; padding-inline: 16px; padding-block: 28px 60px; display: grid; gap: 18px; }
+h1 { margin: 0; font-size: clamp(1.6rem, 1.3rem + 1.4vw, 2.1rem); line-height: 1.2; }
+p { margin: 0; }
+.lede { color: var(--muted); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; counter-reset: s; }
+.steps > li { counter-increment: s; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; display: grid; grid-template-columns: 2em minmax(0, 1fr); gap: 4px 12px; }
+.steps > li::before { content: counter(s); grid-row: span 9; width: 2em; height: 2em; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+.steps h2 { margin: 0; font-size: 1.05rem; }
+.steps .body { display: grid; gap: 8px; min-width: 0; }
+.key { margin: 0; padding: 10px 12px; border-radius: 8px; background: var(--code-bg); font: 14px/1.5 var(--font-mono); direction: ltr; text-align: left; overflow-wrap: anywhere; user-select: all; min-height: 2.6em; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { font: inherit; font-size: .95rem; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.btn:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+label { font-weight: 600; font-size: .92rem; }
+input { font: 14px var(--font-mono); padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); width: 7em; direction: ltr; }
+.status { font-size: .9rem; color: var(--ok); min-height: 1.4em; }
+.status.err { color: var(--warn); }
+.warn { background: var(--warn-soft); color: var(--ink); border-radius: 10px; padding: 10px 14px; border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent); }
+.warn b { color: var(--warn); }
+code { font-family: var(--font-mono); font-size: .88em; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; direction: ltr; unicode-bidi: isolate; }
+ul { margin: 0; padding-inline-start: 1.2em; }
+.small { font-size: .88rem; color: var(--muted); }
+</style>
+
+<div class="page">
+  <h1>מפתח לקובץ הראיון</h1>
+  <p class="lede">המפתח שמצפין את קובץ הראיון שהמשתמש מוריד בסוף. בלעדיו מסך הסיום לא יכול לשמור קובץ. הוא נוצר כאן, בדפדפן שלך: העמוד לא שולח אותו לשום מקום ולא שומר אותו.</p>
+
+  <ol class="steps">
+    <li>
+      <h2>יצירת המפתח</h2>
+      <div class="body">
+        <div class="row">
+          <label for="kid">שם המפתח</label>
+          <input id="kid" value="k1" maxlength="16" spellcheck="false" autocomplete="off">
+          <span class="small">בפעם הראשונה <code>k1</code>. מפתח נוסף בעתיד: <code>k2</code>, וכן הלאה.</span>
+        </div>
+        <div class="row"><button class="btn primary" id="make">יצירת מפתח</button></div>
+        <p class="key" id="key" aria-live="polite">כאן יופיע המפתח.</p>
+        <div class="row">
+          <button class="btn" id="copy" disabled>העתקה</button>
+          <span class="status" id="status" role="status"></span>
+        </div>
+      </div>
+    </li>
+    <li>
+      <h2>שמירה במנהל הסיסמאות — קודם כל</h2>
+      <div class="body">
+        <p>שמור את השורה כולה, כולל <code>k1:</code> שבתחילתה, בשם "Think Twice — INTERVIEW_FILE_KEYS".</p>
+        <p class="warn"><b>אם המפתח אובד, אף קובץ שהוצפן בו לא ייפתח שוב.</b> הקבצים נמצאים אצל המשתמשים, ושום דבר אחר לא פותח אותם.</p>
+      </div>
+    </li>
+    <li>
+      <h2>הוספה ב-Vercel</h2>
+      <div class="body">
+        <ul>
+          <li>Vercel ← team <code>think-twice1</code> ← הפרויקט ← <b>Settings</b> ← <b>Environment Variables</b>.</li>
+          <li>Key: <code>INTERVIEW_FILE_KEYS</code></li>
+          <li>Value: השורה שהעתקת.</li>
+          <li>Environments: <b>Production</b> ו-<b>Preview</b>.</li>
+          <li>אפשר לסמן <b>Sensitive</b>: אז Vercel לא יציג אותו שוב, והעותק שלך במנהל הסיסמאות הוא היחיד שאפשר לקרוא.</li>
+          <li><b>Save</b>.</li>
+        </ul>
+        <p class="small">אסור שהשם יתחיל ב-<code>VITE_</code>: משתנה כזה נשלח לכל דפדפן.</p>
+      </div>
+    </li>
+    <li>
+      <h2>פריסה מחדש</h2>
+      <div class="body">
+        <p>משתנה חדש נכנס לתוקף רק בפריסה הבאה. ב-Vercel: <b>Deployments</b> ← הפריסה האחרונה ← <b>Redeploy</b>. או שתגיד ל-Claude, ו-<code>/ship-check</code> יבדוק שהמפתח עובד.</p>
+      </div>
+    </li>
+  </ol>
+
+  <p class="warn"><b>מפתח נוסף בעתיד:</b> מוסיפים אותו <b>אחרי</b> הקיים, עם פסיק: <code>k1:…,k2:…</code>. לעולם לא מוחקים מפתח ישן, כי קבצים שהוצפנו בו מפסיקים להיפתח. האחרון ברשימה מצפין, וכולם פותחים.</p>
+  <p class="small">איך זה עובד: 32 בתים אקראיים מ-<code>crypto.getRandomValues</code> של הדפדפן, בקידוד base64. אותו פורמט ש-<code>server/interviewFile.js</code> מצפה לו. המפתח נמחק כשסוגרים את העמוד.</p>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  let line = '';
+  const validKid = (v) => /^[a-z0-9]{1,16}$/.test(v);
+
+  $('make').addEventListener('click', () => {
+    const kid = $('kid').value.trim();
+    if (!validKid(kid)) {
+      line = '';
+      $('key').textContent = 'כאן יופיע המפתח.';
+      $('copy').disabled = true;
+      $('status').className = 'status err';
+      $('status').textContent = 'שם המפתח: אותיות אנגליות קטנות וספרות בלבד, עד 16 תווים. למשל k1.';
+      return;
+    }
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    let bin = '';
+    for (const b of bytes) bin += String.fromCharCode(b);
+    line = `${kid}:${btoa(bin)}`;
+    $('key').textContent = line;
+    $('copy').disabled = false;
+    $('status').className = 'status';
+    $('status').textContent = '';
+  });
+
+  $('copy').addEventListener('click', async () => {
+    if (!line) return;
+    try {
+      await navigator.clipboard.writeText(line);
+      $('status').className = 'status';
+      $('status').textContent = 'הועתק. עכשיו שמור אותו במנהל הסיסמאות.';
+    } catch {
+      const r = document.createRange();
+      r.selectNodeContents($('key'));
+      const sel = getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+      $('status').textContent = 'המפתח מסומן. העתק אותו ידנית (Ctrl+C או ⌘C).';
+    }
+  });
+})();
+</script>

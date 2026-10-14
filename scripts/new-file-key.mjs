@@ -2,6 +2,11 @@
 //
 //   node scripts/new-file-key.mjs k1
 //
+// Ran runs nothing on his own computer. For him the same key is made in the
+// browser by docs/file-key-generator.html (published as a private page; the link
+// is in DEPLOY-STATUS.md). This script is for whoever has a terminal; both write
+// the format server/interviewFile.js parses.
+//
 // Ran adds the printed line to the Vercel project's environment (Production and
 // Preview) — appended after any existing keys, comma-separated, never replacing
 // one — and saves the same line in his password manager. A key that is lost is

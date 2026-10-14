@@ -95,7 +95,7 @@
 - src/adapters — model.js (ממשק complete() יחיד; קורא ל-`/api/anthropic/v1/messages` **בלי מפתח** — ה-proxy מזריק אותו. חי/מדומה נקבע ע"י `VITE_USE_MOCK`), appAuth.js (סיסמת הגישה, ב-sessionStorage לכל טאב), interviewFile.js (הצפנה ופתיחה של קובץ המשתמש, דרך `/api/interview-file`)
 - api/ — `anthropic/v1/messages.js` (ה-proxy: מזריק `ANTHROPIC_API_KEY`, בודק `APP_PASSWORD`), `interview-file.js` (מצפין ופותח את קובץ המשתמש עם `INTERVIEW_FILE_KEYS`; לא שומר ולא מתעד תוכן), `ping.js` (בדיקת חיים)
 - server/ — קוד Node בלבד, משותף לפונקציות ולשרת הפיתוח (`interviewFile.js`: AES-256-GCM, מפתחות עם גרסה). `src/` לעולם לא מייבא ממנו
-- **`INTERVIEW_FILE_KEYS`** — `"k1:<base64>,k2:<base64>"`. האחרון מצפין, כולם פותחים. **אסור למחוק מפתח:** כל קובץ שהוצפן בו לא ייפתח עוד לעולם. מפתח חדש: `node scripts/new-file-key.mjs k2`, מגובה במנהל הסיסמאות של רן
+- **`INTERVIEW_FILE_KEYS`** — `"k1:<base64>,k2:<base64>"`. האחרון מצפין, כולם פותחים. **אסור למחוק מפתח:** כל קובץ שהוצפן בו לא ייפתח עוד לעולם. מפתח חדש: עמוד [מפתח לקובץ הראיון](https://claude.ai/artifact/Uh3xzBR4Moovp4LxuHN9mJ) (`docs/file-key-generator.html`), שיוצר אותו בדפדפן — **רן לא מריץ דבר במחשב שלו**, ולכן הוראה לרן אף פעם לא מתחילה ב"במחשב שלך" או בפקודת טרמינל. מגובה במנהל הסיסמאות של רן. ‏`node scripts/new-file-key.mjs k2` נשאר למי שיש טרמינל
 - src/safety — בדיקת קדם + פרוטוקול עצירה
 - tests/ — transitions/ (מטריצת מעברים), lint/ (בדיקות תור), judge/ (שופט-LLM), fixtures/ (תסריטי זהב ופרסונות)
 - sim/ — סימולציות מראיין-מול-פרסונה (headless)
