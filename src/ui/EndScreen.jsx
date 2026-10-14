@@ -26,8 +26,12 @@ import { HELP_LINE } from '../safety/index.js';
 // ended, that is how they read its last words and the board again; the header's
 // "סיום" opens this screen once more.
 //
-// Not here yet: the copy to the account's email and to an address the person
-// adds. Both need accounts and a mail service (plan stage 4).
+// BY EMAIL (Ran, 14.10.2026): two addresses typed here — the person's own and,
+// if they want, one more, such as a therapist's — shown back before anything is
+// sent, used for that one send, and kept nowhere. The mail carries the encrypted
+// file, never the conversation (api/send-interview.js, server/mail.js). Shown
+// only where the deployment can send mail (`mail.available()`). Until accounts
+// exist there is no account address, so the person's own is typed too.
 //
 // AFTER A SAFETY STOP (`safetyStop`) the screen does not close by itself, and it
 // carries the help line. A reload erases the conversation, and with it the stop
@@ -43,6 +47,18 @@ export const END_SECONDS = 5 * 60;
 // says so (Ran, 14.10.2026).
 const DO_NOT_EDIT = 'אל תפתח את הקובץ לעריכה: שינוי בו, אפילו של תו אחד, ימנע את פתיחתו.';
 
+// What a failed send says.
+const MAIL_FAILED = {
+  'mail-restricted': 'לכתובת הזו עוד אי אפשר לשלוח: שירות המייל עדיין בהגדרת ניסיון.',
+  'mail-rejected': 'הכתובת לא התקבלה. בדוק אותה ונסה שוב.',
+  'bad-address': 'אחת הכתובות לא תקינה. בדוק אותה ונסה שוב.',
+  'mail-not-configured': 'שליחה במייל לא זמינה כרגע.',
+  'mail-busy': 'שירות המייל עמוס. נסה שוב בעוד רגע.',
+  network: 'אין חיבור לאינטרנט כרגע.',
+};
+const mailFailed = (code) => MAIL_FAILED[code] ?? 'השליחה לא הצליחה. אפשר לנסות שוב, או להוריד את הקובץ.';
+const looksLikeAddress = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.trim());
+
 const clock = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
 // What a failed save says. The person is about to lose the interview, so the
@@ -53,12 +69,20 @@ const SAVE_FAILED = {
   'not-configured': 'שמירת קבצים לא זמינה כרגע.',
 };
 
-export default function EndScreen({ reason, seal, fileName, onClose, onExit, safetyStop = false }) {
+export default function EndScreen({ reason, seal, fileName, onClose, onExit, safetyStop = false, mail = null }) {
   // saving → saved (the file is ready) | failed; a failed save can be tried again.
   const [save, setSave] = useState({ status: 'saving', url: null, error: null });
   // Whether the person has taken the file; and whether "יציאה" is asking first.
   const [downloaded, setDownloaded] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
+  // Email: whether this deployment can send, what was typed, and where the send is.
+  const [mailOn, setMailOn] = useState(false);
+  const [selfAddr, setSelfAddr] = useState('');
+  const [otherAddr, setOtherAddr] = useState('');
+  // idle → confirm → sending → done
+  const [mailStage, setMailStage] = useState('idle');
+  const [mailResults, setMailResults] = useState(null);
+  const envelopeRef = useRef(null);
   // Counted against the clock, not in ticks: a browser slows the timers of a
   // background tab (to once a minute, after a while), and five minutes must
   // stay five minutes when the person has switched tabs.
@@ -98,8 +122,30 @@ export default function EndScreen({ reason, seal, fileName, onClose, onExit, saf
       new Blob([JSON.stringify(out.file)], { type: 'application/octet-stream' })
     );
     urlRef.current = url;
+    envelopeRef.current = out.file;
     setSave({ status: 'saved', url, error: null });
   }, []);
+
+  // Whether mail can be offered here at all.
+  useEffect(() => {
+    let live = true;
+    mail?.available?.().then((ok) => live && setMailOn(Boolean(ok)));
+    return () => {
+      live = false;
+    };
+  }, [mail]);
+
+  const addresses = [selfAddr.trim(), otherAddr.trim()].filter(Boolean);
+  const canSend =
+    addresses.length > 0 && addresses.every(looksLikeAddress) && mailStage !== 'sending' && Boolean(envelopeRef.current);
+
+  const sendMail = async () => {
+    setMailStage('sending');
+    const out = await mail.send({ file: envelopeRef.current, self: selfAddr.trim(), other: otherAddr.trim(), fileName });
+    setMailResults(out.ok ? out.results : { ...(out.results ?? {}), error: out.error });
+    setMailStage('done');
+  };
+  const selfSent = mailResults?.self === 'sent';
 
   const takeFile = () => {
     if (!save.url) return;
@@ -137,8 +183,8 @@ export default function EndScreen({ reason, seal, fileName, onClose, onExit, saf
   // At zero: leave — unless the file is still being saved, in which case leave
   // the moment it is saved or has failed (this runs again when it does).
   useEffect(() => {
-    if (left === 0 && save.status !== 'saving') exit();
-  }, [left, save.status, exit]);
+    if (left === 0 && save.status !== 'saving' && mailStage !== 'sending') exit();
+  }, [left, save.status, mailStage, exit]);
 
   const restart = () => {
     deadlineRef.current = Date.now() + END_SECONDS * 1000;
@@ -147,8 +193,9 @@ export default function EndScreen({ reason, seal, fileName, onClose, onExit, saf
 
   const saving = save.status === 'saving';
   // Leaving with a file ready and not taken asks first: it is the last copy.
+  // A copy sent to the person's own address counts as taken.
   const askExit = () => {
-    if (save.status === 'saved' && !downloaded) setConfirmExit(true);
+    if (save.status === 'saved' && !downloaded && !selfSent) setConfirmExit(true);
     else exit();
   };
 
@@ -192,9 +239,11 @@ export default function EndScreen({ reason, seal, fileName, onClose, onExit, saf
               הראיון מוכן כקובץ מוצפן. אפשר לפתוח אותו רק כאן, באפליקציה —{' '}
               {leaving && !safetyStop ? 'כדי לקרוא אותו שוב או להמשיך ממנו.' : 'כדי לקרוא אותו שוב.'}
             </p>
-            <p className="endscreen-warn">
-              כדי לשמור אותו אצלך, לחץ על "הורדת הקובץ". אם לא תוריד אותו, הראיון יימחק כשהמסך ייסגר, ולא יישאר ממנו עותק.
-            </p>
+            {!selfSent && (
+              <p className="endscreen-warn">
+                כדי לשמור אותו אצלך, לחץ על "הורדת הקובץ"{mailOn ? ' או שלח אותו למייל שלך' : ''}. אם לא, הראיון יימחק כשהמסך ייסגר, ולא יישאר ממנו עותק.
+              </p>
+            )}
             <p className="endscreen-hint">{DO_NOT_EDIT}</p>
           </>
         )}
@@ -223,6 +272,80 @@ export default function EndScreen({ reason, seal, fileName, onClose, onExit, saf
           </>
         )}
       </div>
+
+      {mailOn && save.status === 'saved' && (
+        <div className="endmail">
+          <h3>שליחה במייל</h3>
+          <label htmlFor="end-mail-self">המייל שלך</label>
+          <input
+            id="end-mail-self"
+            type="email"
+            dir="ltr"
+            autoComplete="off"
+            value={selfAddr}
+            onChange={(e) => {
+              setSelfAddr(e.target.value);
+              if (mailStage !== 'sending') setMailStage('idle');
+            }}
+            disabled={mailStage === 'sending'}
+          />
+          <label htmlFor="end-mail-other">מייל נוסף, למשל של המטפל (לא חובה)</label>
+          <input
+            id="end-mail-other"
+            type="email"
+            dir="ltr"
+            autoComplete="off"
+            value={otherAddr}
+            onChange={(e) => {
+              setOtherAddr(e.target.value);
+              if (mailStage !== 'sending') setMailStage('idle');
+            }}
+            disabled={mailStage === 'sending'}
+          />
+          <p className="endscreen-hint">הכתובות משמשות לשליחה הזו בלבד, ולא נשמרות. במייל יש רק את הקובץ המוצפן, לא את השיחה.</p>
+          {mailStage === 'confirm' ? (
+            <div className="endscreen-confirm">
+              <p>לשלוח את קובץ הראיון אל:</p>
+              <ul className="endmail-to" dir="ltr">
+                {addresses.map((a) => (
+                  <li key={a}>{a}</li>
+                ))}
+              </ul>
+              <div className="endscreen-actions">
+                <button className="btn btn-primary" onClick={sendMail}>
+                  שליחה
+                </button>
+                <button className="btn" onClick={() => setMailStage('idle')}>
+                  ביטול
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="endscreen-actions">
+              <button className="btn" onClick={() => setMailStage('confirm')} disabled={!canSend}>
+                {mailStage === 'sending' ? 'שולח…' : 'שליחה במייל'}
+              </button>
+            </div>
+          )}
+          {mailStage === 'done' && mailResults && (
+            <div aria-live="polite">
+              {[
+                ['self', selfAddr.trim()],
+                ['other', otherAddr.trim()],
+              ]
+                .filter(([k, a]) => a && mailResults[k])
+                .map(([k, a]) => (
+                  <p key={k} className={mailResults[k] === 'sent' ? 'endmail-ok' : 'endscreen-warn'}>
+                    {mailResults[k] === 'sent' ? `נשלח אל ${a}.` : `לא נשלח אל ${a}. ${mailFailed(mailResults[k])}`}
+                  </p>
+                ))}
+              {mailResults.error && !mailResults.self && !mailResults.other && (
+                <p className="endscreen-warn">{mailFailed(mailResults.error)}</p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {confirmExit ? (
         <div className="endscreen-confirm" role="alertdialog" aria-labelledby="endscreen-confirm-text">
@@ -254,7 +377,7 @@ export default function EndScreen({ reason, seal, fileName, onClose, onExit, saf
               הורדת הקובץ
             </button>
           )}
-          <button className="btn" onClick={askExit} disabled={saving}>
+          <button className="btn" onClick={askExit} disabled={saving || mailStage === 'sending'}>
             {saving ? 'מכין…' : 'יציאה'}
           </button>
         </div>

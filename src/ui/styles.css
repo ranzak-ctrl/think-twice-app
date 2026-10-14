@@ -1293,6 +1293,53 @@ button {
   margin-top: 10px;
 }
 
+.endmail {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: 6px;
+}
+
+.endmail h3 {
+  margin: 0 0 2px;
+  font-size: 14px;
+}
+
+.endmail label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.endmail input {
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+}
+
+.endmail input:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+
+.endmail-to {
+  margin: 0 0 6px;
+  padding-inline-start: 18px;
+  font-size: 13.5px;
+  text-align: left;
+}
+
+.endmail-ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+
 .endscreen-hint {
   color: var(--text-muted);
 }

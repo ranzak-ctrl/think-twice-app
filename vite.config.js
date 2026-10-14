@@ -33,22 +33,28 @@ function interviewFileDev(env) {
       } else if (env.INTERVIEW_FILE_KEYS) {
         process.env.INTERVIEW_FILE_KEYS = env.INTERVIEW_FILE_KEYS;
       }
-      server.middlewares.use('/api/interview-file', async (req, res) => {
-        const chunks = [];
-        for await (const chunk of req) chunks.push(chunk);
-        req.body = Buffer.concat(chunks).toString('utf8');
-        // The Vercel response helpers the handler uses.
-        res.status = (code) => {
-          res.statusCode = code;
-          return res;
-        };
-        res.json = (obj) => {
-          res.setHeader('Content-Type', 'application/json');
-          res.end(JSON.stringify(obj));
-        };
-        const { default: handler } = await import('./api/interview-file.js');
-        await handler(req, res);
-      });
+      for (const k of ['RESEND_API_KEY', 'MAIL_FROM']) if (env[k]) process.env[k] = env[k];
+      // The same two functions Vercel runs: sealing and opening the file, and
+      // mailing it (which answers "not available" without RESEND_API_KEY and
+      // MAIL_FROM in .env — never VITE_-prefixed).
+      for (const name of ['interview-file', 'send-interview']) {
+        server.middlewares.use(`/api/${name}`, async (req, res) => {
+          const chunks = [];
+          for await (const chunk of req) chunks.push(chunk);
+          req.body = Buffer.concat(chunks).toString('utf8');
+          // The Vercel response helpers the handler uses.
+          res.status = (code) => {
+            res.statusCode = code;
+            return res;
+          };
+          res.json = (obj) => {
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify(obj));
+          };
+          const { default: handler } = await import(`./api/${name}.js`);
+          await handler(req, res);
+        });
+      }
     },
   };
 }

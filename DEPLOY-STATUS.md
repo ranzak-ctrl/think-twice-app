@@ -178,7 +178,14 @@ curl -s https://<url>/assets/<bundle>.js | grep -c "sk-ant"       # 0 = אין �
 
 > **הערה:** טריק `mv .env .env.bak` לפני הבנייה בוטל ואין להחזיר אותו. הוא היה דרוש רק כל עוד קוד הלקוח קרא `VITE_ANTHROPIC_API_KEY`; היום אין שום סוד עם קידומת `VITE_`, והבנייה בטוחה כברירת מחדל. `VITE_LIVE` הפך ל-no-op — המצב נקבע ע"י `VITE_USE_MOCK`.
 
-**משתני סביבה נדרשים ב-Vercel** (Production + Preview): `ANTHROPIC_API_KEY` · `APP_PASSWORD` · `VITE_REQUIRE_PASSWORD=1` · `INTERVIEW_FILE_KEYS`.
+**משתני סביבה נדרשים ב-Vercel** (Production + Preview): `ANTHROPIC_API_KEY` · `APP_PASSWORD` · `VITE_REQUIRE_PASSWORD=1` · `INTERVIEW_FILE_KEYS` (הוגדר ואומת ב-Preview, 14.10.2026).
+
+**שליחה במייל (14.10.2026; טרם הוגדר):** `RESEND_API_KEY` (Secret) ו-`MAIL_FROM`, שניהם ב-Production וב-Preview, לא `VITE_`. בלעדיהם החלק של המייל פשוט לא מופיע במסך הסיום.
+1. נרשמים ל-resend.com עם `ranzak@gmail.com` (עיקרון הברזל).
+2. API Keys ← Create API Key, בשם `think-twice`, בהרשאת Sending access. שומרים במנהל הסיסמאות.
+3. ב-Vercel, בפרויקט `think-twice`: `RESEND_API_KEY` = המפתח (Secret), ו-`MAIL_FROM` = `Think Twice <onboarding@resend.dev>` (Config).
+4. Redeploy, או קומיט חדש לענף.
+**בלי דומיין מאומת ב-Resend, נשלח רק ל-`ranzak@gmail.com`.** לנמענים אחרים המסך יגיד "שירות המייל עדיין בהגדרת ניסיון". עם דומיין: מחליפים את `MAIL_FROM` לכתובת בדומיין.
 
 **`INTERVIEW_FILE_KEYS` (נוסף 10.10.2026; טרם הוגדר).** המפתח שמצפין את קובץ הראיון של המשתמש. בלעדיו מסך הסיום לא מצליח לשמור קובץ. ההגדרה, פעם אחת:
 **בלי מחשב ובלי טרמינל** (רן לא מריץ דבר במחשב שלו): עמוד [מפתח לקובץ הראיון](https://claude.ai/artifact/Uh3xzBR4Moovp4LxuHN9mJ) יוצר את המפתח בדפדפן, ומראה את ארבעת הצעדים. העמוד לא שולח את המפתח לשום מקום ולא שומר אותו. המקור: `docs/file-key-generator.html`.

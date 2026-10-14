@@ -83,7 +83,8 @@ describe('the file downloads only from the button (Ran, 14.10.2026)', () => {
   });
 
   it('leaving with the file not taken asks first, and says what is lost', () => {
-    expect(src).toMatch(/save\.status === 'saved' && !downloaded\) setConfirmExit\(true\)/);
+    // A copy mailed to the person's own address counts as taken.
+    expect(src).toMatch(/save\.status === 'saved' && !downloaded && !selfSent\) setConfirmExit\(true\)/);
     expect(src).toContain('לא הורדת את הקובץ. אם תצא עכשיו, הראיון יימחק ולא יישאר ממנו עותק.');
     expect(src).toContain('יציאה בלי קובץ');
   });

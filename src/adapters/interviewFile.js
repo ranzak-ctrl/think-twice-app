@@ -26,6 +26,12 @@ export const FILE_EXTENSION = '.thinktwice';
 
 const API_URL = '/api/interview-file';
 
+// One POST to one of the app's file functions, with the door and no cache.
+// Shared with interviewMail.js.
+export async function callApi(body, opts) {
+  return call(body, opts);
+}
+
 async function call(body, { fetchImpl = fetch, apiUrl = API_URL } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   const pw = getAppPassword();
@@ -55,6 +61,7 @@ async function call(body, { fetchImpl = fetch, apiUrl = API_URL } = {}) {
   if (!res.ok || !json) {
     const out = { ok: false, error: json?.error ?? `http-${res.status}` };
     if (typeof json?.reason === 'string') out.reason = json.reason;
+    if (json?.results && typeof json.results === 'object') out.results = json.results;
     return out;
   }
   return { ok: true, ...json };

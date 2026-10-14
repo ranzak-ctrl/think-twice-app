@@ -20,6 +20,10 @@ import {
   upgradeSession,
 } from './sessionExport.js';
 import { sealInterview, openInterviewFile, isSealedFile, interviewFileName, FILE_EXTENSION } from '../adapters/interviewFile.js';
+import { mailAvailable, sendInterviewMail } from '../adapters/interviewMail.js';
+
+// Mail from the end screen: the adapter, handed down so EndScreen stays free of it.
+const MAIL = { available: mailAvailable, send: sendInterviewMail };
 import { APP_VERSION } from '../adapters/appVersion.js';
 import { rewriteTurn, buildRevision } from './rewriteTurn.js';
 
@@ -709,6 +713,7 @@ export default function App({ onUnauthorized }) {
           onClose={closeEnd}
           onExit={exitApp}
           safetyStop={Boolean(state.meta.safetyFlag)}
+          mail={MAIL}
         />
       )}
 
