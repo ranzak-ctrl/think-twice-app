@@ -14,9 +14,11 @@
 // of docs/interview-platform-plan.md (§2א). Until accounts exist, the page's own
 // address chooses: `?interview=parents` runs the parents' interview, anything else
 // runs Think Twice for adults (Ran, 16.10.2026: bring the parents' interview up on
-// the QA link). The choice is read once, when the page loads, and a page runs one
-// interview for its whole life — switching is a new address, which is a reload,
-// which is also what erases an interview from the browser.
+// the QA link). On the QA build a page whose address names NO interview shows the
+// choice of the two first (interviewChoiceNeeded, InterviewChoice.jsx), so one link
+// serves both (Ran, 16.10.2026). The choice is read once, when the page loads, and a
+// page runs one interview for its whole life — switching is a new address, which is
+// a reload, which is also what erases an interview from the browser.
 
 import { createEngine } from '../core/engine.js';
 import { complete } from '../adapters/model.js';
@@ -84,6 +86,32 @@ const PARENTS_ALLOWED =
   !onProductionHost() &&
   (import.meta.env?.MODE !== 'production' ||
     (typeof __PREVIEW_DEPLOYMENT__ !== 'undefined' && __PREVIEW_DEPLOYMENT__ === true));
+
+// The short name an address asks for, or null.
+const askedIn = (search) => {
+  try {
+    return new URLSearchParams(search ?? '').get('interview');
+  } catch {
+    return null;
+  }
+};
+
+// The QA choice: a page that is offered both interviews and whose address names
+// neither shows the choice first. Production offers only the adult interview, so
+// it never shows the choice.
+export function interviewChoiceNeeded(search, { allowParents = PARENTS_ALLOWED } = {}) {
+  if (!allowParents) return false;
+  const id = ALIASES[askedIn(search)] ?? askedIn(search);
+  return !INTERVIEWS[id];
+}
+
+// The address a choice links to: the same page, with the chosen interview named, and
+// every other parameter kept (a share token, for one).
+export function choiceHref(search, alias) {
+  const params = new URLSearchParams(search ?? '');
+  params.set('interview', alias);
+  return `?${params.toString()}`;
+}
 
 // The interview an address asks for. Unknown or absent → the adult interview,
 // so every link that ever worked still opens what it opened.

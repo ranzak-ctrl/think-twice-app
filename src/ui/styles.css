@@ -1902,3 +1902,51 @@ button {
     opacity: 0.5;
   }
 }
+
+/* The QA choice between the two interviews (interview.js, InterviewChoice.jsx).
+   Two real links, so picking one is a new page load. */
+.interview-choice {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-content: center;
+  gap: 20px;
+  padding: 24px 16px;
+  background: var(--bg);
+  color: var(--text);
+}
+.interview-choice h1 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  text-align: center;
+}
+.interview-choice-list {
+  display: grid;
+  gap: 12px;
+  width: min(440px, 100%);
+}
+.choice-card {
+  display: grid;
+  gap: 4px;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+}
+.choice-card:hover,
+.choice-card:focus-visible {
+  border-color: var(--border-strong);
+  background: var(--surface-sunken);
+}
+.choice-card strong {
+  font-size: 1rem;
+}
+.choice-card span {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
