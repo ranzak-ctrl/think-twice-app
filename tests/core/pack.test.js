@@ -315,7 +315,8 @@ describe('the Router routes by the pack it is handed', () => {
   });
 
   it('runs the decision component on the last stage, whatever its number', () => {
-    expect(route(at(mini, 3, { goal: 1 }), mini).decision).toBe(Decision.SHOW_BOARD);
+    expect(route({ ...at(mini, 3, { goal: 1 }), basket: [{ text: 'x' }] }, mini).decision).toBe(Decision.SHOW_BOARD);
+    expect(route(at(mini, 3, { goal: 1 }), mini)).toMatchObject({ decision: Decision.REOPEN, reason: 'empty_basket', targetStage: 2 });
     expect(
       route(at(mini, 3, { goal: 2, board_presented: 2, sharp_decision: 2, package_test: 2 }), mini).decision
     ).toBe(Decision.SESSION_COMPLETE);

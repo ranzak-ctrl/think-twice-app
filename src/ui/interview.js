@@ -75,9 +75,15 @@ const ALIASES = { adult: thinkTwiceAdult.id, parents: thinkTwiceParents.id };
 // Vercel Preview build (the QA link) and in local development, never in
 // production (router-guard, 16.10.2026). The flag is set at build time
 // (vite.config.js); anywhere it is not set, the parents' interview is not offered.
+// And, belt and braces, never on the production address itself — in case a
+// Preview bundle were ever promoted without being rebuilt.
+const PRODUCTION_HOSTS = ['think-twice-nine.vercel.app'];
+const onProductionHost = () =>
+  typeof window !== 'undefined' && PRODUCTION_HOSTS.includes(window.location?.hostname);
 const PARENTS_ALLOWED =
-  import.meta.env?.MODE !== 'production' ||
-  (typeof __PREVIEW_DEPLOYMENT__ !== 'undefined' && __PREVIEW_DEPLOYMENT__ === true);
+  !onProductionHost() &&
+  (import.meta.env?.MODE !== 'production' ||
+    (typeof __PREVIEW_DEPLOYMENT__ !== 'undefined' && __PREVIEW_DEPLOYMENT__ === true));
 
 // The interview an address asks for. Unknown or absent → the adult interview,
 // so every link that ever worked still opens what it opened.

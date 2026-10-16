@@ -238,3 +238,35 @@ describe('the hand-over keeps the rules every hand-over keeps', () => {
     expect(done.meta).toMatchObject({ sessionComplete: true, currentStage: 4 });
   });
 });
+
+// router-guard's second review, 16.10.2026.
+describe('a closing stage always follows a decision', () => {
+  it('refuses an interview that closes without ever deciding — the turn loop could not run it', () => {
+    const p = {
+      ...clone(after),
+      stages: [
+        { key: 'stage1', label: 'מה קרה', slots: [{ id: 'what' }] },
+        { key: 'stage2', label: 'מה מתרגלים', slots: [{ id: 'step' }], components: [{ type: 'closing' }] },
+      ],
+    };
+    expect(validatePack(p).errors.join(' | ')).toContain('"closing" needs a "decision" stage before it');
+  });
+});
+
+describe('the decision never shows an empty board where the options were not required', () => {
+  it('goes back to gathering when the basket is empty', () => {
+    // As in the parents' pack: the decision does not require the options stage.
+    const loose = clone(after);
+    delete loose.stages[2].requires;
+    expect(route(at(loose, 3, { goal: 2 }), loose)).toMatchObject({
+      decision: Decision.REOPEN,
+      targetStage: 2,
+      reason: 'empty_basket',
+    });
+    expect(route({ ...at(loose, 3, { goal: 2 }), basket: [{ text: 'לשבת לידו' }] }, loose).decision).toBe(
+      Decision.SHOW_BOARD
+    );
+    // Where the decision does require it, the board shows as it always did.
+    expect(route(at(after, 3, { goal: 2 }), after).decision).toBe(Decision.SHOW_BOARD);
+  });
+});

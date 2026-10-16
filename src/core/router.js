@@ -114,6 +114,18 @@ export function route(state, pack = DEFAULT_PACK) {
       return { decision: Decision.REOPEN, targetStage: production, reason: 'merge' };
     }
     if (!decided.board_presented && (decided.goal ?? 0) >= 1) {
+      // A board is built from the basket; with nothing collected there is nothing
+      // to choose from, and the decision stage has no load guard to leave it by.
+      // When nothing guaranteed the options were gathered — the decision stage
+      // does not `require` the collector's — an empty basket sends the person
+      // back to gathering instead. The parents' interview is that case: its
+      // options stage can end on its guard (router-guard, 16.10.2026). Think
+      // Twice requires stage 6, so its routing is unchanged.
+      const gathered =
+        production != null && (stageAt(pack, currentStage).requires ?? []).includes(stageKey(production));
+      if (!gathered && production != null && !(state.basket ?? []).length) {
+        return { decision: Decision.REOPEN, targetStage: production, reason: 'empty_basket' };
+      }
       return { decision: Decision.SHOW_BOARD };
     }
     // Decided: a sharp decision (or a structured deferral) with the package test

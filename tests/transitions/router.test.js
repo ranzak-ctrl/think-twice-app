@@ -404,6 +404,16 @@ describe('Safety stop', () => {
 describe('Stage 7 closure', () => {
   it('shows board when goal known and board not yet presented', () => {
     let s = createState();
+    s = { ...s, basket: [{ text: 'לדבר איתו מחר' }], meta: { ...s.meta, currentStage: 7 } };
+    s = { ...s, coverage: { ...s.coverage, stage7: { goal: 2, board_presented: 0, sharp_decision: 0, package_test: 0 } } };
+    expect(route(s).decision).toBe(Decision.SHOW_BOARD);
+  });
+
+  // router-guard, 16.10.2026: an empty basket sends the person back to gathering
+  // only where nothing guaranteed the options were gathered. Think Twice's stage 7
+  // requires stage 6, so its routing is what it always was.
+  it('still shows the board in Think Twice, whose decision requires the options stage', () => {
+    let s = createState();
     s = { ...s, meta: { ...s.meta, currentStage: 7 } };
     s = { ...s, coverage: { ...s.coverage, stage7: { goal: 2, board_presented: 0, sharp_decision: 0, package_test: 0 } } };
     expect(route(s).decision).toBe(Decision.SHOW_BOARD);

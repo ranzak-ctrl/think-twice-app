@@ -571,6 +571,9 @@ export async function generateStageOpener(state, history, opts = {}, deps) {
 // anchors in what the user just raised. A merge always re-opens the collector
 // stage (router.js), so its number is the decision's target — 6 in Think Twice.
 function reopenSituation(decision) {
+  if (decision.reason === 'empty_basket') {
+    return `חזרה לשלב האפשרויות (${decision.targetStage}): עוד לא נאספה אף אפשרות, ואין מתוך מה לבחור. עגן את הפתיח במה שהמשתמש אמר זה עתה, והזמן אותו להציע אפשרות ראשונה. אל תתייחס לזה כסגירה.`;
+  }
   if (decision.reason === 'merge') {
     return `חזרה לשלב החלופות (${decision.targetStage}): המשתמש העלה פעולת "גם וגם" ממשית וברת-ביצוע. עגן את הפתיח בפעולה שהוא העלה — הוסף אותה לסל האפשרויות והזמן אותו להמשיך לבחון חלופות. אל תתייחס לזה כסגירה.`;
   }

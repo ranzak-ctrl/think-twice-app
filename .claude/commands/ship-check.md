@@ -21,21 +21,24 @@ Run every gate before a deployment reaches testers. Report each as PASS or FAIL 
 
 From a cloud session this gate cannot run at all: the network policy refuses `vercel.app` with a 403 on CONNECT. Do not report it as passing or failing from there. Say it is unverifiable in this environment, hand Ran the commands, and clear what you can with gate 6 instead.
 
-**6 · Build configuration, proven by the bundle fingerprint.** Three variables reach the browser, and all three are burned into the JS at build time rather than read at runtime:
+**6 · Build configuration, proven by the bundle fingerprint.** Four settings reach the browser, and all four are burned into the JS at build time rather than read at runtime:
 
 | variable | what it decides |
 |---|---|
 | `VITE_USE_MOCK` | live model vs scripted mock |
 | `VITE_REQUIRE_PASSWORD` | whether the password gate exists at all |
 | `VITE_MODEL` | which model the app names |
+| `VERCEL_ENV` | `preview` opens the parents' interview (`__PREVIEW_DEPLOYMENT__`, vite.config.js); anything else keeps it closed |
 
 Vite names the output file after a hash of its contents, so **the bundle filename is a fingerprint of the configuration that produced it.** That makes the deployment's configuration checkable without reaching the site:
 
 ```bash
 # 1. the deployed name, from the Vercel build log (the `dist/assets/index-*.js` line)
 # 2. the same commit, built here with the configuration production is supposed to have
-env -u VITE_USE_MOCK -u VITE_MODEL VITE_REQUIRE_PASSWORD=1 npm run build
+env -u VITE_USE_MOCK -u VITE_MODEL -u VERCEL_ENV VITE_REQUIRE_PASSWORD=1 npm run build
 ```
+
+`VERCEL_ENV` is a fourth input since 16.10.2026, and it is a boolean in the bundle: production and a local build both carry `false`, so the comparison above holds for production. **Checking a Preview deployment instead?** Build with `VERCEL_ENV=preview` as well, or the names will differ for that reason alone.
 
 **Identical name → the gate passes**, and it passes for both halves at once: the password gate is on, and the app is live rather than mock, because a `VITE_USE_MOCK=true` build produces a different name. **A different name → stop.** Something in the Vercel environment is not what you think. Rebuild locally varying one variable at a time until you find which one accounts for the difference, and do not deploy until you know.
 

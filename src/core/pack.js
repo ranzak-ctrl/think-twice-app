@@ -336,6 +336,12 @@ export function validatePack(pack) {
   if (closings.length === 1 && closings[0] !== last) {
     err('"closing" must sit on the last stage — the interview ends there');
   }
+  // The closing stage is what comes after a decision; the turn loop reads the
+  // decision stage on every turn (session.js), so an interview without one cannot
+  // run (router-guard, 16.10.2026).
+  if (closings.length === 1 && !(decisions.length === 1 && decisions[0] < closings[0])) {
+    err('"closing" needs a "decision" stage before it');
+  }
   // The board is built from the basket, and an either-or merge re-opens the stage
   // that filled it. Without a collector before it the board is empty and a merge
   // goes nowhere; on the same stage a merge would re-open the stage it is in.
