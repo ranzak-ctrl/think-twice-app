@@ -126,19 +126,108 @@ td:first-child { font-weight: 600; }
 .tag.open { background: var(--warm-soft); color: var(--warm); }
 footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); padding-top: 16px; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+
+/* ── The four views (v2's visual dashboard, redrawn on v3's tokens) ── */
+.vtabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); width: fit-content; max-width: 100%; }
+.vtabs button { font: inherit; font-size: .9rem; font-weight: 600; color: var(--muted); background: transparent; border: 0; border-radius: 8px; padding: 6px 14px; cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; }
+.vtabs button small { font-weight: 500; font-size: .76rem; color: inherit; opacity: .8; }
+.vtabs button[aria-selected="true"] { background: var(--accent); color: var(--surface); }
+.vtabs button:hover:not([aria-selected="true"]) { background: var(--accent-soft); color: var(--ink); }
+.view { display: grid; gap: 14px; min-width: 0; }
+[hidden] { display: none !important; }
+.seg { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 3px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); }
+.seg button { font: inherit; font-size: .85rem; font-weight: 600; color: var(--muted); background: transparent; border: 0; border-radius: 7px; padding: 4px 11px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+.ctlrow { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.ctllabel { font-size: .85rem; color: var(--muted); font-weight: 600; }
+
+/* overview */
+.sgrid-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.sgrid { display: grid; gap: 6px; padding: 12px; min-width: 760px; }
+.sgrid .rowlab { grid-column: 1 / -1; font-size: .78rem; font-weight: 600; color: var(--muted); letter-spacing: .03em; margin-block-start: 4px; }
+.scell { min-width: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); padding: 7px 6px; text-align: center; font-size: .82rem; line-height: 1.35; }
+.scell.stage { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
+.scell.stage b { display: block; color: var(--accent); font-size: 1rem; font-variant-numeric: tabular-nums; }
+.scell.agent { font-family: var(--font-mono); font-size: .72rem; color: var(--muted); direction: ltr; overflow-wrap: anywhere; }
+.scell.slots { text-align: start; display: grid; gap: 2px; align-content: start; }
+.slotname { font-family: var(--font-mono); font-size: .72rem; direction: ltr; text-align: left; overflow-wrap: anywhere; }
+.slotname.barred { color: var(--danger); text-decoration: underline dotted; }
+.chips { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; }
+.chip { font-size: .68rem; font-weight: 600; padding: 0 6px; border-radius: 999px; background: var(--code-bg); color: var(--ink); white-space: nowrap; }
+.chip.c-gate { background: var(--danger-soft); color: var(--danger); }
+.chip.c-int { background: var(--warm-soft); color: var(--warm); }
+.chip.c-col, .chip.c-dec { background: var(--accent-soft); color: var(--accent); }
+.chip.c-close { background: var(--ok-soft); color: var(--ok); }
+.chip.c-cat { background: var(--plan-soft); color: var(--plan); }
+.flowdown { text-align: center; color: var(--muted); font-size: .85rem; }
+.reg { border: 1px solid var(--line); border-inline-start: 5px solid var(--ok); border-radius: 12px; background: var(--surface); padding: 12px 14px; display: grid; gap: 8px; }
+.reg.off { border-inline-start-color: var(--muted); border-inline-start-style: dashed; }
+.reg h3 { margin: 0; display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+.state3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 10px; }
+.writer { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 10px 12px; display: grid; gap: 4px; align-content: start; font-size: .9rem; }
+.writer .who { font-weight: 700; }
+.writer .what { color: var(--muted); font-size: .85rem; }
+.writer.code { border-color: color-mix(in srgb, var(--warm) 45%, transparent); }
+.writer.model { border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+.writer.idle { opacity: .5; border-style: dashed; }
+
+/* turn cycle */
+.stations { display: grid; gap: 6px; }
+.station { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 10px 12px; display: grid; gap: 6px; transition: opacity .15s, box-shadow .15s; min-width: 0; }
+.station.dim { opacity: .35; }
+.station.hot { box-shadow: 0 0 0 2px var(--accent); }
+.station.skip { border-style: dashed; background: transparent; }
+.station-head { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: baseline; }
+.snum { display: inline-grid; place-items: center; width: 1.7em; height: 1.7em; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: .85rem; font-variant-numeric: tabular-nums; flex: none; }
+.station.safe .snum { background: var(--danger-soft); color: var(--danger); }
+.station.code .snum { background: var(--warm-soft); color: var(--warm); }
+.station .src { color: var(--muted); font-size: .8rem; font-family: var(--font-mono); direction: ltr; }
+.json { margin: 0; font-family: var(--font-mono); font-size: .76rem; line-height: 1.55; background: var(--code-bg); border-radius: 8px; padding: 8px 10px; direction: ltr; text-align: left; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+.json .k { color: var(--accent); } .json .g { color: var(--ok); } .json .w { color: var(--warm); } .json .r { color: var(--danger); } .json .c { color: var(--muted); }
+.down { text-align: center; color: var(--muted); font-size: .8rem; line-height: 1; }
+.stepbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.btn { font: inherit; font-size: .85rem; font-weight: 600; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 5px 12px; cursor: pointer; }
+.btn:hover { background: var(--accent-soft); }
+.scenario-note { border-radius: 10px; background: var(--accent-soft); padding: 9px 12px; font-size: .9rem; }
+
+/* router axes */
+.axes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); gap: 10px; }
+.ax { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 10px 12px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.ax h3 { margin: 0; font-size: .95rem; }
+.ax .hint { color: var(--muted); font-size: .8rem; line-height: 1.45; }
+.track { position: relative; height: 10px; border-radius: 6px; background: var(--code-bg); }
+.fill { height: 100%; border-radius: 6px; background: var(--accent); }
+.thr { position: absolute; top: -4px; height: 18px; width: 2px; background: var(--ok); inset-inline-start: 80%; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.tog { display: flex; gap: 8px; align-items: flex-start; font-size: .88rem; line-height: 1.45; cursor: pointer; }
+.tog input { margin-top: .25em; accent-color: var(--accent); flex: none; width: 1rem; height: 1rem; }
+.verdict { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 14px 16px; display: grid; gap: 6px; }
+.verdict .d { font-family: var(--font-mono); font-size: 1.15rem; font-weight: 500; direction: ltr; text-align: start; unicode-bidi: isolate; overflow-wrap: anywhere; }
+.verdict .d.adv { color: var(--ok); } .verdict .d.hold { color: var(--warm); } .verdict .d.stop { color: var(--danger); } .verdict .d.back { color: var(--plan); }
+.verdict .why { font-size: .92rem; }
+.verdict .order { color: var(--muted); font-size: .82rem; }
+
+/* vocabulary */
+.vgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr)); gap: 10px; }
+.vcard { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 10px 12px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.vcard h3 { margin: 0; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.vcard .test { color: var(--warm); font-size: .88rem; }
+.vcard .ex { color: var(--muted); font-size: .85rem; }
+@media (prefers-reduced-motion: reduce) { .station { transition: none; } }
 </style>
 </head>
 <body>
 <div class="page">
 
 <header class="mast">
-  <p class="eyebrow">מסמך ארכיטקטורה · v3 · 10.10.2026 · ענף <code>claude/youthful-hamilton-40ef4m</code></p>
+  <p class="eyebrow">מסמך ארכיטקטורה · v3 · עודכן 16.10.2026 · ענף <code>claude/youthful-hamilton-40ef4m</code></p>
   <h1>Think Twice — ארכיטקטורת האפליקציה כולה</h1>
   <p class="lede">איך האפליקציה בנויה היום, מקצה לקצה: מה רץ בדפדפן, מה רץ בשרת, איך תור אחד עובר במנוע, איפה תוכן הראיון נמצא בכל רגע, ומה מתוכנן ועוד לא בנוי.</p>
-  <p class="meta">מחליף את v1 (<a href="architecture-dashboard.html">architecture-dashboard.html</a>, 15.8.2026) ואת v2 (<a href="architecture-dashboard-v2.html">architecture-dashboard-v2.html</a>, הרשם), שנשארים כמו שהם. מה חדש מאז v2: המנוע נפרד מחבילת הראיון (8–10.10.2026), הנחיות המראיין בשתי שכבות (9.10), ומסך הסיום עם הקובץ המוצפן (10.10). אם המסמך נוגד את הקוד, הקוד הוא העובדה (CLAUDE.md).</p>
+  <p class="meta">מחליף את v1 (<a href="architecture-dashboard.html">architecture-dashboard.html</a>, 15.8.2026) ואת v2 (<a href="architecture-dashboard-v2.html">architecture-dashboard-v2.html</a>, הרשם), שנשארים כמו שהם. מה חדש מאז v2: המנוע נפרד מחבילת הראיון (8–10.10.2026), הנחיות המראיין בשתי שכבות (9.10), ומסך הסיום עם הקובץ המוצפן (10.10). ומאז: שליחת הקובץ במייל (14.10), וראיון ההורים כטיוטה ב-QA, עם שלב סגירה אחרי ההכרעה ובלי רשם (16.10). ארבעת המבטים החזותיים של v2 מצוירים כאן מחדש לפי הקוד של היום. אם המסמך נוגד את הקוד, הקוד הוא העובדה (CLAUDE.md).</p>
   <ul class="legend" aria-label="מקרא">
     <li><span class="sw built"></span>בנוי ורץ</li>
-    <li><span class="sw new"></span>חדש ב-10.10.2026</li>
+    <li><span class="sw new"></span>חדש מאז 10.10.2026</li>
     <li><span class="sw plan"></span>מתוכנן, לא בנוי</li>
     <li><span class="sw safe"></span>שכבת הבטיחות</li>
   </ul>
@@ -148,6 +237,7 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
   <p>תוכן העניינים</p>
   <ol>
     <li><a href="#glance">במבט אחד</a></li>
+    <li><a href="#views">ארבעה מבטים</a></li>
     <li><a href="#layers">מנוע · חבילה · מעטפת</a></li>
     <li><a href="#turn">תור אחד</a></li>
     <li><a href="#state">ה-StateDocument</a></li>
@@ -170,13 +260,13 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
 
 <section id="glance" aria-labelledby="h-glance">
   <h2 id="h-glance">במבט אחד</h2>
-  <p>שלוש קומות: הדפדפן מחזיק את הראיון ומריץ את המנוע. פונקציות ב-Vercel מחזיקות את הסודות ולא שומרות דבר. Anthropic מריץ את המודל. מעליהן, בקו מקווקו, מה שמתוכנן לשלב 4.</p>
+  <p>שלוש קומות: הדפדפן מחזיק את הראיון ומריץ את המנוע. פונקציות ב-Vercel מחזיקות את הסודות ולא שומרות דבר. Anthropic מריץ את המודל, ו-Resend שולח את הקובץ המוצפן במייל. מעליהן, בקו מקווקו, מה שמתוכנן לשלב 4.</p>
   <div class="stack" role="img" aria-label="תרשים שכבות: דפדפן, פונקציות Vercel, שירותים חיצוניים, ותוכנית החשבונות">
     <div class="band plan">
-      <div class="band-head"><span class="band-name">חשבונות ומייל</span><span class="band-sub">שלב 4 · לא בנוי · ממתין להכרעה על מסד נתונים ושירות מייל</span></div>
+      <div class="band-head"><span class="band-name">חשבונות</span><span class="band-sub">שלב 4 · לא בנוי · ממתין להכרעה על מסד נתונים</span></div>
       <div class="boxes">
         <div class="box plan"><b>מסד נתונים</b>אימייל מוצפן · הרשאות · מכסה. אף פעם לא תוכן ראיון</div>
-        <div class="box plan"><b>שירות מייל</b>הזמנה · קוד אימות · ברוך הבא · שחזור · הקובץ המוצפן בסיום</div>
+        <div class="box plan"><b>מייל לחשבון</b>הזמנה · קוד אימות · ברוך הבא · שחזור. שליחת הקובץ בסיום כבר בנויה (למטה)</div>
         <div class="box plan"><b>מסך ניהול משתמשים</b>מנהל בלבד, עם יומן פעולות</div>
         <div class="box plan"><b>מסך בחירת מודל</b>אישי · הורים · שניהם</div>
       </div>
@@ -185,10 +275,11 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
       <div class="band-head"><span class="band-name">הדפדפן</span><span class="band-sub">React + Vite · עברית RTL · כל הראיון בזיכרון הטאב בלבד</span></div>
       <div class="boxes">
         <div class="box"><b>מעטפת</b><code>src/ui/</code> צ'אט · מפה · פס שלבים · מצב מדריך · שער סיסמה</div>
-        <div class="box new"><b>מסך הסיום</b><code>EndScreen.jsx</code> שמירה מוצפנת · 5 דקות · רענון</div>
-        <div class="box"><b>הרכבת הראיון</b><code>src/ui/interview.js</code> חבילה + טקסטים + קריאת מודל + הסבות</div>
+        <div class="box new"><b>מסך הסיום</b><code>EndScreen.jsx</code> שמירה מוצפנת · מייל · 5 דקות · רענון</div>
+        <div class="box"><b>הרכבת הראיון</b><code>src/ui/interview.js</code> חבילה + טקסטים + קריאת מודל + הסבות. הכתובת בוחרת ראיון</div>
         <div class="box"><b>המנוע</b><code>src/core/</code> Router · State · לולאת התור · רשם · מפה</div>
-        <div class="box"><b>חבילת ראיון</b><code>src/packs/think-twice-adult/</code></div>
+        <div class="box"><b>חבילות ראיון</b><code>src/packs/think-twice-adult/</code></div>
+        <div class="box new"><b>ראיון ההורים · טיוטה</b><code>src/packs/think-twice-parents/</code> רק ב-Preview</div>
         <div class="box safe"><b>בטיחות</b><code>src/safety/</code> לפני כל דבר אחר בתור</div>
         <div class="box"><b>מתאמים</b><code>src/adapters/</code> מודל · קובץ · סיסמה · דוח תקלה</div>
       </div>
@@ -199,6 +290,7 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
       <div class="boxes">
         <div class="box"><b>ה-proxy למודל</b><code>api/anthropic/v1/messages.js</code> מזריק <code>ANTHROPIC_API_KEY</code></div>
         <div class="box new"><b>קובץ הראיון</b><code>api/interview-file.js</code> מצפין ופותח עם <code>INTERVIEW_FILE_KEYS</code></div>
+        <div class="box new"><b>מייל</b><code>api/send-interview.js</code> הקובץ המוצפן דרך Resend. ממתין ל-<code>RESEND_API_KEY</code></div>
         <div class="box"><b>דוח תקלה</b><code>api/report.js</code> מטא-דאטה מסוננת ללוג</div>
         <div class="box"><b>בדיקת חיים</b><code>api/ping.js</code></div>
       </div>
@@ -208,8 +300,152 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
       <div class="band-head"><span class="band-name">חיצוני</span><span class="band-sub">ספקים שמעבדים עבורנו</span></div>
       <div class="boxes">
         <div class="box"><b>Anthropic API</b><code>claude-haiku-4-5</code> · מדיניות שמירה: רן בודק "אפס שמירה"</div>
+        <div class="box new"><b>Resend</b>שולח את הקובץ המוצפן, עם טקסט קבוע בלי השיחה. עד שיהיה דומיין מאומת: רק לכתובת של החשבון שם</div>
       </div>
     </div>
+  </div>
+</section>
+
+<section id="views" aria-labelledby="h-views">
+  <h2 id="h-views">ארבעה מבטים על אותה מערכת</h2>
+  <p>התצוגה החזותית של v2, מצוירת מחדש לפי הקוד של היום: מבט-על · תור בודד · החלטת ה-Router · אוצר המילים של הגרף. המבט הראשון והשני מראים את שני הראיונות, כי ההבדל ביניהם הוא חלק מהארכיטקטורה.</p>
+  <div class="vtabs" role="tablist" aria-label="מבטים">
+    <button role="tab" id="t-arch" aria-controls="v-arch" aria-selected="true" data-v="arch"><small>מבט-על</small>ארכיטקטורה מאוחדת</button>
+    <button role="tab" id="t-flow" aria-controls="v-flow" aria-selected="false" data-v="flow" tabindex="-1"><small>תור בודד</small>מחזור התור</button>
+    <button role="tab" id="t-router" aria-controls="v-router" aria-selected="false" data-v="router" tabindex="-1"><small>החלטה</small>צירי ה-Router</button>
+    <button role="tab" id="t-vocab" aria-controls="v-vocab" aria-selected="false" data-v="vocab" tabindex="-1"><small>מילון</small>יישויות וקשתות</button>
+  </div>
+
+  <!-- 1 · overview -->
+  <div class="view" id="v-arch" role="tabpanel" aria-labelledby="t-arch">
+    <div class="ctlrow"><span class="ctllabel">ראיון:</span>
+      <div class="seg" id="arch-pack" role="group" aria-label="בחירת ראיון">
+        <button type="button" data-p="adult" aria-pressed="true">Think Twice · אישי</button>
+        <button type="button" data-p="parents" aria-pressed="false">Think Twice · הורים</button>
+      </div>
+      <span class="ctllabel" id="arch-where"></span>
+    </div>
+
+    <h3>1 · השיחה, השלבים והסוכנים — מתוך <code id="arch-file">pack.js</code></h3>
+    <div class="sgrid-wrap"><div class="sgrid" id="arch-grid" role="table" aria-label="שלבים, סוכנים ו-slots"></div></div>
+    <p class="hint" style="color:var(--muted);font-size:.85rem">‏slot <span class="slotname barred" style="display:inline">בקו מנוקד</span> חסום (<code>barred</code>): נשמר, מקבל ציון ונחקר, ולעולם לא מצויר ולא מצוטט לאדם. ‏<span class="chip c-cat">+ קטלוג</span> = טבלת מאפיין · צורך · כלי נכנסת לסוכן של השלב.</p>
+
+    <div class="flowdown">↓ כל תור</div>
+    <div class="reg" id="arch-reg"></div>
+    <div class="flowdown">↓ כותבים ל ↓</div>
+
+    <h3>3 · STATE — התיק, ומי כותב בו</h3>
+    <div class="state3">
+      <div class="writer model" id="w-reg"><span class="who">הרשם (קריאת מודל)</span><span class="what">כותב את סיפור המאורע: <code>eventRecord</code> · <code>actorMap</code> · <code>edges</code> · <code>groups</code> · <code>openForks</code> · <code>gaps</code>. לא נותן ציונים.</span><span class="what" id="w-reg-off" hidden><strong>בראיון ההורים לא רץ.</strong></span></div>
+      <div class="writer model"><span class="who">המראיין (קריאת מודל)</span><span class="what">שואל, ומדווח <code>evaluation</code>: ציוני slots ל-<code>coverage</code> · <code>findings</code> · דגלי התנגדות · <code>alternatives</code> לסל · סוג ההכרעה.</span></div>
+      <div class="writer code"><span class="who">הקוד</span><span class="what"><code>meta</code>: שלב, מונים, ממתין לאישור, <code>pendingClose</code>, סיום, KPI. גוזר את ציון הקאסט. <strong>ה-Router קורא רק את <code>coverage</code> ואת <code>meta</code>.</strong></span></div>
+    </div>
+
+    <div class="flowdown">↓ ‏control</div>
+    <h3>4 · ה-Router — קוד, לא מודל</h3>
+    <div class="two">
+      <div class="card"><h3>מעבר שלב</h3><p>כיסוי מלא, או (סף רך ∧ מיצוי), ואז סיכום לאישור. מגן העומס כופה מעבר. שער הקאסט מחזיק כשדמות לא ברורה.</p></div>
+      <div class="card"><h3>ההכרעה <span class="tag">16.10</span></h3><p>לוח כשהיעד ידוע. סל ריק ובלי תלות בשלב האפשרויות ← חזרה לאיסוף. עמומה לא מחליטה. החלטה חדה: סוגרת כשזה השלב האחרון, ומעבירה הלאה כששלב סגירה בא אחריה.</p></div>
+      <div class="card"><h3>שלב הסגירה <span class="tag">16.10</span></h3><p>‏<code>closing</code>, רק בשלב האחרון ורק אחרי הכרעה. מוכן כמו כל שלב ← סיכום ← <strong>אישור הסיכום מסיים את הראיון</strong>. הכפתור אומר את זה.</p></div>
+    </div>
+
+    <div class="flowdown">↓</div>
+    <h3>5 · ההגשה — מהדפדפן לשרת, בלי מפתח</h3>
+    <div class="stack" role="img" aria-label="הדפדפן שולח בלי מפתח לפונקציות Vercel, שמזריקות את המפתחות ופונות לספקים">
+      <div class="band where"><div class="band-head"><span class="band-name">הדפדפן</span><span class="band-sub">הראיון בזיכרון הטאב · <code>x-app-password</code> בלבד</span></div></div>
+      <div class="arrow" aria-hidden="true">↓</div>
+      <div class="band fn"><div class="band-head"><span class="band-name">פונקציות Vercel</span><span class="band-sub">חסרות state · לא כותבות · לוג טכני בלבד</span></div>
+        <div class="boxes">
+          <div class="box"><b>המודל</b><code>api/anthropic/v1/messages.js</code></div>
+          <div class="box new"><b>קובץ הראיון</b><code>api/interview-file.js</code> · AES-256-GCM</div>
+          <div class="box new"><b>מייל</b><code>api/send-interview.js</code> · Resend · ממתין למפתח</div>
+          <div class="box"><b>דוח תקלה · חיים</b><code>api/report.js</code> · <code>api/ping.js</code></div>
+        </div>
+      </div>
+      <div class="arrow" aria-hidden="true">↓</div>
+      <div class="band ext"><div class="band-head"><span class="band-name">ספקים</span><span class="band-sub">Anthropic (המודל) · Resend (מייל, כשיוגדר)</span></div></div>
+    </div>
+  </div>
+
+  <!-- 2 · turn cycle -->
+  <div class="view" id="v-flow" role="tabpanel" aria-labelledby="t-flow" hidden>
+    <p>תור אחד, תחנה אחרי תחנה, עם האובייקט שעובר בכל תחנה. ארבעה תרחישים: שניים מראיון המבוגרים ושניים מראיון ההורים. בחר תרחיש, ועבור עליו צעד-צעד.</p>
+    <div class="ctlrow">
+      <div class="seg" id="flow-sc" role="group" aria-label="תרחיש">
+        <button type="button" data-k="clean" aria-pressed="true">① אישי · תור רגיל</button>
+        <button type="button" data-k="end" aria-pressed="false">② אישי · סוף שלב</button>
+        <button type="button" data-k="nomem" aria-pressed="false">③ הורים · בלי רשם</button>
+        <button type="button" data-k="close" aria-pressed="false">④ הורים · הסגירה</button>
+      </div>
+    </div>
+    <div class="scenario-note" id="flow-note"></div>
+    <div class="stepbar"><button type="button" class="btn" id="flow-next">צעד הבא ▸</button><button type="button" class="btn" id="flow-all">הצג הכול</button><span class="ctllabel" id="flow-hint"></span></div>
+    <div class="stations" id="flow-stations"></div>
+  </div>
+
+  <!-- 3 · router axes -->
+  <div class="view" id="v-router" role="tabpanel" aria-labelledby="t-router" hidden>
+    <p>הזז את הצירים וראה מה ה-Router מחליט. הסדר כאן הוא הסדר ב-<code>route()</code> ב-<code>src/core/router.js</code>: הבדיקה הראשונה שמתקיימת מכריעה.</p>
+    <div class="ctlrow"><span class="ctllabel">סוג השלב:</span>
+      <div class="seg" id="rx-kind" role="group" aria-label="סוג השלב">
+        <button type="button" data-k="regular" aria-pressed="true">שלב רגיל</button>
+        <button type="button" data-k="decision" aria-pressed="false">שלב ההכרעה</button>
+        <button type="button" data-k="closing" aria-pressed="false">שלב הסגירה</button>
+      </div>
+    </div>
+    <div class="axes" id="rx-regular">
+      <div class="ax"><h3>כיסוי</h3><span class="hint">כמה מה-slots של השלב ב-2. הסף הרך: 80%, וכולם לפחות 1.</span>
+        <div class="track"><div class="fill" id="rx-fill"></div><div class="thr" aria-hidden="true"></div></div>
+        <input type="range" id="rx-cov" min="0" max="100" step="5" value="60" aria-label="אחוז ה-slots ב-2">
+        <span class="ctllabel" id="rx-covval"></span>
+        <label class="tog"><input type="checkbox" id="rx-zero"> יש slot שעוד ב-0</label>
+      </div>
+      <div class="ax"><h3>מיצוי</h3><span class="hint">תורות רצופים בלי מידע חדש. הסף: 2.</span>
+        <div class="seg" id="rx-sat" role="group" aria-label="מיצוי"><button type="button" data-v="0" aria-pressed="false">0</button><button type="button" data-v="1" aria-pressed="true">1</button><button type="button" data-v="2" aria-pressed="false">2</button></div>
+      </div>
+      <div class="ax"><h3>שערים ורשתות</h3>
+        <label class="tog"><input type="checkbox" id="rx-guard"> מגן העומס נורה (תקרת השאלות של השלב)</label>
+        <label class="tog"><input type="checkbox" id="rx-cast"> דמות לא ברורה, בשלב עם שער קאסט</label>
+        <label class="tog" id="rx-dep-wrap"><input type="checkbox" id="rx-dep"> השלב הבא תלוי בשלב שלא מוצה</label>
+        <label class="tog"><input type="checkbox" id="rx-floor"> בתוך חלון התיקון, אחרי "רוצה לתקן"</label>
+      </div>
+    </div>
+    <div class="axes" id="rx-decision" hidden>
+      <div class="ax"><h3>היעד והלוח</h3>
+        <div class="seg" id="rx-goal" role="group" aria-label="ציון היעד"><button type="button" data-v="0" aria-pressed="false">יעד 0</button><button type="button" data-v="1" aria-pressed="true">יעד 1</button><button type="button" data-v="2" aria-pressed="false">יעד 2</button></div>
+        <label class="tog"><input type="checkbox" id="rx-board"> הלוח כבר הוצג</label>
+        <label class="tog"><input type="checkbox" id="rx-empty"> הסל ריק</label>
+      </div>
+      <div class="ax"><h3>ההכרעה</h3>
+        <label class="tog"><input type="checkbox" id="rx-decided"> חדה, ומבחן החבילה עבר (שניהם ב-2)</label>
+        <label class="tog"><input type="checkbox" id="rx-vague"> סווגה כעמומה</label>
+        <label class="tog"><input type="checkbox" id="rx-merge"> "גם וגם" אמיתי</label>
+        <label class="tog"><input type="checkbox" id="rx-dfloor"> בתוך חלון התיקון</label>
+      </div>
+      <div class="ax"><h3>המבנה של הראיון</h3>
+        <div class="seg" id="rx-preset" role="group" aria-label="כמו איזה ראיון"><button type="button" data-p="adult" aria-pressed="true">כמו אישי</button><button type="button" data-p="parents" aria-pressed="false">כמו הורים</button></div>
+        <label class="tog"><input type="checkbox" id="rx-gathered" checked> ההכרעה תלויה בשלב האפשרויות</label>
+        <label class="tog"><input type="checkbox" id="rx-last" checked> ההכרעה היא השלב האחרון</label>
+      </div>
+    </div>
+    <div class="verdict" aria-live="polite">
+      <span class="ctllabel">RouterDecision</span>
+      <span class="d" id="rx-d"></span>
+      <span class="why" id="rx-why"></span>
+      <span class="order" id="rx-order"></span>
+    </div>
+  </div>
+
+  <!-- 4 · vocabulary -->
+  <div class="view" id="v-vocab" role="tabpanel" aria-labelledby="t-vocab" hidden>
+    <p>ממה הרשם בונה את הגרף של כל מקרה (<code>src/core/vocabulary.js</code>). לכל פריט מבחן הכרעה, כי רשימה בלי מבחנים מתמלאת בסיווגים שגויים. ראיון ההורים לא משתמש בגרף היום: הוא רץ בלי הרשם.</p>
+    <h3>שבע יישויות</h3>
+    <div class="vgrid" id="vocab-ent"></div>
+    <h3>שמונה קשתות</h3>
+    <div class="vgrid" id="vocab-edge"></div>
+    <h3>שלושה צירים חוצי-יישויות</h3>
+    <div class="vgrid" id="vocab-axis"></div>
+    <div class="note"><p><strong>שתי מוסכמות שמחזיקות את הכול:</strong> קצוות בשמות-מרחב (<code>actor:</code> · <code>beat:</code> · <code>stance:</code> · <code>emotion:</code> · <code>fork:</code> · <code>stageN.slot</code>), ו-<code>confirmed:false</code> כברירת מחדל. "הקשתות הן של המרואיין. כשהמערכת לא סגורה על הקשר — היא שואלת אותו" (רן, 5.9.2026). רק <code>then</code> ו-<code>because</code> קובעות סדר במפה.</p></div>
   </div>
 </section>
 
@@ -228,7 +464,7 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
         <li><code>registrar.js</code> · הרשם, שמפרק את הסיפור לגרף</li>
         <li><code>promptBuilder.js</code> · <code>guidelines.js</code> · הרכבת הפרומפטים</li>
         <li><code>storyMap.js</code> · <code>eventMap.js</code> · היטל המפה</li>
-        <li><code>pack.js</code> · <code>validatePack</code>, קטלוג סגור</li>
+        <li><code>pack.js</code> · <code>validatePack</code>, קטלוג סגור של חמישה רכיבים</li>
       </ul>
       <p><strong>אסור לו לייבא</strong> פרומפט, מתאם או <code>import.meta</code>. ‏<code>tests/core/portable-core.test.js</code> נכשל אם זה חוזר (עיקרון 4).</p>
     </div>
@@ -241,13 +477,13 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
         <li><code>judge.js</code> · רובריקת השופט, לבדיקות בלבד</li>
         <li><code>migrations.js</code> · הסבת קבצים בין גרסאות <span class="tag">חדש</span></li>
       </ul>
-      <p>היום חבילה אחת: <code>think-twice-adult</code>, ששמה "Think Twice · אישי", גרסה 1.</p>
+      <p>שתי חבילות: <code>think-twice-adult</code> ("Think Twice · אישי", גרסה 1, שבעה שלבים), ו-<code>think-twice-parents</code> ("Think Twice · הורים", גרסה 1, שמונה שלבים, בלי רשם) <span class="tag open">טיוטה ל-QA</span></p>
     </div>
     <div class="card">
       <h3>המעטפת — "למי"</h3>
       <p><code>src/ui/</code> · אחת לכולם.</p>
       <ul>
-        <li><code>interview.js</code> · המקום היחיד שבו בוחרים ראיון</li>
+        <li><code>interview.js</code> · המקום היחיד שבו בוחרים ראיון. היום לפי הכתובת: <code>?interview=parents</code> <span class="tag">16.10</span></li>
         <li><code>App.jsx</code> · <code>Chat.jsx</code> · <code>StoryMap.jsx</code> · <code>StageRail.jsx</code></li>
         <li><code>GuidePanel.jsx</code> · מצב מדריך, וייצוא קריא לבודקים</li>
         <li><code>EndScreen.jsx</code> · מסך הסיום <span class="tag">חדש</span></li>
@@ -260,15 +496,15 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
 
 <section id="turn" aria-labelledby="h-turn">
   <h2 id="h-turn">תור אחד, מההודעה ועד התשובה</h2>
-  <p>הסדר הוא העיקר: הרשם כותב קודם, והמראיין שואל על מה שהרשם כתב ("הרשם מוסר את הסיפור המעודכן", רן, 18.9.2026). ‏<code>runTurn</code> ב-<code>src/core/session.js</code>.</p>
+  <p>אותו תור, צעד-צעד ועם האובייקטים עצמם: המבט "מחזור התור" למעלה. הסדר הוא העיקר: הרשם כותב קודם, והמראיין שואל על מה שהרשם כתב ("הרשם מוסר את הסיפור המעודכן", רן, 18.9.2026). ‏<code>runTurn</code> ב-<code>src/core/session.js</code>.</p>
   <ol class="steps">
     <li class="safe"><div><b>בדיקת בטיחות</b><span>‏<code>preCheck</code> על הודעת המשתמש. אזכור מצוקה חריפה ← עצירה מיד, עם הודעת העצירה וקו העזרה. שום מודל לא נקרא.</span><span class="who">src/safety · רץ לפני כל דבר, גם לפני בדיקת התלויות</span></div></li>
-    <li><div><b>הרשם</b><span>קריאת מודל אחת שמפרקת את התור לגרף: פעימות, עמדות, רגשות, דמויות, קשתות, קבוצות, פיצולים ותצפיות פערים. דלתא בלבד, לפי <code>id</code> יציב.</span><span class="who">registrar.js · דלוק (<code>REGISTRAR_ENABLED</code>) · כישלון לא עולה למשתמש בתור</span></div></li>
+    <li><div><b>הרשם</b><span>קריאת מודל אחת שמפרקת את התור לגרף: פעימות, עמדות, רגשות, דמויות, קשתות, קבוצות, פיצולים ותצפיות פערים. דלתא בלבד, לפי <code>id</code> יציב.</span><span>בראיון ההורים אין רשם (<code>registrar: null</code>). במקומו, הממצאים של כל השלבים נכנסים לפרומפט של המראיין, כדי שיזכור מה כבר נאמר.</span><span class="who">registrar.js · דלוק (<code>REGISTRAR_ENABLED</code>) · כישלון לא עולה למשתמש בתור</span></div></li>
     <li><div><b>המראיין</b><span>קריאת מודל עם הנחיות המראיין (על + ייחודי), סוכן השלב, המעריך והרשימה השחורה. מחזיר <code>evaluation</code> <strong>לפני</strong> <code>message</code>: "חלץ, אז שאל".</span><span class="who">promptBuilder.js · חלק יציב לקאשינג, חלק משתנה</span></div></li>
     <li><div><b>פענוח ומיזוג</b><span>ציוני slots, ממצאים, מפת שחקנים, קוביות, קשתות, תוויות ופערים נכנסים ל-State. slot שהמודל המציא — מתעלמים ממנו.</span><span class="who">responseParser.js · state.js</span></div></li>
     <li><div><b>גזירה בקוד</b><span>ציון הקאסט נגזר מבהירות מפת השחקנים בכל תור שיש בו מפה (ריק ← 0, עמום ← 1, כולם ברורים ← 2). עוצמת הרגש נרשמת בשלבים שהחבילה מסמנת.</span><span class="who">session.js · לפי <code>castClarity</code> ו-<code>intensity</code> בחבילה</span></div></li>
     <li><div><b>ה-Router מחליט</b><span>להישאר · לבקש אישור סיכום · לפתוח מחדש · להציג לוח · לסגור · לעצור. <strong>המודל מציע, הקוד מכריע.</strong></span><span class="who">router.js · לפי ספי החבילה</span></div></li>
-    <li><div><b>סינתזה לפי ההחלטה</b><span>סיכום לאישור, לוח הכרעה, או בסגירה. במעבר שלב: פתיח שהמודל מנסח ומעוגן בסיפור; ה-signpost הסטטי רק כגיבוי.</span><span class="who">summary.md · board.md · opener.md</span></div></li>
+    <li><div><b>סינתזה לפי ההחלטה</b><span>סיכום לאישור (גם הסיכום האחרון, ששלב סגירה מבקש), לוח הכרעה, או מסך הסיום. במעבר שלב: פתיח שהמודל מנסח ומעוגן בסיפור; ה-signpost הסטטי רק כגיבוי.</span><span class="who">summary.md · board.md · opener.md</span></div></li>
     <li><div><b>התשובה מוצגת</b><span>שאלה מכוונת אחת. האפליקציה מוסיפה אותה לתמליל, והמפה מצוירת מחדש מה-State.</span><span class="who">App.jsx · Chat.jsx · StoryMap.jsx</span></div></li>
   </ol>
 </section>
@@ -279,13 +515,13 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
     <thead><tr><th>שדה</th><th>מה בו</th><th>כותב</th><th>קורא</th></tr></thead>
     <tbody>
       <tr><td><code>coverage</code></td><td>ציון לכל slot בכל שלב: 0 · 1 · 2 · U</td><td>המעריך, והגזירה בקוד</td><td><strong>ה-Router</strong>, מצב מדריך</td></tr>
-      <tr><td><code>meta</code></td><td>שלב נוכחי, מונים, ממתין לאישור, דגל בטיחות, סיום, KPI, יומן החלטות</td><td>הקוד</td><td>ה-Router, המעטפת</td></tr>
-      <tr><td><code>findings</code></td><td>ממצאים מילוליים לכל slot</td><td>המעריך</td><td>המראיין, הסיכום, מצב מדריך. <strong>חסומים לא מגיעים לתצוגה</strong></td></tr>
+      <tr><td><code>meta</code></td><td>שלב נוכחי, מונים, ממתין לאישור, <code>pendingClose</code> (האישור הבא מסיים), דגל בטיחות, סיום, KPI, יומן החלטות</td><td>הקוד</td><td>ה-Router, המעטפת</td></tr>
+      <tr><td><code>findings</code></td><td>ממצאים מילוליים לכל slot</td><td>המעריך</td><td>המראיין, הסיכום, מצב מדריך. בראיון בלי רשם, גם הזיכרון של המראיין ("מה נמסר עד עכשיו"). <strong>חסומים מגיעים רק למראיין, לעולם לא לתצוגה</strong></td></tr>
       <tr><td><code>actorMap</code></td><td>הקאסט הפתור: מי, תפקיד, קשר, ברור או לא, פעולות</td><td>המעריך, הרשם</td><td>הגזירה, המפה</td></tr>
       <tr><td><code>gaps</code></td><td>סתירות ופערים שנרשמו</td><td>הקוד, מתצפיות</td><td>המראיין בלבד. <strong>לעולם לא מוצג למשתמש</strong> (gap-management §1)</td></tr>
       <tr><td><code>nodes</code> · <code>edges</code> · <code>groups</code></td><td>קוביות, קשתות ומכלים של האיור</td><td>המעריך, הרשם</td><td><strong>המפה בלבד.</strong> ה-Router לא קורא אותם לעולם</td></tr>
       <tr><td><code>openForks</code> · <code>mapLabels</code></td><td>פיצולים פתוחים, תוויות</td><td>המעריך</td><td>המפה</td></tr>
-      <tr><td><code>eventRecord</code></td><td>רישום המאורע: תפאורה, פעימות, עמדות, רגשות</td><td>הרשם</td><td>המראיין, המפה</td></tr>
+      <tr><td><code>eventRecord</code></td><td>רישום המאורע: תפאורה, פעימות, עמדות, רגשות</td><td>הרשם. ריק בראיון ההורים</td><td>המראיין, המפה</td></tr>
       <tr><td><code>board</code> · <code>basket</code> · <code>decision</code></td><td>לוח ההכרעה, סל החלופות וההכרעה</td><td>הסל: המעריך. הלוח: קריאת מודל (<code>board.md</code>) מתוך הסל, כשה-Router מחליט להציג אותו</td><td>המעטפת (לוח ההכרעה)</td></tr>
     </tbody>
   </table></div>
@@ -296,13 +532,15 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
   <ul>
     <li><strong>מעבר שלב:</strong> כל ה-slots של הליבה ב-2 מעבירים לבד. אחרת: כולם לפחות 1, רובם (~80%) ב-2, ושני תורות בלי מידע חדש. ואז אישור המשתמש לסיכום.</li>
     <li><strong>שער מפת השחקנים:</strong> לא עוברים כל עוד דמות לא ברורה. חריג פתוח: מפה ריקה לגמרי (questions-for-natali §15).</li>
-    <li><strong>מגן עומס:</strong> 20 שאלות, 15 בשלב 5. ערכי ביניים, עד גלאי עייפות (§1).</li>
+    <li><strong>מגן עומס:</strong> באישי 20 שאלות, 15 בשלב 5. בהורים מגן לכל שלב (7·4·5·5·6·8·—·6). ערכי ביניים, עד גלאי עייפות (§1).</li>
     <li><strong>תלויות:</strong> שלב 5 דורש את שלב 2 ממוצה; שלב 7 דורש את שלב 6 ויעד מנוסח. שיפוט לא חוזר לייצור.</li>
     <li><strong>פתיחה מחדש:</strong> מידע סותר או מרחיב מוריד ציון ופותח נושא סגור, עם פתיח שמסביר למה חזרנו.</li>
-    <li><strong>שלב 7:</strong> חדה · דחייה מובנית · עמומה. עמומה לעולם לא סוגרת.</li>
+    <li><strong>ההכרעה:</strong> חדה · דחייה מובנית · עמומה. עמומה לעולם לא סוגרת. חדה סוגרת את הראיון כשזה השלב האחרון; כששלב סגירה בא אחריה, היא מסכמת ומעבירה אליו, עם אותם כללי תלות וחלון תיקון <span class="tag">16.10</span></li>
+    <li><strong>סל ריק:</strong> כשההכרעה לא תלויה בשלב האפשרויות והסל ריק, חוזרים לאסוף במקום להציג לוח ריק. באישי ההכרעה תלויה בשלב 6, ולכן שם שום דבר לא השתנה <span class="tag">16.10</span></li>
+    <li><strong>שלב הסגירה (<code>closing</code>):</strong> רק בשלב האחרון, ורק אחרי הכרעה. מוכן כמו כל שלב, ואז מבקש אישור לסיכום שלו. האישור מסיים את הראיון; "רוצה לתקן" משאיר אותו פתוח <span class="tag">16.10</span></li>
     <li><strong>אין ניווט למשתמש.</strong> נקודות ההחלטה ב-UI: אישור סיכום וההכרעה. ומסך הסיום, שהוא יציאה, לא ניווט בראיון.</li>
   </ul>
-  <p>כל הספים, התלויות והתוויות יושבים ב-<code>pack.js</code>, ושינוי בהם הוא שינוי Router: ‏<code>router-guard</code> ומטריצת המעברים (הכרעת רן, 9.10.2026).</p>
+  <p>לנסות בעצמך: המבט "צירי ה-Router" למעלה. כל הספים, התלויות והתוויות יושבים ב-<code>pack.js</code>, ושינוי בהם הוא שינוי Router: ‏<code>router-guard</code> ומטריצת המעברים (הכרעת רן, 9.10.2026).</p>
 </section>
 
 <section id="pack" aria-labelledby="h-pack">
@@ -310,12 +548,12 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
   <div class="tablewrap"><table>
     <thead><tr><th>שדה ב-<code>pack.js</code></th><th>מה הוא</th></tr></thead>
     <tbody>
-      <tr><td><code>id</code> · <code>name</code> · <code>version</code></td><td><code>think-twice-adult</code> · "Think Twice · אישי" · 1. פותחים כל קובץ ייצוא</td></tr>
-      <tr><td><code>stages</code></td><td>שלבים, slots לכל שלב, ספים, signposts, שם לכל שלב</td></tr>
-      <tr><td>דגלי slot</td><td><code>barred</code> (חסום לתצוגה: המוגלה והנרמול) · <code>mental</code> (תודעה)</td></tr>
-      <tr><td>רכיבים מהקטלוג</td><td><code>castClarity</code> · <code>intensity</code> · אוסף · הכרעה. הקטלוג סגור</td></tr>
+      <tr><td><code>id</code> · <code>name</code> · <code>version</code></td><td><code>think-twice-adult</code> · "Think Twice · אישי" · 1, ו-<code>think-twice-parents</code> · "Think Twice · הורים" · 1. פותחים כל קובץ ייצוא</td></tr>
+      <tr><td><code>stages</code></td><td>שלבים, slots לכל שלב, <code>requires</code> (תלויות), <code>loadGuard</code> לשלב, signposts, שם לכל שלב</td></tr>
+      <tr><td>דגלי slot</td><td><code>barred</code> (חסום לתצוגה: באישי המוגלה והנרמול, בהורים "איזה הורה אני") · <code>mental</code> (תודעה)</td></tr>
+      <tr><td>רכיבים מהקטלוג</td><td><code>castClarity</code> · <code>intensity</code> · <code>collector</code> · <code>decision</code> · <code>closing</code> <span class="tag">16.10</span>. הקטלוג סגור. השלב האחרון חייב לשאת הכרעה או סגירה</td></tr>
       <tr><td><code>routing</code></td><td>מגן עומס, מיצוי, חסד תיקון</td></tr>
-      <tr><td><code>map</code></td><td>סדר המפה, וה-slot שהופך אותה למסלול בזמן</td></tr>
+      <tr><td><code>map</code></td><td>סדר המפה, וה-slot שהופך אותה למסלול בזמן. אין בהורים</td></tr>
     </tbody>
   </table></div>
   <p><strong>השדות סגורים:</strong> שדה שהמנוע לא קורא הוא שגיאה ב-<code>validatePack</code>, כי שגיאת כתיב נכשלת בשקט. שדה חדש, כמו פרופיל בטיחות להורים, הוא שינוי מנוע.</p>
@@ -328,16 +566,17 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
     <thead><tr><th>טקסט</th><th>תפקיד</th><th>שייך ל</th></tr></thead>
     <tbody>
       <tr><td><code>guidelines/super.md</code></td><td>הנחיות-העל לכל מראייני Think Twice. בלוק <code>locked</code> לא נדרס: "שאלה אחת בכל תור"</td><td>כל המודלים</td></tr>
-      <tr><td><code>guidelines/think-twice-adult.md</code></td><td>הנחיות ייחודיות, שגוברות על העל בלוק מול בלוק (<code>guidelines.js</code>)</td><td>המודל</td></tr>
+      <tr><td><code>guidelines/think-twice-adult.md</code> · <code>think-twice-parents.md</code></td><td>הנחיות ייחודיות, שגוברות על העל בלוק מול בלוק (<code>guidelines.js</code>)</td><td>המודל</td></tr>
       <tr><td><code>agents/stage1–7</code></td><td>סוכן לכל שלב</td><td>המודל</td></tr>
       <tr><td><code>evaluator.md</code></td><td>חוזה הדיווח, והגדרות ה-slots</td><td>מעורב: יפוצל (תכנית 3.4)</td></tr>
       <tr><td><code>registrar.md</code></td><td>הרשם</td><td>מעורב: יפוצל</td></tr>
       <tr><td><code>resistance.md</code> · <code>summary.md</code> · <code>opener.md</code> · <code>board.md</code></td><td>התנגדויות, סיכום, פתיח מעוגן, לוח</td><td>כל המודלים</td></tr>
       <tr><td><code>forbidden.js</code></td><td>הרשימה השחורה, בכל פרומפט</td><td>כל המודלים. שורת הז'רגון — רק למבוגרים</td></tr>
       <tr><td><code>judge.md</code></td><td>רובריקת השופט. לא נשלחת לדפדפן</td><td>המודל</td></tr>
+      <tr><td><code>parents/</code></td><td>ראיון ההורים: שמונה סוכנים, מעריך, סיכום, פתיח, לוח, התנגדויות, רשימה שחורה, ו-<code>catalog.md</code> (מאפיין · צורך · כלי) שנכנס לשלבים 3, 4, 6 ו-8. אין <code>registrar</code></td><td>מודל ההורים · טיוטה</td></tr>
     </tbody>
   </table></div>
-  <p><strong>טביעות האצבע</strong> (<code>tests/core/prompt-fingerprint.test.js</code>) מצמידות כל פרומפט מורכב בייט לבייט. כך מיפוי שגוי, או בלוק שזז, נתפסים גם כשכל הבדיקות האחרות ירוקות.</p>
+  <p><strong>טביעות האצבע</strong> (<code>tests/core/prompt-fingerprint.test.js</code>, ו-<code>prompt-fingerprint-parents.test.js</code> להורים) מצמידות כל פרומפט מורכב בייט לבייט. כך מיפוי שגוי, או בלוק שזז, נתפסים גם כשכל הבדיקות האחרות ירוקות.</p>
 </section>
 
 <section id="map" aria-labelledby="h-map">
@@ -347,6 +586,7 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
     <li>לכל קובייה <code>scale</code>: ‏<code>episode</code> (פעימה באירוע) או <code>ongoing</code> (מצב עומד, ברצועת רקע).</li>
     <li>שלוש עמודות, דמויות · פעולות · משמעות, מתחת לרצועת הרקע (רן, 5.9.2026).</li>
     <li>מה שלא אושר (<code>confirmed:false</code>) לא מצויר. ‏slot חסום לא מגיע למפה לעולם (<code>validatePack</code>).</li>
+    <li>בראיון ההורים אין מפה: אין <code>map</code> בחבילה, ואין רשם שיבנה את הגרף. האוצר שממנו המפה נבנית: המבט "יישויות וקשתות" למעלה.</li>
   </ul>
 </section>
 
@@ -356,7 +596,7 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
   <ul>
     <li><strong>חדש ב-10.10.2026:</strong> אחרי עצירה, מסך הסיום מציג שוב את קו העזרה, <strong>ולא נסגר מעצמו</strong>, כדי שהרענון לא ימחק את קו העזרה מהמסך. קובץ שנשמר אחרי עצירה נפתח לקריאה בלבד. ברירת מחדל זמנית עד הכרעת נטלי (questions-for-natali §16).</li>
     <li><strong>נמצא ב-10.10.2026, לא שונה:</strong> אחרי עצירה, הודעה בלי מילת מצוקה עוברת את הבדיקה, והמראיין עונה כרגיל. אף שלב לא מתקדם. מה צריך לקרות במקום זה — §16, שאלה 5.</li>
-    <li>תבניות הבטיחות הן של מבוגר על עצמו. לראיון ההורים נדרש פרופיל בטיחות משלו (סיכון לילד).</li>
+    <li>תבניות הבטיחות הן של מבוגר על עצמו. לראיון ההורים נדרש פרופיל בטיחות משלו: פגיעה בילד, ילד שאמר שהוא רוצה למות (שאלה 7 לנטלי). <strong>עד אז ראיון ההורים נפתח רק ב-Preview:</strong> השער נקבע בבנייה (<code>__PREVIEW_DEPLOYMENT__</code>, מ-<code>VERCEL_ENV</code>), ובכתובת הייצור הוא לא נפתח בשום מקרה <span class="tag">16.10</span></li>
   </ul>
 </section>
 
@@ -370,6 +610,7 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
       <tr><td>אחסון הדפדפן</td><td><strong>שום תוכן.</strong> רק סיסמת הגישה (לטאב) והעדפת המפה</td><td>—</td></tr>
       <tr><td>ה-proxy והפונקציות</td><td>בקשה אחת, בזיכרון. לוג טכני בלבד, בלי גוף</td><td>זמן הבקשה</td></tr>
       <tr><td>Anthropic</td><td>כל תור</td><td>לפי מדיניות החשבון. רן בודק "אפס שמירה"</td></tr>
+      <tr><td>שירות המייל (Resend)</td><td>הקובץ <strong>המוצפן</strong> כקובץ מצורף, וטקסט קבוע בלי השיחה. הכתובות לא נשמרות אצלנו</td><td>לפי המדיניות של Resend</td></tr>
       <tr><td>הקובץ אצל המשתמש</td><td>הראיון כולו, <strong>מוצפן</strong>, כולל הפערים והממצאים החסומים</td><td>באחריות המשתמש</td></tr>
       <tr><td>הייצוא הקריא</td><td>בודקים בלבד, במצב מדריך</td><td>עד שמצב מדריך יהפוך להרשאה</td></tr>
     </tbody>
@@ -382,12 +623,13 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
     <li><div><b>סוף</b><span>הראיון הסתיים (מסך הסיום נפתח לבד), או "סיום" באמצע (עם "חזרה לראיון").</span><span class="who">App.jsx</span></div></li>
     <li><div><b>חתימה</b><span><code>buildInterviewFile</code> ← POST ל-<code>/api/interview-file</code> ← AES-256-GCM על gzip של ה-JSON, הכותרת (format, v, kid) כ-AAD.</span><span class="who">sessionExport.js · adapters/interviewFile.js · server/interviewFile.js</span></div></li>
     <li><div><b>הורדה</b><span><code>think-twice-YYYY-MM-DD-HHMM.thinktwice</code>, <strong>רק בלחיצה על "הורדת הקובץ"</strong> (רן, 14.10.2026). יציאה בלי להוריד שואלת קודם. אין בקובץ שום טקסט קריא.</span><span class="who">EndScreen.jsx</span></div></li>
+    <li><div><b>מייל</b><span>במסך הסיום מקלידים את המייל שלך, ועוד אחד לבחירה (למשל של המטפל), ורואים אותם לאישור. הכתובות לא נשמרות בשום מקום. החלק מופיע רק כשמוגדר שירות מייל (14.10.2026).</span><span class="who">EndScreen.jsx · api/send-interview.js · server/mail.js</span></div></li>
     <li><div><b>מחיקה</b><span>"יציאה", או 5 דקות לפי השעון ← <code>location.reload()</code>, בלי אזהרת "לעזוב?". לא לפני שהשמירה הסתיימה או נכשלה.</span><span class="who">EndScreen.jsx · App.jsx</span></div></li>
     <li><div><b>פתיחה</b><span>"פתיחת קובץ" ← השרת מפענח ← <code>upgradeSession</code> מריץ הסבות: קודם פורמט, אחר כך גרסת המודל ← צפייה.</span><span class="who">sessionExport.js · packs/*/migrations.js</span></div></li>
     <li><div><b>המשך</b><span>ראיון שלא הסתיים נפתח ישר להמשך, עם שדה הכתיבה (רן, 14.10.2026). שהסתיים, או שנעצר בבטיחות: קריאה בלבד.</span><span class="who">Chat.jsx</span></div></li>
   </ol>
   <div class="two">
-    <div class="card"><h3>המפתחות</h3><p><code>INTERVIEW_FILE_KEYS="k1:&lt;b64&gt;,k2:&lt;b64&gt;"</code>. האחרון מצפין, כולם פותחים. <strong>מפתח לא נמחק לעולם.</strong> מפתח חדש: עמוד <a href="https://claude.ai/artifact/Uh3xzBR4Moovp4LxuHN9mJ">מפתח לקובץ הראיון</a>, שיוצר אותו בדפדפן (<code>docs/file-key-generator.html</code>), וגיבוי במנהל הסיסמאות של רן.</p><p><span class="tag open">⏸️ טרם הוגדר ב-Vercel</span></p></div>
+    <div class="card"><h3>המפתחות</h3><p><code>INTERVIEW_FILE_KEYS="k1:&lt;b64&gt;,k2:&lt;b64&gt;"</code>. האחרון מצפין, כולם פותחים. <strong>מפתח לא נמחק לעולם.</strong> מפתח חדש: עמוד <a href="https://claude.ai/artifact/Uh3xzBR4Moovp4LxuHN9mJ">מפתח לקובץ הראיון</a>, שיוצר אותו בדפדפן (<code>docs/file-key-generator.html</code>), וגיבוי במנהל הסיסמאות של רן.</p><p><span class="tag">✅ הוגדר ואומת ב-Preview, 14.10.2026</span></p></div>
     <div class="card"><h3>תאימות לאחור</h3><p><code>SESSION_FORMAT</code> + <code>FORMAT_MIGRATIONS</code>, וצעד ב-<code>migrations.js</code> לכל העלאת גרסת מודל. קובץ קפוא לכל גרסה שיצאה ב-<code>tests/fixtures/interview-files/</code>. בדיקה נכשלת אם חסר צעד או קובץ.</p></div>
   </div>
   <p>פירוט מלא, כולל מסלול המטפל המתוכנן: <a href="end-flow-plan.md">end-flow-plan.md</a>.</p>
@@ -401,7 +643,10 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
       <tr><td><code>ANTHROPIC_API_KEY</code></td><td>Vercel, שרת בלבד</td><td>מפתח המודל. ה-proxy מזריק אותו</td></tr>
       <tr><td><code>APP_PASSWORD</code></td><td>Vercel, שרת בלבד</td><td>הסיסמה המשותפת. ייכבה בשלב 4</td></tr>
       <tr><td><code>VITE_REQUIRE_PASSWORD</code></td><td>build</td><td>רק אם לשאול מראש. השרת מחליט אם הדלת נעולה</td></tr>
-      <tr><td><code>INTERVIEW_FILE_KEYS</code></td><td>Vercel, שרת בלבד</td><td>מפתחות קובץ הראיון. <strong>חסר היום</strong></td></tr>
+      <tr><td><code>INTERVIEW_FILE_KEYS</code></td><td>Vercel, שרת בלבד</td><td>מפתחות קובץ הראיון. הוגדר ואומת ב-Preview (14.10.2026)</td></tr>
+      <tr><td><code>RESEND_API_KEY</code> · <code>MAIL_FROM</code></td><td>Vercel, שרת בלבד</td><td>שליחת הקובץ במייל. <strong>טרם הוגדרו</strong>, ובלעדיהם החלק של המייל לא מופיע במסך הסיום</td></tr>
+      <tr><td><code>VERCEL_ENV</code></td><td>Vercel, אוטומטי, בזמן הבנייה</td><td><code>preview</code> פותח את ראיון ההורים. אין מה להגדיר</td></tr>
+      <tr><td><code>VITE_MODEL</code></td><td>build</td><td>איזה מודל האפליקציה קוראת. ברירת המחדל <code>claude-haiku-4-5</code> (רן, 28.9.2026)</td></tr>
       <tr><td><code>VITE_USE_MOCK</code></td><td>פיתוח ובדיקות</td><td><code>true</code> ← מודל מדומה. שרת הפיתוח מריץ גם את פונקציית הקובץ, עם מפתח זמני</td></tr>
     </tbody>
   </table></div>
@@ -410,7 +655,7 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
 
 <section id="tests" aria-labelledby="h-tests">
   <h2 id="h-tests">בדיקות ושערים</h2>
-  <p>989 בדיקות ב-10.10.2026 (986 עוברות, 3 מדולגות — הרצות חיות). המרכזיות, ומה כל אחת שומרת:</p>
+  <p>1063 בדיקות ב-16.10.2026 (1060 עוברות, 3 מדולגות — הרצות חיות). המרכזיות, ומה כל אחת שומרת:</p>
   <div class="tablewrap"><table>
     <thead><tr><th>בדיקה</th><th>שומרת על</th></tr></thead>
     <tbody>
@@ -424,9 +669,14 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
       <tr><td><code>tests/api/interview-file.test.js</code></td><td>שום טקסט קריא בקובץ, חסימה של שינוי, החלפת מפתח, אין תוכן בלוג</td></tr>
       <tr><td><code>tests/ui/interview-file.test.js</code></td><td>קובץ מכל גרסה שיצאה נפתח, ואין גרסה בלי צעד הסבה</td></tr>
       <tr><td><code>tests/ui/end-screen.test.js</code></td><td>מסך הסיום, ההתנהגות אחרי עצירה, ואין אחסון בדפדפן</td></tr>
+      <tr><td><code>tests/api/send-interview.test.js</code></td><td>רק קובץ אמיתי של הפריסה, נמען אחד לכל מייל ועד שניים, אין כתובות בלוג</td></tr>
+      <tr><td><code>tests/core/closing.test.js</code></td><td>שלב הסגירה: מעבר מההכרעה, סגירה רק באישור, סל ריק, ראיון שלם בלי רשם</td></tr>
+      <tr><td><code>tests/core/parents-pack.test.js</code></td><td>הכללים של ראיון ההורים, לפי ערך: שלבים, slot חסום, רכיבים, מגנים</td></tr>
+      <tr><td><code>tests/core/findings-memory.test.js</code></td><td>הזיכרון של ראיון בלי רשם, ושהחסום לא מגיע לתצוגה</td></tr>
+      <tr><td><code>tests/ui/interview-choice.test.js</code></td><td>הכתובת בוחרת ראיון, וההורים לא נפתחים איפה שאסור</td></tr>
     </tbody>
   </table></div>
-  <p><code>/ship-check</code> לפני כל שחרור: build, גבול הסודות (אין <code>sk-ant</code> ב-bundle), ארבע הפונקציות קיימות, ותור חי אחד בדפדפן.</p>
+  <p><code>/ship-check</code> לפני כל שחרור: build, גבול הסודות (אין <code>sk-ant</code> ב-bundle), חמש הפונקציות קיימות, ותור חי אחד בדפדפן.</p>
 </section>
 
 <section id="machine" aria-labelledby="h-machine">
@@ -447,8 +697,8 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
   <h2 id="h-planned">מה מתוכנן ולא בנוי</h2>
   <div class="two">
     <div class="card"><h3>חשבונות <span class="tag plan">שלב 4</span></h3><p>מנהל מוסיף משתמשים · הרשאה לכל מודל · כניסה באימייל וסיסמה · תנאי שימוש · קוד אימות · שחזור · מכסה. האימייל המוצפן הוא הנתון המזהה היחיד. תכנית בדיקות: <a href="onboarding-test-plan.md">onboarding-test-plan.md</a>.</p></div>
-    <div class="card"><h3>מייל ומטפל <span class="tag plan">שלב 4.7</span></h3><p>הקובץ המוצפן נשלח לכתובת שבחשבון, ולכתובת נוספת לבחירה. חשבון מטפל פותח לקריאה בלבד רק קובץ שנשלח אליו (טביעת HMAC בתוך ההצפנה).</p></div>
-    <div class="card"><h3>ראיון ההורים <span class="tag plan">שלב 3</span></h3><p>חבילה שנייה, <code>think-twice-parent</code>. נטלי שולחת השבוע מודל מעודכן. צרכי מנוע: "self" כפרמטר, מגדר פנייה, פרופיל בטיחות, ז'רגון לפי מודל. תכנית: <a href="model-update-test-plan.md">model-update-test-plan.md</a>.</p></div>
+    <div class="card"><h3>מטפל <span class="tag plan">שלב 4.7</span></h3><p>השליחה במייל כבר בנויה, עם כתובות שמוקלדות (14.10). עם החשבונות: גם לכתובת שבחשבון. חשבון מטפל פותח לקריאה בלבד רק קובץ שנשלח אליו (טביעת HMAC בתוך ההצפנה).</p></div>
+    <div class="card"><h3>ראיון ההורים <span class="tag open">טיוטה ב-QA · 16.10</span></h3><p>בנוי כחבילה <code>think-twice-parents</code>, שמונה שלבים לשבעת הצעדים של נטלי, ורץ ב-Preview בלבד. <strong>חסר לפני בודקים:</strong> אישור נטלי למבנה, שאלות 2, 3, 6–9 ו-11, ופרופיל הבטיחות (שאלה 7). התכנית ותשובות נטלי: <a href="parent-app/interview-model.md">parent-app/interview-model.md</a>.</p></div>
     <div class="card"><h3>עורך ראיונות <span class="tag plan">שלב 5</span></h3><p>ממשק מעל החבילה, עם <code>validatePack</code> כשער שמירה. תנאים מוקדמים: הגדרות slot כנתונים, ומזהי שלב יציבים.</p></div>
   </div>
 </section>
@@ -461,14 +711,327 @@ footer { grid-column: 1 / -1; color: var(--muted); font-size: .85rem; border-top
     <li><a href="onboarding-test-plan.md">onboarding-test-plan.md</a> · הצטרפות, לכל סוגי ההרשאות</li>
     <li><a href="model-update-test-plan.md">model-update-test-plan.md</a> · עדכון מודל, ועדכון קבצים משותפים</li>
     <li><a href="privacy-security-research.md">privacy-security-research.md</a> · פרטיות ואבטחה (לאימות משפטי)</li>
-    <li><a href="architecture-dashboard-v2.html">architecture-dashboard-v2.html</a> · הרשם, מחזור התור, צירי ה-Router, המילון</li>
-    <li><a href="../DEPLOY-STATUS.md">DEPLOY-STATUS.md</a> · מצב הפריסה, והגדרת <code>INTERVIEW_FILE_KEYS</code></li>
+    <li><a href="parent-app/interview-model.md">parent-app/interview-model.md</a> · ראיון ההורים: התכנית ותשובות נטלי · <a href="parent-app/trait-need-tool.md">trait-need-tool.md</a> · טבלת מאפיין · צורך · כלי · <a href="parent-app/research-review.md">research-review.md</a> · סקירת ספרות</li>
+    <li><a href="architecture-dashboard-v2.html">architecture-dashboard-v2.html</a> · v2, 18.9.2026: הרשם, מחזור התור, צירי ה-Router, המילון. הגרסה שלמעלה מחליפה אותו</li>
+    <li><a href="../DEPLOY-STATUS.md">DEPLOY-STATUS.md</a> · מצב הפריסה, המפתחות, המייל, והקישור לראיון ההורים</li>
   </ul>
 </section>
 
 </main>
 
-<footer>Think Twice · מסמך ארכיטקטורה v3 · נכתב מתוך הקוד בענף <code>claude/youthful-hamilton-40ef4m</code>, 10.10.2026. אם הוא נוגד את הקוד, הקוד הוא העובדה.</footer>
+<footer>Think Twice · מסמך ארכיטקטורה v3 · נכתב מתוך הקוד בענף <code>claude/youthful-hamilton-40ef4m</code>, 10.10.2026, ועודכן 16.10.2026. אם הוא נוגד את הקוד, הקוד הוא העובדה.</footer>
 </div>
+<script>
+(() => {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const brk = (s) => esc(s).replace(/_/g, '_<wbr>');
+  const pressOne = (group, btn) => group.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === btn)));
+
+  /* ── tabs ── */
+  const tabs = [...document.querySelectorAll('.vtabs [role="tab"]')];
+  const showTab = (tab, focus) => {
+    tabs.forEach((t) => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      t.tabIndex = on ? 0 : -1;
+      $(t.getAttribute('aria-controls')).hidden = !on;
+    });
+    if (focus) tab.focus();
+  };
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => showTab(t));
+    t.addEventListener('keydown', (e) => {
+      // RTL: the visual "next" tab is to the left.
+      const step = { ArrowLeft: 1, ArrowRight: -1, Home: -i, End: tabs.length - 1 - i }[e.key];
+      if (step === undefined) return;
+      e.preventDefault();
+      showTab(tabs[(i + step + tabs.length) % tabs.length], true);
+    });
+  });
+
+  /* ── 1 · overview: the two packs, as data (pack.js · prompts.js, 16.10.2026) ── */
+  const PACKS = {
+    adult: {
+      file: 'src/packs/think-twice-adult/pack.js',
+      where: 'ברירת המחדל · כל כתובת · Production ו-Preview',
+      stages: [
+        { name: 'עובדות', label: 'מה קרה', agent: 'stage1-intake', slots: ['trigger', 'timeline', 'actors', 'status', 'auto_reaction'], chips: [['c-gate', 'שער קאסט · actors']] },
+        { name: 'פרשנות', label: 'איך הבנת את זה', agent: 'stage2-interpretation', slots: ['causal', 'meaning', '!wound', '!adhd_pattern'], chips: [] },
+        { name: 'רגש', label: 'מה הרגשת', agent: 'stage3-feel', slots: ['emotion', 'intensity', 'past_echo'], chips: [['c-int', 'עוצמה']] },
+        { name: 'תגובה', label: 'איך הגבת', agent: 'stage4-react', slots: ['auto_reaction', 'planned_reaction'], chips: [] },
+        { name: 'פרשנות חלופית', label: 'זווית אחרת', agent: 'stage5-transform', slots: ['perspective', 'intention', 'alt_formulation', 're_emotion'], chips: [['c-int', 'עוצמה'], ['', 'דורש 2'], ['', 'מגן 15']] },
+        { name: 'חלופות', label: 'מה אפשר לעשות', agent: 'stage6-alternatives', slots: ['alternatives', 'zero_action', 'alt_from_transform'], chips: [['c-col', 'אוסף · סל']] },
+        { name: 'הכרעה', label: 'מה תבחר', agent: 'stage7-decision', slots: ['goal', 'board_presented', 'sharp_decision', 'package_test'], chips: [['c-dec', 'הכרעה · סוגרת'], ['', 'דורש 6']] },
+      ],
+      routing: 'מגן עומס 20 לכל שלב, 15 בשלב 5 · מיצוי 2 · סף רך 80%',
+    },
+    parents: {
+      file: 'src/packs/think-twice-parents/pack.js',
+      where: 'רק ‎?interview=parents‎, ורק ב-Preview · טיוטה לבדיקה',
+      stages: [
+        { name: 'אירוע', label: 'מה קרה', agent: 'stage1-event', slots: ['context', 'demand', 'child_behavior', 'parent_response', 'ending', 'setting_events'], chips: [['', 'מגן 7']] },
+        { name: 'התנהגות', label: 'מה ראינו', agent: 'stage2-behavior', slots: ['behavior_label', 'coping_frame'], chips: [['', 'מגן 4']] },
+        { name: 'מאפיין', label: 'מאיפה זה בא', agent: 'stage3-trait', slots: ['trait_link', 'parent_ownership'], chips: [['c-cat', '+ קטלוג'], ['', 'מגן 5']] },
+        { name: 'צורך', label: 'מה הוא היה צריך', agent: 'stage4-need', slots: ['child_need', 'child_feeling'], chips: [['c-cat', '+ קטלוג'], ['', 'מגן 5']] },
+        { name: 'ההורה', label: 'איפה זה פגש אותי', agent: 'stage5-parent', slots: ['parent_emotion', 'parent_thought_then', 'prognosis', '!parent_self', 'coping_style', 'gap_insight'], chips: [['c-int', 'עוצמה'], ['', 'מגן 6']] },
+        { name: 'חלופות', label: 'מה אפשר לעשות', agent: 'stage6-alternatives', slots: ['alternatives', 'need_match'], chips: [['c-col', 'אוסף · סל'], ['c-cat', '+ קטלוג'], ['', 'מגן 8']] },
+        { name: 'הכרעה', label: 'מה אעשה ברגע הבא', agent: 'stage7-decision', slots: ['goal', 'board_presented', 'sharp_decision', 'package_test'], chips: [['c-dec', 'הכרעה · מעבירה']] },
+        { name: 'תרגול', label: 'מה אתרגל', agent: 'stage8-practice', slots: ['recurring_situation', 'prevention_step', 'parent_practice', 'implementation', 'feasibility'], chips: [['c-close', 'סגירה'], ['c-cat', '+ קטלוג'], ['', 'מגן 6']] },
+      ],
+      routing: 'מגן עומס לכל שלב (7·4·5·5·6·8·—·6) · מיצוי 2 · סף רך 80% · בלי תלויות',
+    },
+  };
+
+  const REG = {
+    adult: `<h3>2 · הרשם <span class="tag">דלוק מאז 28.9</span><span class="ctllabel">קריאת מודל נפרדת · רצה לפני המראיין, בכל תור</span></h3>
+      <p>מפרק את מה שנאמר לגרף: זירה, פעימות, עמדות, רגשות, דמויות, קשתות, מכלים, פיצולים ותצפיות פערים. דלתא בלבד, לפי <code>id</code> יציב, אל <code>eventRecord</code>. המראיין מקבל את הסיפור המעודכן ושואל עליו. הרשם לא נותן ציונים, וכישלון שלו לא עוצר את התור.</p>
+      <p class="ctllabel"><code>registrar.js</code> · <code>registrar.md</code> · <code>REGISTRAR_ENABLED = true</code></p>`,
+    parents: `<h3>2 · בלי רשם <span class="tag open">ויתור מפורש</span><span class="ctllabel"><code>registrar: null</code> ב-<code>prompts.js</code></span></h3>
+      <p>אין גרף ואין איור. כדי שהמראיין יזכור מה כבר נאמר, הממצאים של כל השלבים (<code>findings</code>) נכנסים לפרומפט שלו תחת "מה נמסר עד עכשיו". ה-slot החסום <code>parent_self</code> מגיע רק למראיין עצמו, ולא לסיכום, לפתיח או ללוח.</p>
+      <p class="ctllabel">טקסט רשם חסר עדיין נדחה ב-<code>createEngine</code>: רק <code>null</code> מכובה.</p>`,
+  };
+
+  const drawArch = (key) => {
+    const p = PACKS[key];
+    const n = p.stages.length;
+    const grid = $('arch-grid');
+    grid.style.gridTemplateColumns = `repeat(${n}, minmax(0, 1fr))`;
+    const row = (label, cells) => `<div class="rowlab">${label}</div>${cells.join('')}`;
+    grid.innerHTML =
+      row('שלב · מה שהאדם רואה', p.stages.map((s, i) => `<div class="scell stage" role="cell"><b>${i + 1}</b>${esc(s.name)}<br><span style="color:var(--muted);font-size:.78rem">${esc(s.label)}</span></div>`)) +
+      row('הסוכן של השלב (prompts.js)', p.stages.map((s) => `<div class="scell agent" role="cell">${esc(s.agent)}.md</div>`)) +
+      row('slots (ה-Router קורא את הציונים שלהם)', p.stages.map((s) => `<div class="scell slots" role="cell">${s.slots.map((x) => x.startsWith('!') ? `<span class="slotname barred" title="barred">${brk(x.slice(1))}</span>` : `<span class="slotname">${brk(x)}</span>`).join('')}</div>`)) +
+      row('רכיבים וספים', p.stages.map((s) => `<div class="scell" role="cell"><div class="chips">${s.chips.length ? s.chips.map(([c, t]) => `<span class="chip ${c}">${esc(t)}</span>`).join('') : '<span class="chip" style="opacity:.5">—</span>'}</div></div>`));
+    $('arch-file').textContent = p.file;
+    $('arch-where').textContent = `${p.where} · ${p.routing}`;
+    const reg = $('arch-reg');
+    reg.innerHTML = REG[key];
+    reg.classList.toggle('off', key === 'parents');
+    $('w-reg').classList.toggle('idle', key === 'parents');
+    $('w-reg-off').hidden = key !== 'parents';
+  };
+  const archSeg = $('arch-pack');
+  archSeg.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-p]');
+    if (!b) return;
+    pressOne(archSeg, b);
+    drawArch(b.dataset.p);
+  });
+  drawArch('adult');
+
+  /* ── 2 · turn cycle ── */
+  // Each station: [kind, title, source, body (pre-built json html), caption]
+  const J = (s) => `<pre class="json">${s}</pre>`;
+  const k = (s) => `<span class="k">${s}</span>`;
+  const g = (s) => `<span class="g">${s}</span>`;
+  const w = (s) => `<span class="w">${s}</span>`;
+  const r = (s) => `<span class="r">${s}</span>`;
+  // A Hebrew comment inside an LTR block keeps its own direction.
+  const c = (s) => `<span class="c">${s.startsWith('// ') ? `// <bdi>${s.slice(3)}</bdi>` : `<bdi>${s}</bdi>`}</span>`;
+
+  const SAFE = (said) => ['safe', 'בדיקת בטיחות', 'src/safety · preCheck', J(`${k('"text"')}: "<bdi>${said}</bdi>"\n→ ${g('{ safe: true }')}  ${c('// אזכור מצוקה חריפה → עצירה, ושום מודל לא נקרא')}`), 'רצה לפני כל דבר אחר בתור, גם בלי שום תלות מוזרקת.'];
+
+  const SCENARIOS = {
+    clean: {
+      note: '<strong>① ראיון אישי · תור רגיל בשלב 1.</strong> הרשם כותב קודם, המראיין שואל על מה שנכתב, וה-Router משאיר אותנו בשלב. דוגמה מומצאת.',
+      stations: [
+        SAFE('קניתי בשר לשישי, ובבית ראיתי שהוא לא באיכות שסיכמנו. אשתי אמרה שזה תמיד ככה כשאני קונה'),
+        ['model', 'הרשם', 'registrar.js · registrar.md', J(`${k('"beats"')}: [ { ${k('"id"')}: "meat_arrived", ${k('"slot"')}: "stage1.trigger", ${k('"camera"')}: ${g('true')}, ${k('"scale"')}: "episode" },\n            { ${k('"id"')}: "wife_said", ${k('"actor"')}: "wife", ${k('"camera"')}: ${g('true')} } ],\n${k('"actors"')}: [ { ${k('"id"')}: "wife", ${k('"role"')}: "אשתו", ${k('"clear"')}: ${g('true')} } ],\n${k('"edges"')}: [ { ${k('"from"')}: "beat:meat_arrived", ${k('"to"')}: "beat:wife_said", ${k('"kind"')}: "then", ${k('"confirmed"')}: ${g('true')} } ]`), 'דלתא לפי id יציב, אל eventRecord. לא נותן ציונים.'],
+        ['model', 'בקשת המראיין', 'promptBuilder.js · buildSystemPrompt', J(`${k('stable')}  ${c('// נשמר בקאש')}  super.md + think-twice-adult.md · stage1-intake.md · evaluator.md · forbidden.js\n${k('volatile')}            הסיפור המעודכן מהרשם · STATE SUMMARY · ציוני השלב\n${k('messages')}            6 ההודעות האחרונות`), 'החלק היציב קודם, כדי שהקאש יחזיק.'],
+        ['model', 'מה המודל מחזיר', 'complete() → /api/anthropic/v1/messages', J(`{ ${k('"evaluation"')}: { ${k('"slots"')}: { "trigger": ${g('2')}, "timeline": ${w('1')}, "actors": ${w('1')} },\n                  ${k('"new_info"')}: ${g('true')}, ${k('"flag_avoidance"')}: false },\n  ${k('"message"')}: "ומה עשית באותו רגע, כשהיא אמרה את זה?" }`), '<code>evaluation</code> לפני <code>message</code>: חלץ, אז שאל.'],
+        ['code', 'פענוח ומיזוג', 'responseParser.js · state.js', J(`coverage.stage1 = { trigger: ${g('2')}, timeline: ${w('1')}, actors: ${g('2')} ${c('// נגזר מהמפה: כולם ברורים')}, status: 0, auto_reaction: 0 }\nmeta.noNewInfoStreak = 0`), 'ציון הקאסט נגזר בקוד מבהירות המפה, לא מהמספר של המודל.'],
+        ['code', 'ה-Router', 'router.js · route()', J(`${w('STAY')}  ${c('// 2 מתוך 5 ב-2, ו-status ב-0 — לא סף רך ולא מיצוי')}`), 'המודל מציע, הקוד מכריע.'],
+        ['model', 'סינתזה', '—', J(`${c('// אין: STAY מציג את message של המראיין כמו שהוא')}`), 'שאלה מכוונת אחת על המסך.'],
+      ],
+    },
+    end: {
+      note: '<strong>② ראיון אישי · סוף שלב.</strong> השלב מכוסה, ה-Router מבקש אישור לסיכום, ואחרי "מדויק" נפתח שלב 2 בפתיח מעוגן.',
+      stations: [
+        SAFE('ואז פשוט יצאתי מהמטבח ולא דיברנו עד הערב'),
+        ['model', 'הרשם', 'registrar.js', J(`${k('"beats"')}: [ { ${k('"id"')}: "left_kitchen", ${k('"slot"')}: "stage1.auto_reaction", ${k('"camera"')}: ${g('true')} },\n            { ${k('"id"')}: "silent_till_evening", ${k('"slot"')}: "stage1.status", ${k('"scale"')}: "ongoing" } ]`), ''],
+        ['model', 'בקשת המראיין', 'promptBuilder.js', J(`stage1-intake.md · הסיפור המעודכן · STATE SUMMARY`), ''],
+        ['model', 'מה המודל מחזיר', 'complete()', J(`${k('"slots"')}: { "trigger": ${g('2')}, "timeline": ${g('2')}, "actors": ${g('2')}, "status": ${g('2')}, "auto_reaction": ${g('2')} }`), ''],
+        ['code', 'פענוח ומיזוג', 'state.js', J(`coverage.stage1 → ${g('כל החמישה ב-2')}`), ''],
+        ['code', 'ה-Router', 'router.js', J(`{ ${k('decision')}: ${g('"REQUEST_CONFIRMATION"')}, ${k('nextStage')}: 2, ${k('reason')}: "full_coverage" }\nmeta.awaitingConfirmation = true`), 'כיסוי מלא מעביר לבד. אחרת: סף רך ומיצוי, או מגן העומס.'],
+        ['model', 'סינתזה: סיכום, ואז פתיח', 'summary.md → ConfirmButtons → opener.md', J(`${k('summary')}  "בוא נוודא שהבנתי נכון — ... זה מדויק?"\n${c('// האדם לוחץ "מדויק"  →  confirmAndAdvance  →  currentStage = 2')}\n${k('opener')}   פתיח שהמודל מנסח ומעוגן בסיפור ${c('// ה-signpost הסטטי רק כגיבוי')}`), '"רוצה לתקן" במקום "מדויק" קונה חלון תיקון לפני שהסיכום מוצע שוב.'],
+      ],
+    },
+    nomem: {
+      note: '<strong>③ ראיון הורים · תור בשלב 6, בלי רשם.</strong> אין גרף. הזיכרון של המראיין הוא הממצאים של כל השלבים, שנכנסים לפרומפט שלו. דוגמה מומצאת.',
+      stations: [
+        SAFE('אולי לשבת לידה בעשר דקות הראשונות, עד שהיא נכנסת לזה'),
+        ['skip', 'הרשם', 'registrar: null', J(`${c('// לא נקרא. createEngine מקבל null כוויתור מפורש; טקסט חסר עדיין נדחה')}`), 'בלי גרף, בלי איור.'],
+        ['model', 'בקשת המראיין', 'promptBuilder.js · renderFindings', J(`${k('stable')}    super.md + think-twice-parents.md · stage6-alternatives.md + catalog.md · evaluator.md\n${k('volatile')}  ## מה נמסר עד עכשיו (hidden from user)\n          stage4.child_need: "שמישהו ישב איתה בהתחלה"\n          stage5.parent_self: "..." ${r('// רק כאן, במראיין. לא בסיכום, בפתיח או בלוח')}\n          ## STATE SUMMARY`), 'הממצאים נכנסים רק כשהרשם כבוי.'],
+        ['model', 'מה המודל מחזיר', 'complete()', J(`{ ${k('"evaluation"')}: { ${k('"slots"')}: { "alternatives": ${w('1')}, "need_match": ${w('1')} },\n                  ${k('"alternatives"')}: [ "לשבת לידה בעשר הדקות הראשונות" ] },\n  ${k('"message"')}: "..." }`), ''],
+        ['code', 'פענוח ומיזוג', 'state.js · basket', J(`basket += [ { text: "לשבת לידה בעשר הדקות הראשונות" } ]\ncoverage.stage6 = { alternatives: ${w('1')}, need_match: ${w('1')} }`), 'הסל הוא מה שהלוח של שלב 7 יציג.'],
+        ['code', 'ה-Router', 'router.js', J(`${w('STAY')}  ${c('// עוד לא מכוסה; מגן העומס של השלב: 8 שאלות')}`), ''],
+        ['model', 'סינתזה', '—', J(`${c('// אין')}`), ''],
+      ],
+    },
+    close: {
+      note: '<strong>④ ראיון הורים · שלב 8, הסגירה.</strong> ההכרעה בשלב 7 לא סגרה את הראיון אלא העבירה לתרגול. שלב הסגירה מוכן, ורק אישור הסיכום שלו מסיים.',
+      stations: [
+        SAFE('מחר בארבע אכין לה את השולחן מראש, ואשב לידה'),
+        ['skip', 'הרשם', 'registrar: null', J(`${c('// לא נקרא')}`), ''],
+        ['model', 'בקשת המראיין', 'promptBuilder.js', J(`stage8-practice.md + catalog.md · מה נמסר עד עכשיו · STATE SUMMARY`), ''],
+        ['model', 'מה המודל מחזיר', 'complete()', J(`${k('"slots"')}: { "recurring_situation": ${g('2')}, "prevention_step": ${g('2')}, "parent_practice": ${g('2')},\n           "implementation": ${g('2')}, "feasibility": ${g('2')} }`), ''],
+        ['code', 'פענוח ומיזוג', 'state.js', J(`coverage.stage8 → ${g('הכול ב-2')}`), ''],
+        ['code', 'ה-Router · closing', 'router.js', J(`{ ${k('decision')}: ${g('"REQUEST_CONFIRMATION"')}, ${k('nextStage')}: ${w('null')}, ${k('closes')}: ${g('true')} }\nmeta.awaitingConfirmation = true · meta.pendingClose = ${g('true')}`), 'שלב הסגירה לא נסגר לבד, גם לא במגן העומס.'],
+        ['model', 'סינתזה: הסיכום האחרון', 'summary.md → ConfirmButtons → EndScreen', J(`${k('summary')}  "בוא נוודא שהבנתי נכון — ... זה מדויק?"\n${c('// הכפתור אומר "מדויק, לסיום"')}\nconfirmAndAdvance → meta.sessionComplete = ${g('true')} ${c('// currentStage נשאר 8')}\n→ ${k('EndScreen')}: הקובץ המוצפן · מייל (כשמוגדר) · מחיקה ברענון`), '"רוצה לתקן" מנקה את pendingClose ומשאיר את הראיון פתוח.'],
+      ],
+    },
+  };
+
+  let flowKey = 'clean';
+  let shown = 1;
+  const drawFlow = () => {
+    const sc = SCENARIOS[flowKey];
+    $('flow-note').innerHTML = sc.note;
+    const total = sc.stations.length;
+    $('flow-stations').innerHTML = sc.stations.map(([kind, title, src, body, cap], i) => {
+      const cls = ['station'];
+      if (kind === 'safe') cls.push('safe');
+      if (kind === 'code') cls.push('code');
+      if (kind === 'skip') cls.push('skip');
+      if (i >= shown) cls.push('dim');
+      if (i === shown - 1) cls.push('hot');
+      return `${i ? '<div class="down" aria-hidden="true">↓</div>' : ''}<div class="${cls.join(' ')}"${i >= shown ? ' aria-hidden="true"' : ''}>
+        <div class="station-head"><span class="snum">${i}</span><b>${esc(title)}</b><span class="src">${esc(src)}</span></div>
+        ${body}${cap ? `<span class="ctllabel" style="font-weight:500">${cap}</span>` : ''}</div>`;
+    }).join('');
+    $('flow-hint').textContent = shown >= total ? 'סוף התור' : `תחנה ${shown - 1} מתוך ${total - 1}`;
+    $('flow-next').disabled = shown >= total;
+  };
+  const flowSeg = $('flow-sc');
+  flowSeg.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-k]');
+    if (!b) return;
+    pressOne(flowSeg, b);
+    flowKey = b.dataset.k;
+    shown = 1;
+    drawFlow();
+  });
+  $('flow-next').addEventListener('click', () => { shown += 1; drawFlow(); });
+  $('flow-all').addEventListener('click', () => { shown = SCENARIOS[flowKey].stations.length; drawFlow(); });
+  drawFlow();
+
+  /* ── 3 · router simulator — mirrors route() in src/core/router.js ── */
+  let rxKind = 'regular';
+  let rxSat = 1;
+  let rxGoal = 1;
+  const on = (id) => $(id).checked;
+
+  const decideRegular = (closing) => {
+    const cov = Number($('rx-cov').value);
+    const zero = on('rx-zero');
+    const soft = cov >= 80 && !zero;
+    const full = cov === 100 && !zero;
+    const covReady = full || (soft && rxSat >= 2);
+    const guard = on('rx-guard');
+    const cast = !closing && on('rx-cast');
+    const ready = (covReady && !cast) || guard;
+    // The same precedence as router.js: the guard names itself even when coverage is ready.
+    const reason = guard ? 'load_guard' : rxSat >= 2 ? 'exhausted' : 'full_coverage';
+    if (ready) {
+      if (!closing && on('rx-dep')) return ['STAY', 'hold', 'dependency_not_met', 'השלב הבא תלוי בשלב שעוד לא מוצה. הראיון נשאר, וממשיך לשאול כאן.'];
+      if (on('rx-floor')) return ['STAY', 'hold', 'correcting_summary', 'האדם אמר "רוצה לתקן". הסיכום לא מוצע שוב לפני שחלון התיקון עבר.'];
+      if (closing) return ['REQUEST_CONFIRMATION · closes: true', 'adv', reason, 'שלב הסגירה מוכן. מוצג סיכום, והכפתור אומר "מדויק, לסיום": רק האישור מסיים את הראיון.'];
+      return ['REQUEST_CONFIRMATION · nextStage', 'adv', reason, reason === 'load_guard' ? 'מגן העומס: מעבר כפוי, גם בלי מיצוי. עדיין דרך סיכום ואישור.' : 'השלב מוכן. מוצג סיכום לאישור, ואחרי "מדויק" נפתח השלב הבא בפתיח מעוגן.'];
+    }
+    if (cast && covReady) return ['STAY', 'stop', 'actors_unclear', 'שער הקאסט: הכיסוי מספיק, אבל דמות במפה לא ברורה. השאלה הבאה מבררת אותה.'];
+    return ['STAY', 'hold', '—', zero ? 'יש slot שעוד לא נגעו בו. סף רך דורש שכולם לפחות ב-1.' : cov < 80 ? 'פחות מ-80% מה-slots ב-2.' : 'הסף הרך עבר, אבל עוד אין שני תורות רצופים בלי מידע חדש.'];
+  };
+
+  const decideDecision = () => {
+    if (on('rx-merge')) return ['REOPEN · targetStage = האפשרויות', 'back', 'merge', '"גם וגם" אמיתי: חוזרים לשלב האפשרויות לנסח את השילוב כאפשרות אחת.'];
+    if (rxGoal >= 1 && !on('rx-board')) {
+      if (!on('rx-gathered') && on('rx-empty')) return ['REOPEN · targetStage = האפשרויות', 'back', 'empty_basket', 'הסל ריק, וההכרעה לא תלויה בשלב האפשרויות: חוזרים לאסוף, במקום להציג לוח ריק. (16.10.2026)'];
+      return ['SHOW_BOARD', 'adv', '—', 'היעד ידוע: הלוח מוצג, מתוך הסל, בקריאת מודל נפרדת (board.md).'];
+    }
+    const vague = on('rx-vague');
+    if (!vague && on('rx-decided')) {
+      if (on('rx-last')) return ['SESSION_COMPLETE', 'adv', '—', 'הכרעה חדה בשלב האחרון: הראיון נסגר ומסך הסיום נפתח.'];
+      if (on('rx-dfloor')) return ['STAY', 'hold', 'correcting_summary', 'חלון התיקון אחרי "רוצה לתקן".'];
+      return ['REQUEST_CONFIRMATION · nextStage', 'adv', 'decided', 'שלב סגירה בא אחרי ההכרעה: היא לא סוגרת, אלא מסכמת ומעבירה אליו. (16.10.2026)'];
+    }
+    if (vague) return ['STAY', 'stop', '—', 'הכרעה עמומה לעולם לא סוגרת. ממשיכים לחדד.'];
+    return ['STAY', 'hold', '—', rxGoal === 0 ? 'עוד אין יעד מנוסח: קודם מבררים מה רוצים שיקרה.' : 'הלוח הוצג, ועוד אין הכרעה חדה עם מבחן חבילה.'];
+  };
+
+  const ORDER = {
+    regular: 'סדר הבדיקות: בטיחות ← ממתין לאישור ← מוכנות (כיסוי ∧ קאסט, או מגן) ← תלות ← חלון תיקון ← אישור. אחרת: שער קאסט, או הישארות.',
+    decision: 'סדר הבדיקות: "גם וגם" ← יעד בלי לוח (סל ריק?) ← הכרעה חדה ולא עמומה ← שלב אחרון? ← תלות ← חלון תיקון ← העברה.',
+    closing: 'סדר הבדיקות: מוכנות (כיסוי, או מגן) ← חלון תיקון ← סיכום שסוגר. בלי תלות ובלי שער קאסט בשלב האחרון.',
+  };
+
+  const drawRouter = () => {
+    const cov = Number($('rx-cov').value);
+    $('rx-fill').style.width = `${cov}%`;
+    $('rx-covval').textContent = `${cov}% מה-slots ב-2`;
+    $('rx-regular').hidden = rxKind === 'decision';
+    $('rx-decision').hidden = rxKind !== 'decision';
+    $('rx-dep-wrap').hidden = rxKind === 'closing';
+    $('rx-cast').closest('label').hidden = rxKind === 'closing';
+    const [d, tone, reason, why] = rxKind === 'decision' ? decideDecision() : decideRegular(rxKind === 'closing');
+    const el = $('rx-d');
+    el.textContent = d + (reason !== '—' ? `  ·  reason: ${reason}` : '');
+    el.className = `d ${tone}`;
+    $('rx-why').textContent = why;
+    $('rx-order').textContent = ORDER[rxKind];
+  };
+
+  const segOf = (id, fn) => {
+    const seg = $(id);
+    seg.addEventListener('click', (e) => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      pressOne(seg, b);
+      fn(b);
+      drawRouter();
+    });
+  };
+  segOf('rx-kind', (b) => { rxKind = b.dataset.k; });
+  segOf('rx-sat', (b) => { rxSat = Number(b.dataset.v); });
+  segOf('rx-goal', (b) => { rxGoal = Number(b.dataset.v); });
+  segOf('rx-preset', (b) => {
+    const adult = b.dataset.p === 'adult';
+    $('rx-gathered').checked = adult;
+    $('rx-last').checked = adult;
+  });
+  document.querySelectorAll('#v-router input').forEach((i) => i.addEventListener('input', drawRouter));
+  drawRouter();
+
+  /* ── 4 · vocabulary (src/core/vocabulary.js · docs/event-vocabulary.md) ── */
+  const ENT = [
+    ['actor', 'שחקן', 'מי פעיל במאורע, כולל המרואיין (self).', 'האם עשה, רצה או הרגיש משהו בתוך המאורע? מי שרק הוזכר אינו שחקן.', ''],
+    ['beat', 'פעולה', 'צעד שמישהו נקט. גם אי-עשייה ("היא לא ענתה").', 'מבחן המצלמה. ולפיצול: אפשר לחלוק על אחד ולהסכים עם השני? ← שתי פעולות.', 'episode · ongoing'],
+    ['stance', 'עמדה', 'מה שחקן רצה, חתר אליו, או הבין.', 'אפשר להתווכח על זה? עמדה אפשר לסתור בעובדה, רגש אי אפשר.', 'want · goal · reading'],
+    ['emotion', 'רגש', 'מה שחקן הרגיש.', 'מבחן הגרנולריות: "עלבון" כן, "רע לי" לא.', 'situational · prior · trait'],
+    ['setting', 'זירה', 'הבמה: איפה, מתי, על רקע מה.', 'האם מצלמה הייתה קולטת את זה בלי לצלם אף אחד?', 'מקום · זמן · תקדים · תנאים'],
+    ['fork', 'פיצול', 'מה שהסיפור עצמו השאיר פתוח.', 'עובדה על העולם, לא פער בידע שלנו. לפחות שני ענפים.', ''],
+    ['group', 'מְכָל', 'קופסה סביב קבוצת פריטים.', 'חייב confirmed: קופסה היא טענה.', 'community · process · perspective'],
+  ];
+  const EDGE = [
+    ['then', 'רצף זמן: ואז', '"עברת בסלון" ◀ "שאלת ממתי הוחלט"', true],
+    ['because', 'סיבתיות: בגלל ש', '"היא לא ויתרה" ◀ "יצאת מהחדר"', true],
+    ['agent', 'שחקן ביצע פעולה', 'actor:wife ◀ "בחרה צימר"', false],
+    ['echo', 'דמיון למשהו מחוץ למאורע: ככה הרגשתי אז', '"עלבון" ◀ "כשמורים אמרו שאני לא משתדל"', false],
+    ['derives_from', 'גזירה: זה יצא מזה (מבחן החלחול)', '"לשאול מתי נוח לה" ◀ "היא רצתה רגע נעים"', false],
+    ['about', 'מושא: תודעה על משהו בתוך המאורע', '"עלבון" ◀ "מה שהיא ענתה"', false],
+    ['despite', 'ניגוד: קרה למרות', '"הלכת לקניות" ◀ "גב תפוס"', false],
+    ['alternative_to', 'במקום: המתמודד ← המכהן. מקשרת, לא מדרגת', '"לשאול מתי נוח" ◀ "יצאת מהחדר"', false],
+  ];
+  const AX = [
+    ['source', 'ייחוס', 'stated · attributed · inferred · unknown', 'מבחן הבעלות: inferred = המראיין הציע, ונשאר כך עד שהמרואיין מאמץ במילים שלו.'],
+    ['0 · 1 · 2 · U', 'ודאות', '0 · 1 · 2 · U', 'משקל, לא שער (רן, 5.9): 2 מלא · 1 מקווקו · 0 ו-U לא מצוירים.'],
+    ['scale', 'קצב', 'episode · ongoing', 'מצב מול מאורע, לא משך: גב שתפס הבוקר הוא ongoing אם החזיק לאורך כל האירוע.'],
+  ];
+  $('vocab-ent').innerHTML = ENT.map(([id, he, what, test, sub]) => `<div class="vcard"><h3>${he} <code>${id}</code></h3><span>${what}</span><span class="test">${test}</span>${sub ? `<span class="ex"><code>${sub}</code></span>` : ''}</div>`).join('');
+  $('vocab-edge').innerHTML = EDGE.map(([id, what, ex, orders]) => `<div class="vcard"><h3><code>${id}</code>${orders ? '<span class="tag">קובעת סדר</span>' : ''}</h3><span>${what}</span><span class="ex">${ex}</span></div>`).join('');
+  $('vocab-axis').innerHTML = AX.map(([id, he, vals, what]) => `<div class="vcard"><h3>${he} <code>${id}</code></h3><span class="ex"><code>${vals}</code></span><span>${what}</span></div>`).join('');
+})();
+</script>
 </body>
 </html>
