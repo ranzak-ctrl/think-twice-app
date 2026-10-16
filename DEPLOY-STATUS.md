@@ -180,6 +180,8 @@ curl -s https://<url>/assets/<bundle>.js | grep -c "sk-ant"       # 0 = אין �
 
 **משתני סביבה נדרשים ב-Vercel** (Production + Preview): `ANTHROPIC_API_KEY` · `APP_PASSWORD` · `VITE_REQUIRE_PASSWORD=1` · `INTERVIEW_FILE_KEYS` (הוגדר ואומת ב-Preview, 14.10.2026).
 
+**ראיון ההורים ב-QA (16.10.2026):** אותה פריסה, עם `?interview=parents` בסוף הכתובת — למשל `https://think-twice-git-claude-youthful-hamilton-40ef4m-think-twice1.vercel.app/?interview=parents`. בלי הפרמטר נפתח ראיון המבוגרים, כמו תמיד. אין משתנה סביבה חדש. **טיוטה:** נטלי עוד לא אישרה, ולא לבודקים. **נפתח רק ב-Preview** (וב-`npm run dev`): בייצור הפרמטר מתעלם ונפתח ראיון המבוגרים, עד שיהיה לראיון ההורים פרופיל בטיחות משלו — פגיעה בילד, ילד שאמר שהוא רוצה למות (interview-model §7, שאלה 7 של נטלי). השער נקבע בבנייה מ-`VERCEL_ENV` (`vite.config.js`).
+
 **שליחה במייל (14.10.2026; טרם הוגדר):** `RESEND_API_KEY` (Secret) ו-`MAIL_FROM`, שניהם ב-Production וב-Preview, לא `VITE_`. בלעדיהם החלק של המייל פשוט לא מופיע במסך הסיום.
 1. נרשמים ל-resend.com עם `ranzak@gmail.com` (עיקרון הברזל).
 2. API Keys ← Create API Key, בשם `think-twice`, בהרשאת Sending access. שומרים במנהל הסיסמאות.
