@@ -11,7 +11,7 @@ import EndScreen from './EndScreen.jsx';
 import { Logo, Download, Upload, Gauge, MapSketch, Exit } from './icons.jsx';
 import { importState } from '../core/state.js';
 // The interview — pack, texts and model adapter, composed once (interview.js).
-import { interview, interviewMigrations } from './interview.js';
+import { interview, interviewMigrations, interviewCopy } from './interview.js';
 import {
   buildSessionExport,
   buildInterviewFile,
@@ -66,7 +66,9 @@ const openRefusal = (r) => (OPEN_REFUSAL[r.reason ?? r.error] ?? (() => 'לא ה
 // What is left is what the interviewer actually says first: exactly one
 // directed question, which is what the turn-lint asks of every system turn.
 // The roadmap the preamble carries is interface copy and not bound by it.
-const OPENING_QUESTION = 'אז ספר לי — מה קרה?';
+// Both are per interview since the parents' interview joined (16.10.2026), and
+// live with its composition in interview.js.
+const OPENING_QUESTION = interviewCopy.opening;
 
 // Messages carry a timestamp so the chat can show one; `at` is additive and
 // ignored by the core (formatHistory maps role/content only), so older exports
@@ -282,6 +284,9 @@ export default function App({ onUnauthorized }) {
     // fires once (a side effect inside an updater double-fires under StrictMode).
     const advanced = interview.confirmAndAdvance(state);
     setState(advanced);
+    // The closing stage's summary: confirming it ended the interview, so there is
+    // no next stage to open — the end screen opens on its own.
+    if (advanced.meta.sessionComplete) return;
     setLoading(true);
     try {
       const { nextState, message, failure } = await interview.generateStageOpener(advanced, history);
@@ -554,6 +559,7 @@ export default function App({ onUnauthorized }) {
         <header className="header">
           <div className="brand">
             <Logo />
+            {interviewCopy.badge && <span className="interview-badge">{interviewCopy.badge}</span>}
           </div>
 
           <div className="header-spacer" />
@@ -664,6 +670,8 @@ export default function App({ onUnauthorized }) {
             onConfirm={handleConfirm}
             onReject={handleReject}
             viewing={viewing}
+            preamble={interviewCopy.preamble}
+            closing={Boolean(state.meta.awaitingConfirmation && state.meta.pendingClose)}
           />
           {mapOpen && <StoryMap map={map} />}
           <StageRail

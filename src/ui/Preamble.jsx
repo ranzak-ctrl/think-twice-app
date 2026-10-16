@@ -20,13 +20,9 @@
 // Bound by the interface rules, not the conversational lint: it is allowed the
 // roadmap the turn-lint keeps out of a turn.
 
-export default function Preamble() {
-  return (
-    <p className="preamble">
-      אם קרה משהו שהסעיר אותך והוא עדיין רץ לך בראש — כאן המקום לעבור עליו לאט.
-      נתחיל ממה שקרה בפועל, נמשיך להבין למה זה תפס אותך ככה, ונתקדם יחד אל
-      הנקודה שתוכל/י לבחור את התגובה הכי נכונה עבורך. אני מוביל, שואל שאלה אחת
-      בכל פעם, ובסוף הראיון תוכל/י לקבל החלטה מושכלת.
-    </p>
-  );
+//
+// The words are per interview since the parents' interview joined (16.10.2026):
+// they live with its composition (src/ui/interview.js), and this only places them.
+export default function Preamble({ text }) {
+  return <p className="preamble">{text}</p>;
 }

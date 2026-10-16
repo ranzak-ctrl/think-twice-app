@@ -88,6 +88,12 @@ export default defineConfig(({ mode }) => {
     plugins: [react(), interviewFileDev(env)],
     define: {
       __APP_VERSION__: JSON.stringify(APP_VERSION),
+      // True only in a Vercel Preview build (the QA link). The parents' interview
+      // opens there and nowhere else until it has a safety profile of its own
+      // (src/ui/interview.js). A boolean, not the environment's name: a local
+      // production build and Vercel's production build both carry `false`, so
+      // /ship-check's bundle fingerprint still matches between them.
+      __PREVIEW_DEPLOYMENT__: JSON.stringify(process.env.VERCEL_ENV === 'preview'),
     },
     server: {
       proxy: {

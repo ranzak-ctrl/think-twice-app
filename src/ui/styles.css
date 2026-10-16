@@ -166,6 +166,20 @@ button {
   direction: ltr;
 }
 
+/* Which interview this page runs, beside the logo — only for one that is not the
+   default (src/ui/interview.js). The brand row is LTR (above), so it sits after
+   the lockup on screen; the text itself stays RTL. */
+.interview-badge {
+  direction: rtl;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 10px;
+  white-space: nowrap;
+}
+
 .brand-mark {
   display: block;
   /* The ratio travels with the file: each export has its own line weight, and a

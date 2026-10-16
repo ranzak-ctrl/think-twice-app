@@ -30,6 +30,10 @@ export default function Chat({
   // read — `viewing` says whether it ended or was stopped. An unfinished one
   // opens with the composer.
   viewing = null,
+  // The interview's own preamble (src/ui/interview.js), shown until the first answer.
+  preamble = '',
+  // The summary awaiting confirmation is the last one: confirming it ends the interview.
+  closing = false,
 }) {
   const [input, setInput] = useState('');
   const [showJump, setShowJump] = useState(false);
@@ -109,7 +113,7 @@ export default function Chat({
           something that was said. It shows only while nobody has answered yet
           (Ran, 23.8) — once the interview is running, the person has read it,
           and it would hold a third of the window for the rest of the session. */}
-      {atStart && <Preamble />}
+      {atStart && preamble && <Preamble text={preamble} />}
 
       <div className="stream">
         <div className="scroller" ref={scrollerRef} onScroll={handleScroll}>
@@ -174,7 +178,7 @@ export default function Chat({
       </div>
 
       {awaitingConfirmation && !viewing && (
-        <ConfirmButtons onConfirm={onConfirm} onReject={onReject} />
+        <ConfirmButtons onConfirm={onConfirm} onReject={onReject} closing={closing} />
       )}
 
       {viewing ? (
@@ -200,7 +204,7 @@ export default function Chat({
               // ahead; only sending is gated. Confirmation is a real gate.
               disabled={awaitingConfirmation}
               placeholder={
-                awaitingConfirmation ? 'אשר את הסיכום כדי להמשיך' : 'כתוב כאן…'
+                awaitingConfirmation ? (closing ? 'אשר את הסיכום כדי לסיים' : 'אשר את הסיכום כדי להמשיך') : 'כתוב כאן…'
               }
               aria-label="הודעה"
             />
