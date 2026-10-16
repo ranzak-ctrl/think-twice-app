@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { formatSelfOther } from '../core/kpi.js';
 import { castOf, intensityStages, intensityKey } from '../core/pack.js';
 import { Close } from './icons.jsx';
-import { DEFAULT_MODEL } from '../adapters/model.js';
+import { DEFAULT_MODEL, chooseModel } from '../adapters/model.js';
 
 // The stages, their working names, the cast's slot and where intensity is measured
 // are the interview's — read from its pack, so the panel shows whichever interview
@@ -81,9 +81,10 @@ const RATES = {
   'claude-sonnet-4-6': () => ({ in: 3, out: 15 }),
   'claude-opus-4-8': () => ({ in: 5, out: 25 }),
   'claude-haiku-4-5': () => ({ in: 1, out: 5 }),
+  'claude-sonnet-5-5': () => ({ in: 2, out: 10 }),
 };
 
-const MODEL_ID = import.meta.env.VITE_MODEL ?? DEFAULT_MODEL;
+const MODEL_ID = chooseModel();
 
 function rates() {
   return (RATES[MODEL_ID] ?? RATES[DEFAULT_MODEL])();

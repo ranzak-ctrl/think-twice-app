@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { complete } from '../../src/adapters/model.js';
+import { complete, chooseModel, DEFAULT_MODEL, PREVIEW_MODEL } from '../../src/adapters/model.js';
 
 // JSON-stability retry (dev-plan §148). These tests force the real (network) path
 // with VITE_USE_MOCK=false and a stubbed fetch, then verify the adapter retries a
@@ -446,5 +446,88 @@ describe('adapter complete() — thinking is opted out per model family', () => 
     const body = bodyOf(fetchStub);
     expect(body.max_tokens).toBe(8192);
     expect(body).not.toHaveProperty('thinking');
+  });
+});
+
+// Ran, 16.10.2026: the QA link (a Vercel Preview build) runs on Sonnet 5.5;
+// production keeps Haiku. Sonnet 5.5 rejects `disabled` thinking with a 400 — its
+// thinking-off setting is `between_tools` — and its safety classifiers can decline
+// a turn, which must not be retried as if it were broken JSON.
+describe('adapter complete() — Sonnet 5.5 on the QA link', () => {
+  beforeEach(() => {
+    vi.stubEnv('VITE_USE_MOCK', 'false');
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  const bodyOf = (fetchStub) => JSON.parse(fetchStub.mock.calls[0][1].body);
+
+  it('names Sonnet 5.5 in a Preview build, Haiku in production, and VITE_MODEL over both', () => {
+    expect(PREVIEW_MODEL).toBe('claude-sonnet-5-5');
+    expect(DEFAULT_MODEL).toBe('claude-haiku-4-5');
+    expect(chooseModel({ env: {}, preview: true })).toBe('claude-sonnet-5-5');
+    expect(chooseModel({ env: {}, preview: false })).toBe('claude-haiku-4-5');
+    expect(chooseModel({ env: { VITE_MODEL: 'claude-sonnet-5' }, preview: true })).toBe('claude-sonnet-5');
+  });
+
+  it('a test run, like production, is not a Preview build', () => {
+    expect(chooseModel({ env: {} })).toBe('claude-haiku-4-5');
+  });
+
+  it('turns thinking off with between_tools, alone in the field', async () => {
+    vi.stubEnv('VITE_MODEL', 'claude-sonnet-5-5');
+    const fetchStub = makeFetch([VALID]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    const r = await complete(ARGS);
+
+    const body = bodyOf(fetchStub);
+    expect(r.ok).toBe(true);
+    expect(body.model).toBe('claude-sonnet-5-5');
+    expect(body.thinking).toEqual({ type: 'between_tools' });
+    expect(body).not.toHaveProperty('output_config');
+    expect(body).not.toHaveProperty('temperature');
+  });
+
+  it('a declined turn ends at once, named as a refusal, with no interview content', async () => {
+    vi.stubEnv('VITE_MODEL', 'claude-sonnet-5-5');
+    const fetchStub = vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      headers: { get: () => 'rid123' },
+      json: async () => ({
+        content: [],
+        stop_reason: 'refusal',
+        stop_details: { type: 'refusal', category: 'general_harms', explanation: 'x' },
+        usage: { input_tokens: 10, output_tokens: 0 },
+      }),
+      text: async () => '',
+    }));
+    vi.stubGlobal('fetch', fetchStub);
+
+    const r = await complete(ARGS);
+
+    expect(fetchStub).toHaveBeenCalledTimes(1);
+    expect(r).toMatchObject({ ok: false, error: 'refusal' });
+    expect(r.failure).toMatchObject({ kind: 'refusal', detail: 'model declined (general_harms)' });
+    expect(JSON.stringify(r.failure)).not.toContain('hi');
+  });
+
+  it('a declined registrar call costs the person nothing: no message', async () => {
+    vi.stubEnv('VITE_MODEL', 'claude-sonnet-5-5');
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      headers: { get: () => null },
+      json: async () => ({ content: [], stop_reason: 'refusal', stop_details: null, usage: {} }),
+      text: async () => '',
+    })));
+
+    const r = await complete({ ...ARGS, mode: 'registrar' });
+
+    expect(r).toMatchObject({ ok: false, error: 'refusal', message: null });
+    expect(r.failure.detail).toBe('model declined (no category)');
   });
 });

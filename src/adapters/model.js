@@ -655,6 +655,22 @@ function describeUpstream(text) {
 // and `effort` are errors on this model; neither is sent from here.
 export const DEFAULT_MODEL = 'claude-haiku-4-5';
 
+// Ran, 16.10.2026: the QA link runs on Sonnet 5.5. In one QA run of the parents'
+// interview Haiku's Hebrew broke twice when it re-worded a parent ("וחוק לה" for
+// "ונרשה לה", "מתח מהצעדים" for "מפציר"). A Preview build — the QA link,
+// __PREVIEW_DEPLOYMENT__ from VERCEL_ENV in vite.config.js — names Sonnet 5.5;
+// production keeps Haiku, at half the price ($1/$5 against $2/$10). VITE_MODEL,
+// when set, still wins everywhere.
+export const PREVIEW_MODEL = 'claude-sonnet-5-5';
+
+const PREVIEW_BUILD = typeof __PREVIEW_DEPLOYMENT__ !== 'undefined' && __PREVIEW_DEPLOYMENT__ === true;
+
+// The one place the model is chosen — the adapter and the guide's cost meter both
+// read it, so the meter can never price a model the app is not calling.
+export function chooseModel({ env = import.meta.env, preview = PREVIEW_BUILD } = {}) {
+  return env?.VITE_MODEL ?? (preview ? PREVIEW_MODEL : DEFAULT_MODEL);
+}
+
 // Thinking has to be asked for, or not, per model family — sending the wrong
 // shape is a 400, and this call is a person's turn.
 //
@@ -663,9 +679,14 @@ export const DEFAULT_MODEL = 'claude-haiku-4-5';
 // buy nothing here, because this flow wants a compact JSON envelope and not
 // reasoning. Haiku 4.5 is the other shape — thinking is off unless asked for
 // with `{type:'enabled', budget_tokens}` — so omitting the field IS the opt-out,
-// and is the documented way to get no thinking on it.
+// and is the documented way to get no thinking on it. Sonnet 5.5 is a third
+// shape: `disabled` is a 400 there, and its thinking-off setting is
+// `between_tools`, which takes no other field and needs effort `high` or below —
+// the default, and nothing here sends another.
 function thinkingField(model) {
-  return model.startsWith('claude-haiku-') ? {} : { thinking: { type: 'disabled' } };
+  if (model.startsWith('claude-haiku-')) return {};
+  if (model === 'claude-sonnet-5-5') return { thinking: { type: 'between_tools' } };
+  return { thinking: { type: 'disabled' } };
 }
 
 export async function complete({
@@ -676,7 +697,7 @@ export async function complete({
   fetchImpl = fetch,
   apiUrl = '/api/anthropic/v1/messages',
 }) {
-  const model = import.meta.env.VITE_MODEL ?? DEFAULT_MODEL;
+  const model = chooseModel();
   // Mock mode is explicit: VITE_USE_MOCK=true (local dev + tests). Anything else
   // runs live against the serverless proxy, which holds the key server-side.
   const live = import.meta.env.VITE_USE_MOCK !== 'true';
@@ -775,6 +796,21 @@ export async function complete({
 
     const data = await res.json();
     usage = mergeUsage(usage, data.usage);
+    // A model with safety classifiers (Sonnet 5.5) can decline a turn: HTTP 200,
+    // stop_reason "refusal", and no usable reply. That is not a malformed reply —
+    // feeding it back behind REPAIR_NUDGE would only ask for the same decline twice
+    // more — so it ends here, under its own name. The category holds no interview
+    // content, so the report may carry it.
+    if (data.stop_reason === 'refusal') {
+      return {
+        ok: false,
+        error: 'refusal',
+        message: mode === 'registrar' ? null : 'שגיאה בעיבוד התשובה. נסה שוב.',
+        evaluation: null,
+        usage,
+        failure: { kind: 'refusal', status: res.status, requestId: lastRequestId, stage, mode: mode ?? 'turn', attempt, detail: `model declined (${data.stop_details?.category ?? 'no category'})` },
+      };
+    }
     // Pick the first block that carries text — never assume content[0]. Models
     // with thinking on (sonnet-5 default) lead with a `thinking` block, which
     // has no `text`; reading content[0].text there yields '' -> no_json.
