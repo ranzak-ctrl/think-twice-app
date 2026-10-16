@@ -224,7 +224,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   <p class="eyebrow">מסמך ארכיטקטורה · v3 · עודכן 16.10.2026 · ענף <code>claude/youthful-hamilton-40ef4m</code></p>
   <h1>Think Twice — ארכיטקטורת האפליקציה כולה</h1>
   <p class="lede">איך האפליקציה בנויה היום, מקצה לקצה: מה רץ בדפדפן, מה רץ בשרת, איך תור אחד עובר במנוע, איפה תוכן הראיון נמצא בכל רגע, ומה מתוכנן ועוד לא בנוי.</p>
-  <p class="meta">מחליף את v1 (<a href="architecture-dashboard.html">architecture-dashboard.html</a>, 15.8.2026) ואת v2 (<a href="architecture-dashboard-v2.html">architecture-dashboard-v2.html</a>, הרשם), שנשארים כמו שהם. מה חדש מאז v2: המנוע נפרד מחבילת הראיון (8–10.10.2026), הנחיות המראיין בשתי שכבות (9.10), ומסך הסיום עם הקובץ המוצפן (10.10). ומאז: שליחת הקובץ במייל (14.10), וראיון ההורים כטיוטה ב-QA, עם שלב סגירה אחרי ההכרעה ובלי רשם (16.10). ארבעת המבטים החזותיים של v2 מצוירים כאן מחדש לפי הקוד של היום. אם המסמך נוגד את הקוד, הקוד הוא העובדה (CLAUDE.md).</p>
+  <p class="meta">מחליף את v1 (<a href="architecture-dashboard.html">architecture-dashboard.html</a>, 15.8.2026) ואת v2 (<a href="architecture-dashboard-v2.html">architecture-dashboard-v2.html</a>, הרשם), שנשארים כמו שהם. מה חדש מאז v2: המנוע נפרד מחבילת הראיון (8–10.10.2026), הנחיות המראיין בשתי שכבות (9.10), ומסך הסיום עם הקובץ המוצפן (10.10). ומאז: שליחת הקובץ במייל (14.10), וראיון ההורים כטיוטה ב-QA, עם שלב סגירה אחרי ההכרעה ובלי רשם (16.10). ורשם ואיור לראיון ההורים: מתוכננים, וממתינים לאישור רן (16.10). ארבעת המבטים החזותיים של v2 מצוירים כאן מחדש לפי הקוד של היום. אם המסמך נוגד את הקוד, הקוד הוא העובדה (CLAUDE.md).</p>
   <ul class="legend" aria-label="מקרא">
     <li><span class="sw built"></span>בנוי ורץ</li>
     <li><span class="sw new"></span>חדש מאז 10.10.2026</li>
@@ -336,7 +336,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 
     <h3>3 · STATE — התיק, ומי כותב בו</h3>
     <div class="state3">
-      <div class="writer model" id="w-reg"><span class="who">הרשם (קריאת מודל)</span><span class="what">כותב את סיפור המאורע: <code>eventRecord</code> · <code>actorMap</code> · <code>edges</code> · <code>groups</code> · <code>openForks</code> · <code>gaps</code>. לא נותן ציונים.</span><span class="what" id="w-reg-off" hidden><strong>בראיון ההורים לא רץ.</strong></span></div>
+      <div class="writer model" id="w-reg"><span class="who">הרשם (קריאת מודל)</span><span class="what">כותב את סיפור המאורע: <code>eventRecord</code> · <code>actorMap</code> · <code>edges</code> · <code>groups</code> · <code>openForks</code> · <code>gaps</code>. לא נותן ציונים.</span><span class="what" id="w-reg-off" hidden><strong>בראיון ההורים עוד לא רץ.</strong> רשם להורים מתוכנן.</span></div>
       <div class="writer model"><span class="who">המראיין (קריאת מודל)</span><span class="what">שואל, ומדווח <code>evaluation</code>: ציוני slots ל-<code>coverage</code> · <code>findings</code> · דגלי התנגדות · <code>alternatives</code> לסל · סוג ההכרעה.</span></div>
       <div class="writer code"><span class="who">הקוד</span><span class="what"><code>meta</code>: שלב, מונים, ממתין לאישור, <code>pendingClose</code>, סיום, KPI. גוזר את ציון הקאסט. <strong>ה-Router קורא רק את <code>coverage</code> ואת <code>meta</code>.</strong></span></div>
     </div>
@@ -438,7 +438,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 
   <!-- 4 · vocabulary -->
   <div class="view" id="v-vocab" role="tabpanel" aria-labelledby="t-vocab" hidden>
-    <p>ממה הרשם בונה את הגרף של כל מקרה (<code>src/core/vocabulary.js</code>). לכל פריט מבחן הכרעה, כי רשימה בלי מבחנים מתמלאת בסיווגים שגויים. ראיון ההורים לא משתמש בגרף היום: הוא רץ בלי הרשם.</p>
+    <p>ממה הרשם בונה את הגרף של כל מקרה (<code>src/core/vocabulary.js</code>). לכל פריט מבחן הכרעה, כי רשימה בלי מבחנים מתמלאת בסיווגים שגויים. ראיון ההורים עוד לא משתמש בגרף, כי הוא רץ בלי רשם. <strong>הרשם המתוכנן להורים ישתמש באותו אוצר מילים, בלי תוספות:</strong> הרגש והצורך של הילד נרשמים כייחוס של ההורה (<code>attributed</code>), הקשר למאפיין של הקשב נרשם כאיך שההורה הבין (עמדה מסוג <code>reading</code>), והשרשרת של נטלי (התנהגות ← מאפיין ← צורך ← מה עושים ← מה מתרגלים) נבנית מקשתות קיימות: <code>because</code> · <code>derives_from</code> · <code>alternative_to</code>.</p>
     <h3>שבע יישויות</h3>
     <div class="vgrid" id="vocab-ent"></div>
     <h3>שמונה קשתות</h3>
@@ -477,7 +477,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
         <li><code>judge.js</code> · רובריקת השופט, לבדיקות בלבד</li>
         <li><code>migrations.js</code> · הסבת קבצים בין גרסאות <span class="tag">חדש</span></li>
       </ul>
-      <p>שתי חבילות: <code>think-twice-adult</code> ("Think Twice · אישי", גרסה 1, שבעה שלבים), ו-<code>think-twice-parents</code> ("Think Twice · הורים", גרסה 1, שמונה שלבים, בלי רשם) <span class="tag open">טיוטה ל-QA</span></p>
+      <p>שתי חבילות: <code>think-twice-adult</code> ("Think Twice · אישי", גרסה 1, שבעה שלבים), ו-<code>think-twice-parents</code> ("Think Twice · הורים", גרסה 1, שמונה שלבים, עוד בלי רשם) <span class="tag open">טיוטה ל-QA</span></p>
     </div>
     <div class="card">
       <h3>המעטפת — "למי"</h3>
@@ -499,7 +499,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   <p>אותו תור, צעד-צעד ועם האובייקטים עצמם: המבט "מחזור התור" למעלה. הסדר הוא העיקר: הרשם כותב קודם, והמראיין שואל על מה שהרשם כתב ("הרשם מוסר את הסיפור המעודכן", רן, 18.9.2026). ‏<code>runTurn</code> ב-<code>src/core/session.js</code>.</p>
   <ol class="steps">
     <li class="safe"><div><b>בדיקת בטיחות</b><span>‏<code>preCheck</code> על הודעת המשתמש. אזכור מצוקה חריפה ← עצירה מיד, עם הודעת העצירה וקו העזרה. שום מודל לא נקרא.</span><span class="who">src/safety · רץ לפני כל דבר, גם לפני בדיקת התלויות</span></div></li>
-    <li><div><b>הרשם</b><span>קריאת מודל אחת שמפרקת את התור לגרף: פעימות, עמדות, רגשות, דמויות, קשתות, קבוצות, פיצולים ותצפיות פערים. דלתא בלבד, לפי <code>id</code> יציב.</span><span>בראיון ההורים אין רשם (<code>registrar: null</code>). במקומו, הממצאים של כל השלבים נכנסים לפרומפט של המראיין, כדי שיזכור מה כבר נאמר.</span><span class="who">registrar.js · דלוק (<code>REGISTRAR_ENABLED</code>) · כישלון לא עולה למשתמש בתור</span></div></li>
+    <li><div><b>הרשם</b><span>קריאת מודל אחת שמפרקת את התור לגרף: פעימות, עמדות, רגשות, דמויות, קשתות, קבוצות, פיצולים ותצפיות פערים. דלתא בלבד, לפי <code>id</code> יציב.</span><span>בראיון ההורים עוד אין רשם (<code>registrar: null</code>). במקומו, הממצאים של כל השלבים נכנסים לפרומפט של המראיין, כדי שיזכור מה כבר נאמר. רשם להורים מתוכנן (16.10).</span><span class="who">registrar.js · דלוק (<code>REGISTRAR_ENABLED</code>) · כישלון לא עולה למשתמש בתור</span></div></li>
     <li><div><b>המראיין</b><span>קריאת מודל עם הנחיות המראיין (על + ייחודי), סוכן השלב, המעריך והרשימה השחורה. מחזיר <code>evaluation</code> <strong>לפני</strong> <code>message</code>: "חלץ, אז שאל".</span><span class="who">promptBuilder.js · חלק יציב לקאשינג, חלק משתנה</span></div></li>
     <li><div><b>פענוח ומיזוג</b><span>ציוני slots, ממצאים, מפת שחקנים, קוביות, קשתות, תוויות ופערים נכנסים ל-State. slot שהמודל המציא — מתעלמים ממנו.</span><span class="who">responseParser.js · state.js</span></div></li>
     <li><div><b>גזירה בקוד</b><span>ציון הקאסט נגזר מבהירות מפת השחקנים בכל תור שיש בו מפה (ריק ← 0, עמום ← 1, כולם ברורים ← 2). עוצמת הרגש נרשמת בשלבים שהחבילה מסמנת.</span><span class="who">session.js · לפי <code>castClarity</code> ו-<code>intensity</code> בחבילה</span></div></li>
@@ -521,7 +521,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       <tr><td><code>gaps</code></td><td>סתירות ופערים שנרשמו</td><td>הקוד, מתצפיות</td><td>המראיין בלבד. <strong>לעולם לא מוצג למשתמש</strong> (gap-management §1)</td></tr>
       <tr><td><code>nodes</code> · <code>edges</code> · <code>groups</code></td><td>קוביות, קשתות ומכלים של האיור</td><td>המעריך, הרשם</td><td><strong>המפה בלבד.</strong> ה-Router לא קורא אותם לעולם</td></tr>
       <tr><td><code>openForks</code> · <code>mapLabels</code></td><td>פיצולים פתוחים, תוויות</td><td>המעריך</td><td>המפה</td></tr>
-      <tr><td><code>eventRecord</code></td><td>רישום המאורע: תפאורה, פעימות, עמדות, רגשות</td><td>הרשם. ריק בראיון ההורים</td><td>המראיין, המפה</td></tr>
+      <tr><td><code>eventRecord</code></td><td>רישום המאורע: תפאורה, פעימות, עמדות, רגשות</td><td>הרשם. בראיון ההורים ריק, עד הרשם המתוכנן</td><td>המראיין, המפה</td></tr>
       <tr><td><code>board</code> · <code>basket</code> · <code>decision</code></td><td>לוח ההכרעה, סל החלופות וההכרעה</td><td>הסל: המעריך. הלוח: קריאת מודל (<code>board.md</code>) מתוך הסל, כשה-Router מחליט להציג אותו</td><td>המעטפת (לוח ההכרעה)</td></tr>
     </tbody>
   </table></div>
@@ -573,7 +573,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       <tr><td><code>resistance.md</code> · <code>summary.md</code> · <code>opener.md</code> · <code>board.md</code></td><td>התנגדויות, סיכום, פתיח מעוגן, לוח</td><td>כל המודלים</td></tr>
       <tr><td><code>forbidden.js</code></td><td>הרשימה השחורה, בכל פרומפט</td><td>כל המודלים. שורת הז'רגון — רק למבוגרים</td></tr>
       <tr><td><code>judge.md</code></td><td>רובריקת השופט. לא נשלחת לדפדפן</td><td>המודל</td></tr>
-      <tr><td><code>parents/</code></td><td>ראיון ההורים: שמונה סוכנים, מעריך, סיכום, פתיח, לוח, התנגדויות, רשימה שחורה, ו-<code>catalog.md</code> (מאפיין · צורך · כלי) שנכנס לשלבים 3, 4, 6 ו-8. אין <code>registrar</code></td><td>מודל ההורים · טיוטה</td></tr>
+      <tr><td><code>parents/</code></td><td>ראיון ההורים: שמונה סוכנים, מעריך, סיכום, פתיח, לוח, התנגדויות, רשימה שחורה, ו-<code>catalog.md</code> (מאפיין · צורך · כלי) שנכנס לשלבים 3, 4, 6 ו-8. עוד אין <code>registrar</code>; מתוכנן <code>parents/registrar.md</code></td><td>מודל ההורים · טיוטה</td></tr>
     </tbody>
   </table></div>
   <p><strong>טביעות האצבע</strong> (<code>tests/core/prompt-fingerprint.test.js</code>, ו-<code>prompt-fingerprint-parents.test.js</code> להורים) מצמידות כל פרומפט מורכב בייט לבייט. כך מיפוי שגוי, או בלוק שזז, נתפסים גם כשכל הבדיקות האחרות ירוקות.</p>
@@ -586,7 +586,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     <li>לכל קובייה <code>scale</code>: ‏<code>episode</code> (פעימה באירוע) או <code>ongoing</code> (מצב עומד, ברצועת רקע).</li>
     <li>שלוש עמודות, דמויות · פעולות · משמעות, מתחת לרצועת הרקע (רן, 5.9.2026).</li>
     <li>מה שלא אושר (<code>confirmed:false</code>) לא מצויר. ‏slot חסום לא מגיע למפה לעולם (<code>validatePack</code>).</li>
-    <li>בראיון ההורים אין מפה: אין <code>map</code> בחבילה, ואין רשם שיבנה את הגרף. האוצר שממנו המפה נבנית: המבט "יישויות וקשתות" למעלה.</li>
+    <li>בראיון ההורים עוד אין מפה: אין <code>map</code> בחבילה, ואין רשם שיבנה את הגרף. <strong>מתוכנן (רן, 16.10):</strong> איור גם להורים, באותו מבנה של רצועת רקע ושלוש עמודות, שנבנה ישירות מהתיק של הרשם (<code>nodesFromRecord</code>, ההכרעה "הגרף מוביל" מ-18.9). האוצר שממנו המפה נבנית: המבט "יישויות וקשתות" למעלה.</li>
   </ul>
 </section>
 
@@ -699,6 +699,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     <div class="card"><h3>חשבונות <span class="tag plan">שלב 4</span></h3><p>מנהל מוסיף משתמשים · הרשאה לכל מודל · כניסה באימייל וסיסמה · תנאי שימוש · קוד אימות · שחזור · מכסה. האימייל המוצפן הוא הנתון המזהה היחיד. תכנית בדיקות: <a href="onboarding-test-plan.md">onboarding-test-plan.md</a>.</p></div>
     <div class="card"><h3>מטפל <span class="tag plan">שלב 4.7</span></h3><p>השליחה במייל כבר בנויה, עם כתובות שמוקלדות (14.10). עם החשבונות: גם לכתובת שבחשבון. חשבון מטפל פותח לקריאה בלבד רק קובץ שנשלח אליו (טביעת HMAC בתוך ההצפנה).</p></div>
     <div class="card"><h3>ראיון ההורים <span class="tag open">טיוטה ב-QA · 16.10</span></h3><p>בנוי כחבילה <code>think-twice-parents</code>, שמונה שלבים לשבעת הצעדים של נטלי, ורץ ב-Preview בלבד. <strong>חסר לפני בודקים:</strong> אישור נטלי למבנה, שאלות 2, 3, 6–9 ו-11, ופרופיל הבטיחות (שאלה 7). התכנית ותשובות נטלי: <a href="parent-app/interview-model.md">parent-app/interview-model.md</a>.</p></div>
+    <div class="card"><h3>רשם ואיור להורים <span class="tag plan">ממתין לאישור · 16.10</span></h3><p>רשם עם הוראות להורים, על אותו גרף ואותו אוצר מילים. כל דמות שעולה נרשמת, גם ניצב. "איזה הורה אני" נשמר ולא מצויר, ומילת אופי על הילד לא נרשמת כעובדה. איור של המאורע, שנבנה מהתיק של הרשם. המחיר: פנייה נוספת למודל בכל תור, כמו בראיון האישי. מה שנטלי לא הכריעה (שאלות 2, 6, 7, 8) מתוקן אחרי ההכרעות שלה. המודל: <a href="https://claude.ai/artifact/8QoVSLDicKwEsCDSUyBF1b">רשם ראיון ההורים</a> (<code>docs/parent-app/registrar-model.html</code>).</p></div>
     <div class="card"><h3>עורך ראיונות <span class="tag plan">שלב 5</span></h3><p>ממשק מעל החבילה, עם <code>validatePack</code> כשער שמירה. תנאים מוקדמים: הגדרות slot כנתונים, ומזהי שלב יציבים.</p></div>
   </div>
 </section>
@@ -711,6 +712,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     <li><a href="onboarding-test-plan.md">onboarding-test-plan.md</a> · הצטרפות, לכל סוגי ההרשאות</li>
     <li><a href="model-update-test-plan.md">model-update-test-plan.md</a> · עדכון מודל, ועדכון קבצים משותפים</li>
     <li><a href="privacy-security-research.md">privacy-security-research.md</a> · פרטיות ואבטחה (לאימות משפטי)</li>
+    <li><a href="https://claude.ai/artifact/8QoVSLDicKwEsCDSUyBF1b">parent-app/registrar-model.html</a> · המודל של רשם ההורים והאיור, לאישור רן (16.10)</li>
     <li><a href="parent-app/interview-model.md">parent-app/interview-model.md</a> · ראיון ההורים: התכנית ותשובות נטלי · <a href="parent-app/trait-need-tool.md">trait-need-tool.md</a> · טבלת מאפיין · צורך · כלי · <a href="parent-app/research-review.md">research-review.md</a> · סקירת ספרות</li>
     <li><a href="architecture-dashboard-v2.html">architecture-dashboard-v2.html</a> · v2, 18.9.2026: הרשם, מחזור התור, צירי ה-Router, המילון. הגרסה שלמעלה מחליפה אותו</li>
     <li><a href="../DEPLOY-STATUS.md">DEPLOY-STATUS.md</a> · מצב הפריסה, המפתחות, המייל, והקישור לראיון ההורים</li>
@@ -790,7 +792,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       <p class="ctllabel"><code>registrar.js</code> · <code>registrar.md</code> · <code>REGISTRAR_ENABLED = true</code></p>`,
     parents: `<h3>2 · בלי רשם <span class="tag open">ויתור מפורש</span><span class="ctllabel"><code>registrar: null</code> ב-<code>prompts.js</code></span></h3>
       <p>אין גרף ואין איור. כדי שהמראיין יזכור מה כבר נאמר, הממצאים של כל השלבים (<code>findings</code>) נכנסים לפרומפט שלו תחת "מה נמסר עד עכשיו". ה-slot החסום <code>parent_self</code> מגיע רק למראיין עצמו, ולא לסיכום, לפתיח או ללוח.</p>
-      <p class="ctllabel">טקסט רשם חסר עדיין נדחה ב-<code>createEngine</code>: רק <code>null</code> מכובה.</p>`,
+      <p class="ctllabel">טקסט רשם חסר עדיין נדחה ב-<code>createEngine</code>: רק <code>null</code> מכובה.</p>
+      <p><span class="tag plan">מתוכנן · ממתין לאישור רן · 16.10</span> רשם להורים, עם הוראות משלו ועל אותו גרף, ואיור של המאורע שנבנה מהתיק שלו. כל דמות שעולה נרשמת, גם ניצב. "איזה הורה אני" נשמר ולא מצויר. <a href="https://claude.ai/artifact/8QoVSLDicKwEsCDSUyBF1b">המודל</a></p>`,
   };
 
   const drawArch = (key) => {
@@ -859,7 +862,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       ],
     },
     nomem: {
-      note: '<strong>③ ראיון הורים · תור בשלב 6, בלי רשם.</strong> אין גרף. הזיכרון של המראיין הוא הממצאים של כל השלבים, שנכנסים לפרומפט שלו. דוגמה מומצאת.',
+      note: '<strong>③ ראיון הורים · תור בשלב 6, בלי רשם.</strong> אין גרף. הזיכרון של המראיין הוא הממצאים של כל השלבים, שנכנסים לפרומפט שלו. דוגמה מומצאת. רשם להורים מתוכנן, ואחריו התור הזה ייראה כמו ①.',
       stations: [
         SAFE('אולי לשבת לידה בעשר דקות הראשונות, עד שהיא נכנסת לזה'),
         ['skip', 'הרשם', 'registrar: null', J(`${c('// לא נקרא. createEngine מקבל null כוויתור מפורש; טקסט חסר עדיין נדחה')}`), 'בלי גרף, בלי איור.'],
