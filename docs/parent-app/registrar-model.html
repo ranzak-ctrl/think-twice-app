@@ -1,0 +1,269 @@
+<title>רשם ראיון ההורים</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Hebrew:wght@400;500;600;700&family=Secular+One&display=swap">
+<style>
+/* Layout: one reading column, a proposal to approve — the ask on top, then what is recorded, what never is, the drawing, and what it rests on. Same palette as the project's architecture pages. */
+:root {
+  --bg: #f2f4f8; --surface: #ffffff; --ink: #141c2b; --muted: #56617a; --line: #d5dbe7;
+  --accent: #2f4fb3; --accent-soft: #e2e8f8; --warm: #b8640b; --warm-soft: #fbeedb;
+  --ok: #1d7a4e; --ok-soft: #dcf1e6; --plan: #6d5a9e; --plan-soft: #ece7f7;
+  --danger: #b4232c; --danger-soft: #fbe3e4;
+  --font-display: "Secular One", "IBM Plex Sans Hebrew", "Arial Hebrew", sans-serif;
+  --font-body: "IBM Plex Sans Hebrew", "Assistant", "Arial Hebrew", "Noto Sans Hebrew", system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1320; --surface: #151c2c; --ink: #e2e7f2; --muted: #9aa6bf; --line: #27314a;
+    --accent: #8aa6ff; --accent-soft: #1c2747; --warm: #f0aa58; --warm-soft: #33240f;
+    --ok: #5fd39a; --ok-soft: #12301f; --plan: #b9a7ec; --plan-soft: #261f3d;
+    --danger: #ff8f96; --danger-soft: #3a1619; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1320; --surface: #151c2c; --ink: #e2e7f2; --muted: #9aa6bf; --line: #27314a;
+  --accent: #8aa6ff; --accent-soft: #1c2747; --warm: #f0aa58; --warm-soft: #33240f;
+  --ok: #5fd39a; --ok-soft: #12301f; --plan: #b9a7ec; --plan-soft: #261f3d;
+  --danger: #ff8f96; --danger-soft: #3a1619; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.75 var(--font-body); }
+.page { direction: rtl; max-width: 860px; margin-inline: auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 72px; display: grid; gap: 36px; }
+header { display: grid; gap: 10px; }
+.eyebrow { margin: 0; color: var(--accent); font-weight: 600; font-size: .9rem; }
+h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(2rem, 1.5rem + 2vw, 2.7rem); line-height: 1.15; text-wrap: balance; }
+h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 1.5rem; line-height: 1.3; text-wrap: balance; }
+h3 { margin: 0; font-size: 1.02rem; }
+p { margin: 0; max-width: 68ch; }
+ul, ol { margin: 0; padding-inline-start: 1.3em; max-width: 70ch; }
+li { margin-block: 4px; }
+section { display: grid; gap: 14px; min-width: 0; }
+.lede { font-size: 1.08rem; }
+.muted { color: var(--muted); }
+.ask { border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); background: var(--accent-soft); border-radius: 12px; padding: 14px 16px; display: grid; gap: 6px; }
+.ask strong { color: var(--ink); }
+
+.flow { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; counter-reset: f; max-width: none; }
+.flow li { counter-increment: f; display: grid; grid-template-columns: 2em minmax(0, 1fr); gap: 10px; align-items: start; margin: 0; }
+.flow li::before { content: counter(f); display: grid; place-items: center; width: 2em; height: 2em; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
+.rules { display: flex; flex-wrap: wrap; gap: 8px; }
+.rule { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 3px 12px; font-size: .9rem; }
+
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: .94rem; }
+th, td { text-align: start; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { background: var(--accent-soft); font-weight: 600; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td:first-child { font-weight: 600; white-space: nowrap; }
+.ex { color: var(--muted); }
+.ex q { color: var(--ink); }
+
+.never { border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent); background: var(--danger-soft); border-radius: 12px; padding: 14px 16px; display: grid; gap: 8px; }
+.never h2 { color: var(--danger); }
+.never li strong { color: var(--ink); }
+
+/* The sample drawing: background strip over three columns, as in the adult interview (Ran, 5.9.2026). */
+.drawing { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); padding: 14px; display: grid; gap: 12px; }
+.ground { border: 1px dashed var(--plan); background: var(--plan-soft); border-radius: 10px; padding: 8px 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.ground .tag { font-size: .8rem; font-weight: 600; color: var(--plan); margin-inline-end: 4px; }
+.cols { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr) minmax(0, 1.2fr); gap: 10px; }
+@media (max-width: 620px) { .cols { grid-template-columns: minmax(0, 1fr); } }
+.col { display: grid; gap: 6px; align-content: start; min-width: 0; }
+.col > b { font-size: .82rem; color: var(--muted); }
+.cube { border: 1px solid var(--line); border-radius: 8px; background: var(--bg); padding: 5px 9px; font-size: .9rem; line-height: 1.4; }
+.cube.who { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.cube.act { border-inline-start: 4px solid var(--accent); }
+.cube.plan { border-inline-start: 4px solid var(--ok); }
+.cube.feel { border-inline-start: 4px solid var(--warm); }
+.cube.think { border-inline-start: 4px solid var(--plan); }
+.cube small { display: block; color: var(--muted); font-size: .76rem; }
+.down { text-align: center; color: var(--muted); font-size: .78rem; line-height: 1; }
+.off { border: 1px dashed var(--danger); border-radius: 8px; padding: 5px 9px; font-size: .86rem; color: var(--danger); background: transparent; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: .82rem; color: var(--muted); }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-inline-end: 5px; vertical-align: -1px; }
+.legend .l-act::before { background: var(--accent); } .legend .l-feel::before { background: var(--warm); }
+.legend .l-think::before { background: var(--plan); } .legend .l-plan::before { background: var(--ok); }
+
+.pill { display: inline-block; font-size: .78rem; font-weight: 600; padding: 1px 9px; border-radius: 999px; white-space: nowrap; }
+.pill.done { background: var(--ok-soft); color: var(--ok); }
+.pill.open { background: var(--warm-soft); color: var(--warm); }
+.cost { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 10px; }
+.cost div { border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 10px 12px; display: grid; gap: 4px; }
+footer { color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); padding-top: 14px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+</style>
+
+<div class="page">
+
+<header>
+  <p class="eyebrow">Think Twice · הורים · טיוטה לאישור של רן · 16.10.2026</p>
+  <h1>רשם ראיון ההורים</h1>
+  <p class="lede">אחרי כל תשובה של ההורה, הרשם מעדכן את "התיק" של המקרה: מי היה שם, מה קרה ובאיזה סדר, מה כל אחד רצה, הבין והרגיש. המראיין קורא את התיק לפני שהוא בוחר את השאלה הבאה, והאיור על המסך מצויר ממנו.</p>
+  <div class="ask">
+    <p><strong>מה אני מבקש ממך:</strong> לאשר את המודל הזה, או לכתוב מה לתקן. אחרי האישור כותבים את ההוראות, בודקים ומעלים לקישור ה-QA. מה שנטלי עוד לא הכריעה מסומן למטה, ונתקן אותו אחרי ההכרעות שלה.</p>
+  </div>
+</header>
+
+<section aria-labelledby="h-turn">
+  <h2 id="h-turn">מה קורה בכל תור</h2>
+  <ol class="flow">
+    <li><span>ההורה עונה.</span></li>
+    <li><span>הרשם קורא את השאלה של המראיין ואת התשובה של ההורה, ומעדכן בתיק רק את מה שהתשובה הוסיפה או שינתה.</span></li>
+    <li><span>המראיין מקבל את התיק המעודכן ובוחר את השאלה הבאה.</span></li>
+    <li><span>האיור על המסך מתעדכן.</span></li>
+  </ol>
+  <div class="rules" aria-label="שלושה כללים">
+    <span class="rule">לא מדבר עם ההורה</span>
+    <span class="rule">לא נותן ציונים ולא מחליט על מעבר שלב</span>
+    <span class="rule">לא ממציא: רק מה שנאמר</span>
+  </div>
+  <p class="muted">זה אותו רשם שרץ בראיון האישי מאז 28.9, עם הוראות חדשות שנכתבות להורים.</p>
+</section>
+
+<section aria-labelledby="h-cast">
+  <h2 id="h-cast">הדמויות</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>דמות</th><th>איך נרשמת</th></tr></thead>
+    <tbody>
+      <tr><td>ההורה</td><td>תמיד בגוף שני: "ביקשת", "צעקת". כך המשפטים נקראים, ולא כמו תיק שנכתב עליו.</td></tr>
+      <tr><td>הילד</td><td>בשם שההורה נתן לו. "הוא", אלא אם ההורה מדבר עליו אחרת.</td></tr>
+      <tr><td>ההורה השני</td><td>עוד דמות בסיטואציה, עם מה שעשה ואמר. אפשר להרחיב עליו ככל שצריך כדי להבין מה קרה (נטלי, שאלה 12).</td></tr>
+      <tr><td>אחים, סבים, מורה</td><td>רק מי שעשה, רצה או הרגיש משהו באירוע. מי שרק הוזכר אינו דמות.</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-what">
+  <h2 id="h-what">מה נרשם</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>סוג</th><th>מה זה</th><th>דוגמה</th></tr></thead>
+    <tbody>
+      <tr><td>הזירה</td><td>איפה, מתי, ועל רקע מה. גם גיל הילד, כשנאמר</td><td class="ex"><q>ליד שולחן המטבח, בשש בערב, מבחן מחר</q></td></tr>
+      <tr><td>מה קרה</td><td>מה הילד עשה או אמר, מה ההורה עשה או אמר, ואיך זה נגמר. מה שמצלמה הייתה קולטת נרשם כעובדה. מה שלא, נרשם כמו שנאמר ומסומן כפרשנות</td><td class="ex"><q>זרק את המחברת</q> עובדה. <q>עשה לי דווקא</q> הפרשנות של ההורה</td></tr>
+      <tr><td>מה כל אחד רצה והבין</td><td>מה ההורה רצה ומה הבין באותו רגע. מה הילד רצה או היה צריך, רק כמו שההורה אמר</td><td class="ex"><q>רצית שיסיים לפני תשע</q> · <q>חשבת שהוא מתחמק</q></td></tr>
+      <tr><td>מה כל אחד הרגיש</td><td>ההורה, אז ועכשיו. הילד, כמו שההורה ראה או ניחש, ומסומן "לפי ההורה"</td><td class="ex"><q>כעסת, ואחר כך הרגשת אשמה</q> · <q>נראה לך שהוא נבהל</q></td></tr>
+      <tr><td>מה מתחבר למה</td><td>"ואז", "בגלל ש", "למרות ש", "במקום". קשר שההורה לא אמר נרשם כלא מאושר, לא מצויר, והמראיין שואל עליו</td><td class="ex"><q>זרק את המחברת, ואז צעקת</q></td></tr>
+      <tr><td>סתירות</td><td>כשסיפור משתנה בין גרסאות, זה נרשם ברשימה נסתרת שרק המראיין רואה, והוא מחליט אם לשאול. ההורה לא רואה אותה, והראיון לא חוזר לשלב קודם בגללה</td><td class="ex">קודם <q>אחרי שלוש דקות</q>, עכשיו <q>מיד</q></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-stages">
+  <h2 id="h-stages">לאיזה שלב שייך כל דבר</h2>
+  <p>כל דבר שנרשם שייך לשלב אחד. כך המראיין יודע מה כבר נאמר בכל שלב, גם כשזה נאמר לפני שהגענו אליו.</p>
+  <div class="tablewrap"><table>
+    <thead><tr><th>שלב</th><th>מה נרשם בו</th></tr></thead>
+    <tbody>
+      <tr><td>1 · מה קרה</td><td>המקום והזמן, מה התבקש, מה הילד עשה, מה ההורה עשה, איך זה נגמר, ואיך היה היום עוד לפני</td></tr>
+      <tr><td>2 · מה ראינו</td><td>השם שההורה נותן להתנהגות, ואיך היא עזרה לילד להתמודד</td></tr>
+      <tr><td>3 · מאיפה זה בא</td><td>הקשר בין ההתנהגות למאפיין של הקשב, במילים של ההורה</td></tr>
+      <tr><td>4 · מה הוא היה צריך</td><td>הצורך והרגש של הילד, רק כמו שההורה ניסח אותם</td></tr>
+      <tr><td>5 · איפה זה פגש אותי</td><td>מה ההורה הרגיש וחשב אז, ממה הוא חושש, איך הוא נוהג בדרך כלל, והפער שהוא רואה. <strong>רגש או מחשבה של ההורה נרשמים כאן גם כשהם עולים מוקדם</strong>, למשל בשלב 1</td></tr>
+      <tr><td>6 · מה אפשר לעשות</td><td>כל אפשרות, ומי הציע אותה: ההורה, או המראיין מהטבלה</td></tr>
+      <tr><td>7 · מה אעשה ברגע הבא</td><td>מה ההורה רוצה שיקרה, ומה בחר</td></tr>
+      <tr><td>8 · מה אתרגל</td><td>המצב שחוזר, הצעד שעושים מראש, מה מתרגלים, ומתי</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section class="never" aria-labelledby="h-never">
+  <h2 id="h-never">מה לעולם לא</h2>
+  <ul>
+    <li><strong>"איזה הורה אני"</strong> נרשם רק אם ההורה אמר את זה, במילים שלו, תחת נושא נפרד. לא מצויר, לא מצוטט ולא נכנס לסיכום. הרשם לא מנסח את זה בשביל ההורה ולא מסיק את זה ממה שאמר.</li>
+    <li><strong>מילת אופי על הילד</strong> ("חצוף", "מפונק") לא נרשמת כעובדה על הילד. היא נרשמת כמילים של ההורה, והאיור מצייר את המעשה עצמו.</li>
+    <li><strong>הצורך של הילד</strong>: הרשם לא מסיק אותו. נרשם רק מה שההורה אמר.</li>
+    <li><strong>דפוס הורי</strong> שהמערכת מזהה ("מגונן", "מעניש") לא נרשם כתווית. נרשם מה ההורה עשה.</li>
+    <li><strong>אבחנה</strong>: לא של הילד ולא של ההורה.</li>
+    <li><strong>האשמה של ההורה השני</strong> ("זה בגלל אבא שלו") נרשמת כמה שההורה חושב, לא כעובדה.</li>
+  </ul>
+</section>
+
+<section aria-labelledby="h-draw">
+  <h2 id="h-draw">האיור</h2>
+  <p>כמו בראיון האישי: רצועת רקע של מצבים קבועים, ומתחתיה שלוש עמודות: דמויות · מה קרה · מה זה אמר. הסדר הוא הסדר שההורה סיפר ("ואז", "בגלל ש"). מצויר רק מה שנאמר ואושר.</p>
+  <p class="muted">דוגמה מומצאת, לפי הדוגמה של נטלי על שיעורי בית ("לא יודע מאיפה להתחיל"):</p>
+  <div class="drawing" role="img" aria-label="דוגמה לאיור של ראיון הורים: רצועת רקע, ושלוש עמודות של דמויות, מה קרה ומה זה אמר">
+    <div class="ground"><span class="tag">ברקע</span><span class="cube">כל ערב שיעורי הבית הם מאבק</span><span class="cube">קשה לו להתחיל משימה גדולה</span></div>
+    <div class="cols">
+      <div class="col"><b>דמויות</b>
+        <div class="cube who">את/ה</div>
+        <div class="cube who">יואב, בן 10</div>
+        <div class="cube who">נועה, אחותו</div>
+      </div>
+      <div class="col"><b>מה קרה</b>
+        <div class="cube act">ביקשת להתחיל בשש</div><div class="down" aria-hidden="true">↓</div>
+        <div class="cube act">ישב ובהה בדף</div><div class="down" aria-hidden="true">↓</div>
+        <div class="cube act">זרק את המחברת<small>ופגע בנועה</small></div><div class="down" aria-hidden="true">↓</div>
+        <div class="cube act">צעקת ושלחת לחדר</div><div class="down" aria-hidden="true">↓</div>
+        <div class="cube act">בכה בחדר</div>
+        <div class="cube plan">בפעם הבאה: לחלק את הדף לצעדים קטנים</div>
+        <div class="cube plan">מראש: להכין את הצעד הראשון</div>
+      </div>
+      <div class="col"><b>מה זה אמר</b>
+        <div class="cube think">חשבת שהוא מתחמק<small>אז</small></div>
+        <div class="cube feel">כעס, ואחר כך אשמה<small>שלך</small></div>
+        <div class="cube feel">מוצף<small>שלו, לפי מה שראית</small></div>
+        <div class="cube think">לדעת מאיפה להתחיל<small>מה הוא היה צריך</small></div>
+        <div class="off">"אני אמא גרועה" — נשמר, לא מצויר</div>
+      </div>
+    </div>
+    <div class="legend" aria-hidden="true"><span class="l-act">מה קרה</span><span class="l-plan">מה אעשה</span><span class="l-think">מחשבה וצורך</span><span class="l-feel">רגש</span></div>
+  </div>
+  <p class="muted">האיור מופיע עם כפתור להסתרה, כמו אצל המבוגרים. הוא נבנה ישירות מהתיק של הרשם. זו ההכרעה שלך מ-18.9 ("הגרף מוביל"), שבראיון האישי עוד לא הופעלה.</p>
+</section>
+
+<section aria-labelledby="h-natali">
+  <h2 id="h-natali">על מה זה נשען: ההכרעות של נטלי</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>שאלה</th><th>מה נטלי הכריעה</th><th>מה זה אומר לרשם</th></tr></thead>
+    <tbody>
+      <tr><td>12 · הורה שני</td><td>עוד דמות, ואפשר להרחיב עליה ככל שצריך</td><td>דמות מלאה, עם מה שעשה ואמר <span class="pill done">הוכרע</span></td></tr>
+      <tr><td>4 · כלים</td><td>ההורה מציע קודם, המראיין מוסיף מהטבלה, ההורה בוחר</td><td>ליד כל אפשרות נרשם מי הציע אותה. הצעה של המראיין נשארת "הצעה" עד שההורה מאמץ אותה במילים שלו <span class="pill done">הוכרע</span></td></tr>
+      <tr><td>5 · הטבלה</td><td>Claude מכין טבלת מאפיין · צורך · כלי, ונטלי מתקנת</td><td>הרשם לא מוסיף מהטבלה דבר. קשר למאפיין שהמראיין הציע נרשם כהצעה עד שההורה מאמץ <span class="pill done">הוכרע</span></td></tr>
+      <tr><td>10 · סדר השלבים</td><td>אפשר להקדים את שלב 5 כשההורה מוצף</td><td>רגש ומחשבה של ההורה נרשמים מתי שהם עולים ונשמרים לשלב 5. ההקדמה עצמה עוד לא בנויה <span class="pill done">הוכרע</span></td></tr>
+      <tr><td>1 · שלושת הסלים</td><td>אין צורך במושג. קונפליקט בבית בין הורים לילדים</td><td>אין סיווג לסלים <span class="pill done">הוכרע</span></td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-open">
+  <h2 id="h-open">מה פתוח, ונתקן אחרי נטלי</h2>
+  <div class="tablewrap"><table>
+    <thead><tr><th>שאלה</th><th>עד ההכרעה</th></tr></thead>
+    <tbody>
+      <tr><td>7 · בטיחות</td><td>הרשם הוא לא שכבת הבטיחות. מה שקרה, גם מכה או לעג, נרשם כמו שנאמר ובלי שיפוט. העצירה היא של שכבת הבטיחות, ופרופיל ההורים שלה עוד לא קיים <span class="pill open">פתוח</span></td></tr>
+      <tr><td>6 · עונש</td><td>עונש שההורה מציע נרשם כמו כל אפשרות, בלי שיפוט <span class="pill open">פתוח</span></td></tr>
+      <tr><td>8 · קשב אצל ההורה</td><td>נרשם רק אם ההורה העלה, כמחשבה שלו בשלב 5. לא שואלים עליו <span class="pill open">פתוח</span></td></tr>
+      <tr><td>2 · גילאים</td><td>גיל הילד נרשם בזירה, כפרט עליו <span class="pill open">פתוח</span></td></tr>
+      <tr><td>שלב 5, שיפוט עצמי</td><td>"אמרתי לעצמי שאני אמא גרועה" נרשם רק תחת "איזה הורה אני" <span class="pill open">פתוח</span></td></tr>
+      <tr><td>3, 9, 11</td><td>לא משפיעות על הרשם</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="h-cost">
+  <h2 id="h-cost">מה ישתנה בפועל</h2>
+  <div class="cost">
+    <div><h3>מחיר</h3><p>עוד פנייה למודל בכל תור. בערך פי שניים לתור בקישור ה-QA.</p></div>
+    <div><h3>זמן</h3><p>המראיין עונה אחרי שהרשם סיים, ולכן כל תור לוקח כמה שניות יותר.</p></div>
+    <div><h3>הזיכרון</h3><p>במקום הרשימה הקצרה של מה שנאמר, המראיין יקבל את התיק המלא.</p></div>
+    <div><h3>המסך</h3><p>האיור מופיע ליד הצ'אט.</p></div>
+  </div>
+</section>
+
+<section aria-labelledby="h-next">
+  <h2 id="h-next">אחרי שתאשר</h2>
+  <ol>
+    <li>כותבים את ההוראות של רשם ההורים, לפי העמוד הזה.</li>
+    <li>מוסיפים לראיון ההורים את האיור, וסוקרים את השינוי במבנה.</li>
+    <li>בודקים, ומעלים לקישור ה-QA.</li>
+    <li>אתה מריץ ראיון ובודק את האיור ואת השאלות.</li>
+  </ol>
+</section>
+
+<footer>Think Twice · ראיון ההורים · טיוטה. מבוסס על ההכרעות במסמך האישור של נטלי (interview-model.md §9) ועל הרשם של הראיון האישי.</footer>
+</div>
