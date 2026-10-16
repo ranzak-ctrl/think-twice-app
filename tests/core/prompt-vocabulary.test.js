@@ -17,12 +17,20 @@
 //
 // In other words: this does not let the gap hide. It stops the switch being
 // flipped while the prompt cannot emit half of what the code accepts.
+//
+// ── THE PARENTS' REGISTRAR IS HELD TO THE SAME BAR (prompt-editor, 16.10.2026) ──
+// The parents' interview got its own registrar text (parents/registrar.md), and the
+// code that reads it is the same pack-generic code, so the same silent failure
+// applies to it: a kind it never shows in JSON is a kind its model never emits.
+// Checked on the text as the pack maps it — author notes stripped, exactly what
+// the model reads — rather than the raw file.
 
 import { describe, it, expect } from 'vitest';
 import registrarMd from '../../src/content/prompts/registrar.md?raw';
 import evaluatorMd from '../../src/content/prompts/evaluator.md?raw';
 import { EDGE_KINDS, GROUP_KINDS } from '../../src/core/vocabulary.js';
 import { REGISTRAR_ENABLED } from '../../src/core/promptBuilder.js';
+import { thinkTwiceParentsPrompts } from '../../src/packs/think-twice-parents/prompts.js';
 
 // `kind` is not only an edge field: groups carry one, and so do gap targets
 // (state.js:658-666). Scraping the field name alone would conflate all three.
@@ -73,5 +81,30 @@ describe('prompt ↔ vocabulary agreement', () => {
   it('registrar.md states the `about` direction rule the code enforces', () => {
     expect(/about[\s\S]{0,3000}?(תודע|מחשב|נפש|mind|MENTAL_SLOTS)/i.test(registrarMd),
       'registrar.md names `about` but never says its `from` must be a mind — mergeEdges drops the rest').toBe(true);
+  });
+});
+
+describe('prompt ↔ vocabulary agreement — the parents registrar', () => {
+  const parentsRegistrar = thinkTwiceParentsPrompts.registrar;
+  const missingFromParents = () => [...EDGE_KINDS].filter((k) => !kindsIn(parentsRegistrar).has(k));
+
+  it('is a text, and the scraper actually finds examples in it', () => {
+    expect(typeof parentsRegistrar, 'the parents pack maps no registrar text').toBe('string');
+    expect(kindsIn(parentsRegistrar).size, 'parents/registrar.md: no `"kind": "..."` examples found — the scraper is broken or the prompt changed shape').toBeGreaterThan(0);
+  });
+
+  it.runIf(REGISTRAR_ENABLED)('shows every edge kind in an example, now that the registrar runs', () => {
+    const missing = missingFromParents();
+    expect(missing, `parents/registrar.md has no JSON example for: ${missing.join(' · ')} — the model will never emit them. Finish it (prompt-editor owns it).`).toEqual([]);
+  });
+
+  it('teaches no kind the code would drop', () => {
+    const unknown = [...kindsIn(parentsRegistrar)].filter((k) => !KNOWN.has(k));
+    expect(unknown, `parents/registrar.md teaches kinds that mergeEdges/mergeGroups discard silently: ${unknown.join(' · ')}`).toEqual([]);
+  });
+
+  it('states the `about` direction rule the code enforces', () => {
+    expect(/about[\s\S]{0,3000}?(תודע|מחשב|נפש|mind|MENTAL_SLOTS)/i.test(parentsRegistrar),
+      'parents/registrar.md names `about` but never says its `from` must be a mind — mergeEdges drops the rest').toBe(true);
   });
 });

@@ -86,7 +86,9 @@
 import { buildCast } from './story.js';
 // What the map may draw and where it puts it are the interview's: the pack's barred
 // slots, its narrative order and its timeline slot (pack.js, `map`).
-import { DEFAULT_PACK, barredSlots, mapNarrative, mapTimeline, parseSlotRef } from './pack.js';
+import { DEFAULT_PACK, barredSlots, mapNarrative, mapTimeline, mapSource, parseSlotRef } from './pack.js';
+// The record's projection, for a pack whose map draws from the registrar's record.
+import { nodesFromRecord } from './eventMap.js';
 // One definition of which edges may order, guarded by a test that also checks every
 // other kind in the vocabulary stays out of it.
 import { ORDERING_EDGE_KINDS as ORDERING_KINDS } from './vocabulary.js';
@@ -186,7 +188,10 @@ function nodesOf(state, pack) {
   const kindOf = (slotId) => meta.get(slotId)?.kind ?? 'other';
   const rankOf = (slotId) => meta.get(slotId)?.rank ?? Number.MAX_SAFE_INTEGER;
 
-  const reported = Object.values(state?.nodes ?? {})
+  // The cubes: what the interviewer reported, or — for a pack whose map says so —
+  // the registrar's record. The display guard is applied inside nodesFromRecord.
+  const source = mapSource(pack) === 'record' ? nodesFromRecord(state, pack) : state?.nodes ?? {};
+  const reported = Object.values(source)
     .filter((n) => certaintyOf(state, n.slot, pack, barred))
     .sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0));
   const claimed = new Set(reported.map((n) => n.slot));

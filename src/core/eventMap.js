@@ -9,9 +9,18 @@
 // the graph, and its CONTENTS still came from a store keyed by slot.
 //
 // Output shape is exactly what `state.nodes` holds — { id, label, slot, scale, seq }
-// — so storyMap.js switches source in one line once the registrar is live. Until
-// then the two coexist and this is dead code with tests around it, which is
-// deliberate: flipping the map onto an empty record would blank the drawing.
+// — so storyMap.js switches source in one line. It did, for the first pack that
+// asked (`map.source: 'record'`, the parents' interview, 16.10.2026); Think Twice
+// still draws the cubes its interviewer reports, and flipping it onto the record
+// waits on its own decision.
+//
+// ── WHAT THE INTERVIEWER OFFERED IS NOT HIS ──
+// A stance or feeling with `source: 'inferred'` is something the INTERVIEWER put
+// forward and the person has not yet taken up in his own words (the ownership
+// test, registrar.md). The record keeps it — the interviewer needs to know what is
+// on the table — but the drawing is of what HE said, so it is not drawn until the
+// registrar reports it again as `stated` (router-guard, 16.10.2026: an offered
+// trait link scored 2 was drawn firm, as if the parent had said it).
 //
 // ── WHAT BECOMES A CUBE ──
 // Beats, stances and emotions. NOT the setting: a place and a time are not things
@@ -70,6 +79,7 @@ export function nodesFromRecord(state, pack = DEFAULT_PACK) {
   ]) {
     for (const e of Object.values(store ?? {}).sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0))) {
       if (!displayable(e, pack)) continue; // the pack's barred slots stop here — the wound, the ADHD pattern
+      if (e.source === 'inferred') continue; // offered by the interviewer, not yet his (see above)
       const label = nameOf(e);
       if (!label) continue; // a cube with no name is not a cube
       out[`${kind}:${e.id}`] = { id: `${kind}:${e.id}`, label, slot: e.slot, scale: scaleOf(e, kind), seq: ++seq };

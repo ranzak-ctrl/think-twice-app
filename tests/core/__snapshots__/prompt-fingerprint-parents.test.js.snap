@@ -8,7 +8,7 @@ exports[`prompt fingerprints — parents > the probe prompt, every stage, empty 
   },
   "stage1.rich": {
     "stable": "16760:e687f3c4425e4161",
-    "volatile": "864:dcedcb0c4cce9c9c",
+    "volatile": "1799:0105845255e43fad",
   },
   "stage2.fresh": {
     "stable": "16153:130e6952e7ea3287",
@@ -16,7 +16,7 @@ exports[`prompt fingerprints — parents > the probe prompt, every stage, empty 
   },
   "stage2.rich": {
     "stable": "16153:130e6952e7ea3287",
-    "volatile": "864:e9fcaa6dbaed7917",
+    "volatile": "1799:36695b8137adf58f",
   },
   "stage3.fresh": {
     "stable": "22812:49cfc9025a818e88",
@@ -24,7 +24,7 @@ exports[`prompt fingerprints — parents > the probe prompt, every stage, empty 
   },
   "stage3.rich": {
     "stable": "22812:49cfc9025a818e88",
-    "volatile": "864:a6eb44a1f51648fc",
+    "volatile": "1799:dd124b268db0117f",
   },
   "stage4.fresh": {
     "stable": "22667:786e7202fb5f8fd1",
@@ -32,7 +32,7 @@ exports[`prompt fingerprints — parents > the probe prompt, every stage, empty 
   },
   "stage4.rich": {
     "stable": "22667:786e7202fb5f8fd1",
-    "volatile": "864:1e2ed9a004bc0848",
+    "volatile": "1799:81ff668bbb178a39",
   },
   "stage5.fresh": {
     "stable": "17064:a1d6b4eb63f546b0",
@@ -40,7 +40,7 @@ exports[`prompt fingerprints — parents > the probe prompt, every stage, empty 
   },
   "stage5.rich": {
     "stable": "17064:a1d6b4eb63f546b0",
-    "volatile": "864:4e3351748a070fb0",
+    "volatile": "1799:8e029961c3b14332",
   },
   "stage6.fresh": {
     "stable": "22758:40031b1080ffccfd",
@@ -48,7 +48,7 @@ exports[`prompt fingerprints — parents > the probe prompt, every stage, empty 
   },
   "stage6.rich": {
     "stable": "22758:40031b1080ffccfd",
-    "volatile": "864:c1a0314ab18bdada",
+    "volatile": "1799:164396d774c8dbf5",
   },
   "stage7.fresh": {
     "stable": "16651:eb7da573e977077e",
@@ -56,7 +56,7 @@ exports[`prompt fingerprints — parents > the probe prompt, every stage, empty 
   },
   "stage7.rich": {
     "stable": "16651:eb7da573e977077e",
-    "volatile": "864:6fcb024e1832a9f0",
+    "volatile": "1799:c12edeb287481d98",
   },
   "stage8.fresh": {
     "stable": "22760:cc00d1ab707adb95",
@@ -64,31 +64,44 @@ exports[`prompt fingerprints — parents > the probe prompt, every stage, empty 
   },
   "stage8.rich": {
     "stable": "22760:cc00d1ab707adb95",
-    "volatile": "864:b6259eec67a87510",
+    "volatile": "1799:c40cef5003102fc9",
+  },
+}
+`;
+
+exports[`prompt fingerprints — parents > the registrar prompt 1`] = `
+{
+  "fresh": {
+    "stable": "42774:91cf2392a761f177",
+    "volatile": "722:56ac6ff9e50810ff",
+  },
+  "rich": {
+    "stable": "42774:91cf2392a761f177",
+    "volatile": "1799:0105845255e43fad",
   },
 }
 `;
 
 exports[`prompt fingerprints — parents > the summary, opener and board prompts 1`] = `
 {
-  "board": "6032:f919467175ba490d",
-  "opener.stage1": "8432:0305b7c7227c9f7b",
-  "opener.stage1.reopen": "8462:83bca6a4f4e00a58",
-  "opener.stage2": "7825:e1c3bdb135247133",
-  "opener.stage2.reopen": "7855:9f3cc29bc197876c",
-  "opener.stage3": "14484:c1b9c0bf35811439",
-  "opener.stage3.reopen": "14514:32176bfc8be01cb2",
-  "opener.stage4": "14339:bab6293e65b40129",
-  "opener.stage4.reopen": "14369:9230261ada0ce791",
-  "opener.stage5": "8736:3396cac7acb19ace",
-  "opener.stage5.reopen": "8766:3abe7fa6ff12677c",
-  "opener.stage6": "14430:892bf20c567567d9",
-  "opener.stage6.reopen": "14460:b8ef724436d313c5",
-  "opener.stage7": "8323:dfa9793d5bcac679",
-  "opener.stage7.reopen": "8353:842c03c3f53f0c45",
-  "opener.stage8": "14432:9d08e65dbe6f2822",
-  "opener.stage8.reopen": "14462:6abc29ca9ba343af",
-  "summary": "6045:b8c49d257c5f5f40",
+  "board": "6940:df0fb8e24598cb72",
+  "opener.stage1": "9340:a9b7e5cb80148dd3",
+  "opener.stage1.reopen": "9370:a387b0c9a5f02cd1",
+  "opener.stage2": "8733:ffe61cb51a69c224",
+  "opener.stage2.reopen": "8763:5a77f7a5d1341de7",
+  "opener.stage3": "15392:d8025d730f725d52",
+  "opener.stage3.reopen": "15422:93eb27316c305eb3",
+  "opener.stage4": "15247:b7366f48e814a66a",
+  "opener.stage4.reopen": "15277:7c2de0e9bd02fb34",
+  "opener.stage5": "9644:06f93fff2cb1aaf2",
+  "opener.stage5.reopen": "9674:d8324a78225d7837",
+  "opener.stage6": "15338:5c0b24e05564f25b",
+  "opener.stage6.reopen": "15368:98a17d0344a500c6",
+  "opener.stage7": "9231:dfe1c2900e925137",
+  "opener.stage7.reopen": "9261:269332c64422eca4",
+  "opener.stage8": "15340:c2a2fc2ce95a23ad",
+  "opener.stage8.reopen": "15370:3d1a2989e9041eb2",
+  "summary": "6953:e4738223c983a939",
 }
 `;
 
@@ -99,6 +112,7 @@ exports[`prompt fingerprints — parents > the texts as mapped, one by one 1`] =
   "forbidden": "1026:c00e07b020f8a3c1",
   "guidelinesSpecific": "3932:c54af42cf86825e9",
   "opener": "1583:d726c866558895e5",
+  "registrar": "42774:91cf2392a761f177",
   "resistance": "2526:29f585022a087741",
   "stage1": "1785:b0ccd6b89165f6a7",
   "stage2": "1178:0f660608882cf3a5",

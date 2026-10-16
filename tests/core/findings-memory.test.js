@@ -1,16 +1,22 @@
 // An interview without the registrar still remembers (promptBuilder.js,
-// renderFindings; prompt-editor and router-guard, 16.10.2026). The parents'
-// interviewer must see in stage 6 the child's need it found in stage 4 — and the
-// one thing only the parent may word, "which parent am I", must never reach a
-// prompt whose words are spoken back to the parent.
+// renderFindings; prompt-editor and router-guard, 16.10.2026). The interviewer
+// must see in stage 6 the child's need it found in stage 4 — and the one thing
+// only the parent may word, "which parent am I", must never reach a prompt whose
+// words are spoken back to the parent.
+//
+// The parents' interview ran this way until it got its own registrar (Ran,
+// 16.10.2026). The path stays for any interview that opts out with
+// `registrar: null`, so it is tested on the parents' texts with the registrar
+// taken out.
 
 import { describe, it, expect } from 'vitest';
 import { createState, addFindings } from '../../src/core/state.js';
 import { buildSystemPrompt, buildSummaryPrompt, buildOpenerPrompt, buildBoardPrompt } from '../../src/core/promptBuilder.js';
 import { thinkTwiceParents as pack } from '../../src/packs/think-twice-parents/pack.js';
-import { thinkTwiceParentsPrompts as prompts } from '../../src/packs/think-twice-parents/prompts.js';
+import { thinkTwiceParentsPrompts } from '../../src/packs/think-twice-parents/prompts.js';
 import { thinkTwiceAdultPrompts } from '../../src/packs/think-twice-adult/prompts.js';
 
+const prompts = { ...thinkTwiceParentsPrompts, registrar: null };
 const NEED = 'לדחות משימה שלא ברורה לו';
 const SELF = 'אני אמא שלא מצליחה איתו';
 
@@ -39,6 +45,12 @@ describe('the findings of an interview without the registrar', () => {
       expect(p).toContain(NEED);
       expect(p).not.toContain(SELF);
     }
+  });
+
+  it('are not how the parents’ interview remembers any more: it has its own registrar', () => {
+    expect(typeof thinkTwiceParentsPrompts.registrar).toBe('string');
+    const p = buildSystemPrompt({ stage: 6, state: stateInStage6(), prompts: thinkTwiceParentsPrompts, pack });
+    expect(p).not.toContain('## מה נמסר עד עכשיו');
   });
 
   it('change nothing for an interview that has the registrar', () => {

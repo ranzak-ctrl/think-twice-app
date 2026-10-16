@@ -17,7 +17,7 @@
 // Refuses to build on a pack or texts it cannot run: a broken interview stops
 // here, before anyone has typed a word, instead of mis-routing a real person.
 
-import { validatePack, validatePrompts } from './pack.js';
+import { validatePack, validatePrompts, mapSource } from './pack.js';
 import { REGISTRAR_ENABLED } from './promptBuilder.js';
 import { checkGuidelines } from './guidelines.js';
 import { createState } from './state.js';
@@ -43,8 +43,8 @@ export function createEngine({ pack, prompts, complete } = {}) {
   }
   // Conditional on the switch, which is why it is checked here and not in pack.js:
   // with the registrar on, every turn starts with its call. An interview that runs
-  // without it says so with `registrar: null` (the parents' interview, for now: it
-  // has no story map). A missing or empty text is still refused — that is a text
+  // without it says so with `registrar: null` (the parents' interview did until
+  // 16.10.2026, when it got its own registrar). A missing or empty text is still refused — that is a text
   // lost on the way, and it would drop the registrar without anyone deciding to.
   if (
     REGISTRAR_ENABLED &&
@@ -52,6 +52,16 @@ export function createEngine({ pack, prompts, complete } = {}) {
     (typeof prompts.registrar !== 'string' || !prompts.registrar.trim())
   ) {
     throw new Error('createEngine: the registrar is switched on and the pack has no registrar text (null opts out on purpose)');
+  }
+  // A map drawn from the registrar's record needs a registrar to write it. An
+  // interview that opts out of the registrar and still asks for a record map would
+  // draw only the fallback cubes from the interviewer's findings, never the story —
+  // a contradiction in the pack, refused here. (With the registrar switched off
+  // globally, REGISTRAR_ENABLED, the record map falls back the same way on purpose:
+  // that is the kill switch, not a pack's choice, and refusing it would break the
+  // registrar-off row.)
+  if (mapSource(pack) === 'record' && prompts.registrar === null) {
+    throw new Error("createEngine: the pack's map draws from the registrar's record, and this interview opts out of the registrar");
   }
   if (typeof complete !== 'function') {
     throw new Error('createEngine: `complete` (the model call) is required');

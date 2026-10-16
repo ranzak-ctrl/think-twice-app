@@ -16,11 +16,16 @@
 //               parents.md: who it serves, how it addresses a parent whose gender
 //               it does not know yet, and Ran's ruling that with parents
 //               professional terms are allowed).
-//   registrar   null — this interview runs without the registrar for now: it has
-//               no story map, so nothing would read the graph it builds. An
-//               explicit null is how an interview says so; a missing or empty text
-//               is still refused (engine.js), because that is a text lost on the
-//               way rather than a decision.
+//   registrar   The parents' own (parents/registrar.md, prompt-editor, 16.10.2026),
+//               after Ran approved the parents registrar model that day
+//               (docs/parent-app/registrar-model.html). Until then this was null:
+//               the interview ran without the registrar, and the interviewer saw
+//               the evaluator's findings instead (promptBuilder.js renderFindings,
+//               which now stays silent here). Same JSON contract and field names as
+//               the adult registrar.md — the code that reads it is the same — with
+//               the parents' slots, minds and cast, and the parents' rules on what
+//               is never a fact. The pack's drawing is made from what it records
+//               (pack.js `map`), and engine.js refuses that drawing without it.
 //   summary, opener, board
 //               Parents copies, not the shared files: those address the person in
 //               the masculine ("במה אתה בוחר?") and ban jargon, and editing them
@@ -45,6 +50,7 @@ import guidelinesSuper from '../../content/prompts/guidelines/super.md?raw';
 import guidelinesSpecific from '../../content/prompts/guidelines/think-twice-parents.md?raw';
 import resistance from '../../content/prompts/parents/resistance.md?raw';
 import evaluator from '../../content/prompts/parents/evaluator.md?raw';
+import registrar from '../../content/prompts/parents/registrar.md?raw';
 import summary from '../../content/prompts/parents/summary.md?raw';
 import opener from '../../content/prompts/parents/opener.md?raw';
 import board from '../../content/prompts/parents/board.md?raw';
@@ -81,8 +87,8 @@ export const thinkTwiceParentsPrompts = {
   guidelines: { super: guidelinesSuper, specific: guidelinesSpecific },
   resistance: text(resistance),
   evaluator: text(evaluator),
-  // This interview runs without the registrar for now (see above).
-  registrar: null,
+  // The parents' own registrar (see above).
+  registrar: text(registrar),
   summary: text(summary),
   opener: text(opener),
   board: text(board),

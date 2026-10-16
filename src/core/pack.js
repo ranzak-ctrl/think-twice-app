@@ -148,6 +148,14 @@ export function mapNarrative(pack) {
 // The slot whose certainty turns the map from a scene into a journey, or null.
 export const mapTimeline = (pack) => parseSlotRef(pack, pack.map?.timeline);
 
+// Where the map's cubes come from. 'reported' (the default, Think Twice today): the
+// cubes the interviewer reports in `nodes`. 'record': the registrar's record,
+// projected by eventMap.js — Ran's ruling of 18.9.2026 that the map is a rendering
+// of the ledger ("הגרף מוביל"), first switched on for the parents' interview
+// (16.10.2026). A record map needs a registrar to write the record (engine.js).
+export const MAP_SOURCES = new Set(['reported', 'record']);
+export const mapSource = (pack) => pack.map?.source ?? 'reported';
+
 // ── Validation ──
 // Returns { ok, errors, limits }, and never throws: an editor hands this whatever
 // a person typed. Every entry is a sentence a pack author can act on.
@@ -174,7 +182,7 @@ const FIELDS = {
   routing: ['softThreshold', 'saturationLimit', 'loadGuard', 'rejectGrace'],
   stage: ['key', 'name', 'label', 'signpost', 'slots', 'requires', 'loadGuard', 'components'],
   slot: ['id', ...SLOT_FLAGS],
-  map: ['narrative', 'timeline'],
+  map: ['narrative', 'timeline', 'source'],
   mapRow: ['kind', 'slots'],
 };
 const COMPONENT_FIELDS = { castClarity: ['type', 'slot'], closing: ['type'], collector: ['type'], decision: ['type'], intensity: ['type'] };
@@ -390,7 +398,8 @@ function validateMap(pack, err) {
   };
 
   for (const k of unknownFields(pack.map, FIELDS.map)) err(`map: unknown field "${k}"`);
-  const { narrative, timeline } = pack.map;
+  const { narrative, timeline, source } = pack.map;
+  if (source !== undefined && !MAP_SOURCES.has(source)) err(`map.source must be one of ${[...MAP_SOURCES].join(', ')}`);
   if (narrative !== undefined && !Array.isArray(narrative)) err('map.narrative must be a list');
   const seen = new Set();
   (Array.isArray(narrative) ? narrative : []).forEach((row, i) => {

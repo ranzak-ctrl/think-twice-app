@@ -80,11 +80,6 @@ export const thinkTwiceParents = {
     rejectGrace: 3,
   },
 
-  // No `map`: this interview runs without the registrar for now (prompts.js), so
-  // there is no event record to lay out. Its evaluator reports no nodes either, so
-  // the map stays empty and the shell does not offer the drawing (App.jsx hides
-  // the toggle while the map is empty).
-  //
   // Barred, as in the adult pack, means stored, scored and probed but never drawn
   // or recited: `parent_self` is "which parent am I", which only the parent may
   // word — the interviewer never phrases it, reflects it or confronts them with it
@@ -193,4 +188,48 @@ export const thinkTwiceParents = {
       components: [{ type: 'closing' }],
     },
   ],
+
+  // ── THE DRAWING (Ran, 16.10.2026: "גם אצל ההורים יהיה איור של המאורע") ──
+  // The approved model: docs/parent-app/registrar-model.html. The cubes come from
+  // the registrar's record (`source: 'record'`), not from cubes the interviewer
+  // reports — this evaluator reports none, and Ran ruled on 18.9.2026 that the map
+  // is a rendering of the ledger ("הגרף מוביל"). The layout is Think Twice's: a
+  // background strip for standing states over three columns, characters · what
+  // happened · what it meant (Ran, 5.9.2026).
+  //
+  // The narrative gives each slot its kind — the column its cubes go in — and the
+  // order to fall back on until the parent says what led to what. The rows are in
+  // the order things happen: what was asked and what the child did, what the parent
+  // did, then how it ended — `fact` appears twice so the ending cannot be drawn
+  // before the parent's response (router-guard, 16.10.2026). It lists only slots
+  // whose FALLBACK cube — drawn from the interviewer's findings while the record has
+  // nothing on that slot — is a moment of the event or a meaning:
+  //   - not stage1.context, which the registrar keeps as the setting, not a cube;
+  //   - not the standing states (setting_events, coping_style, recurring_situation,
+  //     and trait_link, the trait the behaviour comes from), which the registrar
+  //     marks `ongoing` and the map draws in the background strip — a fallback cube
+  //     would draw them as a moment;
+  //   - not stage2.behavior_label, whose finding may be the parent's character word
+  //     ("מפונק"): the approved model draws the act, never the word;
+  //   - not the options (stage 6), which the board shows;
+  //   - never parent_self, which is barred (validatePack refuses it here).
+  // A slot not listed has no fallback cube, but what the REGISTRAR records under it
+  // is still drawn, as 'other', in report order — stage 6 options and the parent's
+  // fears (prognosis) included, in the parent's own words. Not drawn: what the
+  // interviewer offered and the parent has not taken up (eventMap.js).
+  map: {
+    source: 'record',
+    narrative: [
+      { kind: 'fact', slots: ['stage1.demand', 'stage1.child_behavior'] },
+      { kind: 'action', slots: ['stage1.parent_response'] },
+      { kind: 'fact', slots: ['stage1.ending'] },
+      { kind: 'thought', slots: ['stage5.parent_thought_then', 'stage5.gap_insight', 'stage7.goal'] },
+      { kind: 'feeling', slots: ['stage4.child_feeling', 'stage5.parent_emotion'] },
+      { kind: 'other', slots: ['stage4.child_need'] },
+      { kind: 'plan', slots: ['stage7.sharp_decision', 'stage8.prevention_step', 'stage8.parent_practice'] },
+    ],
+    // The sequence is whole once the parent has said how it ended: from then on the
+    // drawing is a route, not a scene.
+    timeline: 'stage1.ending',
+  },
 };
