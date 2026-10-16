@@ -62,6 +62,10 @@ export const thinkTwiceParents = {
   id: 'think-twice-parents',
   // Ran's name for this model, 9.10.2026.
   name: 'Think Twice · הורים',
+  // Stays 1 while this is a QA draft on Preview only: its texts are still
+  // moving (16.10.2026) and no tester has a file of it. The rule that every text
+  // change bumps the version, with a migration step, starts with the first
+  // version that leaves Preview.
   version: 1,
 
   routing: {
