@@ -1,5 +1,5 @@
 import { renderEvent } from './eventView.js';
-import { DEFAULT_PACK, stageKey } from './pack.js';
+import { DEFAULT_PACK, stageKey, barredSlots } from './pack.js';
 import { composeGuidelines } from './guidelines.js';
 
 // ── THE CORE IMPORTS NO PROMPT ──
@@ -92,7 +92,7 @@ export function buildSystemPromptParts({ stage, state, prompts, pack = DEFAULT_P
   // The ONLY caller that gets the unredacted account — its output is a question
   // to the person, never a text spoken verbatim, and stage 2 must see the מוגלה to
   // probe it. Summary / opener / board keep the safe default.
-  const stateSummary = summarizeState(state, { full: true, pack });
+  const stateSummary = summarizeState(state, { full: true, pack, prompts });
 
   return {
     // The stage prompt sits inside the cached half deliberately. It changes seven
@@ -119,7 +119,8 @@ export function buildSystemPrompt(args) {
 
 // Registrar mode — the call that assembles the event.
 //
-// ⚠ THE SWITCH IS ON, and it runs the registrar on every turn of every interview.
+// ⚠ THE SWITCH IS ON, and it runs the registrar on every turn of every interview
+// that has a registrar text — one may opt out with an explicit null (engine.js).
 // It was flipped for the release of 28.9 (PR #3); what gated it is docs/event-model.md
 // §8, and the runs that followed are logged in docs/live-findings.md.
 //
@@ -161,7 +162,7 @@ export function buildSummaryPrompt({ state, prompts, pack = DEFAULT_PACK }) {
     guidelines(prompts),
     text(prompts, 'summary'),
     forbiddenBlock(prompts),
-    summarizeState(state, { pack }),
+    summarizeState(state, { pack, prompts }),
   ]
     .filter(Boolean)
     .join('\n\n---\n\n');
@@ -202,7 +203,7 @@ export function buildOpenerPrompt({ stage, state, situation, prompts, pack = DEF
     text(prompts, 'opener'),
     situationBlock,
     forbiddenBlock(prompts),
-    summarizeState(state, { pack }),
+    summarizeState(state, { pack, prompts }),
   ]
     .filter(Boolean)
     .join('\n\n---\n\n');
@@ -229,7 +230,7 @@ export function buildBoardPrompt({ state, prompts, pack = DEFAULT_PACK }) {
     text(prompts, 'board'),
     forbiddenBlock(prompts),
     basket,
-    summarizeState(state, { pack }),
+    summarizeState(state, { pack, prompts }),
   ]
     .filter(Boolean)
     .join('\n\n---\n\n');
@@ -248,7 +249,31 @@ export function formatHistory(history) {
 // `full` reaches renderEvent: the probe needs the whole account (stage 2 cannot
 // explore a wound it is not told about); every user-facing builder gets it redacted,
 // by the pack's barred slots.
-function summarizeState(state, { full = false, pack } = {}) {
+// ── AN INTERVIEW WITHOUT THE REGISTRAR STILL REMEMBERS ──
+// The probe sees the last LAST_K_TURNS messages and the coverage numbers. With the
+// registrar on, the assembled event carries the rest of the story; with it off
+// (`prompts.registrar === null`, the parents' interview) nothing did, and by the
+// options stage the interviewer could no longer see the child's need it is meant to
+// answer (prompt-editor, 16.10.2026). So such an interview gets the findings — the
+// evaluator's short notes per slot, already in the person's own register — stage
+// by stage. Redacted like the account: only the probe (`full`) sees the barred
+// slots; the summary, the opener and the board, whose words reach the person,
+// never do (eventView.js says why that polarity matters).
+function renderFindings(state, { full, pack }) {
+  const barred = barredSlots(pack);
+  const out = [];
+  for (const st of pack.stages) {
+    const rows = Object.entries(state.findings?.[st.key] ?? {}).filter(
+      ([slot, items]) => Array.isArray(items) && items.length && (full || !barred.has(slot))
+    );
+    if (!rows.length) continue;
+    out.push(`### ${st.label}`);
+    for (const [slot, items] of rows) out.push(`- ${slot}: ${items.join(' · ')}`);
+  }
+  return out.length ? `## מה נמסר עד עכשיו (hidden from user)\n${out.join('\n')}` : '';
+}
+
+function summarizeState(state, { full = false, pack, prompts } = {}) {
   const { coverage, meta } = state;
   const threads = (meta.savedThreads ?? []).length
     ? `\nsaved_threads: ${JSON.stringify(meta.savedThreads)}`
@@ -292,8 +317,9 @@ function summarizeState(state, { full = false, pack } = {}) {
   // its next question about the story. Empty until the registrar is wired, so this
   // is a no-op for now — `renderEvent` returns '' for an untouched record.
   const event = renderEvent(state, { full, pack });
+  const remembered = prompts?.registrar === null ? renderFindings(state, { full, pack }) : '';
 
-  return `${event ? `${event}\n\n` : ''}## STATE SUMMARY (hidden from user)
+  return `${event ? `${event}\n\n` : ''}${remembered ? `${remembered}\n\n` : ''}## STATE SUMMARY (hidden from user)
 stage: ${meta.currentStage}
 questions_this_stage: ${meta.questionCount}
 saturation: ${meta.saturationCount}

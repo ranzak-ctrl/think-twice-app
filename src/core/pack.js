@@ -299,6 +299,11 @@ export function validatePack(pack) {
     // One stage, one way to end: the decision closes on a sharp choice, the
     // closing stage on its confirmed summary. Both on one stage would be two
     // closures racing for the same turn.
+    // The decision stage routes by its own rules and never reads a load guard, so
+    // one set there would promise a backstop that cannot fire.
+    if (hasComponent(stage, 'decision') && stage.loadGuard !== undefined) {
+      err(`${where}: loadGuard has no effect on the decision stage — it routes by the board and the choice`);
+    }
     if (hasComponent(stage, 'closing') && hasComponent(stage, 'decision')) {
       err(`${where}: closing cannot sit on the decision stage — the decision closes the interview itself`);
     }

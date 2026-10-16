@@ -498,9 +498,12 @@ export async function runTurn(state, history, userText, deps) {
         sessionComplete: true,
         kpi: {
           ...nextState.meta.kpi,
+          // The stage the session ends in — the decision stage when it closes the
+          // interview. Keyed by the current stage, so a turn after a closing
+          // stage ended it never writes its count over the decision's.
           questionsPerStage: {
             ...nextState.meta.kpi.questionsPerStage,
-            [decisionKey]: nextState.meta.questionCount,
+            [stageAt(pack, nextState.meta.currentStage)?.key ?? decisionKey]: nextState.meta.questionCount,
           },
         },
       },

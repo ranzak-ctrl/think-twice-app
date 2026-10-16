@@ -28,10 +28,35 @@
 // is the plan's own proposal, and every such place says so below. Nothing here is
 // for a real parent until Natali signs it off.
 //
+// ── WHAT THE ENGINE DOES NOT DO YET, THAT THE PLAN ASKS FOR ──
+// router-guard's review (16.10.2026), kept here so nobody reads the plan as built:
+//   - Dependencies: the plan (interview-model.md §5.1) lists five; none is encoded.
+//     Stages run in order, and a `requires` that cannot be met strands the parent —
+//     stage 7 requiring stage 6 would, since stage 6's two slots must both reach 2
+//     and the dependency is checked before the load guard (the adult interview's
+//     known issue D). So nothing here `requires` anything.
+//   - Summaries: the engine asks for one at the end of EVERY stage, eight in all;
+//     the plan wants them after stages 1, 5 and 7 only.
+//   - Re-open triggers and the coherence chain (§5.1, §5.2) are not checked in code.
+//   - The "operating instructions" card (§5.3) does not exist; the interview ends on
+//     the closing stage's ordinary summary.
+//   - No cast gate, although questions-for-natali §15 assumed one here.
+//
+// ── THE LOAD GUARD PACES THIS INTERVIEW ──
+// In the adult interview the guard is a backstop set high so it rarely fires. Here
+// it is the usual way a stage ends: a two-slot stage at a 0.8 threshold needs both
+// slots at 2 (so saturation never helps), and `U` does not count toward the
+// threshold — stage 5, with `prognosis` and `parent_self` allowed to stay U, cannot
+// reach it. The low per-stage guards are what move the parent on. That includes the
+// closing stage: after its guard it asks for the summary even if little is
+// covered, and the parent's confirmation ends the interview. All of it is for
+// Natali to set (interview-model.md §9), and none of it is validated.
+//
 // ── WHO OWNS WHAT HERE ──
 // As in the adult pack: the labels and signposts are Natali's register (drafts
-// until she approves them); the routing numbers, `requires` and the components are
-// the Router's rules, and any change to this file gets router-guard's review.
+// until she approves them); the routing numbers and the components are the
+// Router's rules, and any change to this file gets router-guard's review.
+// tests/core/parents-pack.test.js pins them.
 
 export const thinkTwiceParents = {
   id: 'think-twice-parents',
@@ -42,16 +67,19 @@ export const thinkTwiceParents = {
   routing: {
     softThreshold: 0.8,
     saturationLimit: 2,
-    // The fallback guard. Every stage below sets its own, from the plan's
-    // per-stage ceilings (interview-model.md §4) — placeholders, like the adult
-    // pack's, chosen so that a flooded parent is not held in a stage: "better an
-    // unexhausted stage than a flooded parent" (the approval doc).
+    // The fallback guard. Every stage but the decision sets its own, from the
+    // plan's per-stage ceilings (interview-model.md §4) — placeholders, chosen so
+    // that a flooded parent is not held long in a stage: "better an unexhausted
+    // stage than a flooded parent" (the approval doc). See the header: here the
+    // guard paces the interview.
     loadGuard: 20,
     rejectGrace: 3,
   },
 
   // No `map`: this interview runs without the registrar for now (prompts.js), so
-  // there is no event record to lay out, and the shell hides the drawing.
+  // there is no event record to lay out. Its evaluator reports no nodes either, so
+  // the map stays empty and the shell does not offer the drawing (App.jsx hides
+  // the toggle while the map is empty).
   //
   // Barred, as in the adult pack, means stored, scored and probed but never drawn
   // or recited: `parent_self` is "which parent am I", which only the parent may
@@ -140,7 +168,7 @@ export const thinkTwiceParents = {
         { id: 'sharp_decision' },
         { id: 'package_test' },
       ],
-      requires: ['stage6'],
+      // No `requires`: see the header — stage 6 could never be left.
       components: [{ type: 'decision' }],
     },
     {

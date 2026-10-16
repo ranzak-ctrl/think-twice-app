@@ -217,3 +217,24 @@ describe('an interview with a closing stage runs to its end', () => {
     expect(calls).not.toContain('registrar');
   });
 });
+
+// router-guard's review of 16.10.2026, findings 6 and 10.
+describe('the hand-over keeps the rules every hand-over keeps', () => {
+  it('waits for a dependency of the stage after the decision', () => {
+    const p = clone(after);
+    p.stages[3].requires = ['stage1'];
+    expect(route(at(p, 3, DECIDED), p)).toMatchObject({ decision: Decision.STAY, reason: 'dependency_not_met' });
+  });
+
+  it('refuses a load guard on the decision stage, which would never fire', () => {
+    const p = clone(after);
+    p.stages[2].loadGuard = 4;
+    expect(validatePack(p).errors.join(' | ')).toContain('loadGuard has no effect on the decision stage');
+  });
+
+  it('never advances past the last stage, even when the closing flag is missing', () => {
+    const s = at(after, 4, {}, { awaitingConfirmation: true, pendingNextStage: null });
+    const done = confirmAndAdvance(s, after);
+    expect(done.meta).toMatchObject({ sessionComplete: true, currentStage: 4 });
+  });
+});

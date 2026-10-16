@@ -63,7 +63,7 @@ export function createEngine({ pack, prompts, complete } = {}) {
     prompts,
     createState: () => createState(pack),
     route: (state) => route(state, pack),
-    confirmAndAdvance: (state) => confirmAndAdvance(state),
+    confirmAndAdvance: (state) => confirmAndAdvance(state, pack),
     rejectConfirmation: (state) => rejectConfirmation(state, pack),
     runTurn: (state, history, userText) => runTurn(state, history, userText, deps),
     generateStageOpener: (state, history, opts) => generateStageOpener(state, history, opts, deps),

@@ -123,7 +123,11 @@ export function route(state, pack = DEFAULT_PACK) {
       // The last stage: the decision ends the interview, as in Think Twice.
       if (currentStage === stageCount(pack)) return { decision: Decision.SESSION_COMPLETE };
       // A closing stage follows (validatePack): the decision is summarised and
-      // confirmed like any stage that ends, and the interview moves on to it.
+      // confirmed like any stage that ends, and the interview moves on to it —
+      // under the same dependency rule as every other hand-over.
+      if (!dependenciesMet(coverage, currentStage + 1, pack)) {
+        return { decision: Decision.STAY, reason: 'dependency_not_met' };
+      }
       if (questionCount < (meta.confirmationFloor ?? 0)) {
         return { decision: Decision.STAY, reason: 'correcting_summary' };
       }
@@ -220,11 +224,14 @@ export function resolveResistance(signals) {
 }
 
 // Called when user clicks "מדויק" (confirm summary)
-export function confirmAndAdvance(state) {
+export function confirmAndAdvance(state, pack = DEFAULT_PACK) {
   const { meta } = state;
   if (!meta.awaitingConfirmation) return state;
   // The closing stage's summary: confirming it ends the interview where it stands.
-  if (meta.pendingClose) {
+  // Also when the flag is missing but there is nowhere to advance to (a hand-
+  // edited export): the interview never moves past its last stage.
+  const nowhereNext = meta.pendingNextStage == null && meta.currentStage >= stageCount(pack);
+  if (meta.pendingClose || nowhereNext) {
     return {
       ...state,
       meta: {
