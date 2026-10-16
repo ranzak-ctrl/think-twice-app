@@ -116,11 +116,18 @@ export function route(state, pack = DEFAULT_PACK) {
     if (!decided.board_presented && (decided.goal ?? 0) >= 1) {
       return { decision: Decision.SHOW_BOARD };
     }
-    // Session complete when sharp decision + package test both at 2
-    // A vague decision never closes the session (Transition Protocol §7, מבחן החדות).
+    // Decided: a sharp decision (or a structured deferral) with the package test
+    // passed. A vague decision never decides (Transition Protocol §7, מבחן החדות).
     const vague = meta.kpi?.decisionType === 'vague';
     if (!vague && decided.sharp_decision === 2 && decided.package_test === 2) {
-      return { decision: Decision.SESSION_COMPLETE };
+      // The last stage: the decision ends the interview, as in Think Twice.
+      if (currentStage === stageCount(pack)) return { decision: Decision.SESSION_COMPLETE };
+      // A closing stage follows (validatePack): the decision is summarised and
+      // confirmed like any stage that ends, and the interview moves on to it.
+      if (questionCount < (meta.confirmationFloor ?? 0)) {
+        return { decision: Decision.STAY, reason: 'correcting_summary' };
+      }
+      return { decision: Decision.REQUEST_CONFIRMATION, nextStage: currentStage + 1, reason: 'decided' };
     }
     return { decision: Decision.STAY };
   }
@@ -168,6 +175,22 @@ export function route(state, pack = DEFAULT_PACK) {
     };
   }
 
+  // The closing stage (the last one, after the decision): ready by the same
+  // paths as any stage, it asks for its summary to be confirmed — and the
+  // confirmation ends the interview instead of opening a next stage
+  // (confirmAndAdvance). Same grace after a rejected summary as everywhere.
+  if (readyToAdvance && hasComponent(stageAt(pack, currentStage), 'closing')) {
+    if (questionCount < (meta.confirmationFloor ?? 0)) {
+      return { decision: Decision.STAY, reason: 'correcting_summary' };
+    }
+    return {
+      decision: Decision.REQUEST_CONFIRMATION,
+      nextStage: null,
+      closes: true,
+      reason: loadGuardTriggered ? 'load_guard' : saturated ? 'exhausted' : 'full_coverage',
+    };
+  }
+
   // Coverage was ready but the cast is unclear — hold and keep clarifying (guide trail).
   if (castGated && coverageReady && !actorsClearEnough && !loadGuardTriggered) {
     return { decision: Decision.STAY, reason: 'actors_unclear' };
@@ -200,6 +223,31 @@ export function resolveResistance(signals) {
 export function confirmAndAdvance(state) {
   const { meta } = state;
   if (!meta.awaitingConfirmation) return state;
+  // The closing stage's summary: confirming it ends the interview where it stands.
+  if (meta.pendingClose) {
+    return {
+      ...state,
+      meta: {
+        ...meta,
+        sessionComplete: true,
+        pendingClose: false,
+        pendingNextStage: null,
+        awaitingConfirmation: false,
+        kpi: {
+          ...meta.kpi,
+          questionsPerStage: {
+            ...(meta.kpi?.questionsPerStage ?? {}),
+            [`stage${meta.currentStage}`]: meta.questionCount,
+          },
+        },
+        decisionLog: appendDecisionLog(meta.decisionLog, {
+          decision: Decision.SESSION_COMPLETE,
+          reason: 'confirmed',
+          stage: meta.currentStage,
+        }),
+      },
+    };
+  }
   return {
     ...state,
     meta: {
@@ -242,6 +290,7 @@ export function rejectConfirmation(state, pack = DEFAULT_PACK) {
       ...meta,
       awaitingConfirmation: false,
       pendingNextStage: null,
+      pendingClose: false,
       // Push the gate out past the correction. Measured from the current count
       // rather than added to any previous floor, so repeated rejections cannot
       // accumulate into a stage that never offers a summary again.

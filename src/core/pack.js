@@ -28,6 +28,7 @@ export const DEFAULT_PACK = thinkTwiceAdult;
 
 export const COMPONENT_TYPES = new Set([
   'castClarity', // block advance while an actor is unclear; derive the named slot from the cast
+  'closing',     // the last stage, after the decision: covered and its summary confirmed ends the interview
   'collector',   // the production stage: options accumulate in the basket, never ranked
   'decision',    // board from the basket, sharpness, package test; a vague decision never closes
   'intensity',   // record the reported emotion intensity (1–10) while standing here — the delta KPI
@@ -176,7 +177,7 @@ const FIELDS = {
   map: ['narrative', 'timeline'],
   mapRow: ['kind', 'slots'],
 };
-const COMPONENT_FIELDS = { castClarity: ['type', 'slot'], collector: ['type'], decision: ['type'], intensity: ['type'] };
+const COMPONENT_FIELDS = { castClarity: ['type', 'slot'], closing: ['type'], collector: ['type'], decision: ['type'], intensity: ['type'] };
 const unknownFields = (obj, allowed) => Object.keys(obj).filter((k) => !allowed.includes(k));
 
 export function validatePack(pack) {
@@ -295,6 +296,12 @@ export function validatePack(pack) {
     if (hasComponent(stage, 'castClarity') && hasComponent(stage, 'decision')) {
       err(`${where}: castClarity cannot sit on the decision stage — the decision never reads the cast`);
     }
+    // One stage, one way to end: the decision closes on a sharp choice, the
+    // closing stage on its confirmed summary. Both on one stage would be two
+    // closures racing for the same turn.
+    if (hasComponent(stage, 'closing') && hasComponent(stage, 'decision')) {
+      err(`${where}: closing cannot sit on the decision stage — the decision closes the interview itself`);
+    }
   });
 
   const carriers = (type) => stages.map((s, i) => (hasComponent(s, type) ? i + 1 : null)).filter(Boolean);
@@ -302,13 +309,27 @@ export function validatePack(pack) {
   const decisions = carriers('decision');
   // One cast per interview, so one gate on it: the derived slot is the cast's one
   // score, and two stages deriving it would be two scores of the same thing.
-  for (const [type, at] of [['castClarity', carriers('castClarity')], ['collector', collectors], ['decision', decisions]]) {
+  const closings = carriers('closing');
+  for (const [type, at] of [
+    ['castClarity', carriers('castClarity')],
+    ['closing', closings],
+    ['collector', collectors],
+    ['decision', decisions],
+  ]) {
     if (at.length > 1) err(`only one stage may carry "${type}"`);
   }
-  // Today the decision is the only way an interview closes, so it must be last.
-  // A pack that ends otherwise needs a closure component the engine does not have.
-  if (!hasComponent(stages[stages.length - 1], 'decision')) {
-    err('the last stage must carry the "decision" component (the only closure the engine has)');
+  // How an interview ends. Two closures exist: the decision, which closes on a
+  // sharp choice that passed the package test, and the closing stage, which
+  // closes once it is covered and its summary is confirmed — what comes after a
+  // decision, as in the parents' interview: choose a response, then practise it
+  // for next time (Natali's step 7). Either way the closure is the last stage:
+  // nothing could run after the interview ended.
+  const last = stages.length;
+  if (!hasComponent(stages[last - 1], 'decision') && !hasComponent(stages[last - 1], 'closing')) {
+    err('the last stage must carry "decision" or "closing" — an interview needs a way to end');
+  }
+  if (closings.length === 1 && closings[0] !== last) {
+    err('"closing" must sit on the last stage — the interview ends there');
   }
   // The board is built from the basket, and an either-or merge re-opens the stage
   // that filled it. Without a collector before it the board is empty and a merge

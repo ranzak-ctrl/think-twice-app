@@ -42,9 +42,16 @@ export function createEngine({ pack, prompts, complete } = {}) {
     throw new Error(`createEngine: the interviewer's guidelines do not compose — ${g.errors.join('; ')}`);
   }
   // Conditional on the switch, which is why it is checked here and not in pack.js:
-  // with the registrar on, every turn starts with its call.
-  if (REGISTRAR_ENABLED && (typeof prompts.registrar !== 'string' || !prompts.registrar.trim())) {
-    throw new Error('createEngine: the registrar is switched on and the pack has no registrar text');
+  // with the registrar on, every turn starts with its call. An interview that runs
+  // without it says so with `registrar: null` (the parents' interview, for now: it
+  // has no story map). A missing or empty text is still refused — that is a text
+  // lost on the way, and it would drop the registrar without anyone deciding to.
+  if (
+    REGISTRAR_ENABLED &&
+    prompts.registrar !== null &&
+    (typeof prompts.registrar !== 'string' || !prompts.registrar.trim())
+  ) {
+    throw new Error('createEngine: the registrar is switched on and the pack has no registrar text (null opts out on purpose)');
   }
   if (typeof complete !== 'function') {
     throw new Error('createEngine: `complete` (the model call) is required');

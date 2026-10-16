@@ -16,10 +16,12 @@
 // verified there, Resend sends only to the address its account was opened with.
 
 import { thinkTwiceAdult } from '../src/packs/think-twice-adult/pack.js';
+import { thinkTwiceParents } from '../src/packs/think-twice-parents/pack.js';
 
 // The interviews this deployment can mail, by id. A new model is added here.
 export const MODEL_NAMES = Object.freeze({
   [thinkTwiceAdult.id]: thinkTwiceAdult.name,
+  [thinkTwiceParents.id]: thinkTwiceParents.name,
 });
 
 export class MailError extends Error {

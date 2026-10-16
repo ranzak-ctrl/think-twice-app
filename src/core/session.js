@@ -406,8 +406,9 @@ export async function runTurn(state, history, userText, deps) {
   // The code decides transitions, never the model.
   const decision = route(nextState, pack);
   let reply = result.message ?? PARSE_FALLBACK;
-  // The stage that decides — where the board is shown and the session closes. One
-  // per pack, and always the last (validatePack). Think Twice: stage 7.
+  // The stage that decides — where the board is shown. One per pack (validatePack);
+  // it closes the session when it is the last stage (Think Twice: stage 7), and
+  // hands over to the closing stage when one follows it (the parents' interview).
   const decisionStage = stageWith(pack, 'decision');
   const decisionKey = stageAt(pack, decisionStage).key;
 
@@ -424,7 +425,13 @@ export async function runTurn(state, history, userText, deps) {
     if (summaryResult.ok && summaryResult.message) {
       nextState = {
         ...nextState,
-        meta: { ...nextState.meta, awaitingConfirmation: true, pendingNextStage: decision.nextStage },
+        meta: {
+          ...nextState.meta,
+          awaitingConfirmation: true,
+          pendingNextStage: decision.nextStage,
+          // The closing stage's summary: confirming it ends the interview.
+          pendingClose: decision.closes === true,
+        },
       };
       reply = summaryResult.message;
     } else {

@@ -148,6 +148,9 @@ export const REGISTRAR_ENABLED = true;
 // two halves, for the reason in buildSystemPromptParts above.
 export function buildRegistrarPrompt({ state, prompts, pack = DEFAULT_PACK }) {
   if (!REGISTRAR_ENABLED) return '';
+  // An interview may run without the registrar, and says so with an explicit
+  // null — never by leaving the text out, which createEngine refuses (engine.js).
+  if (prompts?.registrar === null) return '';
   return { stable: text(prompts, 'registrar'), volatile: summarizeState(state, { full: true, pack }) };
 }
 
