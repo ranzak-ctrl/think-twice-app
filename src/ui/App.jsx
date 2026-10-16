@@ -113,6 +113,9 @@ export default function App({ onUnauthorized }) {
   // the adapter builds each entry and puts no interview content in it. Held in
   // memory like everything else; nothing is persisted (principle 6).
   const [failures, setFailures] = useState([]);
+  // What the registrar did on the last turn — ran, failed, how many things it
+  // recorded — shown in guide mode. Counts only, like the failures.
+  const [lastRegistrar, setLastRegistrar] = useState(null);
 
   // The bundle filename is the build's fingerprint: it encodes which VITE_ config
   // produced the deployment, so a report names the exact build that failed.
@@ -258,8 +261,18 @@ export default function App({ onUnauthorized }) {
       setHistory((h) => [...h, { role: 'user', content: text, at: Date.now() }]);
       setLoading(true);
       try {
-        const { nextState, reply, unauthorized, failure } = await interview.runTurn(state, history, text);
+        const { nextState, reply, unauthorized, failure, registrar, registrarFailure } = await interview.runTurn(
+          state,
+          history,
+          text
+        );
         setState(nextState);
+        // A turn that never reached the registrar (a safety stop, a locked door)
+        // clears the line rather than leaving an earlier turn's status on it.
+        setLastRegistrar(registrar ?? null);
+        // A registrar failure never costs the person their turn, so it is not the
+        // turn's `failure` — but it goes into the error report all the same.
+        if (registrarFailure) recordFailure(registrarFailure, nextState);
         if (failure) recordFailure(failure, nextState);
         if (unauthorized) {
           // A locked door, not a failed turn. Take the person's message back out
@@ -476,6 +489,7 @@ export default function App({ onUnauthorized }) {
 
   const applyOpened = ({ session, viewOnly }) => {
     setState(importState(JSON.stringify(session)));
+    setLastRegistrar(null); // the status belonged to the interview this one replaces
     setRevisions(Array.isArray(session.revisions) ? session.revisions : []);
     setHistory(Array.isArray(session.history) && session.history.length ? session.history : [openingMessage()]);
     // A person's file of an unfinished interview opens straight into it, the
@@ -702,6 +716,7 @@ export default function App({ onUnauthorized }) {
             state={state}
             pack={interview.pack}
             account={interview.renderEvent}
+            lastRegistrar={lastRegistrar}
             width={guideWidth}
             revisions={revisions}
             notes={history

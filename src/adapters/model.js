@@ -742,8 +742,9 @@ export async function complete({
           // Truncation here is the WORST failure this system has, because it is
           // invisible twice over: the reply is cut mid-JSON, parseRegistrarResponse
           // returns invalid_json, and runRegistrar deliberately returns the state
-          // untouched so a bad turn never costs the person their turn. The graph
-          // just silently stops growing — and it would degrade exactly as the
+          // untouched so a bad turn never costs the person their turn. (Since
+          // 16.10.2026 guide mode says so and the error report records it.) The graph
+          // just stops growing — and it would degrade exactly as the
           // interview gets richer, which is when the registrar matters most.
           max_tokens: mode === 'registrar' ? 8192 : 1024,
           ...thinkingField(model),
@@ -837,7 +838,9 @@ export async function complete({
           failure: { kind: 'truncated', status: res.status, requestId: lastRequestId, stage, mode, attempt, detail: 'registrar reply hit max_tokens — the graph delta did not fit' },
         };
       }
-      return { ok: true, raw, message: null, evaluation: null, usage };
+      // The request id travels with a good reply too, so a reply that then fails
+      // to parse can still be matched to the proxy's log line (registrar.js).
+      return { ok: true, raw, message: null, evaluation: null, usage, requestId: lastRequestId };
     }
     if (mode === 'summary' || mode === 'opener') {
       const message = raw.trim();

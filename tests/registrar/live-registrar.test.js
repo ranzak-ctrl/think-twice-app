@@ -12,7 +12,9 @@
 //     unescaped quote is what broke the judge on run 5, and quoting is routine here.
 //   · a parse failure is SILENT by design: runRegistrar returns the state
 //     untouched so a bad turn never costs the person their turn. Correct, and it
-//     means a registrar that fails every turn looks exactly like one that works.
+//     meant a registrar that fails every turn looked exactly like one that works —
+//     until 16.10.2026, when guide mode started saying so and the error report
+//     started recording it (tests/core/registrar-status.test.js).
 //
 // So this is the cheapest thing that answers the only question left: one live call,
 // asserting the reply parses into the ledger's shape and is not empty.

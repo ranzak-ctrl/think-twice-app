@@ -129,7 +129,28 @@ function formatCacheSaving(usage) {
 
 // `account` is the interview's own renderEvent (engine.js), bound to its pack, so
 // the panel shows the redacted account the summary and opener are built from.
-export default function GuidePanel({ state, pack, account, width = 320, notes = [], revisions = [], onClose, onExportPlain }) {
+// What the registrar did on the last turn. "It ran and found nothing new" and "it
+// failed" leave the same empty account behind; this line tells them apart (Ran,
+// 16.10.2026). The failure itself, with its technical detail, is in the error report.
+function RegistrarStatus({ run }) {
+  if (!run) return null;
+  const style = { fontSize: 11, marginBottom: 6 };
+  if (!run.ran) return <div style={{ ...style, opacity: 0.6 }}>הרשם כבוי בראיון הזה</div>;
+  if (run.error) {
+    return (
+      <div style={{ ...style, color: '#c0392b' }}>
+        ✗ הרשם נכשל בתור האחרון ({run.error}). הפרטים בדוח התקלה.
+      </div>
+    );
+  }
+  return (
+    <div style={{ ...style, color: '#2e7d4f' }}>
+      {run.added > 0 ? `✓ הרשם רשם בתור האחרון ${run.added} פריטים חדשים` : '✓ הרשם רץ בתור האחרון. לא נוספו פריטים חדשים'}
+    </div>
+  );
+}
+
+export default function GuidePanel({ state, pack, account, lastRegistrar = null, width = 320, notes = [], revisions = [], onClose, onExportPlain }) {
   const { coverage, meta } = state;
   const eventText = account(state);
   const cast = castOf(pack);
@@ -429,6 +450,7 @@ export default function GuidePanel({ state, pack, account, width = 320, notes = 
           nothing ever wrote to them. Rendered as text, exactly as the interviewer
           receives it, so a tester reads the same account the model does. */}
       <Section title="המאורע">
+        <RegistrarStatus run={lastRegistrar} />
         {eventText
           ? <pre style={{ whiteSpace: 'pre-wrap', fontSize: 11, lineHeight: 1.6, margin: 0 }}>{eventText}</pre>
           : <div style={{ fontSize: 11, opacity: 0.6 }}>טרם נאסף</div>}

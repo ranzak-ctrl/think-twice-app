@@ -157,8 +157,13 @@ export function applyRegistrar(state, deltas, turn = 0, pack = DEFAULT_PACK) {
   return next;
 }
 
-// Run one registrar pass. Returns { state, usage, error } — never throws, and on
-// any failure returns the state untouched.
+// Run one registrar pass. Returns { state, usage, error, failure } — never throws,
+// and on any failure returns the state untouched. `failure` is technical metadata
+// for the error report, in the adapter's shape and with no interview content: the
+// adapter's own when the call failed, or one built here when the reply did not
+// parse. Without it a failing registrar was invisible — the interview carried on
+// without the story, exactly as it does when there was nothing to record (Ran,
+// 16.10.2026: "הרשם … לא נראה שהוא עובד").
 //
 // A registrar failure MUST NOT cost the person their turn. The interview can run
 // without an assembled story, so a bad parse or a network error degrades to the
@@ -167,18 +172,38 @@ export function applyRegistrar(state, deltas, turn = 0, pack = DEFAULT_PACK) {
 // engine refuses to be composed without it while the switch is on — engine.js.)
 export async function runRegistrar({ state, messages, systemPrompt, completeImpl, turn = 0, stage, pack = DEFAULT_PACK }) {
   if (!systemPrompt || !messages?.length || typeof completeImpl !== 'function') {
-    return { state, usage: null, error: 'not_configured' };
+    return { state, usage: null, error: 'not_configured', failure: null };
   }
+  const failed = (kind, detail, requestId = null) => ({ kind, status: null, requestId, stage, mode: 'registrar', attempt: 1, detail });
   let result;
   try {
     result = await completeImpl({ stage, systemPrompt, messages, mode: 'registrar' });
   } catch (err) {
-    return { state, usage: null, error: err?.message ?? 'call_failed' };
+    return { state, usage: null, error: 'call_failed', failure: failed('exception', 'the registrar call threw') };
   }
-  if (!result?.ok) return { state, usage: result?.usage ?? null, error: result?.error ?? 'call_failed' };
+  if (!result?.ok) {
+    return {
+      state,
+      usage: result?.usage ?? null,
+      // A code only. On an HTTP error the adapter's `error` is the raw response
+      // body; the failure's kind says the same thing without it (router-guard).
+      error:
+        typeof result?.error === 'string' && /^[a-z_]{1,40}$/.test(result.error)
+          ? result.error
+          : (result?.failure?.kind ?? 'call_failed'),
+      failure: result?.failure ?? failed('call_failed', 'the registrar call failed'),
+    };
+  }
 
   const parsed = parseRegistrarResponse(result.raw ?? result.message ?? '');
-  if (!parsed.ok) return { state, usage: result.usage ?? null, error: parsed.error };
+  if (!parsed.ok) {
+    return {
+      state,
+      usage: result.usage ?? null,
+      error: parsed.error,
+      failure: failed('registrar_parse', `registrar reply: ${parsed.error}`, result.requestId ?? null),
+    };
+  }
 
-  return { state: applyRegistrar(state, parsed.deltas, turn, pack), usage: result.usage ?? null, error: null };
+  return { state: applyRegistrar(state, parsed.deltas, turn, pack), usage: result.usage ?? null, error: null, failure: null };
 }

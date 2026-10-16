@@ -83,7 +83,9 @@ function requireDeps(deps, who) {
 }
 
 // Process a single user message against (state, history).
-// Returns { nextState, reply, decision } — the caller owns the history array.
+// Returns { nextState, reply, decision, failure, registrar, registrarFailure }, plus
+// `unauthorized` on a locked door; the safety stop and the locked door return no
+// registrar fields. The caller owns the history array.
 // `deps` is { pack, prompts, complete }; a shell gets it bound by createEngine.
 export async function runTurn(state, history, userText, deps) {
   // Safety pre-check — an acute-distress mention stops the interview safely.
@@ -143,6 +145,15 @@ export async function runTurn(state, history, userText, deps) {
   });
   usage = addUsage(usage, registrar.usage);
   const probeState = registrar.state;
+  // What the registrar did this turn, for guide mode: whether it ran, whether it
+  // failed, and how many new things it put in the record. "Ran and recorded
+  // nothing" and "failed" look the same in the account; this tells them apart.
+  // Counts only — no content.
+  const registrarRun = {
+    ran: registrar.error !== 'not_configured',
+    error: registrar.error === 'not_configured' ? null : registrar.error,
+    added: Math.max(0, recordSize(probeState) - recordSize(state)),
+  };
 
   const result = await complete({
     stage,
@@ -527,7 +538,23 @@ export async function runTurn(state, history, userText, deps) {
   // `failure` is technical metadata for the error report (null on a good turn).
   // The adapter builds it and carries no interview content in it — see
   // describeUpstream in model.js and principle 6.
-  return { nextState, reply, decision: decision.decision, failure: result.failure ?? null };
+  return {
+    nextState,
+    reply,
+    decision: decision.decision,
+    failure: result.failure ?? null,
+    registrar: registrarRun,
+    registrarFailure: registrar.failure ?? null,
+  };
+}
+
+// How many entities the registrar's record holds — its ledger, its cast and its
+// edges. Used only to say how many NEW ones a turn added: a correction to an
+// existing one, the setting, groups and forks are not counted.
+function recordSize(state) {
+  const r = state?.eventRecord ?? {};
+  const n = (o) => Object.keys(o ?? {}).length;
+  return n(r.beats) + n(r.stances) + n(r.emotions) + n(state?.actorMap) + n(state?.edges);
 }
 
 // Low-level opener: produce the opening message + the raw usage of the call. The

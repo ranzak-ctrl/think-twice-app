@@ -354,8 +354,9 @@ describe('adapter complete() — failure metadata carries no interview content',
 // turn. Before 19.9.2026 it shared the interviewer's max_tokens of 1024, which
 // would have truncated it mid-JSON on any rich turn — and truncation there is
 // invisible twice over: parseRegistrarResponse returns invalid_json and
-// runRegistrar deliberately returns the state untouched, so the graph silently
-// stops growing exactly as the interview gets richer.
+// runRegistrar deliberately returns the state untouched, so the graph stops
+// growing exactly as the interview gets richer (silently, until guide mode and the
+// error report learned to say so on 16.10.2026).
 describe('registrar mode — headroom and truncation', () => {
   const body = async (fetchImpl) => {
     await complete({ stage: 1, systemPrompt: 'sys', messages: [{ role: 'user', content: 'x' }], mode: 'registrar', fetchImpl });
