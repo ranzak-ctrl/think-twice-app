@@ -52,6 +52,11 @@ export function parseResponse(raw) {
       decision:
         evaluation.decision && typeof evaluation.decision === 'object' ? evaluation.decision : null,
       gapObservations: parseGapObservations(evaluation),
+      // Which slot the question aims at ("stageN.slot"), the model's own account of
+      // its question. The code compares it with the current stage (session.js) —
+      // the model proposes, the code decides what to do about a question that
+      // strayed (Ran, 24.10.2026). Absent or malformed → null, never a guess.
+      asks: typeof evaluation.asks === 'string' && evaluation.asks.trim() ? evaluation.asks.trim().slice(0, 40) : null,
       openForks: parseOpenForks(evaluation),
       mapLabels: parseMapLabels(evaluation),
       nodes: parseNodes(evaluation),

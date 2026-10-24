@@ -28,7 +28,7 @@ export const DEFAULT_PACK = thinkTwiceAdult;
 
 export const COMPONENT_TYPES = new Set([
   'castClarity', // block advance while an actor is unclear; derive the named slot from the cast
-  'closing',     // the last stage, after the decision: covered and its summary confirmed ends the interview
+  'closing',     // the last stage, after the decision: covered, its summary ends the interview
   'collector',   // the production stage: options accumulate in the basket, never ranked
   'decision',    // board from the basket, sharpness, package test; a vague decision never closes
   'intensity',   // record the reported emotion intensity (1–10) while standing here — the delta KPI
@@ -181,7 +181,7 @@ const isGuard = (v) => isPosInt(v) && v <= LOAD_GUARD_MAX;
 // engine change, so it is added here on purpose.
 const FIELDS = {
   pack: ['id', 'name', 'version', 'routing', 'stages', 'map'],
-  routing: ['softThreshold', 'saturationLimit', 'loadGuard', 'rejectGrace'],
+  routing: ['softThreshold', 'saturationLimit', 'loadGuard'],
   stage: ['key', 'name', 'label', 'signpost', 'slots', 'requires', 'loadGuard', 'components'],
   slot: ['id', ...SLOT_FLAGS],
   map: ['narrative', 'timeline', 'source'],
@@ -225,7 +225,6 @@ export function validatePack(pack) {
   }
   if (!isPosInt(r.saturationLimit)) err('routing.saturationLimit must be a positive integer');
   if (!isGuard(r.loadGuard)) err(`routing.loadGuard must be a whole number from 1 to ${LOAD_GUARD_MAX}`);
-  if (!(Number.isInteger(r.rejectGrace) && r.rejectGrace >= 0)) err('routing.rejectGrace must be a non-negative integer');
 
   if (!Array.isArray(pack.stages) || !pack.stages.length) {
     err('pack.stages must list at least one stage');
@@ -307,7 +306,7 @@ export function validatePack(pack) {
       err(`${where}: castClarity cannot sit on the decision stage — the decision never reads the cast`);
     }
     // One stage, one way to end: the decision closes on a sharp choice, the
-    // closing stage on its confirmed summary. Both on one stage would be two
+    // closing stage on its summary. Both on one stage would be two
     // closures racing for the same turn.
     // The decision stage routes by its own rules and never reads a load guard, so
     // one set there would promise a backstop that cannot fire.
@@ -431,7 +430,7 @@ function validateMap(pack, err) {
 // they are used: `registrar` only while the registrar is switched on (engine.js
 // knows the switch; this module must import nothing from core), and `judge`, which
 // belongs to the acceptance harness and not to the interview (judge.js).
-export const REQUIRED_PROMPTS = ['resistance', 'evaluator', 'summary', 'opener', 'board'];
+export const REQUIRED_PROMPTS = ['resistance', 'evaluator', 'summary', 'summaryNudge', 'opener', 'board'];
 
 export function validatePrompts(pack, prompts) {
   const errors = [];

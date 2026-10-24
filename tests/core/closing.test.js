@@ -13,7 +13,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { validatePack } from '../../src/core/pack.js';
-import { route, confirmAndAdvance, rejectConfirmation, Decision } from '../../src/core/router.js';
+import { route, advanceStage, Decision } from '../../src/core/router.js';
 import { createState } from '../../src/core/state.js';
 import { createEngine } from '../../src/core/engine.js';
 import { thinkTwiceParents } from '../../src/packs/think-twice-parents/pack.js';
@@ -26,7 +26,7 @@ const after = {
   id: 'after-test',
   name: 'ראיון עם תרגול',
   version: 1,
-  routing: { softThreshold: 0.8, saturationLimit: 2, loadGuard: 12, rejectGrace: 2 },
+  routing: { softThreshold: 0.8, saturationLimit: 2, loadGuard: 12 },
   stages: [
     { key: 'stage1', label: 'מה קרה', slots: [{ id: 'what' }] },
     { key: 'stage2', label: 'מה אפשר', slots: [{ id: 'alternatives' }], components: [{ type: 'collector' }] },
@@ -98,7 +98,7 @@ describe('validatePack: how an interview may end', () => {
 });
 
 describe('the Router: a decision that hands over, and a stage that closes', () => {
-  it('a decided decision with a stage after it asks for its summary to be confirmed', () => {
+  it('a decided decision with a stage after it decides the hand-over (summary, then the closing stage)', () => {
     expect(route(at(after, 3, DECIDED), after)).toMatchObject({
       decision: Decision.REQUEST_CONFIRMATION,
       nextStage: 4,
@@ -111,37 +111,26 @@ describe('the Router: a decision that hands over, and a stage that closes', () =
     expect(route(s, after).decision).toBe(Decision.STAY);
   });
 
-  it('a rejected decision summary buys the grace before it is offered again', () => {
-    const s = at(after, 3, DECIDED, { questionCount: 1, confirmationFloor: 3 });
-    expect(route(s, after)).toMatchObject({ decision: Decision.STAY, reason: 'correcting_summary' });
-  });
-
-  it('the closing stage, covered, asks for its summary — and does not close by itself', () => {
+  it('the closing stage, covered, decides its summary — and does not close by itself', () => {
     const r = route(at(after, 4, { step: 2, when: 2 }), after);
     expect(r).toMatchObject({ decision: Decision.REQUEST_CONFIRMATION, nextStage: null, closes: true });
     expect(route(at(after, 4, { step: 2, when: 1 }), after).decision).toBe(Decision.STAY);
   });
 
-  it('the closing stage’s load guard asks for the summary too', () => {
+  it('the closing stage’s load guard decides the summary too', () => {
     expect(route(at(after, 4, {}, { questionCount: 5 }), after)).toMatchObject({
       closes: true,
       reason: 'load_guard',
     });
   });
 
-  it('confirming the closing summary ends the interview where it stands', () => {
-    const s = at(after, 4, { step: 2, when: 2 }, { awaitingConfirmation: true, pendingClose: true, questionCount: 3 });
-    const done = confirmAndAdvance(s);
-    expect(done.meta).toMatchObject({ sessionComplete: true, currentStage: 4, awaitingConfirmation: false, pendingClose: false });
+  it('the closing summary ends the interview where it stands (advanceStage, closes)', () => {
+    const s = at(after, 4, { step: 2, when: 2 }, { questionCount: 3 });
+    const done = advanceStage(s, { nextStage: null, closes: true }, after);
+    expect(done.meta).toMatchObject({ sessionComplete: true, currentStage: 4 });
     expect(done.meta.kpi.questionsPerStage.stage4).toBe(3);
-    expect(done.meta.decisionLog.at(-1)).toMatchObject({ decision: Decision.SESSION_COMPLETE, reason: 'confirmed' });
+    expect(done.meta.decisionLog.at(-1)).toMatchObject({ decision: Decision.SESSION_COMPLETE, reason: 'summarized' });
     expect(route(done, after).decision).toBe(Decision.SESSION_COMPLETE);
-  });
-
-  it('rejecting it keeps the interview open and buys the grace', () => {
-    const s = at(after, 4, {}, { awaitingConfirmation: true, pendingClose: true, questionCount: 4 });
-    const back = rejectConfirmation(s, after);
-    expect(back.meta).toMatchObject({ sessionComplete: false, pendingClose: false, confirmationFloor: 6 });
   });
 });
 
@@ -182,19 +171,13 @@ describe('an interview with a closing stage runs to its end', () => {
       history = [...history, { role: 'user', content: text }, { role: 'assistant', content: r.reply }];
       return r.decision;
     };
-    const confirm = async () => {
-      state = interview.confirmAndAdvance(state);
-      if (state.meta.sessionComplete) return;
-      const r = await interview.generateStageOpener(state, history);
-      state = r.nextState;
-    };
-
+    // Since 24.10.2026 the turn that decides a transition also carries it out:
+    // summary, advance, opener — nothing for anyone to confirm.
     expect(await turn('הוא נתן פליק לאח', { slots: { what: 2 } })).toBe(Decision.REQUEST_CONFIRMATION);
-    await confirm();
+    expect(state.meta.currentStage).toBe(2);
     expect(await turn('אפשר לשבת לידו', { slots: { alternatives: 2 }, alternatives: ['לשבת לידו'] })).toBe(
       Decision.REQUEST_CONFIRMATION
     );
-    await confirm();
     expect(state.meta.currentStage).toBe(3);
     expect(await turn('שיעשה שיעורים בשקט', { slots: { goal: 2 } })).toBe(Decision.SHOW_BOARD);
     expect(
@@ -204,12 +187,9 @@ describe('an interview with a closing stage runs to its end', () => {
       })
     ).toBe(Decision.REQUEST_CONFIRMATION);
     expect(state.meta.sessionComplete).toBe(false);
-    await confirm();
     expect(state.meta.currentStage).toBe(4);
 
     expect(await turn('מחר בארבע אכין אותו מראש', { slots: { step: 2, when: 2 } })).toBe(Decision.REQUEST_CONFIRMATION);
-    expect(state.meta).toMatchObject({ awaitingConfirmation: true, pendingClose: true, sessionComplete: false });
-    await confirm();
     expect(state.meta.sessionComplete).toBe(true);
     expect(state.meta.currentStage).toBe(4);
 
@@ -233,8 +213,8 @@ describe('the hand-over keeps the rules every hand-over keeps', () => {
   });
 
   it('never advances past the last stage, even when the closing flag is missing', () => {
-    const s = at(after, 4, {}, { awaitingConfirmation: true, pendingNextStage: null });
-    const done = confirmAndAdvance(s, after);
+    const s = at(after, 4, {}, {});
+    const done = advanceStage(s, { nextStage: null }, after);
     expect(done.meta).toMatchObject({ sessionComplete: true, currentStage: 4 });
   });
 });

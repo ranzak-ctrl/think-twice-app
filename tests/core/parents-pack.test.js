@@ -64,7 +64,7 @@ describe('the parents’ pack', () => {
   });
 
   it('paces each stage with its own load guard', () => {
-    expect(p.routing).toEqual({ softThreshold: 0.8, saturationLimit: 2, loadGuard: 20, rejectGrace: 3 });
+    expect(p.routing).toEqual({ softThreshold: 0.8, saturationLimit: 2, loadGuard: 20 });
     expect(p.stages.map((s) => s.loadGuard ?? null)).toEqual([7, 4, 5, 5, 6, 8, null, 6]);
   });
 

@@ -46,9 +46,11 @@ export const thinkTwiceAdult = {
   // question per turn, the headers no longer reach the model — and the drawing is
   // the registrar's record. 3 (24.10.2026, later that day): an emotion in stage 1
   // is recorded, not asked; the evaluator stops reporting the map layer; a
-  // checklist closes the turn prompt. The state's shape did not change either
-  // time (migrations.js).
-  version: 3,
+  // checklist closes the turn prompt. 4 (24.10.2026, night): a stage closes on a
+  // brief summary and moves on — no confirmation; the saved state loses the four
+  // waiting fields (migrations.js, step 3). The state's shape did not change in
+  // 2 and 3.
+  version: 4,
 
   // The Router's numbers. Each is a pack decision; none is clinically validated
   // beyond what docs/questions-for-natali.md records (§1 load guard, §13 grace).
@@ -56,7 +58,6 @@ export const thinkTwiceAdult = {
     softThreshold: 0.8,  // share of core slots at 2 for the soft path
     saturationLimit: 2,  // consecutive turns with no new information
     loadGuard: 20,       // TEMPORARY backstop — placeholder, questions-for-natali §1; see router.js
-    rejectGrace: 3,      // turns bought by "לתקן"
   },
 
   // Order is the interview's order. A stage's key is `stage{n}` by position: the

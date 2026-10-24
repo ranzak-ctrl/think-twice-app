@@ -1,5 +1,5 @@
 import { renderEvent } from './eventView.js';
-import { DEFAULT_PACK, stageKey, barredSlots, mapSource } from './pack.js';
+import { DEFAULT_PACK, stageKey, barredSlots, mapSource, stageAt } from './pack.js';
 import { composeGuidelines, composeGuidelinesTail } from './guidelines.js';
 
 // ── THE CORE IMPORTS NO PROMPT ──
@@ -101,8 +101,10 @@ export function buildSystemPromptParts({ stage, state, prompts, pack = DEFAULT_P
   const stagePrompt = stagePromptFor(prompts, stage);
   // The ONLY caller that gets the unredacted account — its output is a question
   // to the person, never a text spoken verbatim, and stage 2 must see the מוגלה to
-  // probe it. Summary / opener / board keep the safe default.
-  const stateSummary = summarizeState(state, { full: true, pack, prompts });
+  // probe it. Summary / opener / board keep the safe default. Also the only caller
+  // that gets the course correction after a stray question (`correction`): it is
+  // an instruction to the one who writes the next question, and nobody else.
+  const stateSummary = summarizeState(state, { full: true, correction: true, pack, prompts });
 
   return {
     // The stage prompt sits inside the cached half deliberately. It changes seven
@@ -167,6 +169,9 @@ export function buildRegistrarPrompt({ state, prompts, pack = DEFAULT_PACK }) {
   // An interview may run without the registrar, and says so with an explicit
   // null — never by leaving the text out, which createEngine refuses (engine.js).
   if (prompts?.registrar === null) return '';
+  // Unredacted (the registrar records the wound too), but without the course
+  // correction a stray question leaves behind: that block tells the interviewer
+  // what to ask next, and here it would be a speaking instruction in a JSON-only call.
   return { stable: text(prompts, 'registrar'), volatile: summarizeState(state, { full: true, pack }) };
 }
 
@@ -185,19 +190,18 @@ export function buildSummaryPrompt({ state, prompts, pack = DEFAULT_PACK }) {
 
 // Summary mode reuses the live conversation, which on the real API can pull the
 // model into CONTINUING the dialogue (a fresh probe) instead of summarizing — the
-// dissonance Ran hit (confirmation requested, but the message was a follow-up
-// question, not a recap). Anchor the call with the model's last probe + an explicit
-// instruction so the next reply is a recap. Role-valid (… user → assistant → user).
-export const SUMMARY_NUDGE =
-  'תודה. לפני שנמשיך הלאה — סכם בקצרה, במילים שלי, את מה שמסרתי בשלב הזה בלבד, ובקש אישור. ' +
-  'פתח ב"בוא נוודא שהבנתי נכון —" וסיים ב"זה מדויק?". אל תשאל שאלה חדשה, אל תעמיק ואל תוסיף מידע.';
-
-export function buildSummaryMessages(messages, probeMessage) {
+// dissonance Ran hit (a follow-up question where a recap was due). Anchor the call
+// with the model's last probe + an explicit "summarize now" user turn so the next
+// reply is a recap. Role-valid (… user → assistant → user). The nudge's words are
+// the pack's (`prompts.summaryNudge`, src/content/prompts/summary-nudge.md): it is
+// prompt content, and it changed with the summary itself on 24.10.2026 (no
+// confirmation asked any more).
+export function buildSummaryMessages(messages, probeMessage, prompts) {
   if (!probeMessage) return messages; // no probe to anchor (rare) — leave as-is
   return [
     ...messages,
     { role: 'assistant', content: probeMessage },
-    { role: 'user', content: SUMMARY_NUDGE },
+    { role: 'user', content: text(prompts, 'summaryNudge').trim() },
   ];
 }
 
@@ -209,14 +213,21 @@ export function buildSummaryMessages(messages, probeMessage) {
 // `situation` (optional) frames the transition — e.g. a Re-open back to an earlier
 // stage to complete info — so the opener can explain why we returned. Forward
 // transitions omit it.
-export function buildOpenerPrompt({ stage, state, situation, prompts, pack = DEFAULT_PACK }) {
+// `after` (forward transitions since 24.10.2026): the brief summary that closed
+// the stage, which the opener follows inside ONE message. The opener is told it
+// was just said, so it does not say it again — it frames the new stage and asks.
+export function buildOpenerPrompt({ stage, state, situation, after, prompts, pack = DEFAULT_PACK }) {
   const stagePrompt = stagePromptFor(prompts, stage);
   const situationBlock = situation ? `## הקשר המעבר\n${situation}` : '';
+  const afterBlock = after
+    ? `## מה נאמר זה עתה\nהסיכום הזה כבר נאמר, והפתיח שלך בא מיד אחריו באותה הודעה — אל תחזור עליו:\n${after}`
+    : '';
   return [
     guidelines(prompts),
     stagePrompt,
     text(prompts, 'opener'),
     situationBlock,
+    afterBlock,
     forbiddenBlock(prompts),
     summarizeState(state, { pack, prompts }),
   ]
@@ -225,9 +236,11 @@ export function buildOpenerPrompt({ stage, state, situation, prompts, pack = DEF
 }
 
 // The API requires the messages to END WITH A USER turn (no assistant prefill).
-// Forward transitions end on the assistant's summary → append the user's
-// confirmation; a Re-open already ends on the user's own turn → leave it as is.
-export const OPENER_NUDGE = 'כן, זה מדויק. אפשר להמשיך.';
+// Since 24.10.2026 every opener is built on a history that ends on the person's
+// own answer (the turn that closed the stage, or the one that re-opened it), so
+// nothing is appended. The nudge remains for a caller whose history ends on an
+// assistant turn, and says nothing in the person's name.
+export const OPENER_NUDGE = 'המשך.';
 
 export function buildOpenerMessages(messages) {
   const last = messages[messages.length - 1];
@@ -288,7 +301,29 @@ function renderFindings(state, { full, pack }) {
   return out.length ? `## מה נמסר עד עכשיו (hidden from user)\n${out.join('\n')}` : '';
 }
 
-function summarizeState(state, { full = false, pack, prompts } = {}) {
+// The stage's boundaries, named to the model after a question that strayed. The
+// text says what the stage is and what its slots are, asks for a frame and one
+// question on them, and forbids any word about it to the person. A deviation is
+// not an error and never ends an interview (Ran, 24.10.2026, test-plan §א.1ב).
+function renderOffStage(state, pack) {
+  const off = state?.meta?.offStage;
+  if (!off?.asked) return '';
+  // The correction belongs to the stage the question strayed from. advanceStage and
+  // a re-open clear the flag; should a stale one ever arrive here with the interview
+  // already elsewhere, saying "we are still in the old stage" would be the wrong
+  // thing to tell the model — so nothing is said.
+  const stage = stageAt(pack, state.meta.currentStage);
+  if (!stage || stage.key !== off.stage) return '';
+  const slots = (stage.slots ?? []).map((sl) => sl.id).join(' · ');
+  return [
+    '## תיקון מסלול (hidden from user)',
+    `השאלה הקודמת שלך כיוונה ל-\`${off.asked}\`, שאינו בשלב הנוכחי. השלב לא השתנה: אנחנו עדיין ב"${stage.label ?? stage.name ?? stage.key}" (${stage.key}), וה-slots שלו הם: ${slots}.`,
+    'עכשיו: משפט מסגור אחד, ושאלה אחת על אחד מה-slots האלה. מה שהמרואיין ענה נרשם ל-slot שלו (לכידה חוצת-שלבים).',
+    'אל תאמר למרואיין דבר על החריגה — לא התנצלות, לא "סטינו", לא הסבר. פשוט ממשיכים.',
+  ].join('\n');
+}
+
+function summarizeState(state, { full = false, correction = false, pack, prompts } = {}) {
   const { coverage, meta } = state;
   const threads = (meta.savedThreads ?? []).length
     ? `\nsaved_threads: ${JSON.stringify(meta.savedThreads)}`
@@ -339,8 +374,15 @@ function summarizeState(state, { full = false, pack, prompts } = {}) {
   // is a no-op for now — `renderEvent` returns '' for an untouched record.
   const event = renderEvent(state, { full, pack });
   const remembered = prompts?.registrar === null ? renderFindings(state, { full, pack }) : '';
+  // The previous question strayed outside the stage (session.js, meta.offStage):
+  // the stage's boundaries are named to the MODEL, here, hidden — and only on the
+  // interviewer's turn prompt (`correction`, buildSystemPromptParts), where the
+  // next question is written; not to the registrar, whose prompt is also
+  // unredacted. The person is told nothing: no apology, no "we strayed" (Ran,
+  // 24.10.2026).
+  const offStage = correction ? renderOffStage(state, pack) : '';
 
-  return `${event ? `${event}\n\n` : ''}${remembered ? `${remembered}\n\n` : ''}## STATE SUMMARY (hidden from user)
+  return `${event ? `${event}\n\n` : ''}${remembered ? `${remembered}\n\n` : ''}${offStage ? `${offStage}\n\n` : ''}## STATE SUMMARY (hidden from user)
 stage: ${meta.currentStage}
 questions_this_stage: ${meta.questionCount}
 saturation: ${meta.saturationCount}

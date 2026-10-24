@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { runTurn } from '../helpers/engine.js';
-import { confirmAndAdvance } from '../../src/core/router.js';
 import { createState } from '../../src/core/state.js';
 import { resetMockCounters } from '../../src/adapters/model.js';
 import { buildMap } from '../../src/core/storyMap.js';
@@ -29,10 +28,6 @@ describe('what the registrar records reaches the map', () => {
     let state = createState();
     let history = [];
     for (let turns = 0; state.meta.currentStage <= stage && turns < 60; turns++) {
-      if (state.meta.awaitingConfirmation) {
-        state = confirmAndAdvance(state);
-        continue;
-      }
       const text = 'אני לא יודע מה לעשות';
       const { nextState, reply } = await runTurn(state, history, text);
       history = [...history, { role: 'user', content: text }, { role: 'assistant', content: reply }];

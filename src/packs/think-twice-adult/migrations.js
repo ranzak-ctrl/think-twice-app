@@ -27,4 +27,15 @@ export const thinkTwiceAdultMigrations = {
   // opens a stage and answers a drift — and no slot, field or state shape moved.
   // A version-2 file is a version-3 file.
   2: (session) => session,
+  // 3 → 4 (24.10.2026): the end-of-stage confirmation went (Ran: a stage closes on
+  // a brief summary and moves on). A file saved while the old shell waited for the
+  // person to confirm carries the waiting fields; nothing reads them any more, and
+  // they are dropped so the file is what version 4 would have written. Every slot,
+  // every other field is the same; the Router decides the pending transition again
+  // on the next turn, since the stage is still covered.
+  3: (session) => {
+    const meta = { ...(session.state?.meta ?? {}) };
+    for (const k of ['awaitingConfirmation', 'pendingNextStage', 'pendingClose', 'confirmationFloor']) delete meta[k];
+    return { ...session, state: { ...session.state, meta } };
+  },
 };

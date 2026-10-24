@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createState } from '../../src/core/state.js';
-import { confirmAndAdvance } from '../../src/core/router.js';
 import { runTurn } from '../helpers/engine.js';
 import { resetMockCounters } from '../../src/adapters/model.js';
 
@@ -24,11 +23,6 @@ describe('Meat golden script — end to end', () => {
 
     while (!state.meta.sessionComplete && turns < MAX) {
       turns++;
-      if (state.meta.awaitingConfirmation) {
-        // Simulate the user clicking "מדויק" on the interim summary.
-        state = confirmAndAdvance(state);
-        continue;
-      }
       const userText = 'אני לא יודע מה לעשות';
       const { nextState, reply } = await runTurn(state, history, userText);
       history = [

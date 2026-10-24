@@ -47,8 +47,7 @@ function states() {
     }
   }
   const base = createState();
-  out.push({ label: 'awaiting confirmation', state: { ...base, meta: { ...base.meta, awaitingConfirmation: true } } });
-  out.push({ label: 'inside reject grace', state: { ...fill(base, 1, 2), meta: { ...base.meta, confirmationFloor: 9, questionCount: 4 } } });
+  out.push({ label: 'full coverage, mid-stage', state: { ...fill(base, 1, 2), meta: { ...base.meta, questionCount: 4 } } });
   out.push({ label: 'at the load guard', state: { ...base, meta: { ...base.meta, questionCount: 25 } } });
   out.push({ label: 'safety stop', state: { ...base, meta: { ...base.meta, safetyFlag: true } } });
   out.push({ label: 'session complete', state: { ...base, meta: { ...base.meta, sessionComplete: true } } });

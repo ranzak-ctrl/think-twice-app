@@ -9,7 +9,7 @@ export const four = {
   id: 'four-stage-test',
   name: 'ראיון בדיקה',
   version: 1,
-  routing: { softThreshold: 0.8, saturationLimit: 2, loadGuard: 12, rejectGrace: 2 },
+  routing: { softThreshold: 0.8, saturationLimit: 2, loadGuard: 12 },
   stages: [
     { key: 'stage1', name: 'זירה', label: 'מה קרה', slots: [{ id: 'event' }, { id: 'when' }] },
     {
@@ -55,6 +55,7 @@ export const prompts = {
   evaluator: t('evaluator'),
   registrar: t('registrar'),
   summary: t('summary'),
+  summaryNudge: 'סכם בקצרה, במילים שלי, את מה שמסרתי בשלב הזה. בלי שאלה.',
   opener: t('opener'),
   board: t('board'),
   forbidden: ['[forbidden]'],

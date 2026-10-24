@@ -117,11 +117,15 @@ export function createState(pack = DEFAULT_PACK) {
       savedThreads: [],        // topics user drifted to — may contain useful info
       decisionLog: [],         // recent Router decisions (guide mode) — capped
       mergeAttempt: null,      // the decision stage's either-or: 'real' | 'avoidance' | null (transient)
-      awaitingConfirmation: false,
-      // questionCount below which the summary is not offered again. Set when the
-      // user rejects a summary, so "לתקן" buys turns to actually correct it. See
-      // rejectConfirmation.
-      confirmationFloor: 0,
+      // The interviewer's last question strayed outside the stage (Ran, 24.10.2026:
+      // shown to the person as is, reflected to the MODEL on the next call, never
+      // to the person; the Router is untouched). { asked, stage } for one turn,
+      // then cleared — or null. See session.js and promptBuilder.js.
+      offStage: null,
+      // (awaitingConfirmation, pendingNextStage, pendingClose and confirmationFloor
+      // lived here until 24.10.2026, when the end-of-stage confirmation went —
+      // router.js advanceStage. A file from before may still carry them; nothing
+      // reads them, and the adult migration 3 → 4 strips them.)
       safetyFlag: false,
       sessionComplete: false,
       // Real-API token tally. `inputTokens` is the UNCACHED remainder once prompt

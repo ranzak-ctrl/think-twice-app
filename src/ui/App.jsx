@@ -290,32 +290,6 @@ export default function App({ onUnauthorized }) {
     [state, history, loading]
   );
 
-  const handleConfirm = useCallback(async () => {
-    if (loading) return;
-    // Advance first (drops the confirm UI), then generate a story-anchored opening
-    // question for the new stage. addMessage runs OUTSIDE any setState updater, so it
-    // fires once (a side effect inside an updater double-fires under StrictMode).
-    const advanced = interview.confirmAndAdvance(state);
-    setState(advanced);
-    // The closing stage's summary: confirming it ended the interview, so there is
-    // no next stage to open — the end screen opens on its own.
-    if (advanced.meta.sessionComplete) return;
-    setLoading(true);
-    try {
-      const { nextState, message, failure } = await interview.generateStageOpener(advanced, history);
-      setState(nextState);
-      if (failure) recordFailure(failure, nextState);
-      addMessage('assistant', message);
-    } finally {
-      setLoading(false);
-    }
-  }, [state, history, loading]);
-
-  const handleReject = useCallback(() => {
-    setState((s) => interview.rejectConfirmation(s));
-    addMessage('assistant', 'בסדר — מה רצית לתקן?');
-  }, []);
-
   const download = (href, filename) => {
     const a = document.createElement('a');
     a.href = href;
@@ -675,17 +649,13 @@ export default function App({ onUnauthorized }) {
             history={history}
             loading={loading}
             board={state.board}
-            awaitingConfirmation={state.meta.awaitingConfirmation}
             sessionComplete={state.meta.sessionComplete}
             feedbackEnabled={guideOpen}
             onFeedback={handleFeedback}
             onRewrite={handleRewrite}
             onSend={handleUserMessage}
-            onConfirm={handleConfirm}
-            onReject={handleReject}
             viewing={viewing}
             preamble={interviewCopy.preamble}
-            closing={Boolean(state.meta.awaitingConfirmation && state.meta.pendingClose)}
           />
           {mapOpen && <StoryMap map={map} />}
           <StageRail

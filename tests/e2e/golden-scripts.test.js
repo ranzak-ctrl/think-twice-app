@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createState } from '../../src/core/state.js';
-import { confirmAndAdvance } from '../../src/core/router.js';
 import { runTurn } from '../helpers/engine.js';
 import { resetMockCounters, setMockScenario } from '../../src/adapters/model.js';
 
@@ -20,10 +19,6 @@ async function runScenario(name) {
 
   while (!state.meta.sessionComplete && turns < MAX) {
     turns++;
-    if (state.meta.awaitingConfirmation) {
-      state = confirmAndAdvance(state);
-      continue;
-    }
     const userText = 'אני לא יודע מה לעשות';
     const { nextState, reply } = await runTurn(state, history, userText);
     history = [

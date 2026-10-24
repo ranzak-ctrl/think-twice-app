@@ -108,6 +108,9 @@ describe('mock responses pass lint rules', () => {
 });
 
 // --- Summary mock lint sweep (Router-driven stage recaps) ---
+// Since 24.10.2026 (Ran) a summary ends as a statement: no question mark and no
+// request for confirmation. The message that carries it also carries the next
+// stage's opener, and THAT holds the turn's one question.
 
 describe('mock summaries pass lint rules', () => {
   for (const [stage, message] of Object.entries(MOCK_SUMMARIES)) {
@@ -115,12 +118,14 @@ describe('mock summaries pass lint rules', () => {
       expect(containsForbiddenJargon(message)).toBe(false);
     });
 
-    it(`stage ${stage}: exactly one question mark`, () => {
-      expect(questionCount(message)).toBe(1);
+    it(`stage ${stage}: no question mark, no request for confirmation`, () => {
+      expect(questionCount(message)).toBe(0);
+      expect(message).not.toContain('מדויק');
     });
 
-    it(`stage ${stage}: max 3 sentences before question`, () => {
-      expect(sentenceCountBeforeQuestion(message)).toBeLessThanOrEqual(3);
+    it(`stage ${stage}: opens with "אז הבנתי ש" and stays short`, () => {
+      expect(message.startsWith('אז הבנתי ש')).toBe(true);
+      expect((message.match(/[.!]/g) ?? []).length).toBeLessThanOrEqual(3);
     });
   }
 });
@@ -132,10 +137,10 @@ describe('golden-script scenarios pass lint rules', () => {
     if (name === 'meat') continue; // covered above
 
     for (const [stage, message] of Object.entries(sc.summaries)) {
-      it(`${name} summary ${stage}: no jargon, one question, ≤3 sentences`, () => {
+      it(`${name} summary ${stage}: no jargon, no question, ≤3 sentences`, () => {
         expect(containsForbiddenJargon(message)).toBe(false);
-        expect(questionCount(message)).toBe(1);
-        expect(sentenceCountBeforeQuestion(message)).toBeLessThanOrEqual(3);
+        expect(questionCount(message)).toBe(0);
+        expect((message.match(/[.!]/g) ?? []).length).toBeLessThanOrEqual(3);
       });
     }
 

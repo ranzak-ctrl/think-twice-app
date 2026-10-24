@@ -1381,29 +1381,6 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
-/* Summary confirmation — one of only two decision points shown to the user. */
-.confirm {
-  border-top: 1px solid var(--border);
-  background: var(--surface-accent);
-  padding: 12px 20px;
-}
-
-.confirm-inner {
-  max-width: var(--column-content);
-  margin-inline: auto;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.confirm-label {
-  font-size: 14px;
-  color: var(--text-muted);
-  margin-inline-end: auto;
-}
-
 /* ------------------------------------------------------------- composer -- */
 
 .composer {

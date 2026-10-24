@@ -24,7 +24,7 @@ const SLOT_COLOR = (v) => {
 // Router decision codes → Hebrew labels for the guide-mode trail.
 const DECISION_LABELS = {
   stay: 'נשאר',
-  requestConfirmation: 'מבקש אישור סיכום',
+  requestConfirmation: 'סיכום ומעבר',
   advance: 'מעבר שלב',
   reopen: 'פתיחה מחדש',
   showBoard: 'הצגת לוח',
@@ -205,7 +205,10 @@ export default function GuidePanel({ state, pack, account, lastRegistrar = null,
       {/* Stage indicator */}
       <Section title={`שלב ${meta.currentStage} — ${stageName(pack, meta.currentStage)}`}>
         <Row label="פתח שאלה" value={meta.questionAperture} />
-        <Row label="ממתין לאישור" value={meta.awaitingConfirmation ? 'כן' : 'לא'} />
+        {/* The last question strayed outside the stage: shown here only (a tester's
+            view); the person saw the question as it was, and the next prompt names
+            the stage's boundaries to the model (Ran, 24.10.2026). */}
+        {meta.offStage?.asked && <Row label="חריגה מהשלב" value={`השאלה כיוונה ל-${meta.offStage.asked}; מתוקן בתור הבא`} />}
       </Section>
 
       {/* Tester feedback collected on individual interviewer questions. Rides in

@@ -37,6 +37,14 @@ describe('session — Re-open opener (stage 7 → 6 merge)', () => {
     expect(reply).not.toBe('תגובת שלב 7');
   });
 
+  // A question that strayed on the very turn that re-opens: the correction would
+  // name the boundaries of the stage we just left (router-guard, 24.10.2026).
+  it('clears a stray question recorded on the re-opening turn', async () => {
+    const { nextState } = await runStage7Turn({ merge_attempt: 'real', asks: 'stage3.emotion' });
+    expect(nextState.meta.currentStage).toBe(6);
+    expect(nextState.meta.offStage).toBeNull();
+  });
+
   it('resets the merge attempt and stage counters on re-open', async () => {
     const { nextState } = await runStage7Turn({ merge_attempt: 'real' });
     expect(nextState.meta.mergeAttempt).toBeNull();
@@ -44,16 +52,13 @@ describe('session — Re-open opener (stage 7 → 6 merge)', () => {
     expect(nextState.meta.saturationCount).toBe(0);
   });
 
-  // Re-open is the other path that changes stage, and confirmationFloor is a
-  // threshold ON questionCount — zeroing one without the other would pin the
-  // reopened stage in STAY for a whole grace window, past the load guard, which
-  // could not fire because the floor would sit above it. Asserted by name
-  // rather than by "the counters", because the counters are what the sibling
-  // assertions above already enumerate: a fifth field added later needs its own
-  // line here, and a silent omission is exactly what this guards.
-  it('clears the summary-correction floor on re-open', async () => {
+  // Until 24.10.2026 re-open also zeroed `confirmationFloor`, the threshold the
+  // summary-correction window set on questionCount. The confirmation step is
+  // gone (Ran's ruling of that day: a stage ends with a summary and moves on), and
+  // with it the floor; a re-opened stage must not carry the dead field back.
+  it('carries no summary-correction floor into the re-opened stage', async () => {
     const { nextState } = await runStage7Turn({ merge_attempt: 'real' });
-    expect(nextState.meta.confirmationFloor).toBe(0);
+    expect(nextState.meta).not.toHaveProperty('confirmationFloor');
   });
 
   // The framing the opener is written from, word for word. Its stage number comes

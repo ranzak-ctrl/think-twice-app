@@ -16,19 +16,24 @@ import {
 
 export const Decision = {
   STAY: 'stay',
-  REQUEST_CONFIRMATION: 'requestConfirmation', // show summary, wait for user
-  ADVANCE: 'advance',                          // confirmed — move to next stage
+  // A transition is decided. Until 24.10.2026 the shell showed the summary and
+  // waited for the person to confirm it; since Ran's ruling of that day the
+  // session summarizes, advances (advanceStage) and opens the next stage in the
+  // same message — nobody waits. The name is kept so decision logs and exports
+  // from before read the same.
+  REQUEST_CONFIRMATION: 'requestConfirmation',
+  ADVANCE: 'advance',                          // the stage closed on its summary — moved on
   REOPEN: 'reopen',                            // contradicting info — drop slot
   SHOW_BOARD: 'showBoard',                     // decision stage: present the board
   SAFETY_STOP: 'safetyStop',
   SESSION_COMPLETE: 'sessionComplete',
 };
 
-// The numbers this module routes by — the soft threshold, the saturation limit,
-// the load guard and the rejection grace — are the PACK's (pack.routing, and a
-// stage's own `loadGuard`); Think Twice's values are in
-// src/packs/think-twice-adult/pack.js. What they mean, and why two of them exist
-// at all, stays here with the code that acts on them:
+// The numbers this module routes by — the soft threshold, the saturation limit
+// and the load guard — are the PACK's (pack.routing, and a stage's own
+// `loadGuard`); Think Twice's values are in src/packs/think-twice-adult/pack.js.
+// What the load guard means, and why it exists at all, stays here with the code
+// that acts on it:
 //
 // LOAD GUARD — a TEMPORARY BACKSTOP, not the real mechanism. Counting questions is
 // the wrong proxy for user load (see docs/questions-for-natali.md §1): it can't
@@ -38,17 +43,8 @@ export const Decision = {
 // saturation never fires; removing it would strand stages. Set deliberately high
 // so it rarely fires — do not treat Think Twice's 20/15 as clinically validated.
 //
-// REJECT GRACE — turns bought by rejecting a summary. Without it the gate that
-// produced the summary is still open on the next turn — questionCount only rises,
-// coverage never falls — so "לתקן" re-offered the same summary immediately and the
-// user could never correct anything. Bounded on purpose: questionCount always
-// climbs, so the floor is always crossed and no stage can strand behind it.
-// INTERIM VALUE — how long a correction takes is interview pace, and the
-// transition protocol has no rejection branch to read it off: it defines the
-// confirmation gate and says nothing about what follows "לתקן". Filed as
-// docs/questions-for-natali.md §13. Same family as the load guard (§1) but not
-// covered by it. Not clinically validated.
-export const REJECT_GRACE = DEFAULT_PACK.routing.rejectGrace;
+// (The rejection grace — turns bought by rejecting a summary — went with the
+// confirmation step on 24.10.2026; docs/questions-for-natali.md §13 records it.)
 
 // Returns { allAtLeastOne, softThresholdMet, missingSlots }
 export function evaluateStage(coverage, stage, pack = DEFAULT_PACK) {
@@ -90,18 +86,15 @@ export function route(state, pack = DEFAULT_PACK) {
     currentStage,
     saturationCount,
     questionCount,
-    awaitingConfirmation,
     safetyFlag,
     sessionComplete,
   } = meta;
 
   if (safetyFlag) return { decision: Decision.SAFETY_STOP };
   if (sessionComplete) return { decision: Decision.SESSION_COMPLETE };
-
-  // Hold until user confirms summary
-  if (awaitingConfirmation) {
-    return { decision: Decision.STAY, reason: 'awaiting_confirmation' };
-  }
+  // (A file saved while the old shell waited for a confirmation carries
+  // `awaitingConfirmation: true`; nothing reads it any more, and the next turn
+  // decides the transition again — the stage is still covered.)
 
   // The decision stage: show the board as soon as the goal is known and the board
   // not yet shown.
@@ -140,9 +133,6 @@ export function route(state, pack = DEFAULT_PACK) {
       if (!dependenciesMet(coverage, currentStage + 1, pack)) {
         return { decision: Decision.STAY, reason: 'dependency_not_met' };
       }
-      if (questionCount < (meta.confirmationFloor ?? 0)) {
-        return { decision: Decision.STAY, reason: 'correcting_summary' };
-      }
       return { decision: Decision.REQUEST_CONFIRMATION, nextStage: currentStage + 1, reason: 'decided' };
     }
     return { decision: Decision.STAY };
@@ -178,12 +168,6 @@ export function route(state, pack = DEFAULT_PACK) {
     if (!dependenciesMet(coverage, nextStage, pack)) {
       return { decision: Decision.STAY, reason: 'dependency_not_met' };
     }
-    // The user rejected the last summary and is still inside the grace window —
-    // hold whatever reopened the gate (load guard, full coverage or saturation)
-    // and let the correction land first.
-    if (questionCount < (meta.confirmationFloor ?? 0)) {
-      return { decision: Decision.STAY, reason: 'correcting_summary' };
-    }
     return {
       decision: Decision.REQUEST_CONFIRMATION,
       nextStage,
@@ -192,13 +176,9 @@ export function route(state, pack = DEFAULT_PACK) {
   }
 
   // The closing stage (the last one, after the decision): ready by the same
-  // paths as any stage, it asks for its summary to be confirmed — and the
-  // confirmation ends the interview instead of opening a next stage
-  // (confirmAndAdvance). Same grace after a rejected summary as everywhere.
+  // paths as any stage, its summary ends the interview instead of opening a
+  // next stage (advanceStage, `closes`).
   if (readyToAdvance && hasComponent(stageAt(pack, currentStage), 'closing')) {
-    if (questionCount < (meta.confirmationFloor ?? 0)) {
-      return { decision: Decision.STAY, reason: 'correcting_summary' };
-    }
     return {
       decision: Decision.REQUEST_CONFIRMATION,
       nextStage: null,
@@ -235,23 +215,36 @@ export function resolveResistance(signals) {
   return { resistanceFlag: null, questionAperture: null };
 }
 
-// Called when user clicks "מדויק" (confirm summary)
-export function confirmAndAdvance(state, pack = DEFAULT_PACK) {
+// The transition the Router decided, carried out. Ran, 24.10.2026: no confirmation
+// at the end of a stage — the session summarizes briefly, moves on, and the next
+// stage opens with a frame and a question in the same message. So this takes the
+// Router's decision ({ nextStage, closes }) directly; there is no pending state
+// and nothing for the person to press. A correction from the person is an
+// ordinary turn: contradicting information lowers a slot and re-opens the stage
+// (Decision.REOPEN), with an opener that says why we came back.
+//
+// `closes` (the closing stage, after the decision) ends the interview where it
+// stands. Also when there is nowhere to advance to — the interview never moves
+// past its last stage: `nextStage` is honoured only inside the pack and ahead of
+// the current stage; anything else means the next stage by one, or the end when
+// this is the last. `route()` never hands over an out-of-range stage today, and
+// an exported function keeps its own promise.
+//
+// A question that strayed on the closing turn (meta.offStage) is cleared: the
+// correction names the stage's boundaries, and the stage has just changed — kept,
+// it would tell the next stage's interviewer it is still in the old one.
+export function advanceStage(state, decision = {}, pack = DEFAULT_PACK) {
   const { meta } = state;
-  if (!meta.awaitingConfirmation) return state;
-  // The closing stage's summary: confirming it ends the interview where it stands.
-  // Also when the flag is missing but there is nowhere to advance to (a hand-
-  // edited export): the interview never moves past its last stage.
-  const nowhereNext = meta.pendingNextStage == null && meta.currentStage >= stageCount(pack);
-  if (meta.pendingClose || nowhereNext) {
+  const n = decision.nextStage;
+  const nextStage = Number.isInteger(n) && n > meta.currentStage && n <= stageCount(pack) ? n : null;
+  const nowhereNext = nextStage == null && meta.currentStage >= stageCount(pack);
+  if (decision.closes || nowhereNext) {
     return {
       ...state,
       meta: {
         ...meta,
         sessionComplete: true,
-        pendingClose: false,
-        pendingNextStage: null,
-        awaitingConfirmation: false,
+        offStage: null,
         kpi: {
           ...meta.kpi,
           questionsPerStage: {
@@ -261,7 +254,7 @@ export function confirmAndAdvance(state, pack = DEFAULT_PACK) {
         },
         decisionLog: appendDecisionLog(meta.decisionLog, {
           decision: Decision.SESSION_COMPLETE,
-          reason: 'confirmed',
+          reason: 'summarized',
           stage: meta.currentStage,
         }),
       },
@@ -271,14 +264,10 @@ export function confirmAndAdvance(state, pack = DEFAULT_PACK) {
     ...state,
     meta: {
       ...meta,
-      currentStage: meta.pendingNextStage ?? meta.currentStage + 1,
-      pendingNextStage: null,
-      awaitingConfirmation: false,
+      currentStage: nextStage ?? meta.currentStage + 1,
       questionCount: 0,
       saturationCount: 0,
-      // The new stage starts from zero, so a floor left over from a rejection in
-      // the stage that just closed would silently suppress its first summary.
-      confirmationFloor: 0,
+      offStage: null,
       // KPI: record the closing stage's question count before it resets.
       kpi: {
         ...meta.kpi,
@@ -289,34 +278,7 @@ export function confirmAndAdvance(state, pack = DEFAULT_PACK) {
       },
       decisionLog: appendDecisionLog(meta.decisionLog, {
         decision: Decision.ADVANCE,
-        reason: 'confirmed',
-        stage: meta.currentStage,
-      }),
-    },
-  };
-}
-
-// Called when user clicks "לתקן" (fix summary)
-export function rejectConfirmation(state, pack = DEFAULT_PACK) {
-  const { meta } = state;
-  // Same guard as confirmAndAdvance. Harmless while this only cleared two
-  // already-false flags; now that it writes routing state, a stray call would
-  // buy three turns of forced STAY in a stage that never offered a summary.
-  if (!meta.awaitingConfirmation) return state;
-  return {
-    ...state,
-    meta: {
-      ...meta,
-      awaitingConfirmation: false,
-      pendingNextStage: null,
-      pendingClose: false,
-      // Push the gate out past the correction. Measured from the current count
-      // rather than added to any previous floor, so repeated rejections cannot
-      // accumulate into a stage that never offers a summary again.
-      confirmationFloor: meta.questionCount + pack.routing.rejectGrace,
-      decisionLog: appendDecisionLog(meta.decisionLog, {
-        decision: Decision.STAY,
-        reason: 'summary_rejected',
+        reason: 'summarized',
         stage: meta.currentStage,
       }),
     },

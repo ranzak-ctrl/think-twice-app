@@ -115,7 +115,7 @@ describe('the run: the core works in plain Node, and reaches no platform', () =>
           specific: '<!-- @identity -->\\n[identity]\\n',
         },
         resistance: t('resistance'), evaluator: t('evaluator'),
-        registrar: t('registrar'), summary: t('summary'), opener: t('opener'),
+        registrar: t('registrar'), summary: t('summary'), summaryNudge: t('summaryNudge'), opener: t('opener'),
         board: t('board'), judge: t('judge'), forbidden: ['[forbidden]'],
         stages: Object.fromEntries(thinkTwiceAdult.stages.map((s) => [s.key, t(s.key)])),
       };

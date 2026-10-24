@@ -1,11 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   route,
-  confirmAndAdvance,
-  rejectConfirmation,
   Decision,
   evaluateStage,
-  REJECT_GRACE,
+  advanceStage,
 } from '../../src/core/router.js';
 import { createState } from '../../src/core/state.js';
 
@@ -40,11 +38,6 @@ function withQuestionCount(state, count) {
   return { ...state, meta: { ...state.meta, questionCount: count } };
 }
 
-// A summary is on the table awaiting the user's verdict — the only state from
-// which confirming or rejecting means anything.
-function awaiting(state, nextStage = 2) {
-  return { ...state, meta: { ...state.meta, awaitingConfirmation: true, pendingNextStage: nextStage } };
-}
 
 // ─── 0. An unknown stage fails loudly ───────────────────────────────────────
 // Before the pack, CORE_SLOTS[n] was undefined and route() threw. Moving the
@@ -209,103 +202,54 @@ describe('Load guard', () => {
 
 // ─── 5. Confirmation flow ────────────────────────────────────────────────────
 describe('Confirmation flow', () => {
-  // Interim value, questions-for-natali §13. The tests below are written in terms
-  // of REJECT_GRACE, so without this line any value would pass them.
-  it('the rejection grace is three turns', () => {
-    expect(REJECT_GRACE).toBe(3);
-  });
-
-  it('confirm advances stage', () => {
+  // Since 24.10.2026 (Ran) nobody confirms a summary: the turn that decides a
+  // transition carries it out — advanceStage, with the Router's own decision.
+  it('advanceStage moves to the decided stage and resets the counters', () => {
     let s = createState();
     s = fillStage(s, 1);
     s = withSaturation(s);
-    route(s); // triggers REQUEST_CONFIRMATION
-    s = {
-      ...s,
-      meta: { ...s.meta, awaitingConfirmation: true, pendingNextStage: 2 },
-    };
-    const advanced = confirmAndAdvance(s);
+    const d = route(s);
+    expect(d.decision).toBe(Decision.REQUEST_CONFIRMATION);
+    const advanced = advanceStage(s, d);
     expect(advanced.meta.currentStage).toBe(2);
-    expect(advanced.meta.awaitingConfirmation).toBe(false);
     expect(advanced.meta.questionCount).toBe(0);
     expect(advanced.meta.saturationCount).toBe(0);
+    expect(advanced.meta.kpi.questionsPerStage.stage1).toBe(s.meta.questionCount);
+    expect(advanced.meta.decisionLog.at(-1)).toMatchObject({ decision: Decision.ADVANCE, reason: 'summarized', stage: 1 });
+    expect(advanced.meta).not.toHaveProperty('awaitingConfirmation');
   });
 
-  it('reject keeps stage and clears flag', () => {
+  it('a file saved while the old shell waited for a confirmation is simply decided again', () => {
     let s = createState();
+    s = fillStage(s, 1);
+    s = withSaturation(s);
     s = { ...s, meta: { ...s.meta, awaitingConfirmation: true, pendingNextStage: 2 } };
-    const rejected = rejectConfirmation(s);
-    expect(rejected.meta.currentStage).toBe(1);
-    expect(rejected.meta.awaitingConfirmation).toBe(false);
-  });
-
-  // Regression: rejecting a summary used to change nothing the gate reads. The
-  // load guard stays triggered (questionCount only rises) and coverage never
-  // falls, so the very next turn re-offered the same summary — "לתקן" could
-  // never actually correct anything.
-  it('reject does not re-offer the summary on the next turn', () => {
-    let s = createState();
-    s = fillStage(s, 1);
-    s = withSaturation(s);
-    s = withQuestionCount(s, 20); // load guard at the ceiling
     expect(route(s).decision).toBe(Decision.REQUEST_CONFIRMATION);
-
-    s = rejectConfirmation(awaiting(s));
-    s = withQuestionCount(s, 21); // the correction turn
-    const after = route(s);
-    expect(after.decision).toBe(Decision.STAY);
-    expect(after.reason).toBe('correcting_summary');
   });
 
-  it('the summary returns once the grace window passes — no stranded stage', () => {
+  // The exported function keeps its own promise: never past the last stage, never
+  // backwards (that is REOPEN's job). route() hands over no such stage today.
+  it('advanceStage honours nextStage only inside the pack and ahead of the current stage', () => {
+    const at = (n) => { const s = createState(); return { ...s, meta: { ...s.meta, currentStage: n } }; };
+    expect(advanceStage(at(2), { nextStage: 9 }).meta.currentStage).toBe(3);
+    expect(advanceStage(at(3), { nextStage: 2 }).meta.currentStage).toBe(4);
+    expect(advanceStage(at(2), { nextStage: 5 }).meta.currentStage).toBe(5);
+    const last = advanceStage(at(7), { nextStage: 9 });
+    expect(last.meta.currentStage).toBe(7);
+    expect(last.meta.sessionComplete).toBe(true);
+  });
+
+  // A question that strayed on the very turn that closes the stage: kept, the
+  // correction would tell the next stage's interviewer it is still in the old one.
+  it('advanceStage clears a stray question recorded on the closing turn', () => {
     let s = createState();
     s = fillStage(s, 1);
-    s = withSaturation(s);
-    s = withQuestionCount(s, 20);
-    s = rejectConfirmation(awaiting(s));
-
-    const returns = 20 + REJECT_GRACE; // the floor — the first turn it is offered again
-    expect(route(withQuestionCount(s, returns - 1)).decision).toBe(Decision.STAY);
-    expect(route(withQuestionCount(s, returns)).decision).toBe(Decision.REQUEST_CONFIRMATION);
-  });
-
-  it('repeated rejections do not accumulate into a stage that never asks again', () => {
-    let s = createState();
-    s = fillStage(s, 1);
-    s = withSaturation(s);
-    s = withQuestionCount(s, 20);
-    s = rejectConfirmation(awaiting(s));
-    expect(s.meta.confirmationFloor).toBe(20 + REJECT_GRACE);
-
-    const second = 20 + REJECT_GRACE;
-    s = rejectConfirmation(awaiting(withQuestionCount(s, second)));
-    // Measured from the count, not stacked onto the previous floor.
-    expect(s.meta.confirmationFloor).toBe(second + REJECT_GRACE);
-  });
-
-  it('the floor does not survive into the next stage', () => {
-    let s = createState();
-    s = fillStage(s, 1);
-    s = withQuestionCount(s, 20);
-    s = rejectConfirmation(awaiting(s));
-    expect(s.meta.confirmationFloor).toBe(20 + REJECT_GRACE);
-
-    s = confirmAndAdvance(awaiting(s));
-    expect(s.meta.confirmationFloor).toBe(0);
-  });
-
-  // Rejecting is a reply to a summary that was actually offered. Unguarded, a
-  // stray call would buy three turns of forced STAY in a stage where nothing
-  // was ever asked.
-  it('rejecting does nothing when no summary is on offer', () => {
-    let s = withQuestionCount(createState(), 20);
-    expect(rejectConfirmation(s)).toBe(s);
-  });
-
-  it('awaiting confirmation blocks further routing', () => {
-    let s = createState();
-    s = { ...s, meta: { ...s.meta, awaitingConfirmation: true } };
-    expect(route(s).decision).toBe(Decision.STAY);
+    s = { ...s, meta: { ...s.meta, offStage: { asked: 'stage2.causal', stage: 'stage1' } } };
+    const d = route(s);
+    expect(d.decision).toBe(Decision.REQUEST_CONFIRMATION);
+    expect(advanceStage(s, d).meta.offStage).toBeNull();
+    const closing = { ...s, meta: { ...s.meta, currentStage: 7 } };
+    expect(advanceStage(closing, { nextStage: null }).meta.offStage).toBeNull();
   });
 });
 

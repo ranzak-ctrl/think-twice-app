@@ -11,7 +11,7 @@ import {
   validatePack, DEFAULT_PACK, stageWith, parseSlotRef, barredSlots, mentalSlots, castOf,
   intensityStages, mapNarrative, mapTimeline, mapSource,
 } from '../../src/core/pack.js';
-import { route, evaluateStage, rejectConfirmation, confirmAndAdvance, Decision } from '../../src/core/router.js';
+import { route, evaluateStage, Decision } from '../../src/core/router.js';
 import { createState, mergeActorMap } from '../../src/core/state.js';
 import { signpostForStage } from '../../src/content/signposting.js';
 
@@ -247,7 +247,7 @@ const mini = {
   id: 'mini',
   name: 'ראיון ניסיון',
   version: 1,
-  routing: { softThreshold: 0.5, saturationLimit: 1, loadGuard: 6, rejectGrace: 2 },
+  routing: { softThreshold: 0.5, saturationLimit: 1, loadGuard: 6 },
   stages: [
     { key: 'stage1', label: 'מה היה', slots: [{ id: 'what' }, { id: 'who' }] },
     { key: 'stage2', label: 'מה אפשר', slots: [{ id: 'options' }], loadGuard: 3, components: [{ type: 'collector' }] },
@@ -335,11 +335,6 @@ describe('the Router routes by the pack it is handed', () => {
     expect(route(s, mini).decision).toBe(Decision.STAY);
   });
 
-  it('buys the pack’s rejection grace', () => {
-    const s = at(mini, 1, {}, { questionCount: 4, awaitingConfirmation: true, pendingNextStage: 2 });
-    expect(rejectConfirmation(s, mini).meta.confirmationFloor).toBe(6);
-    expect(confirmAndAdvance(s).meta.currentStage).toBe(2);
-  });
 
   it('falls back to the plain signpost for a stage without one', () => {
     expect(signpostForStage(2, mini)).toBe('נמשיך.');

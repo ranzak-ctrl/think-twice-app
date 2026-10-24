@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createState } from '../../src/core/state.js';
-import { confirmAndAdvance } from '../../src/core/router.js';
 import { runTurn } from '../helpers/engine.js';
 import { resetMockCounters } from '../../src/adapters/model.js';
 import { buildStory } from '../../src/core/story.js';
@@ -26,10 +25,6 @@ describe('story mirror — across a full interview', () => {
     const snapshots = [];
 
     for (let turns = 0; !state.meta.sessionComplete && turns < 60; turns++) {
-      if (state.meta.awaitingConfirmation) {
-        state = confirmAndAdvance(state);
-        continue;
-      }
       const userText = 'אני לא יודע מה לעשות';
       const { nextState, reply } = await runTurn(state, history, userText);
       history = [
@@ -64,10 +59,6 @@ describe('story mirror — across a full interview', () => {
     const counts = [];
 
     for (let turns = 0; !state.meta.sessionComplete && turns < 60; turns++) {
-      if (state.meta.awaitingConfirmation) {
-        state = confirmAndAdvance(state);
-        continue;
-      }
       const { nextState, reply } = await runTurn(state, history, 'תשובה');
       history = [
         ...history,

@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
-import ConfirmButtons from './ConfirmButtons.jsx';
 import DecisionBoard from './DecisionBoard.jsx';
 import Preamble from './Preamble.jsx';
 import { Mark, Send, ArrowDown, Note, Trash } from './icons.jsx';
@@ -18,22 +17,17 @@ export default function Chat({
   history,
   loading,
   board,
-  awaitingConfirmation,
   sessionComplete,
   feedbackEnabled,
   onFeedback,
   onRewrite,
   onSend,
-  onConfirm,
-  onReject,
   // In place of the composer: an interview opened from a file that can only be
   // read — `viewing` says whether it ended or was stopped. An unfinished one
   // opens with the composer.
   viewing = null,
   // The interview's own preamble (src/ui/interview.js), shown until the first answer.
   preamble = '',
-  // The summary awaiting confirmation is the last one: confirming it ends the interview.
-  closing = false,
 }) {
   const [input, setInput] = useState('');
   const [showJump, setShowJump] = useState(false);
@@ -76,7 +70,7 @@ export default function Chat({
     el.style.height = `${el.scrollHeight}px`;
   }, [input]);
 
-  const blocked = loading || awaitingConfirmation || sessionComplete;
+  const blocked = loading || sessionComplete;
   const canSend = !blocked && input.trim().length > 0;
 
   const submit = () => {
@@ -177,10 +171,6 @@ export default function Chat({
         )}
       </div>
 
-      {awaitingConfirmation && !viewing && (
-        <ConfirmButtons onConfirm={onConfirm} onReject={onReject} closing={closing} />
-      )}
-
       {viewing ? (
         <div className="banner viewing">
           {viewing.complete ? (
@@ -193,7 +183,7 @@ export default function Chat({
         <div className="banner done">הראיון הסתיים. ההחלטה — שלך.</div>
       ) : (
         <div className="composer">
-          <div className={`composer-inner${awaitingConfirmation ? ' disabled' : ''}`}>
+          <div className="composer-inner">
             <textarea
               ref={textareaRef}
               rows={1}
@@ -201,11 +191,9 @@ export default function Chat({
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               // Editable while the model works, so the next answer can be typed
-              // ahead; only sending is gated. Confirmation is a real gate.
-              disabled={awaitingConfirmation}
-              placeholder={
-                awaitingConfirmation ? (closing ? 'אשר את הסיכום כדי לסיים' : 'אשר את הסיכום כדי להמשיך') : 'כתוב כאן…'
-              }
+              // ahead; only sending is gated. (The confirmation gate went on
+              // 24.10.2026 — a stage closes on its summary and moves on.)
+              placeholder="כתוב כאן…"
               aria-label="הודעה"
             />
             <button

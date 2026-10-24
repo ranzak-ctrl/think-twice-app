@@ -49,7 +49,8 @@
 // threshold — stage 5, with `prognosis` and `parent_self` allowed to stay U, cannot
 // reach it. The low per-stage guards are what move the parent on. That includes the
 // closing stage: after its guard it asks for the summary even if little is
-// covered, and the parent's confirmation ends the interview. All of it is for
+// covered, and its summary ends the interview (since 24.10.2026 with no
+// confirmation — Ran). All of it is for
 // Natali to set (interview-model.md §9), and none of it is validated.
 //
 // ── WHO OWNS WHAT HERE ──
@@ -77,7 +78,6 @@ export const thinkTwiceParents = {
     // stage than a flooded parent" (the approval doc). See the header: here the
     // guard paces the interview.
     loadGuard: 20,
-    rejectGrace: 3,
   },
 
   // Barred, as in the adult pack, means stored, scored and probed but never drawn
@@ -183,8 +183,8 @@ export const thinkTwiceParents = {
         { id: 'feasibility' },
       ],
       loadGuard: 6,
-      // The interview ends here: when this stage is covered and the parent
-      // confirms its summary.
+      // The interview ends here: when this stage is covered, on its summary
+      // (no confirmation since 24.10.2026 — Ran).
       components: [{ type: 'closing' }],
     },
   ],

@@ -4,7 +4,7 @@
 // wrapper around runTurn(); the same function runs headless in sims and, later,
 // on a server. THE ROUTER DECIDES TRANSITIONS — runTurn only applies them.
 
-import { route, Decision, resolveResistance } from './router.js';
+import { route, Decision, resolveResistance, advanceStage } from './router.js';
 import { runRegistrar } from './registrar.js';
 import {
   buildSystemPromptParts,
@@ -214,6 +214,23 @@ export async function runTurn(state, history, userText, deps) {
       }
     }
     nextState = { ...nextState, coverage };
+  }
+
+  // ── The question that strayed (Ran, 24.10.2026) ──
+  // "להציג את השאלה למשתמש; בפנייה הבאה למודל לשקף את החריגה ולהחזיר את הראיון
+  // למסלול. בכל מקרה לא לחדול את הראיון." The model says which slot its question
+  // aims at (`asks`); a slot of another stage is a deviation. Nothing about it
+  // changes what the person sees this turn — the reply goes out as it is — and
+  // nothing moves the stage: the Router decides transitions from coverage alone,
+  // and a cross-stage score is capped at 1 above, so a model that "moves on" by
+  // itself has moved nothing. The deviation is recorded for ONE turn, so the next
+  // prompt can name the stage's boundaries to the model (promptBuilder.js, hidden
+  // from the person), and the guide panel can show it to a tester. Not a failure:
+  // the interview can always be brought back on track, and never stops for this.
+  {
+    const asks = typeof ev.asks === 'string' ? parseSlotRef(pack, ev.asks) : null;
+    const strayed = asks && asks.key !== currentKey ? { asked: ev.asks, stage: currentKey } : null;
+    nextState = { ...nextState, meta: { ...nextState.meta, offStage: strayed } };
   }
 
   // Per-slot findings (guide-mode display): fold the model's textual findings into
@@ -434,32 +451,52 @@ export async function runTurn(state, history, userText, deps) {
   const decisionStage = stageWith(pack, 'decision');
   const decisionKey = stageAt(pack, decisionStage).key;
 
+  // The failure of a call made on top of the interviewer's — the summary or the
+  // opener — reported alongside the turn's own (the error report lists one).
+  let transitionFailure = null;
+
   if (decision.decision === Decision.REQUEST_CONFIRMATION) {
+    // Ran, 24.10.2026: nobody confirms a summary. The stage closes on a brief
+    // summary in the person's words, the interview moves on at once, and the next
+    // stage opens with a frame and one question — all in this one message. A
+    // correction from the person is an ordinary turn: contradicting information
+    // lowers a slot and re-opens the stage (REOPEN), with an opener that says why.
     const summaryResult = await complete({
       stage: nextState.meta.currentStage,
       systemPrompt: buildSummaryPrompt({ state: nextState, prompts, pack }),
       // Anchor with the model's probe + an explicit "summarize now" turn so the reply
       // is a recap, not a continuation of the dialogue (the dissonance Ran hit).
-      messages: buildSummaryMessages(messages, result.message),
+      messages: buildSummaryMessages(messages, result.message, prompts),
       mode: 'summary',
     });
     usage = addUsage(usage, summaryResult.usage);
-    if (summaryResult.ok && summaryResult.message) {
-      nextState = {
-        ...nextState,
-        meta: {
-          ...nextState.meta,
-          awaitingConfirmation: true,
-          pendingNextStage: decision.nextStage,
-          // The closing stage's summary: confirming it ends the interview.
-          pendingClose: decision.closes === true,
-        },
-      };
-      reply = summaryResult.message;
+    const summarized = Boolean(summaryResult.ok && summaryResult.message);
+    // The trail reads cause, then effect: the Router's decision goes in here, before
+    // advanceStage appends its own line. A failed summary is named as such — the
+    // same decision would otherwise read alike whether or not anything moved.
+    nextState = logDecision(nextState, decision.decision, summarized ? decision.reason : 'summary_failed', stage);
+    if (summarized) {
+      const summary = summaryResult.message;
+      nextState = advanceStage(nextState, decision, pack);
+      if (nextState.meta.sessionComplete) {
+        // The closing stage: its summary is the last thing said before the end screen.
+        reply = summary;
+      } else {
+        // currentHistory ends on the person's own answer, so the opener's messages
+        // need no appended turn; the summary it follows rides in its prompt.
+        const opener = await completeStageOpener(nextState, currentHistory, { after: summary }, deps);
+        usage = addUsage(usage, opener.usage);
+        transitionFailure = opener.failure ?? null;
+        reply = `${summary}\n\n${opener.message}`;
+      }
     } else {
-      // Summary generation failed (e.g., rate limit). Don't enter a content-free
-      // confirmation — stay; the Router re-requests the summary next turn. (Ran.)
-      reply = summaryResult.message || 'רגע — לא הצלחתי לסכם כרגע, ננסה שוב עוד מעט.';
+      // Summary generation failed (e.g., rate limit): stay, with nothing lost — the
+      // stage is still covered and the Router decides the transition again next
+      // turn. The person gets the interviewer's own question, not a notice: an
+      // interview never stops for a technical hiccup, and no turn is content-free
+      // (Ran, 24.10.2026; test-plan §א item 3). The failure is still reported.
+      transitionFailure = summaryResult.failure ?? null;
+      reply = result.message || summaryResult.message || 'רגע — לא הצלחתי לסכם כרגע, ננסה שוב עוד מעט.';
     }
   }
 
@@ -490,11 +527,9 @@ export async function runTurn(state, history, userText, deps) {
         currentStage: decision.targetStage ?? nextState.meta.currentStage,
         questionCount: 0,
         saturationCount: 0,
-        // The floor is a threshold ON questionCount, so the two only mean
-        // anything as a pair — zeroing one without the other would pin the
-        // reopened stage in STAY for a full grace window, past the load guard,
-        // which could not fire because the floor sits above it.
-        confirmationFloor: 0,
+        // A stray question on this very turn would otherwise be "corrected" against
+        // the stage we just left (see advanceStage).
+        offStage: null,
         mergeAttempt: null,
       },
       coverage: {
@@ -532,18 +567,11 @@ export async function runTurn(state, history, userText, deps) {
     };
   }
 
-  // Record the decision for the guide-mode trail.
-  nextState = {
-    ...nextState,
-    meta: {
-      ...nextState.meta,
-      decisionLog: appendDecisionLog(nextState.meta.decisionLog, {
-        decision: decision.decision,
-        reason: decision.reason ?? '',
-        stage,
-      }),
-    },
-  };
+  // Record the decision for the guide-mode trail. A transition logged itself above,
+  // ahead of advanceStage's own line, so the trail reads cause, then effect.
+  if (decision.decision !== Decision.REQUEST_CONFIRMATION) {
+    nextState = logDecision(nextState, decision.decision, decision.reason, stage);
+  }
 
   nextState = { ...nextState, meta: { ...nextState.meta, usage } };
   // `failure` is technical metadata for the error report (null on a good turn).
@@ -553,7 +581,7 @@ export async function runTurn(state, history, userText, deps) {
     nextState,
     reply,
     decision: decision.decision,
-    failure: result.failure ?? null,
+    failure: result.failure ?? transitionFailure ?? null,
     registrar: registrarRun,
     registrarFailure: registrar.failure ?? null,
   };
@@ -578,7 +606,7 @@ async function completeStageOpener(state, history, opts = {}, deps) {
   const stage = state.meta.currentStage;
   const result = await complete({
     stage,
-    systemPrompt: buildOpenerPrompt({ stage, state, situation: opts.situation, prompts, pack }),
+    systemPrompt: buildOpenerPrompt({ stage, state, situation: opts.situation, after: opts.after, prompts, pack }),
     // Must end with a user turn (no assistant prefill); buildOpenerMessages appends
     // the user's confirmation only when the history ends on an assistant turn.
     messages: buildOpenerMessages(formatHistory(history)),
@@ -591,8 +619,22 @@ async function completeStageOpener(state, history, opts = {}, deps) {
   return { message, usage: result.usage, failure: result.failure ?? null };
 }
 
-// Forward-transition opener (called by the UI on confirm) — folds the call's usage
-// into state and returns the opening message.
+// One line of the guide-mode trail (meta.decisionLog).
+function logDecision(state, decision, reason, stage) {
+  return {
+    ...state,
+    meta: {
+      ...state.meta,
+      decisionLog: appendDecisionLog(state.meta.decisionLog, { decision, reason: reason ?? '', stage }),
+    },
+  };
+}
+
+// Forward-transition opener as a call of its own — folds the call's usage into
+// state and returns the opening message. Until 24.10.2026 the shell called this
+// when the person confirmed a summary; the turn loop now opens the next stage
+// itself (completeStageOpener, above), and this stays in the engine's API for
+// harnesses and tests.
 export async function generateStageOpener(state, history, opts = {}, deps) {
   const { message, usage, failure } = await completeStageOpener(state, history, opts ?? {}, deps);
   return {

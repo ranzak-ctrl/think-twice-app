@@ -63,12 +63,6 @@ describe('a four-stage interview runs from the first turn to a close', () => {
     log.push(r.decision);
     return r;
   };
-  const confirm = async () => {
-    state = interview.confirmAndAdvance(state);
-    const r = await interview.generateStageOpener(state, history);
-    state = r.nextState;
-    history = [...history, { role: 'assistant', content: r.message }];
-  };
   const lastCall = (mode) => calls.filter((c) => c.mode === mode).at(-1);
 
   beforeAll(async () => {
@@ -104,7 +98,6 @@ describe('a four-stage interview runs from the first turn to a close', () => {
         groups: [{ id: 'office', label: 'המשרד', kind: 'process', members: ['shout', 'stage2.hidden_hurt', 'stage1.when'], confirmed: true }],
       },
     });
-    await confirm();
 
     // Stage 2 — the cast is unclear, so the stage holds; then it clears.
     await turn('אני לא בטוח מי עוד היה שם', {
@@ -116,19 +109,16 @@ describe('a four-stage interview runs from the first turn to a close', () => {
     });
     heldOnCast = state;
     await turn('רק הוא, ואני', { probe: { actorMap: [{ id: 'boss', label: 'המנהל', clear: true }] } });
-    await confirm();
 
     // Stage 3 — the collector.
     await turn('אפשר לדבר איתו או לחכות', {
       probe: { slots: { options: 2 }, alternatives: ['לדבר איתו', 'לחכות'], emotionIntensity: 4 },
     });
-    await confirm();
 
     // Stage 4 — the board, a real either-or that re-opens the collector, and back.
     await turn('אני רוצה שזה ייפתר', { probe: { slots: { goal: 1 } } });
     await turn('אולי גם וגם — לדבר איתו מחר וגם לכתוב לו', { probe: { mergeAttempt: 'real' } });
     await turn('כן, זה מה שאני רוצה להוסיף', { probe: { alternatives: ['לכתוב לו מחר'] } });
-    await confirm();
     await turn('המטרה שלי ברורה', { probe: { slots: { goal: 2 } } });
     await turn('אני אדבר איתו מחר בבוקר', {
       probe: { slots: { sharp_decision: 2, package_test: 2 }, decisionType: 'sharp', decision: { choice: 'לדבר איתו' } },
