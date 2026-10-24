@@ -151,7 +151,7 @@ function RegistrarStatus({ run }) {
 }
 
 export default function GuidePanel({ state, pack, account, lastRegistrar = null, width = 320, notes = [], revisions = [], onClose, onExportPlain }) {
-  const modelId = chooseModel({ interview: pack?.id });
+  const modelId = chooseModel();
   const { coverage, meta } = state;
   const eventText = account(state);
   const cast = castOf(pack);

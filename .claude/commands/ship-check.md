@@ -27,7 +27,7 @@ From a cloud session this gate cannot run at all: the network policy refuses `ve
 |---|---|
 | `VITE_USE_MOCK` | live model vs scripted mock |
 | `VITE_REQUIRE_PASSWORD` | whether the password gate exists at all |
-| `VITE_MODEL` | which model the app names. Unset: Haiku 4.5 for the adult interview; the parents' interview is Sonnet 5.5 in a Preview build (`chooseModel`, src/adapters/model.js) |
+| `VITE_MODEL` | which model the app names. Unset: Haiku 4.5 for both interviews (`chooseModel`, src/adapters/model.js) |
 | `VERCEL_ENV` | `preview` opens the parents' interview (`__PREVIEW_DEPLOYMENT__`, vite.config.js); anything else keeps it closed |
 
 Vite names the output file after a hash of its contents, so **the bundle filename is a fingerprint of the configuration that produced it.** That makes the deployment's configuration checkable without reaching the site:

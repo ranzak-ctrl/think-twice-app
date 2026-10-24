@@ -664,23 +664,10 @@ function describeUpstream(text) {
 // and `effort` are errors on this model; neither is sent from here.
 export const DEFAULT_MODEL = 'claude-haiku-4-5';
 
-// The model the parents’ interview names on a Preview build (the QA link).
-export const PREVIEW_MODEL = 'claude-sonnet-5-5';
-
-// True on the QA build: VITE_MODEL aside, the one switch that changes the model.
-const PREVIEW_BUILD = typeof __PREVIEW_DEPLOYMENT__ !== 'undefined' && __PREVIEW_DEPLOYMENT__ === true;
-
-// Which model each interview calls. Ran, 24.10.2026: the adult interview runs on
-// Haiku 4.5 everywhere, QA included. The parents' interview runs on Sonnet 5.5 on a
-// Preview build (the QA link, __PREVIEW_DEPLOYMENT__ from VERCEL_ENV in vite.config.js):
-// its Hebrew broke twice on Haiku in one QA run, 16.10.2026 ("וחוק לה" for "ונרשה לה").
-// Production keeps Haiku for both. VITE_MODEL, when set, wins everywhere.
-// The interview is the pack's id (src/packs/*/pack.js); absent, the default applies.
-export const PARENTS_PACK_ID = 'think-twice-parents';
-export function chooseModel({ env = import.meta.env, preview = PREVIEW_BUILD, interview = null } = {}) {
-  if (env?.VITE_MODEL) return env.VITE_MODEL;
-  if (preview && interview === PARENTS_PACK_ID) return PREVIEW_MODEL;
-  return DEFAULT_MODEL;
+// The model every interview calls. Ran, 24.10.2026: Haiku 4.5 for both interviews,
+// on every build, QA included. VITE_MODEL, when set, wins.
+export function chooseModel({ env = import.meta.env } = {}) {
+  return env?.VITE_MODEL ?? DEFAULT_MODEL;
 }
 
 // Thinking has to be asked for, or not, per model family — sending the wrong

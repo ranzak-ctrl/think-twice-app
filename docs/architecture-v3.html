@@ -299,7 +299,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     <div class="band ext">
       <div class="band-head"><span class="band-name">חיצוני</span><span class="band-sub">ספקים שמעבדים עבורנו</span></div>
       <div class="boxes">
-        <div class="box"><b>Anthropic API</b><code>claude-haiku-4-5</code> לראיון האישי בכל מקום, ולהורים בייצור · <code>claude-sonnet-5-5</code> לראיון ההורים בקישור ה-QA (16.10, 24.10) · מדיניות שמירה: רן בודק "אפס שמירה"</div>
+        <div class="box"><b>Anthropic API</b><code>claude-haiku-4-5</code> לשני הראיונות, בכל הפריסות (24.10). קודם ראיון ההורים ב-QA היה על <code>claude-sonnet-5-5</code> (16.10) · מדיניות שמירה: רן בודק "אפס שמירה"</div>
         <div class="box new"><b>Resend</b>שולח את הקובץ המוצפן, עם טקסט קבוע בלי השיחה. עד שיהיה דומיין מאומת: רק לכתובת של החשבון שם</div>
       </div>
     </div>
@@ -646,7 +646,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
       <tr><td><code>INTERVIEW_FILE_KEYS</code></td><td>Vercel, שרת בלבד</td><td>מפתחות קובץ הראיון. הוגדר ואומת ב-Preview (14.10.2026)</td></tr>
       <tr><td><code>RESEND_API_KEY</code> · <code>MAIL_FROM</code></td><td>Vercel, שרת בלבד</td><td>שליחת הקובץ במייל. <strong>טרם הוגדרו</strong>, ובלעדיהם החלק של המייל לא מופיע במסך הסיום</td></tr>
       <tr><td><code>VERCEL_ENV</code></td><td>Vercel, אוטומטי, בזמן הבנייה</td><td><code>preview</code> פותח את ראיון ההורים. אין מה להגדיר</td></tr>
-      <tr><td><code>VITE_MODEL</code></td><td>build</td><td>איזה מודל האפליקציה קוראת. בלעדיו: <code>claude-haiku-4-5</code> בייצור (רן, 28.9.2026), ו-<code>claude-sonnet-5-5</code> בפריסת Preview (רן, 16.10.2026)</td></tr>
+      <tr><td><code>VITE_MODEL</code></td><td>build</td><td>איזה מודל האפליקציה קוראת. בלעדיו: <code>claude-haiku-4-5</code> לשני הראיונות, בכל הפריסות (רן, 24.10.2026)</td></tr>
       <tr><td><code>VITE_USE_MOCK</code></td><td>פיתוח ובדיקות</td><td><code>true</code> ← מודל מדומה. שרת הפיתוח מריץ גם את פונקציית הקובץ, עם מפתח זמני</td></tr>
     </tbody>
   </table></div>

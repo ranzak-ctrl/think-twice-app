@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { complete, chooseModel, DEFAULT_MODEL, PREVIEW_MODEL, PARENTS_PACK_ID } from '../../src/adapters/model.js';
+import { complete, chooseModel, DEFAULT_MODEL } from '../../src/adapters/model.js';
 
 // JSON-stability retry (dev-plan §148). These tests force the real (network) path
 // with VITE_USE_MOCK=false and a stubbed fetch, then verify the adapter retries a
@@ -468,25 +468,13 @@ describe('adapter complete() — the model per interview, and one question per t
   const TWO = JSON.stringify({ message: 'מה קרה אז? ומה עשית אחר כך?', evaluation: { slots: { trigger: 1 } } });
   const ONE = JSON.stringify({ message: 'מה קרה אז?', evaluation: { slots: { trigger: 1 } } });
 
-  it('names Sonnet 5.5 for the parents’ interview on a Preview build only', () => {
-    expect(PREVIEW_MODEL).toBe('claude-sonnet-5-5');
+  it('names Haiku 4.5 for every interview, on every build (Ran, 24.10.2026)', () => {
     expect(DEFAULT_MODEL).toBe('claude-haiku-4-5');
-    expect(chooseModel({ env: {}, preview: true, interview: PARENTS_PACK_ID })).toBe('claude-sonnet-5-5');
-    expect(chooseModel({ env: {}, preview: false, interview: PARENTS_PACK_ID })).toBe('claude-haiku-4-5');
-  });
-
-  it('names Haiku 4.5 for the adult interview, on every build', () => {
-    expect(chooseModel({ env: {}, preview: true, interview: 'think-twice-adult' })).toBe('claude-haiku-4-5');
-    expect(chooseModel({ env: {}, preview: true })).toBe('claude-haiku-4-5');
-    expect(chooseModel({ env: {}, preview: false })).toBe('claude-haiku-4-5');
-  });
-
-  it('lets VITE_MODEL win over both', () => {
-    expect(chooseModel({ env: { VITE_MODEL: 'claude-sonnet-5' }, preview: true, interview: PARENTS_PACK_ID })).toBe('claude-sonnet-5');
-  });
-
-  it('a test run, like production, is not a Preview build', () => {
     expect(chooseModel({ env: {} })).toBe('claude-haiku-4-5');
+  });
+
+  it('lets VITE_MODEL win', () => {
+    expect(chooseModel({ env: { VITE_MODEL: 'claude-sonnet-5' } })).toBe('claude-sonnet-5');
   });
 
   it('calls the model the shell passed, when it passes one', async () => {
