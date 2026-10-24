@@ -7,6 +7,11 @@
   --bg: #f7f7f8;
   --surface: #ffffff;
   --surface-sunken: #f9fafb;
+  /* The sheet the case map is drawn on. Ran, 24.10.2026: the canvas has to be
+     told apart from the app ground — an even lighter grey, almost white. Sits
+     between --bg and --surface so the drawing reads as paper laid on the desk,
+     and the white cubes and cards still read as objects on it. */
+  --paper: #fbfbfc;
   --surface-accent: #fffaf0;
 
   --border: #e5e7eb;
@@ -456,6 +461,7 @@ button {
 .story {
   flex: 2 1 0;
   min-width: 0;
+  background: var(--paper);
   padding: 22px 18px 28px;
   overflow-y: auto;
   border-inline-start: 1px solid var(--border);
