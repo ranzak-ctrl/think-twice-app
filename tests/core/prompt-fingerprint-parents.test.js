@@ -303,6 +303,7 @@ describe('prompt fingerprints — parents', () => {
       evaluator: fp(prompts.evaluator),
       registrar: fp(prompts.registrar),
       summary: fp(prompts.summary),
+      summaryNudge: fp(prompts.summaryNudge),
       opener: fp(prompts.opener),
       board: fp(prompts.board),
       forbidden: fp(prompts.forbidden.join('\n')),

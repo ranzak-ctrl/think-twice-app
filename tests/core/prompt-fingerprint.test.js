@@ -14,7 +14,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { createHash } from 'node:crypto';
-import { SUMMARY_NUDGE, OPENER_NUDGE } from '../../src/core/promptBuilder.js';
+import { OPENER_NUDGE } from '../../src/core/promptBuilder.js';
+import { prompts as adultPrompts } from '../helpers/engine.js';
 // Composed the way the app composes them: the pack's texts, injected.
 import {
   buildSystemPromptParts,
@@ -166,7 +167,8 @@ describe('prompt fingerprints (engine/pack split must not move a byte)', () => {
   });
 
   it('the fixed texts: nudges and static signposts', () => {
-    const out = { summaryNudge: fp(SUMMARY_NUDGE), openerNudge: fp(OPENER_NUDGE) };
+    // The summary nudge is the pack's own text since 24.10.2026 (summary-nudge.md).
+    const out = { summaryNudge: fp(adultPrompts.summaryNudge), openerNudge: fp(OPENER_NUDGE) };
     for (const n of [...STAGES, 8]) out[`signpost.${n}`] = fp(signpostForStage(n));
     expect(out).toMatchSnapshot();
   });

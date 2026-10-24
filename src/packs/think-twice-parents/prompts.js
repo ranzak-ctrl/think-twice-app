@@ -30,6 +30,12 @@
 //               Parents copies, not the shared files: those address the person in
 //               the masculine ("במה אתה בוחר?") and ban jargon, and editing them
 //               would move every adult fingerprint.
+//   summaryNudge
+//               The user turn that anchors the summary call, the parents' own
+//               (parents/summary-nudge.md): first person, past tense, so it
+//               reveals no gender. Until 24.10.2026 a constant in
+//               src/core/promptBuilder.js (SUMMARY_NUDGE), shared by both
+//               interviews (prompt-editor, 24.10.2026).
 //   catalog     The trait → need → tool table has no key of its own in the
 //               engine's prompt shape, so it is composed here into the agents that
 //               use it — stages 3, 4, 6 and 8 — from ONE file Natali corrects.
@@ -56,6 +62,7 @@ import resistance from '../../content/prompts/parents/resistance.md?raw';
 import evaluator from '../../content/prompts/parents/evaluator.md?raw';
 import registrar from '../../content/prompts/parents/registrar.md?raw';
 import summary from '../../content/prompts/parents/summary.md?raw';
+import summaryNudge from '../../content/prompts/parents/summary-nudge.md?raw';
 import opener from '../../content/prompts/parents/opener.md?raw';
 import board from '../../content/prompts/parents/board.md?raw';
 import catalog from '../../content/prompts/parents/catalog.md?raw';
@@ -81,6 +88,11 @@ export const thinkTwiceParentsPrompts = {
   // The parents' own registrar (see above).
   registrar: text(registrar),
   summary: text(summary),
+  // The user turn that anchors the summary call — the parents' own, gender-neutral
+  // (parents/summary-nudge.md). Until 24.10.2026 both interviews shared a constant
+  // in src/core/promptBuilder.js (SUMMARY_NUDGE); the engine reads it from here
+  // (prompt-editor, 24.10.2026, Ran's ruling on the end-of-stage summary).
+  summaryNudge: text(summaryNudge),
   opener: text(opener),
   board: text(board),
   // Keyed by the pack's stage keys (pack.js), one agent per stage.

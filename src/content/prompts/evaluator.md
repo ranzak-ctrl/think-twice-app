@@ -1,4 +1,5 @@
-<!-- evaluator prompt — v9 · 24.10.2026
+<!-- evaluator prompt — v10 · 24.10.2026
+     v10 (24.10.2026 · prompt-editor, asked by the session after Ran's ruling of 24.10.2026, test-plan §א.1ב items 13–14, both interviews: a question that strays outside the stage is shown to the person as it is, the deviation is reflected TO THE MODEL ONLY on the next call, and the interview is brought back on track — it never stops for this; the engine side — session.js reads the field, promptBuilder.js renders the hidden "## תיקון מסלול" block — was already in): **שדה דיווח חדש `asks`** — ה-slot האחד שהשאלה מכוונת אליו, תמיד בצורה המלאה `"stageN.slot"` מקטלוג הלכידה חוצת-השלבים (parseSlotRef מקבל רק את הצורה הזו; שם חשוף נבלע בשקט), וחייב להיות של השלב הנוכחי. הקוד משווה אותו לשלב; שאלה שסטתה מוצגת למשתמש כפי שהיא ומתוקנת בתור הבא, והמראיין לעולם אינו אומר למשתמש דבר על החריגה. נוספו: השורה `"asks": "stage1.timeline"` בתבנית ה-JSON ליד `slots`, וכלל קצר אחד (חמישה משפטים, בלי דוגמה נוספת) אחרי הלכידה חוצת-השלבים ולפני `slot_findings`. אין שינוי בשום שדה אחר, בכלל שאלה-אחת-לתור או במעבר השלב. הגוף שהמודל קורא: 7,748 ← 8,161 תווים.
      v9 (24.10.2026 · prompt-editor, asked by Ran after measuring what Haiku 5.5 reads on a stage-1 turn: ~31,000 chars, the map-layer spec the bulk of it, the conduct rules ~2% at the top; approved "כן"): **שכבת המפה יוצאת מהמראיין.** הרשם הוא הכותב היחיד של הגרף (רן, 18.9.2026), ומ-24.10.2026 שני הראיונות מציירים מהתיק שלו (`map.source: 'record'`) — המנוע כבר מתעלם משדות המפה של המראיין (session.js). הוסרו: הבלוק `map_labels` (חוקי התווית והטבלה), הבלוק `nodes` (slot אינו קובייה, `scale`, התקציב, הטבלאות, והשורה "לעולם לא קובייה על wound/adhd_pattern"), הבלוק `open_forks`, הבלוק `edges` (מזהי צמתים, ארבעת הסוגים, `confirmed`, "קשתות חוצות שלבים", הטבלה — אבל לא הכלל "קשת לא-מאושרת = שאלת הבירור הבאה", ראו להלן), הבלוק `groups` (שלושת הסוגים, `perspective` — שתי קופסאות), וחמשת השדות האלה מתבנית ה-JSON. ב-`gap_observations` ההפניה ל-`open_forks` הוחלפה במשפט שפיצול הוא עובדה של המקרה שהרשם רושם. נוסף משפט אחד במקום שבו תואר האיור: הוא נבנה מהתיק של הרשם, והמראיין מדווח רק מה שלמד ואת שאלתו. **מיד אחריו נשמר חצי ההתנהלות של הכרעת רן מ-5.9.2026 (§10) כפסקה קצרה אחת, בלי שדה דיווח** (תיקון באותה גרסה לפני שיצאה, prompt-editor, 24.10.2026, בעקבות ההערה הראשונה בדיווח ה-v9: ה-STATE SUMMARY עדיין מציג למראיין את `edges` של הרשם עם `confirmed: false`, ובלי הכלל לא היה מי שיברר אותן): קשת שהרשם רשם ולא אושרה היא שאלת הבירור הבאה — אחרי דמות `clear:false`, ולעולם לא במחיר משימת השלב; המראיין אינו מדווח אותה, ותשובת המשתמש היא מה שהרשם צריך כדי לאשרה (registrar.md v2). ללא שינוי בניסוח: סדר העבודה, `slots`, הלכידה חוצת-השלבים והקטלוג, `slot_findings`, `actor_map`, `gap_observations` (מלבד ההפניה), הדגלים, ושדות השלב. הגוף שהמודל קורא: 25,539 ← 7,748 תווים (מהם 312 לכלל הקשת). הכללים שהוסרו ממשיכים לחיות ב-registrar.md (v2) ובקוד (`barred` ב-pack.js); אין שינוי בכלל שאלה-אחת-לתור ואין שינוי במעבר השלב.
      v8 (24.10.2026 · prompt-editor, asked by Ran after a live adult interview on the QA link, Sonnet 5.5: the turn restated what was said, and one turn asked two questions): (1) message אינו סיכום של evaluation ואינו חוזר על דברי המשתמש — החילוץ קובע איזו שאלה לשאול, לא מה לחזור עליו; (2) תבנית message: שאלה מכוונת אחת בדיוק, ולפניה עד 3 משפטים קצרים בלי חזרה. הכלל של סימן שאלה אחד לכל תור נמצא בהנחיות המראיין (guidelines/think-twice-adult.md). אין שינוי בשום שדה דיווח, ובמעבר השלב.
      v7 (רן, 5.9.2026 · מהרצה חיה שנייה — סיפור הגב התפוס) — שתי הערות של רן על
@@ -69,6 +70,7 @@
     "slots": {
       "<slot_name>": 0
     },
+    "asks": "stage1.timeline",
     "slot_findings": {},
     "actor_map": [],
     "flag_avoidance": false,
@@ -105,6 +107,8 @@
 - 7: goal · board_presented · sharp_decision · package_test
 
 דוגמה (בשלב 1): "הרגשתי מושפל" ← `"slots": { "stage3.emotion": 1 }` — נרשם, לא נחקר עכשיו.
+
+**asks:** ה-slot האחד שהשאלה שלך מכוונת אליו, תמיד בצורה המלאה `"stageN.slot"` — מאותו קטלוג של הלכידה חוצת-השלבים. חייב להיות slot של השלב הנוכחי. אם בזמן מילוי ה-evaluation אתה רואה שהשאלה שלך מכוונת לשלב אחר — זה הרגע לשנות את השאלה, לא את השדה. הקוד משווה את `asks` לשלב: שאלה שסטתה מוצגת למשתמש כפי שהיא, והקוד מחזיר את הראיון למסלול בתור הבא. לעולם אל תאמר למשתמש דבר על זה.
 
 **slot_findings:** לכל slot שעדכנת בתור זה, רשום מערך של ממצאים קצרים — הפרטים הקונקרטיים שעלו, פריט אחד לכל פרט, בניסוח תמציתי במילות המשתמש (עובדות במבחן-המצלמה; לא פרשנות). המפתחות זהים ל-slots (`timeline` או חוצה-שלבים `stageN.slot`). דווח רק על מה שבאמת נמסר בתור זה — אל תמציא ואל תחזור על מה שכבר רשום.
 
