@@ -477,7 +477,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
         <li><code>judge.js</code> · רובריקת השופט, לבדיקות בלבד</li>
         <li><code>migrations.js</code> · הסבת קבצים בין גרסאות <span class="tag">חדש</span></li>
       </ul>
-      <p>שתי חבילות: <code>think-twice-adult</code> ("Think Twice · אישי", גרסה 1, שבעה שלבים), ו-<code>think-twice-parents</code> ("Think Twice · הורים", גרסה 1, שמונה שלבים, עם רשם ואיור משלו) <span class="tag open">טיוטה ל-QA</span></p>
+      <p>שתי חבילות: <code>think-twice-adult</code> ("Think Twice · אישי", גרסה 2 מ-24.10, שבעה שלבים), ו-<code>think-twice-parents</code> ("Think Twice · הורים", גרסה 1, שמונה שלבים, עם רשם ואיור משלו) <span class="tag open">טיוטה ל-QA</span></p>
     </div>
     <div class="card">
       <h3>המעטפת — "למי"</h3>
@@ -500,7 +500,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   <ol class="steps">
     <li class="safe"><div><b>בדיקת בטיחות</b><span>‏<code>preCheck</code> על הודעת המשתמש. אזכור מצוקה חריפה ← עצירה מיד, עם הודעת העצירה וקו העזרה. שום מודל לא נקרא.</span><span class="who">src/safety · רץ לפני כל דבר, גם לפני בדיקת התלויות</span></div></li>
     <li><div><b>הרשם</b><span>קריאת מודל אחת שמפרקת את התור לגרף: פעימות, עמדות, רגשות, דמויות, קשתות, קבוצות, פיצולים ותצפיות פערים. דלתא בלבד, לפי <code>id</code> יציב.</span><span>בראיון ההורים רץ רשם משלו מאז 16.10, עם הוראות להורים. ראיון שמוותר על הרשם (<code>registrar: null</code>) מקבל במקומו את הממצאים של כל השלבים בפרומפט של המראיין.</span><span class="who">registrar.js · דלוק (<code>REGISTRAR_ENABLED</code>) · כישלון לא עולה למשתמש בתור</span></div></li>
-    <li><div><b>המראיין</b><span>קריאת מודל עם הנחיות המראיין (על + ייחודי), סוכן השלב, המעריך והרשימה השחורה. מחזיר <code>evaluation</code> <strong>לפני</strong> <code>message</code>: "חלץ, אז שאל".</span><span class="who">promptBuilder.js · חלק יציב לקאשינג, חלק משתנה</span></div></li>
+    <li><div><b>המראיין</b><span>קריאת מודל עם הנחיות המראיין (על + ייחודי), סוכן השלב, המעריך והרשימה השחורה. מחזיר <code>evaluation</code> <strong>לפני</strong> <code>message</code>: "חלץ, אז שאל". <strong>שאלה אחת בכל תור נאכפת בקוד</strong> (24.10): תשובה עם שתי שאלות נשלחת פעם אחת לתיקון; אם המודל מתעקש, התור נשמר ומסומן <code>two_questions</code> בדוח התקלה. סימן שאלה שסוגר ציטוט אינו נספר.</span><span class="who">promptBuilder.js · חלק יציב לקאשינג, חלק משתנה · model.js · ONE_QUESTION_NUDGE</span></div></li>
     <li><div><b>פענוח ומיזוג</b><span>ציוני slots, ממצאים, מפת שחקנים, קוביות, קשתות, תוויות ופערים נכנסים ל-State. slot שהמודל המציא — מתעלמים ממנו.</span><span class="who">responseParser.js · state.js</span></div></li>
     <li><div><b>גזירה בקוד</b><span>ציון הקאסט נגזר מבהירות מפת השחקנים בכל תור שיש בו מפה (ריק ← 0, עמום ← 1, כולם ברורים ← 2). עוצמת הרגש נרשמת בשלבים שהחבילה מסמנת.</span><span class="who">session.js · לפי <code>castClarity</code> ו-<code>intensity</code> בחבילה</span></div></li>
     <li><div><b>ה-Router מחליט</b><span>להישאר · לבקש אישור סיכום · לפתוח מחדש · להציג לוח · לסגור · לעצור. <strong>המודל מציע, הקוד מכריע.</strong></span><span class="who">router.js · לפי ספי החבילה</span></div></li>
@@ -548,7 +548,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   <div class="tablewrap"><table>
     <thead><tr><th>שדה ב-<code>pack.js</code></th><th>מה הוא</th></tr></thead>
     <tbody>
-      <tr><td><code>id</code> · <code>name</code> · <code>version</code></td><td><code>think-twice-adult</code> · "Think Twice · אישי" · 1, ו-<code>think-twice-parents</code> · "Think Twice · הורים" · 1. פותחים כל קובץ ייצוא</td></tr>
+      <tr><td><code>id</code> · <code>name</code> · <code>version</code></td><td><code>think-twice-adult</code> · "Think Twice · אישי" · 2 (24.10), ו-<code>think-twice-parents</code> · "Think Twice · הורים" · 1. פותחים כל קובץ ייצוא</td></tr>
       <tr><td><code>stages</code></td><td>שלבים, slots לכל שלב, <code>requires</code> (תלויות), <code>loadGuard</code> לשלב, signposts, שם לכל שלב</td></tr>
       <tr><td>דגלי slot</td><td><code>barred</code> (חסום לתצוגה: באישי המוגלה והנרמול, בהורים "איזה הורה אני") · <code>mental</code> (תודעה)</td></tr>
       <tr><td>רכיבים מהקטלוג</td><td><code>castClarity</code> · <code>intensity</code> · <code>collector</code> · <code>decision</code> · <code>closing</code> <span class="tag">16.10</span>. הקטלוג סגור. השלב האחרון חייב לשאת הכרעה או סגירה</td></tr>
@@ -561,12 +561,12 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 
 <section id="texts" aria-labelledby="h-texts">
   <h2 id="h-texts">הטקסטים — תוכן, לא קוד</h2>
-  <p>כל הטקסטים ב-<code>src/content/prompts/</code>, ורק <code>prompt-editor</code> עורך אותם. ‏<code>prompts.js</code> של החבילה אומר איזה קובץ הוא איזה חלק, ו-Vite טוען אותם שם (<code>?raw</code>), במקום היחיד שבו טקסט פוגש את ה-bundler.</p>
+  <p>כל הטקסטים ב-<code>src/content/prompts/</code>, ורק <code>prompt-editor</code> עורך אותם. ‏<code>prompts.js</code> של החבילה אומר איזה קובץ הוא איזה חלק, ו-Vite טוען אותם שם (<code>?raw</code>), במקום היחיד שבו טקסט פוגש את ה-bundler. הערות הגרסה בראש כל קובץ מוסרות לפני שהטקסט מגיע למודל (<code>src/packs/text.js</code>, משותף לשתי החבילות; עד 24.10 הגיעו למודל בראיון האישי).</p>
   <div class="tablewrap"><table>
     <thead><tr><th>טקסט</th><th>תפקיד</th><th>שייך ל</th></tr></thead>
     <tbody>
       <tr><td><code>guidelines/super.md</code></td><td>הנחיות-העל לכל מראייני Think Twice. בלוק <code>locked</code> לא נדרס: "שאלה אחת בכל תור"</td><td>כל המודלים</td></tr>
-      <tr><td><code>guidelines/think-twice-adult.md</code> · <code>think-twice-parents.md</code></td><td>הנחיות ייחודיות, שגוברות על העל בלוק מול בלוק (<code>guidelines.js</code>)</td><td>המודל</td></tr>
+      <tr><td><code>guidelines/think-twice-adult.md</code> · <code>think-twice-parents.md</code></td><td>הנחיות ייחודיות, שגוברות על העל בלוק מול בלוק (<code>guidelines.js</code>). באישי מ-24.10: בלי חזרה על מה שנאמר לפני השאלה (<code>@echo</code>), וספירה של סימן שאלה אחד (<code>@one-question-count</code>)</td><td>המודל</td></tr>
       <tr><td><code>agents/stage1–7</code></td><td>סוכן לכל שלב</td><td>המודל</td></tr>
       <tr><td><code>evaluator.md</code></td><td>חוזה הדיווח, והגדרות ה-slots</td><td>מעורב: יפוצל (תכנית 3.4)</td></tr>
       <tr><td><code>registrar.md</code></td><td>הרשם</td><td>מעורב: יפוצל</td></tr>
@@ -586,7 +586,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     <li>לכל קובייה <code>scale</code>: ‏<code>episode</code> (פעימה באירוע) או <code>ongoing</code> (מצב עומד, ברצועת רקע).</li>
     <li>שלוש עמודות, דמויות · פעולות · משמעות, מתחת לרצועת הרקע (רן, 5.9.2026).</li>
     <li>מה שלא אושר (<code>confirmed:false</code>) לא מצויר. ‏slot חסום לא מגיע למפה לעולם (<code>validatePack</code>).</li>
-    <li><strong>בראיון ההורים האיור נבנה ישירות מהתיק של הרשם</strong> (<code>map.source: 'record'</code>, <code>nodesFromRecord</code>), ההכרעה "הגרף מוביל" מ-18.9, באותו מבנה של רצועת רקע ושלוש עמודות (רן, 16.10). מה שהמראיין הציע (<code>source: inferred</code>) לא מצויר עד שההורה אימץ אותו במילים שלו, ומילת אופי על הילד לא מצוירת לבד. בראיון האישי הקוביות עדיין באות מהמראיין (<code>nodes</code>). האוצר שממנו הגרף נבנה: המבט "יישויות וקשתות" למעלה.</li>
+    <li><strong>בשני הראיונות האיור נבנה ישירות מהתיק של הרשם</strong> (<code>map.source: 'record'</code>, <code>nodesFromRecord</code>), ההכרעה "הגרף מוביל" מ-18.9: בהורים מ-16.10, באישי מ-24.10 (רן). מה שהמראיין הציע (<code>source: inferred</code>) לא מצויר עד שהאדם אימץ אותו במילים שלו, ומילת אופי על הילד לא מצוירת לבד. <strong>סדר הסיפור הוא סדר ההתרחשות</strong> (רן, 24.10): קודם לפי השלב במאורע שהרשם רשם לכל <em>פעולה</em> (לפני · במהלך · אחרי), ואז לפי סדר האמירה, מכל הסוגים יחד (<code>told</code>); מחשבות ורגשות, שהרשם לא ממקם בזמן, נכנסים לגוף המאורע במקום שבו נאמרו; קשתות "ואז" ו"בגלל ש" מאושרות מסדרות את השאר. גם מה שאף אחד לא מחזיק בו (<code>source: unknown</code>) לא מצויר. הקוביות שהמראיין מדווח (<code>nodes</code>) לא מצוירות עוד באף ראיון. האוצר שממנו הגרף נבנה: המבט "יישויות וקשתות" למעלה.</li>
   </ul>
 </section>
 
