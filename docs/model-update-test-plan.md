@@ -21,7 +21,7 @@
 | `src/packs/<id>/pack.js` | **המבנה:** מזהה, שם, גרסה, שלבים, slots, דגלים (`barred`, `mental`), תלויות, ספים, תוויות, signposts, סדר המפה | Claude, אחרי הכרעה קלינית | `router-guard` + מטריצת המעברים (סעיף 3.2) |
 | `src/packs/<id>/prompts.js` | **מיפוי הטקסטים:** איזה קובץ הוא איזה חלק בראיון | `prompt-editor` בלבד | טביעות האצבע |
 | `src/packs/text.js` | **משותף לכל החבילות:** מסיר את הערות הגרסה מראש כל טקסט לפני שהוא מגיע למודל (24.10.2026). ההנחיות לא עוברות דרכו (`guidelines.js` מסיר בעצמו) | Claude | `prompt-fingerprint*.test.js`: שום `<!--` לא מגיע למודל |
-| `src/content/prompts/guidelines/<id>.md` | **הנחיות המראיין הייחודיות,** שגוברות על קובץ העל בלוק מול בלוק | `prompt-editor` בלבד | סעיף 3.1 |
+| `src/content/prompts/guidelines/<id>.md` | **הנחיות המראיין הייחודיות,** שגוברות על קובץ העל בלוק מול בלוק. בלוק `tail` (באישי: `@checklist`) מוצג **אחרון** בפרומפט התור, אחרי סיכום המצב (רן, 24.10.2026) | `prompt-editor` בלבד | סעיף 3.1 |
 | `src/content/prompts/agents/stage*.md` | **סוכן לכל שלב** | `prompt-editor` בלבד | סעיף 3.1 |
 | `src/content/prompts/evaluator.md` | חוזה הדיווח, **וגם הגדרות ה-slots של המבוגרים** (39 אזכורים) | `prompt-editor` בלבד | סעיף 3.1 |
 | `src/content/prompts/registrar.md` | הרשם, **עם דוגמאות של המבוגרים** (25 אזכורים) | `prompt-editor` בלבד | סעיף 3.1 + בדיקות הרשם |
