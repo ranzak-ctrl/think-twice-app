@@ -573,6 +573,15 @@ const REPAIR_NUDGE =
   'הפלט הקודם לא היה JSON תקין. החזר אך ורק אובייקט JSON יחיד בפורמט ' +
   '{"message": "...", "evaluation": {...}} — בלי טקסט נוסף ובלי code fences.';
 
+// One question per turn (Ran, 24.10.2026). A reply with more than one question mark
+// is sent back once per attempt with this nudge: the first question stays, the rest
+// wait for the next turn. Counted on the message only, in a turn; summary, opener
+// and board replies are not turns.
+const ONE_QUESTION_NUDGE =
+  'בתשובה הקודמת יש יותר משאלה אחת. החזר את אותו תוכן, אבל עם שאלה אחת בלבד — ' +
+  'הראשונה מביניהן. השאלה השנייה תישאר לתור הבא. אותו פורמט JSON.';
+const countQuestions = (text) => (String(text ?? '').match(/[?؟]/g) ?? []).length;
+
 // Carries all four token buckets, not just input/output. With prompt caching on,
 // `input_tokens` is only the UNCACHED remainder — the full prompt is
 // input + cache_creation + cache_read. Dropping the cache fields would make the
@@ -655,20 +664,23 @@ function describeUpstream(text) {
 // and `effort` are errors on this model; neither is sent from here.
 export const DEFAULT_MODEL = 'claude-haiku-4-5';
 
-// Ran, 16.10.2026: the QA link runs on Sonnet 5.5. In one QA run of the parents'
-// interview Haiku's Hebrew broke twice when it re-worded a parent ("וחוק לה" for
-// "ונרשה לה", "מתח מהצעדים" for "מפציר"). A Preview build — the QA link,
-// __PREVIEW_DEPLOYMENT__ from VERCEL_ENV in vite.config.js — names Sonnet 5.5;
-// production keeps Haiku, at half the price ($1/$5 against $2/$10). VITE_MODEL,
-// when set, still wins everywhere.
+// The model the parents’ interview names on a Preview build (the QA link).
 export const PREVIEW_MODEL = 'claude-sonnet-5-5';
 
+// True on the QA build: VITE_MODEL aside, the one switch that changes the model.
 const PREVIEW_BUILD = typeof __PREVIEW_DEPLOYMENT__ !== 'undefined' && __PREVIEW_DEPLOYMENT__ === true;
 
-// The one place the model is chosen — the adapter and the guide's cost meter both
-// read it, so the meter can never price a model the app is not calling.
-export function chooseModel({ env = import.meta.env, preview = PREVIEW_BUILD } = {}) {
-  return env?.VITE_MODEL ?? (preview ? PREVIEW_MODEL : DEFAULT_MODEL);
+// Which model each interview calls. Ran, 24.10.2026: the adult interview runs on
+// Haiku 4.5 everywhere, QA included. The parents' interview runs on Sonnet 5.5 on a
+// Preview build (the QA link, __PREVIEW_DEPLOYMENT__ from VERCEL_ENV in vite.config.js):
+// its Hebrew broke twice on Haiku in one QA run, 16.10.2026 ("וחוק לה" for "ונרשה לה").
+// Production keeps Haiku for both. VITE_MODEL, when set, wins everywhere.
+// The interview is the pack's id (src/packs/*/pack.js); absent, the default applies.
+export const PARENTS_PACK_ID = 'think-twice-parents';
+export function chooseModel({ env = import.meta.env, preview = PREVIEW_BUILD, interview = null } = {}) {
+  if (env?.VITE_MODEL) return env.VITE_MODEL;
+  if (preview && interview === PARENTS_PACK_ID) return PREVIEW_MODEL;
+  return DEFAULT_MODEL;
 }
 
 // Thinking has to be asked for, or not, per model family — sending the wrong
@@ -694,10 +706,12 @@ export async function complete({
   systemPrompt,
   messages,
   mode,
+  model: asked,
   fetchImpl = fetch,
   apiUrl = '/api/anthropic/v1/messages',
 }) {
-  const model = chooseModel();
+  // The shell passes the interview's model (interview.js); absent, the default.
+  const model = asked ?? chooseModel();
   // Mock mode is explicit: VITE_USE_MOCK=true (local dev + tests). Anything else
   // runs live against the serverless proxy, which holds the key server-side.
   const live = import.meta.env.VITE_USE_MOCK !== 'true';
@@ -710,6 +724,7 @@ export async function complete({
   let usage = null;
   let attemptMessages = messages;
   let lastFailure = null;
+  let overflow = null;
   // Kept across retries so a parse failure can still name the request the proxy
   // logged, even though the last attempt returned HTTP 200.
   let lastRequestId = null;
@@ -856,6 +871,26 @@ export async function complete({
           };
     }
     const parsed = parseResponse(raw);
+    if (parsed.ok && (mode ?? 'turn') === 'turn' && countQuestions(parsed.message) > 1) {
+      // Two questions in one turn: the reply is kept as the fallback, and the model
+      // is asked once more for one question. If the last attempt is still over, it
+      // is returned with the fact on record — an interviewer that asks two questions
+      // is not a reason to lose the turn.
+      overflow = parsed;
+      if (attempt < MAX_ATTEMPTS) {
+        attemptMessages = [
+          ...attemptMessages,
+          { role: 'assistant', content: raw },
+          { role: 'user', content: ONE_QUESTION_NUDGE },
+        ];
+        continue;
+      }
+      return {
+        ...parsed,
+        usage,
+        failure: { kind: 'two_questions', status: res.status, requestId: lastRequestId, stage, mode: mode ?? 'turn', attempt, detail: 'turn asked more than one question after repair' },
+      };
+    }
     if (parsed.ok) return { ...parsed, usage };
 
     // Parse failed — feed the broken turn back with a repair nudge and retry.
@@ -865,6 +900,16 @@ export async function complete({
       { role: 'assistant', content: raw },
       { role: 'user', content: REPAIR_NUDGE },
     ];
+  }
+
+  // A later attempt failed to parse after an earlier reply asked two questions:
+  // that reply is the turn, with the fact on record, rather than a lost turn.
+  if (overflow) {
+    return {
+      ...overflow,
+      usage,
+      failure: { kind: 'two_questions', status: 200, requestId: lastRequestId, stage, mode: mode ?? 'turn', attempt: MAX_ATTEMPTS, detail: 'turn asked more than one question; a later repair did not parse' },
+    };
   }
 
   console.error('JSON parse failed after', MAX_ATTEMPTS, 'attempts:', lastFailure?.error);

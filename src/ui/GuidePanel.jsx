@@ -84,10 +84,10 @@ const RATES = {
   'claude-sonnet-5-5': () => ({ in: 2, out: 10 }),
 };
 
-const MODEL_ID = chooseModel();
-
-function rates() {
-  return (RATES[MODEL_ID] ?? RATES[DEFAULT_MODEL])();
+// The price of the model this interview calls (model.js, chooseModel): each
+// interview has its own, so the meter takes the id it was given.
+function rates(modelId) {
+  return (RATES[modelId] ?? RATES[DEFAULT_MODEL])();
 }
 
 /* Cache multipliers, per Anthropic pricing: a write costs 1.25x base input
@@ -95,8 +95,8 @@ function rates() {
 const CACHE_WRITE_MULTIPLIER = 1.25;
 const CACHE_READ_MULTIPLIER = 0.1;
 
-function sessionCostUsd(usage) {
-  const { in: rIn, out: rOut } = rates();
+function sessionCostUsd(usage, modelId) {
+  const { in: rIn, out: rOut } = rates(modelId);
   const m = 1e6;
   return (
     (usage.inputTokens / m) * rIn +
@@ -106,23 +106,23 @@ function sessionCostUsd(usage) {
   );
 }
 
-function formatCost(usage) {
+function formatCost(usage, modelId) {
   if (!usage || !usage.calls) return '—';
-  const usd = sessionCostUsd(usage);
+  const usd = sessionCostUsd(usage, modelId);
   return `$${usd.toFixed(4)} (≈ ${(usd * ILS_PER_USD).toFixed(2)} ₪)`;
 }
 
 // What the same tokens would have cost with no caching — every cached token
 // billed at full input rate. Shown only once caching is actually in play.
-function formatCacheSaving(usage) {
+function formatCacheSaving(usage, modelId) {
   const cached = (usage?.cacheWriteTokens ?? 0) + (usage?.cacheReadTokens ?? 0);
   if (!cached) return null;
-  const { in: rIn } = rates();
+  const { in: rIn, out: rOut } = rates(modelId);
   const uncachedUsd =
     (usage.inputTokens / 1e6) * rIn +
     (cached / 1e6) * rIn +
-    (usage.outputTokens / 1e6) * rates().out;
-  const saved = uncachedUsd - sessionCostUsd(usage);
+    (usage.outputTokens / 1e6) * rOut;
+  const saved = uncachedUsd - sessionCostUsd(usage, modelId);
   if (saved <= 0) return null;
   return `$${saved.toFixed(4)} (${Math.round((saved / uncachedUsd) * 100)}%)`;
 }
@@ -151,6 +151,7 @@ function RegistrarStatus({ run }) {
 }
 
 export default function GuidePanel({ state, pack, account, lastRegistrar = null, width = 320, notes = [], revisions = [], onClose, onExportPlain }) {
+  const modelId = chooseModel({ interview: pack?.id });
   const { coverage, meta } = state;
   const eventText = account(state);
   const cast = castOf(pack);
@@ -309,7 +310,7 @@ export default function GuidePanel({ state, pack, account, lastRegistrar = null,
 
       {/* Token / cost meter — real-API usage this session (display only).
           Title carries the live model id so it cannot drift from the adapter. */}
-      <Section title={`עלות (${MODEL_ID})`}>
+      <Section title={`עלות (${modelId})`}>
         <Row label="קריאות API" value={meta.usage?.calls ?? 0} />
         <Row label="input tokens" value={(meta.usage?.inputTokens ?? 0).toLocaleString()} />
         <Row label="output tokens" value={(meta.usage?.outputTokens ?? 0).toLocaleString()} />
@@ -325,9 +326,9 @@ export default function GuidePanel({ state, pack, account, lastRegistrar = null,
             value={(meta.usage.cacheReadTokens).toLocaleString()}
           />
         )}
-        <Row label="עלות מצטברת" value={formatCost(meta.usage)} />
-        {formatCacheSaving(meta.usage) && (
-          <Row label="נחסך במטמון" value={formatCacheSaving(meta.usage)} />
+        <Row label="עלות מצטברת" value={formatCost(meta.usage, modelId)} />
+        {formatCacheSaving(meta.usage, modelId) && (
+          <Row label="נחסך במטמון" value={formatCacheSaving(meta.usage, modelId)} />
         )}
       </Section>
 

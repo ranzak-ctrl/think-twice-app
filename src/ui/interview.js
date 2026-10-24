@@ -21,7 +21,7 @@
 // a reload, which is also what erases an interview from the browser.
 
 import { createEngine } from '../core/engine.js';
-import { complete } from '../adapters/model.js';
+import { complete, chooseModel } from '../adapters/model.js';
 import { thinkTwiceAdult } from '../packs/think-twice-adult/pack.js';
 import { thinkTwiceAdultPrompts } from '../packs/think-twice-adult/prompts.js';
 import { thinkTwiceAdultMigrations } from '../packs/think-twice-adult/migrations.js';
@@ -129,10 +129,14 @@ export function interviewIdFrom(search, { allowParents = PARENTS_ALLOWED } = {})
 
 const chosen = INTERVIEWS[interviewIdFrom(typeof window !== 'undefined' ? window.location?.search : '')];
 
+// The model is the interview's (model.js, chooseModel): the adult interview names
+// Haiku 4.5 everywhere, the parents' names Sonnet 5.5 on the QA build.
+const interviewComplete = (args) => complete({ model: chooseModel({ interview: chosen.pack.id }), ...args });
+
 export const interview = createEngine({
   pack: chosen.pack,
   prompts: chosen.prompts,
-  complete,
+  complete: interviewComplete,
 });
 
 // How a person's interview file from an earlier version of this interview is

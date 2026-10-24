@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { complete, chooseModel, DEFAULT_MODEL, PREVIEW_MODEL } from '../../src/adapters/model.js';
+import { complete, chooseModel, DEFAULT_MODEL, PREVIEW_MODEL, PARENTS_PACK_ID } from '../../src/adapters/model.js';
 
 // JSON-stability retry (dev-plan §148). These tests force the real (network) path
 // with VITE_USE_MOCK=false and a stubbed fetch, then verify the adapter retries a
@@ -450,11 +450,12 @@ describe('adapter complete() — thinking is opted out per model family', () => 
   });
 });
 
-// Ran, 16.10.2026: the QA link (a Vercel Preview build) runs on Sonnet 5.5;
-// production keeps Haiku. Sonnet 5.5 rejects `disabled` thinking with a 400 — its
-// thinking-off setting is `between_tools` — and its safety classifiers can decline
-// a turn, which must not be retried as if it were broken JSON.
-describe('adapter complete() — Sonnet 5.5 on the QA link', () => {
+// Ran, 16.10.2026 and 24.10.2026: the adult interview runs on Haiku 4.5 everywhere; the
+// parents' interview runs on Sonnet 5.5 on the QA build. Sonnet 5.5 rejects `disabled`
+// thinking (its thinking-off setting is `between_tools`), and its refusals are not
+// broken JSON. One question per turn: a reply with two is repaired once, then kept
+// with the fact on record.
+describe('adapter complete() — the model per interview, and one question per turn', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_USE_MOCK', 'false');
   });
@@ -463,21 +464,40 @@ describe('adapter complete() — Sonnet 5.5 on the QA link', () => {
     vi.unstubAllGlobals();
   });
 
-  const bodyOf = (fetchStub) => JSON.parse(fetchStub.mock.calls[0][1].body);
+  const bodyOf = (fetchStub, call = 0) => JSON.parse(fetchStub.mock.calls[call][1].body);
+  const TWO = JSON.stringify({ message: 'מה קרה אז? ומה עשית אחר כך?', evaluation: { slots: { trigger: 1 } } });
+  const ONE = JSON.stringify({ message: 'מה קרה אז?', evaluation: { slots: { trigger: 1 } } });
 
-  it('names Sonnet 5.5 in a Preview build, Haiku in production, and VITE_MODEL over both', () => {
+  it('names Sonnet 5.5 for the parents’ interview on a Preview build only', () => {
     expect(PREVIEW_MODEL).toBe('claude-sonnet-5-5');
     expect(DEFAULT_MODEL).toBe('claude-haiku-4-5');
-    expect(chooseModel({ env: {}, preview: true })).toBe('claude-sonnet-5-5');
+    expect(chooseModel({ env: {}, preview: true, interview: PARENTS_PACK_ID })).toBe('claude-sonnet-5-5');
+    expect(chooseModel({ env: {}, preview: false, interview: PARENTS_PACK_ID })).toBe('claude-haiku-4-5');
+  });
+
+  it('names Haiku 4.5 for the adult interview, on every build', () => {
+    expect(chooseModel({ env: {}, preview: true, interview: 'think-twice-adult' })).toBe('claude-haiku-4-5');
+    expect(chooseModel({ env: {}, preview: true })).toBe('claude-haiku-4-5');
     expect(chooseModel({ env: {}, preview: false })).toBe('claude-haiku-4-5');
-    expect(chooseModel({ env: { VITE_MODEL: 'claude-sonnet-5' }, preview: true })).toBe('claude-sonnet-5');
+  });
+
+  it('lets VITE_MODEL win over both', () => {
+    expect(chooseModel({ env: { VITE_MODEL: 'claude-sonnet-5' }, preview: true, interview: PARENTS_PACK_ID })).toBe('claude-sonnet-5');
   });
 
   it('a test run, like production, is not a Preview build', () => {
     expect(chooseModel({ env: {} })).toBe('claude-haiku-4-5');
   });
 
-  it('turns thinking off with between_tools, alone in the field', async () => {
+  it('calls the model the shell passed, when it passes one', async () => {
+    const fetchStub = makeFetch([VALID]);
+    vi.stubGlobal('fetch', fetchStub);
+    await complete({ ...ARGS, model: 'claude-sonnet-5-5' });
+    expect(bodyOf(fetchStub).model).toBe('claude-sonnet-5-5');
+    expect(bodyOf(fetchStub).thinking).toEqual({ type: 'between_tools' });
+  });
+
+  it('turns thinking off with between_tools, alone in the field, on Sonnet 5.5', async () => {
     vi.stubEnv('VITE_MODEL', 'claude-sonnet-5-5');
     const fetchStub = makeFetch([VALID]);
     vi.stubGlobal('fetch', fetchStub);
@@ -486,7 +506,6 @@ describe('adapter complete() — Sonnet 5.5 on the QA link', () => {
 
     const body = bodyOf(fetchStub);
     expect(r.ok).toBe(true);
-    expect(body.model).toBe('claude-sonnet-5-5');
     expect(body.thinking).toEqual({ type: 'between_tools' });
     expect(body).not.toHaveProperty('output_config');
     expect(body).not.toHaveProperty('temperature');
@@ -530,5 +549,42 @@ describe('adapter complete() — Sonnet 5.5 on the QA link', () => {
 
     expect(r).toMatchObject({ ok: false, error: 'refusal', message: null });
     expect(r.failure.detail).toBe('model declined (no category)');
+  });
+
+  it('a turn with two questions is asked once more, for one', async () => {
+    const fetchStub = makeFetch([TWO, ONE]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    const r = await complete(ARGS);
+
+    expect(fetchStub).toHaveBeenCalledTimes(2);
+    expect(r).toMatchObject({ ok: true, message: 'מה קרה אז?' });
+    expect(r.failure).toBeUndefined();
+    const second = bodyOf(fetchStub, 1).messages;
+    expect(second.at(-1)).toEqual({ role: 'user', content: expect.stringContaining('שאלה אחת בלבד') });
+  });
+
+  it('a turn still asking two after the repairs is kept, with the fact on record', async () => {
+    const fetchStub = makeFetch([TWO, TWO, TWO]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    const r = await complete(ARGS);
+
+    expect(fetchStub).toHaveBeenCalledTimes(3);
+    expect(r.ok).toBe(true);
+    expect(r.message).toBe('מה קרה אז? ומה עשית אחר כך?');
+    expect(r.failure).toMatchObject({ kind: 'two_questions', mode: 'turn' });
+  });
+
+  it('summaries, openers and boards are not turns, and are not counted', async () => {
+    const SUMMARY = 'בוא נוודא שהבנתי נכון? זה מדויק? כן.';
+    const fetchStub = makeFetch([SUMMARY]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    const r = await complete({ ...ARGS, mode: 'summary' });
+
+    expect(fetchStub).toHaveBeenCalledTimes(1);
+    expect(r.ok).toBe(true);
+    expect(r.failure).toBeUndefined();
   });
 });
