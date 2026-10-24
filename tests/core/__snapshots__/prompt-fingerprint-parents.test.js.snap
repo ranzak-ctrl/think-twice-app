@@ -3,67 +3,67 @@
 exports[`prompt fingerprints — parents > the probe prompt, every stage, empty and rich 1`] = `
 {
   "stage1.fresh": {
-    "stable": "16760:e687f3c4425e4161",
+    "stable": "17578:161deb46c7ffa5a5",
     "volatile": "722:56ac6ff9e50810ff",
   },
   "stage1.rich": {
-    "stable": "16760:e687f3c4425e4161",
+    "stable": "17578:161deb46c7ffa5a5",
     "volatile": "1799:0105845255e43fad",
   },
   "stage2.fresh": {
-    "stable": "16153:130e6952e7ea3287",
+    "stable": "16971:1084db56dceaca7e",
     "volatile": "722:925aca33761d3d6b",
   },
   "stage2.rich": {
-    "stable": "16153:130e6952e7ea3287",
+    "stable": "16971:1084db56dceaca7e",
     "volatile": "1799:36695b8137adf58f",
   },
   "stage3.fresh": {
-    "stable": "22812:49cfc9025a818e88",
+    "stable": "23630:cf0e3b8f0f51b766",
     "volatile": "722:c598a46fd8286f32",
   },
   "stage3.rich": {
-    "stable": "22812:49cfc9025a818e88",
+    "stable": "23630:cf0e3b8f0f51b766",
     "volatile": "1799:dd124b268db0117f",
   },
   "stage4.fresh": {
-    "stable": "22667:786e7202fb5f8fd1",
+    "stable": "23485:f45638bd5558bdd8",
     "volatile": "722:cdbff7631c9986fc",
   },
   "stage4.rich": {
-    "stable": "22667:786e7202fb5f8fd1",
+    "stable": "23485:f45638bd5558bdd8",
     "volatile": "1799:81ff668bbb178a39",
   },
   "stage5.fresh": {
-    "stable": "17064:a1d6b4eb63f546b0",
+    "stable": "17882:02964ab3ff9f003b",
     "volatile": "722:5a5ee1fa8b1dc034",
   },
   "stage5.rich": {
-    "stable": "17064:a1d6b4eb63f546b0",
+    "stable": "17882:02964ab3ff9f003b",
     "volatile": "1799:8e029961c3b14332",
   },
   "stage6.fresh": {
-    "stable": "22758:40031b1080ffccfd",
+    "stable": "23576:a72b2a32b0f28e04",
     "volatile": "722:f7def1b4d148ef5b",
   },
   "stage6.rich": {
-    "stable": "22758:40031b1080ffccfd",
+    "stable": "23576:a72b2a32b0f28e04",
     "volatile": "1799:164396d774c8dbf5",
   },
   "stage7.fresh": {
-    "stable": "16651:eb7da573e977077e",
+    "stable": "17469:64e4638d7e471200",
     "volatile": "722:46ee661fab290fb8",
   },
   "stage7.rich": {
-    "stable": "16651:eb7da573e977077e",
+    "stable": "17469:64e4638d7e471200",
     "volatile": "1799:c12edeb287481d98",
   },
   "stage8.fresh": {
-    "stable": "22760:cc00d1ab707adb95",
+    "stable": "23578:83f7b410bf2767b4",
     "volatile": "722:eb3345f54a864297",
   },
   "stage8.rich": {
-    "stable": "22760:cc00d1ab707adb95",
+    "stable": "23578:83f7b410bf2767b4",
     "volatile": "1799:c40cef5003102fc9",
   },
 }
@@ -84,24 +84,24 @@ exports[`prompt fingerprints — parents > the registrar prompt 1`] = `
 
 exports[`prompt fingerprints — parents > the summary, opener and board prompts 1`] = `
 {
-  "board": "6940:df0fb8e24598cb72",
-  "opener.stage1": "9340:a9b7e5cb80148dd3",
-  "opener.stage1.reopen": "9370:a387b0c9a5f02cd1",
-  "opener.stage2": "8733:ffe61cb51a69c224",
-  "opener.stage2.reopen": "8763:5a77f7a5d1341de7",
-  "opener.stage3": "15392:d8025d730f725d52",
-  "opener.stage3.reopen": "15422:93eb27316c305eb3",
-  "opener.stage4": "15247:b7366f48e814a66a",
-  "opener.stage4.reopen": "15277:7c2de0e9bd02fb34",
-  "opener.stage5": "9644:06f93fff2cb1aaf2",
-  "opener.stage5.reopen": "9674:d8324a78225d7837",
-  "opener.stage6": "15338:5c0b24e05564f25b",
-  "opener.stage6.reopen": "15368:98a17d0344a500c6",
-  "opener.stage7": "9231:dfe1c2900e925137",
-  "opener.stage7.reopen": "9261:269332c64422eca4",
-  "opener.stage8": "15340:c2a2fc2ce95a23ad",
-  "opener.stage8.reopen": "15370:3d1a2989e9041eb2",
-  "summary": "6953:e4738223c983a939",
+  "board": "7758:57aca48fc3ede3a4",
+  "opener.stage1": "10158:195e0a005bbde3ce",
+  "opener.stage1.reopen": "10188:46002af48fe17e3d",
+  "opener.stage2": "9551:de06ace933fa7ca6",
+  "opener.stage2.reopen": "9581:53c05564ee61c517",
+  "opener.stage3": "16210:98139ce83bfb35e4",
+  "opener.stage3.reopen": "16240:1a3985ce392c2e5b",
+  "opener.stage4": "16065:54cb85e7130baa43",
+  "opener.stage4.reopen": "16095:d868614cb0af0a7e",
+  "opener.stage5": "10462:78fa5aa02662e93c",
+  "opener.stage5.reopen": "10492:4d647fc8503b7a16",
+  "opener.stage6": "16156:32314cd2c37237f7",
+  "opener.stage6.reopen": "16186:53b9f716eaacdf9a",
+  "opener.stage7": "10049:06a8ab5b72679662",
+  "opener.stage7.reopen": "10079:085eebb1082afa09",
+  "opener.stage8": "16158:d99406456dad220b",
+  "opener.stage8.reopen": "16188:30d55d4940ffc872",
+  "summary": "7771:14229cfe591d7da2",
 }
 `;
 
