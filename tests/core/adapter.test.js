@@ -552,16 +552,28 @@ describe('adapter complete() — the model per interview, and one question per t
     expect(second.at(-1)).toEqual({ role: 'user', content: expect.stringContaining('שאלה אחת בלבד') });
   });
 
-  it('a turn still asking two after the repairs is kept, with the fact on record', async () => {
+  it('a turn still asking two after the one repair is kept, with the fact on record', async () => {
     const fetchStub = makeFetch([TWO, TWO, TWO]);
     vi.stubGlobal('fetch', fetchStub);
 
     const r = await complete(ARGS);
 
-    expect(fetchStub).toHaveBeenCalledTimes(3);
+    expect(fetchStub).toHaveBeenCalledTimes(2); // one repair, not a loop
     expect(r.ok).toBe(true);
     expect(r.message).toBe('מה קרה אז? ומה עשית אחר כך?');
     expect(r.failure).toMatchObject({ kind: 'two_questions', mode: 'turn' });
+  });
+
+  it('a question mark inside the person’s quoted words is not a question of ours', async () => {
+    const QUOTED = JSON.stringify({ message: 'כשהיא אמרה "מה אתה רוצה ממני?" — מה הרגשת?', evaluation: { slots: { trigger: 1 } } });
+    const fetchStub = makeFetch([QUOTED]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    const r = await complete(ARGS);
+
+    expect(fetchStub).toHaveBeenCalledTimes(1);
+    expect(r.ok).toBe(true);
+    expect(r.failure).toBeUndefined();
   });
 
   it('summaries, openers and boards are not turns, and are not counted', async () => {

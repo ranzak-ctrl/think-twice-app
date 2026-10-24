@@ -1,12 +1,14 @@
-// A drawing made from the registrar's record — the parents' interview.
+// A drawing made from the registrar's record — both interviews.
 //
 // Ran, 16.10.2026: "גם אצל ההורים יהיה איור של המאורע". The parents' evaluator
 // reports no cubes, so their map draws the registrar's record (pack `map.source:
 // 'record'`), the rendering of the ledger Ran ruled on 18.9.2026 ("הגרף מוביל").
-// Think Twice keeps drawing the cubes its interviewer reports. What must hold: the
-// record's beats, stances and feelings are drawn, in the order the parent related;
-// "which parent am I" never is; nothing changes for a pack that did not ask; and an
-// interview cannot ask for a record map while opting out of the registrar.
+// Think Twice followed on 24.10.2026, when Ran ruled that the order of the drawing
+// is the order it happened, which only the registrar places. What must hold: the
+// record's beats, stances and feelings are drawn, in the time of the incident and
+// then the order they were told; "which parent am I" never is; nothing changes for
+// a pack that did not ask; and an interview cannot ask for a record map while
+// opting out of the registrar.
 
 import { describe, it, expect } from 'vitest';
 import { buildMap } from '../../src/core/storyMap.js';
@@ -62,7 +64,7 @@ function withRecord(pack) {
 describe('the parents’ map draws the registrar’s record', () => {
   it('asks for it in the pack, and the pack is valid', () => {
     expect(mapSource(parents)).toBe('record');
-    expect(mapSource(adult)).toBe('reported');
+    expect(mapSource(adult)).toBe('record');
     expect(validatePack(parents).ok).toBe(true);
   });
 
@@ -102,13 +104,23 @@ describe('the parents’ map draws the registrar’s record', () => {
   });
 });
 
-describe('nothing changes for a pack that did not ask', () => {
-  it('Think Twice still draws the cubes its interviewer reports, not the record', () => {
+describe('the Think Twice drawing is the record too (Ran, 24.10.2026)', () => {
+  it('draws what the registrar wrote down, once the interviewer has scored its slot', () => {
     const state = applyRegistrar(createState(adult), {
       beats: [{ id: 'arrived', slot: 'stage1.trigger', actor: 'self', text: 'הבשר הגיע', label: 'הבשר הגיע', camera: true }],
     }, 1, adult);
     const covered = { ...state, coverage: { ...state.coverage, stage1: { ...state.coverage.stage1, trigger: 2 } } };
-    expect(buildMap(covered, adult).stations.map((n) => n.id)).not.toContain('beat:arrived');
+    expect(buildMap(covered, adult).stations.map((n) => n.id)).toContain('beat:arrived');
+  });
+
+  it('no longer draws the cubes the interviewer reports in its own turn', () => {
+    const s = createState(adult);
+    const reported = {
+      ...s,
+      nodes: { 'stage1.trigger': { id: 'stage1.trigger', label: 'מדווח', slot: 'stage1.trigger', scale: 'episode', seq: 1 } },
+      coverage: { ...s.coverage, stage1: { ...s.coverage.stage1, trigger: 2 } },
+    };
+    expect(JSON.stringify(buildMap(reported, adult))).not.toContain('מדווח');
   });
 });
 
@@ -174,5 +186,86 @@ describe('any pack with a record map keeps its own barred slots off it', () => {
     );
     expect(Object.keys(state.eventRecord.stances)).toContain('hurt');
     expect(JSON.stringify(buildMap(state, pack))).not.toContain('הפצע');
+  });
+});
+
+// Ran, 24.10.2026: "the announcement is drawn before the preparation it came after".
+// The order of the story is the order it happened, from what the registrar wrote.
+describe('the order of the story is the order it happened', () => {
+  const ORDERED = {
+    beats: [
+      // Told first, but it came after the preparation: the registrar places it during.
+      { id: 'announce', slot: 'stage1.trigger', actor: 'self', text: 'אשתך הודיעה על 20:30', label: 'הודעה 20:30', camera: true, phase: 'during' },
+      { id: 'prep', slot: 'stage1.timeline', actor: 'self', text: 'התארגנו לארוחה', label: 'התארגנות לארוחה', camera: true, phase: 'before' },
+    ],
+  };
+  const scored = (s) => ({
+    ...s,
+    coverage: { ...s.coverage, stage1: { ...s.coverage.stage1, trigger: 2, timeline: 2 } },
+  });
+
+  it('draws the preparation before the announcement, by the time it happened', () => {
+    const state = scored(applyRegistrar(createState(adult), ORDERED, 1, adult));
+    expect(buildMap(state, adult).stations.map((n) => n.label)).toEqual(['התארגנות לארוחה', 'הודעה 20:30']);
+  });
+
+  it('keeps that order when the registrar placed both in the same time, through the confirmed then', () => {
+    const delta = {
+      beats: ORDERED.beats.map((b) => ({ ...b, phase: '' })),
+      edges: [{ from: 'beat:prep', to: 'beat:announce', kind: 'then', confirmed: true }],
+    };
+    const state = scored(applyRegistrar(createState(adult), delta, 1, adult));
+    expect(buildMap(state, adult).stations.map((n) => n.label)).toEqual(['התארגנות לארוחה', 'הודעה 20:30']);
+  });
+
+  // router-guard, 24.10.2026: the same-slot chain constrained siblings by the order
+  // they were told and ignored the time the registrar gave them.
+  it('two beats in one slot keep the time order, not the told order', () => {
+    const sameSlot = {
+      beats: ORDERED.beats.map((b) => ({ ...b, slot: 'stage1.trigger' })),
+    };
+    const state = scored(applyRegistrar(createState(adult), sameSlot, 1, adult));
+    expect(buildMap(state, adult).stations.map((n) => n.label)).toEqual(['התארגנות לארוחה', 'הודעה 20:30']);
+  });
+
+  it('a feeling told between two beats is drawn between them, in the body of the incident', () => {
+    let state = applyRegistrar(createState(adult), { beats: [ORDERED.beats[1]] }, 1, adult); // prep, before
+    state = applyRegistrar(state, { emotions: [{ id: 'dread', slot: 'stage3.emotion', actor: 'self', name: 'חרדה', label: 'חרדה', granular: true, source: 'stated' }] }, 2, adult);
+    state = applyRegistrar(state, { beats: [ORDERED.beats[0]] }, 3, adult); // announce, during
+    state = applyRegistrar(state, { beats: [{ id: 'left', slot: 'stage1.auto_reaction', actor: 'self', text: 'יצאת', label: 'יצאת', camera: true, phase: 'during' }] }, 4, adult);
+    state = scored(state);
+    state = {
+      ...state,
+      coverage: {
+        ...state.coverage,
+        stage1: { ...state.coverage.stage1, auto_reaction: 2 },
+        stage3: { ...state.coverage.stage3, emotion: 2 },
+      },
+    };
+    expect(buildMap(state, adult).stations.map((n) => n.label)).toEqual(['התארגנות לארוחה', 'חרדה', 'הודעה 20:30', 'יצאת']);
+  });
+
+  it("a slot's fallback cube follows the placed beats instead of jumping ahead of them", () => {
+    let state = scored(applyRegistrar(createState(adult), ORDERED, 1, adult));
+    // stage2.causal scored, with a label but nothing in the record for it.
+    state = {
+      ...state,
+      coverage: { ...state.coverage, stage2: { ...state.coverage.stage2, causal: 2 } },
+      mapLabels: { ...state.mapLabels, stage2: { ...(state.mapLabels?.stage2 ?? {}), causal: 'כי לחצו עליו' } },
+    };
+    const labels = buildMap(state, adult).stations.map((n) => n.label);
+    expect(labels).toEqual(['התארגנות לארוחה', 'הודעה 20:30', 'כי לחצו עליו']);
+  });
+
+  it('the ground lane keeps the narrative order: a standing state told later is not "after"', () => {
+    let state = applyRegistrar(createState(adult), {
+      stances: [{ id: 'not_pro', slot: 'stage2.meaning', type: 'reading', actor: 'self', text: 'לא מקצועי', label: 'לא מקצועי', source: 'stated', scale: 'ongoing' }],
+    }, 1, adult);
+    state = applyRegistrar(state, {
+      stances: [{ id: 'pressure', slot: 'stage2.causal', type: 'reading', actor: 'self', text: 'המטבח בלחץ', label: 'המטבח בלחץ', source: 'stated', scale: 'ongoing' }],
+    }, 2, adult);
+    state = { ...state, coverage: { ...state.coverage, stage2: { ...state.coverage.stage2, causal: 2, meaning: 2 } } };
+    // causal precedes meaning in the narrative, though meaning was told first.
+    expect(buildMap(state, adult).ground.map((n) => n.label)).toEqual(['המטבח בלחץ', 'לא מקצועי']);
   });
 });

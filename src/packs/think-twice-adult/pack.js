@@ -42,7 +42,10 @@ export const thinkTwiceAdult = {
   // analysis of a run would need to know about.
   id: 'think-twice-adult',
   name: 'Think Twice · אישי',
-  version: 1,
+  // 2 (24.10.2026): the interviewer's texts changed — no routine restating, one
+  // question per turn, the headers no longer reach the model — and the drawing is
+  // the registrar's record. The state's shape did not change (migrations.js).
+  version: 2,
 
   // The Router's numbers. Each is a pack decision; none is clinically validated
   // beyond what docs/questions-for-natali.md records (§1 load guard, §13 grace).
@@ -160,6 +163,10 @@ export const thinkTwiceAdult = {
   // `timeline` is the slot whose certainty re-forms the map from a scene into a
   // journey — "then timing arrives" (Ran, 4.9.2026).
   map: {
+    // The drawing is the registrar's record (Ran, 24.10.2026): the cubes, their
+    // order and their links come from what the registrar wrote down, not from what
+    // the interviewer reports in the same turn as its question.
+    source: 'record',
     narrative: [
       { kind: 'fact', slots: ['stage1.trigger', 'stage1.timeline', 'stage1.status'] },
       { kind: 'thought', slots: ['stage2.causal', 'stage2.meaning'] },

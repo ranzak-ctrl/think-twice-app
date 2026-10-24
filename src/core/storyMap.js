@@ -181,6 +181,15 @@ const slotMeta = (narrative) =>
 //
 // A reported node whose id IS "stageN.slot" is the ordinary case of that — it
 // simply names and scales the slot's own cube.
+//
+// before · during · after, as the registrar places a beat in the incident. A cube
+// with no phase is taken to be DURING it — the body of the incident — and sits
+// there where it was told: a thought or a feeling (the registrar places beats only,
+// registrar.md), a beat it could not place ("אל תמציא סדר", so it left the field
+// empty), or a slot's own fallback cube, which no record stands behind.
+const PHASE_RANK = { before: 0, during: 1, after: 2 };
+const phaseRank = (n) => PHASE_RANK[n.phase] ?? 1;
+
 function nodesOf(state, pack) {
   const barred = barredSlots(pack);
   const narrative = mapNarrative(pack);
@@ -190,7 +199,8 @@ function nodesOf(state, pack) {
 
   // The cubes: what the interviewer reported, or — for a pack whose map says so —
   // the registrar's record. The display guard is applied inside nodesFromRecord.
-  const source = mapSource(pack) === 'record' ? nodesFromRecord(state, pack) : state?.nodes ?? {};
+  const fromRecord = mapSource(pack) === 'record';
+  const source = fromRecord ? nodesFromRecord(state, pack) : state?.nodes ?? {};
   const reported = Object.values(source)
     .filter((n) => certaintyOf(state, n.slot, pack, barred))
     .sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0));
@@ -213,12 +223,32 @@ function nodesOf(state, pack) {
       scale: n.scale === 'ongoing' ? 'ongoing' : 'episode',
       label: n.label,
       seq: n.seq ?? 0,
+      phase: n.phase ?? '',
       ...certaintyOf(state, n.slot, pack, barred),
     });
   }
 
   // Narrative order across slots, and within one slot the order he said them in.
-  items.sort((a, b) => rankOf(a.slot) - rankOf(b.slot) || a.seq - b.seq);
+  //
+  // On the registrar's record the incident's own time comes first for the cubes on
+  // the route (Ran, 24.10.2026: an announcement was drawn before the preparation it
+  // came after, because the template listed the trigger first): before, during,
+  // after the incident, as the registrar placed each beat; within a time, the order
+  // the record took them down in, across kinds (eventMap.js); the slot's narrative
+  // rank only breaks what is still a tie. A slot's own fallback cube (seq -1) has no
+  // record behind it and no time, so it follows the incident's placed cubes, in
+  // narrative order, rather than jumping ahead of beats that are known to have
+  // happened first. The ground lane has no time in it (see buildMap) and keeps the
+  // narrative order on either source — a standing state told later is not "after".
+  // The confirmed then/because edges, below, order the rest.
+  const byNarrative = (a, b) => rankOf(a.slot) - rankOf(b.slot) || a.seq - b.seq;
+  const byTime = (a, b) =>
+    phaseRank(a) - phaseRank(b) || (a.seq < 0) - (b.seq < 0) || a.seq - b.seq || rankOf(a.slot) - rankOf(b.slot);
+  const timed = (n) => fromRecord && n.scale !== 'ongoing';
+  items.sort((a, b) => {
+    if (timed(a) !== timed(b)) return timed(a) ? -1 : 1;
+    return timed(a) ? byTime(a, b) : byNarrative(a, b);
+  });
 
   // Two cubes reading the same words are one thing said twice, not two things.
   const labels = new Set();
@@ -323,11 +353,18 @@ export function buildMap(state, pack = DEFAULT_PACK) {
   // is here to correct. (Written the other way first, and the test below caught it.)
   // It is never drawn as one of his arrows either: nothing here reaches `links` or
   // `arcs`, so an inferred order stays a dashed line.
+  //
+  // Siblings are chained only within one time of the incident. Two beats in one
+  // slot, one placed `before` and one `during`, are not "reported together" in any
+  // sense that should order them — the registrar has already said which came
+  // first, and a chain by report order would put the later one ahead (router-guard,
+  // 24.10.2026). On an interviewer's report every phase is '', so nothing changes.
   const bySlot = new Map();
   for (const n of stations) {
     if (n.seq < 0) continue; // a slot's own fallback cube stands alone in its slot
-    if (!bySlot.has(n.slot)) bySlot.set(n.slot, []);
-    bySlot.get(n.slot).push(n);
+    const key = `${n.slot}|${n.phase ?? ''}`;
+    if (!bySlot.has(key)) bySlot.set(key, []);
+    bySlot.get(key).push(n);
   }
   for (const siblings of bySlot.values()) {
     const inOrder = [...siblings].sort((a, b) => a.seq - b.seq);

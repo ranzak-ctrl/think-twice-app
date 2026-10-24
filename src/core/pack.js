@@ -148,11 +148,13 @@ export function mapNarrative(pack) {
 // The slot whose certainty turns the map from a scene into a journey, or null.
 export const mapTimeline = (pack) => parseSlotRef(pack, pack.map?.timeline);
 
-// Where the map's cubes come from. 'reported' (the default, Think Twice today): the
-// cubes the interviewer reports in `nodes`. 'record': the registrar's record,
-// projected by eventMap.js — Ran's ruling of 18.9.2026 that the map is a rendering
-// of the ledger ("הגרף מוביל"), first switched on for the parents' interview
-// (16.10.2026). A record map needs a registrar to write the record (engine.js).
+// Where the map's cubes come from. 'reported' (the default): the cubes the
+// interviewer reports in `nodes`. 'record': the registrar's record, projected by
+// eventMap.js — Ran's ruling of 18.9.2026 that the map is a rendering of the ledger
+// ("הגרף מוביל"), first switched on for the parents' interview (16.10.2026) and for
+// Think Twice on 24.10.2026, so no shipped interview draws 'reported' now; the
+// default stays for a pack that says nothing, and the tests keep it working. A
+// record map needs a registrar to write the record (engine.js).
 export const MAP_SOURCES = new Set(['reported', 'record']);
 export const mapSource = (pack) => pack.map?.source ?? 'reported';
 

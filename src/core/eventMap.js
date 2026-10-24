@@ -8,19 +8,33 @@
 // what the correction of that day stopped short of: storyMap.js got its ORDER from
 // the graph, and its CONTENTS still came from a store keyed by slot.
 //
-// Output shape is exactly what `state.nodes` holds — { id, label, slot, scale, seq }
-// — so storyMap.js switches source in one line. It did, for the first pack that
-// asked (`map.source: 'record'`, the parents' interview, 16.10.2026); Think Twice
-// still draws the cubes its interviewer reports, and flipping it onto the record
-// waits on its own decision.
+// Output shape is what `state.nodes` holds — { id, label, slot, scale, seq } — plus
+// the beat's `phase`, so storyMap.js switches source in one line. It did, for the
+// first pack that asked (`map.source: 'record'`, the parents' interview, 16.10.2026),
+// and Think Twice followed on 24.10.2026 (Ran: the order of the story is the order
+// it happened, and only the registrar places things in time). The cubes the
+// interviewer still reports in `nodes` are drawn by no interview now; they stay in
+// the state as the second reported store Ran closed on 18.9, a debt, not a source.
 //
-// ── WHAT THE INTERVIEWER OFFERED IS NOT HIS ──
+// ── WHAT THE INTERVIEWER OFFERED IS NOT HIS, AND NEITHER IS WHAT NOBODY OWNS ──
 // A stance or feeling with `source: 'inferred'` is something the INTERVIEWER put
 // forward and the person has not yet taken up in his own words (the ownership
 // test, registrar.md). The record keeps it — the interviewer needs to know what is
 // on the table — but the drawing is of what HE said, so it is not drawn until the
 // registrar reports it again as `stated` (router-guard, 16.10.2026: an offered
-// trait link scored 2 was drawn firm, as if the parent had said it).
+// trait link scored 2 was drawn firm, as if the parent had said it). `unknown` — the
+// registrar could not tell whose words these are, and it is the default when it
+// reports no source at all — is kept and not drawn for the same reason: a drawing
+// of what he said cannot hold what nobody can say he said (router-guard,
+// 24.10.2026). Drawn: `stated` (his own words, or someone quoted) and `attributed`
+// (what he attributes to another character — "she wanted to punish me" is his).
+// Beats carry no source; a step somebody took is drawn when its slot is scored.
+//
+// ── THE ORDER IS THE ORDER IT WAS TOLD, ACROSS KINDS ──
+// `told` (eventRecord.js) is one counter over beats, stances and emotions, so a
+// feeling told between two beats is laid between them, not after every beat. The
+// time of the incident itself — before · during · after — is the registrar's
+// `phase`, which it places on beats only; storyMap.js puts it before this order.
 //
 // ── WHAT BECOMES A CUBE ──
 // Beats, stances and emotions. NOT the setting: a place and a time are not things
@@ -67,23 +81,26 @@ const scaleOf = (e, kind) =>
 // `fork:` and treats a bare "stageN.slot" as a slot's own cube, so an unprefixed
 // entity id could silently collide with one of those and steal its edges — the
 // same class of fault that once crashed the map (state.js mergeNodes).
+const OWNED = new Set(['stated', 'attributed']); // see the header: what he said, or what he says of another
+const KINDS = [['beat', 'beats'], ['stance', 'stances'], ['emotion', 'emotions']];
+
 export function nodesFromRecord(state, pack = DEFAULT_PACK) {
   const record = state?.eventRecord;
   if (!record) return {};
+  const all = KINDS.flatMap(([kind, key], block) =>
+    Object.values(record[key] ?? {}).map((e) => ({ kind, block, e })),
+  );
+  // The order the record took them down in. An entry from before `told` existed has
+  // none and keeps the front, in block order: it was told before anything stamped.
+  all.sort((a, b) => (a.e.told ?? 0) - (b.e.told ?? 0) || a.block - b.block || (a.e.seq ?? 0) - (b.e.seq ?? 0));
   const out = {};
   let seq = 0;
-  for (const [kind, store] of [
-    ['beat', record.beats],
-    ['stance', record.stances],
-    ['emotion', record.emotions],
-  ]) {
-    for (const e of Object.values(store ?? {}).sort((a, b) => (a.seq ?? 0) - (b.seq ?? 0))) {
-      if (!displayable(e, pack)) continue; // the pack's barred slots stop here — the wound, the ADHD pattern
-      if (e.source === 'inferred') continue; // offered by the interviewer, not yet his (see above)
-      const label = nameOf(e);
-      if (!label) continue; // a cube with no name is not a cube
-      out[`${kind}:${e.id}`] = { id: `${kind}:${e.id}`, label, slot: e.slot, scale: scaleOf(e, kind), seq: ++seq };
-    }
+  for (const { kind, e } of all) {
+    if (!displayable(e, pack)) continue; // the pack's barred slots stop here — the wound, the ADHD pattern
+    if (kind !== 'beat' && !OWNED.has(e.source)) continue; // offered, or nobody's — not his (see above)
+    const label = nameOf(e);
+    if (!label) continue; // a cube with no name is not a cube
+    out[`${kind}:${e.id}`] = { id: `${kind}:${e.id}`, label, slot: e.slot, scale: scaleOf(e, kind), seq: ++seq, phase: e.phase ?? '' };
   }
   return out;
 }

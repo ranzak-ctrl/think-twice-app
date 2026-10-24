@@ -15,6 +15,10 @@
 // Code, not data, which is why it is not in pack.js. A step changes what a saved
 // interview means to the Router, so it gets router-guard's review with the bump.
 //
-// Version 1 is the first, so there is nothing to migrate yet.
-
-export const thinkTwiceAdultMigrations = {};
+export const thinkTwiceAdultMigrations = {
+  // 1 → 2 (24.10.2026): the texts changed, the drawing moved onto the registrar's
+  // record, and nothing in a saved interview changed shape — every slot, every
+  // field is the same. The step is the identity, and it exists so a version-1 file
+  // keeps opening (the test refuses a shipped version with no step).
+  1: (session) => session,
+};

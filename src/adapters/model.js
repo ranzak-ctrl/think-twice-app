@@ -449,8 +449,73 @@ const BUSY_BOARD = [
   { option: 'לתת לזה לנוח כמה ימים', pro: 'מצנן', con: 'משאיר אי-ודאות' },
 ];
 
+// The registrar's scripted record for the meat story — what the probe above reports
+// as `nodes`, `edges` and `groups`, written as the registrar writes it: beats with
+// their phase in the incident, stances and feelings, a cast, and the links. Same keys
+// as the probe turns, since the registrar runs right before each one. The wound and
+// the ADHD pattern are seeded ON PURPOSE, as in the probe script: a dev running the
+// app in mock mode would see the leak if the display guard ever stopped excluding
+// them. Invented, like the rest of the mock.
+const MOCK_REGISTRAR = {
+  '1:0': {
+    setting: { place: 'המטבח', time: 'תחילת המשמרת', precedent: '', conditions: [] },
+    beats: [
+      { id: 'meat_arrived', slot: 'stage1.trigger', actor: 'self', text: 'הבשר שהזמנת הגיע למטבח', label: 'הבשר הגיע', camera: true, phase: 'before', scale: 'episode' },
+    ],
+  },
+  '1:2': {
+    actors: [{ id: 'manager', label: 'הממונה', role: 'הבוס במטבח', relation: 'הבוס שלך', clear: true, actions: ['אמר שהבשר לא איכותי'] }],
+    beats: [
+      { id: 'remark', slot: 'stage1.timeline', actor: 'manager', text: 'אמר שהבשר לא איכותי', label: 'ההערה על הבשר', camera: true, phase: 'during', scale: 'episode' },
+    ],
+    edges: [{ from: 'actor:manager', to: 'beat:remark', kind: 'agent', confirmed: true }],
+  },
+  '1:3': {
+    beats: [
+      { id: 'left', slot: 'stage1.auto_reaction', actor: 'self', text: 'יצאת בלי לומר מילה', label: 'יצאת בשתיקה', camera: true, phase: 'during', scale: 'episode' },
+    ],
+    // He said he left BECAUSE of the remark — stated, so confirmed.
+    edges: [{ from: 'beat:remark', to: 'beat:left', kind: 'because', confirmed: true }],
+    groups: [
+      { id: 'kitchen', label: 'המטבח', kind: 'community', members: ['actor:user', 'actor:manager'], confirmed: true },
+      { id: 'shift', label: 'המשמרת', kind: 'process', members: ['beat:meat_arrived', 'beat:remark'] },
+    ],
+  },
+  '1:4': {
+    beats: [
+      { id: 'not_spoken', slot: 'stage1.status', actor: 'self', text: 'מאז לא חזרתם לדבר על זה', label: 'לא דיברתם', camera: true, phase: 'after', scale: 'episode' },
+    ],
+    open_forks: [{ id: 'job_status', question: 'לא סוכם אם אתה חוזר למשמרת', options: ['אתה חוזר כרגיל', 'הוא כבר חיפש מחליף'], settled: false }],
+  },
+  '2:0': {
+    stances: [
+      // Two readings out of one slot — and the two clocks: the second is how the
+      // kitchen has been for a while, so it belongs on the ground lane.
+      { id: 'show_off', slot: 'stage2.causal', type: 'reading', actor: 'self', text: 'הוא רצה להראות שהוא מבין באוכל', label: 'רצה להראות', source: 'stated', scale: 'episode' },
+      { id: 'kitchen_pressure', slot: 'stage2.causal', type: 'reading', actor: 'self', text: 'המטבח תמיד בלחץ', label: 'המטבח תמיד בלחץ', source: 'stated', scale: 'ongoing' },
+    ],
+  },
+  '2:1': {
+    stances: [{ id: 'not_pro', slot: 'stage2.meaning', type: 'reading', actor: 'self', text: 'שאתה לא מקצועי מספיק', label: 'לא מקצועי מספיק', source: 'stated', scale: 'ongoing' }],
+    edges: [
+      // Suspected, not stated — unconfirmed, so it is not drawn.
+      { from: 'stance:not_pro', to: 'stage3.emotion', kind: 'because' },
+      // A reading pointing AT a character: the remark was about the manager's own standard.
+      { from: 'stance:show_off', to: 'actor:manager', kind: 'because', confirmed: true },
+      // The arrow between the two clocks: the standing pressure is why he read the remark that way.
+      { from: 'stance:kitchen_pressure', to: 'beat:remark', kind: 'because', confirmed: true },
+    ],
+  },
+  '2:2': {
+    stances: [{ id: 'worthless', slot: 'stage2.wound', type: 'reading', actor: 'self', text: 'אני לא שווה כלום', label: 'לא שווה כלום', source: 'stated', scale: 'ongoing' }],
+  },
+  '2:3': {
+    stances: [{ id: 'dysregulation', slot: 'stage2.adhd_pattern', type: 'reading', actor: 'self', text: 'קושי בוויסות בסערת רגע', label: 'קושי בוויסות', source: 'inferred', scale: 'ongoing' }],
+  },
+};
+
 const SCENARIOS = {
-  meat: { responses: MOCK_RESPONSES, summaries: MOCK_SUMMARIES, board: MOCK_BOARD },
+  meat: { responses: MOCK_RESPONSES, summaries: MOCK_SUMMARIES, board: MOCK_BOARD, registrar: MOCK_REGISTRAR },
   friend: {
     responses: buildResponses({
       '3:1': { emotion_intensity: 6 },
@@ -533,14 +598,16 @@ function mockComplete({ stage, mode }) {
     return { ok: true, message, evaluation: null }; // summary mode = plain text (no JSON)
   }
 
-  // Registrar mode — assembles the event, never speaks. It has no scripted mock
-  // story: the golden scripts are transcripts of an INTERVIEW, and inventing a
-  // registrar report for them would test the fixture rather than the registrar.
-  // An empty report keeps every existing test on its current path, and the real
-  // behaviour is exercised in tests/core/registrar.test.js against an injected
-  // completeImpl. It does NOT advance the turn counter — no probing turn was spent.
+  // Registrar mode — assembles the event, never speaks. The "meat" scenario carries
+  // a scripted record (MOCK_REGISTRAR), keyed by the same turn as the probe it
+  // precedes, because the drawing is the record now (Ran, 24.10.2026) and the
+  // end-to-end map tests have to reach the map through the path the app uses. The
+  // other scenarios report nothing, and the registrar's own logic is exercised in
+  // tests/core/registrar.test.js against an injected completeImpl. It does NOT
+  // advance the turn counter — no probing turn was spent.
   if (mode === 'registrar') {
-    return { ok: true, raw: '{}', message: null, evaluation: null };
+    const delta = sc.registrar?.[`${stage}:${turnCounters[stage] ?? 0}`] ?? {};
+    return { ok: true, raw: JSON.stringify(delta), message: null, evaluation: null };
   }
 
   // Board mode — Router returned SHOW_BOARD; return the synthesised board.
@@ -574,13 +641,14 @@ const REPAIR_NUDGE =
   '{"message": "...", "evaluation": {...}} — בלי טקסט נוסף ובלי code fences.';
 
 // One question per turn (Ran, 24.10.2026). A reply with more than one question mark
-// is sent back once per attempt with this nudge: the first question stays, the rest
-// wait for the next turn. Counted on the message only, in a turn; summary, opener
-// and board replies are not turns.
+// is sent back ONCE with this nudge: the first question stays, the rest wait for the
+// next turn. Counted on the message only, in a turn; summary, opener and board
+// replies are not turns. A question mark that closes quoted speech ("כשאמרה 'מה
+// אתה רוצה?'") is the person's words, not a question of ours, and is not counted.
 const ONE_QUESTION_NUDGE =
   'בתשובה הקודמת יש יותר משאלה אחת. החזר את אותו תוכן, אבל עם שאלה אחת בלבד — ' +
   'הראשונה מביניהן. השאלה השנייה תישאר לתור הבא. אותו פורמט JSON.';
-const countQuestions = (text) => (String(text ?? '').match(/[?؟]/g) ?? []).length;
+const countQuestions = (text) => (String(text ?? '').match(/[?؟](?!["'”’»])/g) ?? []).length;
 
 // Carries all four token buckets, not just input/output. With prompt caching on,
 // `input_tokens` is only the UNCACHED remainder — the full prompt is
@@ -860,11 +928,12 @@ export async function complete({
     const parsed = parseResponse(raw);
     if (parsed.ok && (mode ?? 'turn') === 'turn' && countQuestions(parsed.message) > 1) {
       // Two questions in one turn: the reply is kept as the fallback, and the model
-      // is asked once more for one question. If the last attempt is still over, it
-      // is returned with the fact on record — an interviewer that asks two questions
-      // is not a reason to lose the turn.
-      overflow = parsed;
-      if (attempt < MAX_ATTEMPTS) {
+      // is asked once more — once — for one question. A reply that is still over
+      // after that, or one that arrives with no attempt left, is returned with the
+      // fact on record: an interviewer that asks two questions is not a reason to
+      // lose the turn.
+      if (!overflow && attempt < MAX_ATTEMPTS) {
+        overflow = parsed;
         attemptMessages = [
           ...attemptMessages,
           { role: 'assistant', content: raw },
@@ -875,7 +944,15 @@ export async function complete({
       return {
         ...parsed,
         usage,
-        failure: { kind: 'two_questions', status: res.status, requestId: lastRequestId, stage, mode: mode ?? 'turn', attempt, detail: 'turn asked more than one question after repair' },
+        failure: {
+          kind: 'two_questions',
+          status: res.status,
+          requestId: lastRequestId,
+          stage,
+          mode: mode ?? 'turn',
+          attempt,
+          detail: overflow ? 'turn asked more than one question after repair' : 'turn asked more than one question; no attempt left to repair',
+        },
       };
     }
     if (parsed.ok) return { ...parsed, usage };

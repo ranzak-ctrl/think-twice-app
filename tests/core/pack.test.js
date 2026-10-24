@@ -9,7 +9,7 @@ import { describe, it, expect } from 'vitest';
 import { thinkTwiceAdult } from '../../src/packs/think-twice-adult/pack.js';
 import {
   validatePack, DEFAULT_PACK, stageWith, parseSlotRef, barredSlots, mentalSlots, castOf,
-  intensityStages, mapNarrative, mapTimeline,
+  intensityStages, mapNarrative, mapTimeline, mapSource,
 } from '../../src/core/pack.js';
 import { route, evaluateStage, rejectConfirmation, confirmAndAdvance, Decision } from '../../src/core/router.js';
 import { createState, mergeActorMap } from '../../src/core/state.js';
@@ -185,6 +185,10 @@ describe("Think Twice's clinical rules, pinned", () => {
 
   it('gates the cast on stage 1 and derives `actors`', () => {
     expect(castOf(thinkTwiceAdult)).toEqual({ stage: 1, key: 'stage1', slot: 'actors' });
+  });
+
+  it("draws the map from the registrar's record (Ran, 24.10.2026)", () => {
+    expect(mapSource(thinkTwiceAdult)).toBe('record');
   });
 
   it('measures intensity in stage 3 and again in stage 5', () => {

@@ -4,7 +4,12 @@ import { buildStory } from '../../src/core/story.js';
 // the `barred` slot flag); these tests read them from where the drawing does.
 import { mapNarrative, barredSlots, MAP_KINDS } from '../../src/core/pack.js';
 import { thinkTwiceAdult } from '../../src/packs/think-twice-adult/pack.js';
-import { buildMap } from '../../src/core/storyMap.js';
+import { buildMap as buildMapFor } from '../../src/core/storyMap.js';
+// These tests pin how a map draws the cubes its interviewer REPORTS. The adult
+// interview draws from the registrar's record now (Ran, 24.10.2026), so they run on
+// a copy of its pack that still reads the reports.
+const reportedPack = { ...thinkTwiceAdult, map: { ...thinkTwiceAdult.map, source: 'reported' } };
+const buildMap = (state, pack = reportedPack) => buildMapFor(state, pack);
 import {
   createState,
   addFindings,

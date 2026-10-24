@@ -135,9 +135,19 @@ export function displayable(entity, pack = DEFAULT_PACK) {
   return !!ref && !barredSlots(pack).has(ref.slot);
 }
 
-// Shared merge: delta-reported, keyed by a stable id, first-in keeps its seq.
-// `build` returns the stored shape or null to refuse the entry.
-function mergeInto(store, reported, cap, build) {
+// The order the record took things down in, ACROSS the three kinds. `seq` counts
+// within one store, so by itself it cannot say whether a feeling was told before or
+// after a beat; `told` is one counter over the whole ledger, stamped at first merge
+// and never moved. The map reads it (eventMap.js) to lay thoughts and feelings
+// among the beats where they were told, instead of all beats first (router-guard,
+// 24.10.2026). A report of one turn arrives as three arrays, so inside a turn the
+// order is beats, stances, emotions — the finest grain the registrar gives.
+const toldSoFar = (record) =>
+  Math.max(0, ...['beats', 'stances', 'emotions'].flatMap((k) => Object.values(record?.[k] ?? {}).map((e) => e.told ?? 0)));
+
+// Shared merge: delta-reported, keyed by a stable id, first-in keeps its seq and
+// its told. `build` returns the stored shape or null to refuse the entry.
+function mergeInto(store, reported, cap, build, told) {
   const byId = { ...(store ?? {}) };
   let seq = Math.max(0, ...Object.values(byId).map((e) => e.seq ?? 0));
   for (const raw of Array.isArray(reported) ? reported : []) {
@@ -147,7 +157,7 @@ function mergeInto(store, reported, cap, build) {
     if (!prev && Object.keys(byId).length >= cap) continue;
     const next = build(raw, prev);
     if (!next) continue;
-    byId[id] = { ...next, id, seq: prev?.seq ?? ++seq };
+    byId[id] = { ...next, id, seq: prev?.seq ?? ++seq, told: prev?.told ?? ++told };
   }
   return byId;
 }
@@ -191,7 +201,7 @@ export function mergeBeats(record, reported, pack = DEFAULT_PACK) {
         toward: clean(b?.toward, 60) || prev?.toward || '',
         label: entityLabel(b?.label, prev?.label),
       };
-    }),
+    }, toldSoFar(record)),
   };
 }
 
@@ -230,7 +240,7 @@ export function mergeStances(record, reported, pack = DEFAULT_PACK) {
         scale: s?.scale === 'ongoing' ? 'ongoing' : (prev?.scale ?? 'episode'),
         label: entityLabel(s?.label, prev?.label),
       };
-    }),
+    }, toldSoFar(record)),
   };
 }
 
@@ -259,7 +269,7 @@ export function mergeEmotions(record, reported, pack = DEFAULT_PACK) {
         context: clean(e?.context, 60) || prev?.context || '',
         label: entityLabel(e?.label, prev?.label),
       };
-    }),
+    }, toldSoFar(record)),
   };
 }
 

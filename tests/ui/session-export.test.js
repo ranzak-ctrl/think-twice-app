@@ -28,7 +28,7 @@ describe('session export', () => {
     const head = json.split('\n').slice(0, 8).join('\n');
     expect(head).toContain('"id": "think-twice-adult"');
     expect(head).toContain(`"name": "${thinkTwiceAdult.name}"`);
-    expect(head).toContain('"version": 1');
+    expect(head).toContain(`"version": ${thinkTwiceAdult.version}`);
     expect(head).toContain(`"version": "${APP_VERSION}"`);
   });
 

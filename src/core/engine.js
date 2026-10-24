@@ -59,7 +59,11 @@ export function createEngine({ pack, prompts, complete } = {}) {
   // a contradiction in the pack, refused here. (With the registrar switched off
   // globally, REGISTRAR_ENABLED, the record map falls back the same way on purpose:
   // that is the kill switch, not a pack's choice, and refusing it would break the
-  // registrar-off row.)
+  // registrar-off row. Since 24.10.2026 BOTH shipped interviews draw from the
+  // record, so the switch now also degrades the Think Twice drawing to one fallback
+  // cube per scored slot — the cubes the interviewer reports in `nodes` are drawn
+  // by nobody. The interview itself runs on; only the drawing thins. Recorded, not
+  // chosen: a reported fallback would bring back the second store Ran closed.)
   if (mapSource(pack) === 'record' && prompts.registrar === null) {
     throw new Error("createEngine: the pack's map draws from the registrar's record, and this interview opts out of the registrar");
   }
