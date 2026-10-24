@@ -83,6 +83,9 @@ const RATES = {
   'claude-opus-4-8': () => ({ in: 5, out: 25 }),
   'claude-haiku-4-5': () => ({ in: 1, out: 5 }),
   'claude-sonnet-5-5': () => ({ in: 2, out: 10 }),
+  // Two rate cards, by prompt length: $0.10/$0.50 up to a 100K-token prompt,
+  // $0.50/$2.50 beyond. An interview never reaches 100K, so the first is the one.
+  'claude-haiku-5-5': () => ({ in: 0.1, out: 0.5 }),
 };
 
 // The price of the model this interview calls (model.js, chooseModel): each

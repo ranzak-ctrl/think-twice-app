@@ -722,17 +722,24 @@ function describeUpstream(text) {
 // that must reach the API directly supplies a `fetchImpl` that attaches its own
 // key — standing in for the serverless proxy, which is exactly what the proxy
 // does in production. The key never enters this module.
-// Ran, 28.9.2026: run the testers on Haiku 4.5 to cut what a session costs.
-// Half the per-token price of Sonnet 5 in both directions ($1/$5 against $2/$10).
+// Ran, 28.9.2026: run the testers on Haiku to cut what a session costs; Ran,
+// 24.10.2026: Haiku 5.5, for both interviews. $0.10/$0.50 per million tokens on a
+// prompt up to 100K (a fifth of Sonnet 5.5's $2/$10 is $0.40/$2 — this is a
+// twentieth), 1M context, 128K output. Haiku 4.5, the model until 24.10, was
+// $1/$5 with a 200K window.
 //
-// Two things about this model that the request body has to respect, and one to
-// watch: its context window is 200K, not the 1M the Sonnet-5 default had — still
-// far more than an interview needs, but the registrar now sends the whole
-// account every turn, so it is no longer unbounded headroom. `output_config`
-// and `effort` are errors on this model; neither is sent from here.
-export const DEFAULT_MODEL = 'claude-haiku-4-5';
+// What the request body has to respect on this model: thinking is ON by default
+// and counts against max_tokens, so it is switched off below (see thinkingField);
+// `temperature` / `top_p` / `top_k` are a 400, and none is sent; an assistant
+// prefill is a 400, and every attempt here ends with a user turn (the repair
+// nudges below keep that shape); a refusal is a normal 200 with
+// stop_reason 'refusal', handled below as `failure.kind: 'refusal'`, and this
+// model has no server-side fallback for it. Its tokenizer counts the same Hebrew
+// as roughly 30% more tokens than Haiku 4.5 did; the meter in guide mode reads
+// the usage the API reports, so nothing here converts.
+export const DEFAULT_MODEL = 'claude-haiku-5-5';
 
-// The model every interview calls. Ran, 24.10.2026: Haiku 4.5 for both interviews,
+// The model every interview calls. Ran, 24.10.2026: Haiku 5.5 for both interviews,
 // on every build, QA included. VITE_MODEL, when set, wins.
 export function chooseModel({ env = import.meta.env } = {}) {
   return env?.VITE_MODEL ?? DEFAULT_MODEL;
@@ -741,17 +748,20 @@ export function chooseModel({ env = import.meta.env } = {}) {
 // Thinking has to be asked for, or not, per model family — sending the wrong
 // shape is a 400, and this call is a person's turn.
 //
-// Sonnet 5 and the 4.6-and-later families run adaptive thinking by DEFAULT, so
-// they need an explicit opt-out: thinking tokens count against max_tokens and
-// buy nothing here, because this flow wants a compact JSON envelope and not
-// reasoning. Haiku 4.5 is the other shape — thinking is off unless asked for
-// with `{type:'enabled', budget_tokens}` — so omitting the field IS the opt-out,
-// and is the documented way to get no thinking on it. Sonnet 5.5 is a third
-// shape: `disabled` is a 400 there, and its thinking-off setting is
-// `between_tools`, which takes no other field and needs effort `high` or below —
-// the default, and nothing here sends another.
+// Sonnet 5, Haiku 5.5 and the 4.6-and-later families run adaptive thinking by
+// DEFAULT, so they need an explicit opt-out: thinking tokens count against
+// max_tokens and buy nothing here, because this flow wants a compact JSON
+// envelope and not reasoning. On Haiku 5.5 `disabled` is accepted at effort
+// `high` or below, and no effort is sent (the default is `medium`); if a turn
+// ever needs the model to think, the lever is `thinking: {type:'adaptive'}` plus
+// `output_config.effort` AND a larger max_tokens, never `budget_tokens`, which is
+// a 400 there. Haiku 4.5 is the other shape — thinking is off unless asked for
+// with `{type:'enabled', budget_tokens}` — so omitting the field IS the opt-out.
+// Sonnet 5.5 is a third shape: `disabled` is a 400 there, and its thinking-off
+// setting is `between_tools`, which takes no other field and needs effort
+// `high` or below — the default, and nothing here sends another.
 function thinkingField(model) {
-  if (model.startsWith('claude-haiku-')) return {};
+  if (model === 'claude-haiku-4-5') return {};
   if (model === 'claude-sonnet-5-5') return { thinking: { type: 'between_tools' } };
   return { thinking: { type: 'disabled' } };
 }

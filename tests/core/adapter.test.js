@@ -396,8 +396,9 @@ describe('registrar mode — headroom and truncation', () => {
 // The two model families take OPPOSITE defaults for thinking, so the opt-out has
 // to be written per family — and sending the wrong shape is a 400 on a person's
 // turn. Sonnet 5 and the 4.6+ families think unless told not to, so they need the
-// explicit `disabled`. Haiku 4.5 does not think unless asked with
-// `{type:'enabled', budget_tokens}`, so for it the field's ABSENCE is the opt-out.
+// explicit `disabled` — Haiku 5.5, the model since 24.10.2026, among them. Haiku 4.5
+// does not think unless asked with `{type:'enabled', budget_tokens}`, so for it the
+// field's ABSENCE is the opt-out.
 //
 // Either way the intent is one thing: this flow wants a compact JSON envelope and
 // never reasoning tokens, which cost money and eat max_tokens.
@@ -438,20 +439,21 @@ describe('adapter complete() — thinking is opted out per model family', () => 
   // worst failure in the system — silent twice over. Reasoning tokens would be
   // charged against the same ceiling.
   it('keeps the registrar headroom free of reasoning tokens', async () => {
-    vi.stubEnv('VITE_MODEL', 'claude-haiku-4-5');
+    vi.stubEnv('VITE_MODEL', 'claude-haiku-5-5');
     const fetchStub = makeFetch([VALID]);
     vi.stubGlobal('fetch', fetchStub);
 
     await complete({ ...ARGS, mode: 'registrar' });
 
     const body = bodyOf(fetchStub);
+    expect(body.model).toBe('claude-haiku-5-5');
     expect(body.max_tokens).toBe(8192);
-    expect(body).not.toHaveProperty('thinking');
+    expect(body.thinking).toEqual({ type: 'disabled' });
   });
 });
 
-// Ran, 16.10.2026 and 24.10.2026: the adult interview runs on Haiku 4.5 everywhere; the
-// parents' interview runs on Sonnet 5.5 on the QA build. Sonnet 5.5 rejects `disabled`
+// Ran, 16.10.2026 and 24.10.2026: both interviews run on Haiku 5.5 everywhere (the
+// parents' interview ran on Sonnet 5.5 on the QA build for a week). Sonnet 5.5 rejects `disabled`
 // thinking (its thinking-off setting is `between_tools`), and its refusals are not
 // broken JSON. One question per turn: a reply with two is repaired once, then kept
 // with the fact on record.
@@ -468,9 +470,28 @@ describe('adapter complete() — the model per interview, and one question per t
   const TWO = JSON.stringify({ message: 'מה קרה אז? ומה עשית אחר כך?', evaluation: { slots: { trigger: 1 } } });
   const ONE = JSON.stringify({ message: 'מה קרה אז?', evaluation: { slots: { trigger: 1 } } });
 
-  it('names Haiku 4.5 for every interview, on every build (Ran, 24.10.2026)', () => {
-    expect(DEFAULT_MODEL).toBe('claude-haiku-4-5');
-    expect(chooseModel({ env: {} })).toBe('claude-haiku-4-5');
+  it('names Haiku 5.5 for every interview, on every build (Ran, 24.10.2026)', () => {
+    expect(DEFAULT_MODEL).toBe('claude-haiku-5-5');
+    expect(chooseModel({ env: {} })).toBe('claude-haiku-5-5');
+  });
+
+  // The Haiku 5.5 request shape: thinking on by default there, so the opt-out is
+  // explicit; sampling parameters and an assistant prefill are a 400; and the
+  // repair nudge keeps the conversation ending on a user turn.
+  it('sends Haiku 5.5 a request it accepts: thinking off, no sampling, no prefill', async () => {
+    vi.stubEnv('VITE_MODEL', 'claude-haiku-5-5'); // the test env names another model
+    const fetchStub = makeFetch([TWO, ONE]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    await complete(ARGS);
+
+    for (const call of [0, 1]) {
+      const body = bodyOf(fetchStub, call);
+      expect(body.model).toBe('claude-haiku-5-5');
+      expect(body.thinking).toEqual({ type: 'disabled' });
+      for (const k of ['temperature', 'top_p', 'top_k', 'output_config', 'fallbacks']) expect(body).not.toHaveProperty(k);
+      expect(body.messages.at(-1).role).toBe('user');
+    }
   });
 
   it('lets VITE_MODEL win', () => {
