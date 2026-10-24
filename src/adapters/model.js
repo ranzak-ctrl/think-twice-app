@@ -826,7 +826,17 @@ export async function complete({
           // 16.10.2026 guide mode says so and the error report records it.) The graph
           // just stops growing — and it would degrade exactly as the
           // interview gets richer, which is when the registrar matters most.
-          max_tokens: mode === 'registrar' ? 8192 : 1024,
+          //
+          // The interviewer's turn is the same shape one size down: a JSON envelope
+          // with the evaluation (findings, cast, cubes, edges, gap observations)
+          // before a three-sentence message. 1024 held it on Haiku 4.5. Haiku 5.5
+          // counts the same Hebrew as ~30% more tokens, and the first live run on
+          // it (Ran, 24.10.2026, third turn) came back "שגיאה בעיבוד התשובה": the
+          // envelope no longer fit, the cut JSON failed to parse, and the two
+          // repairs were cut at the same ceiling. The cap only bounds a runaway;
+          // the model stops when the envelope is closed, so a larger one costs
+          // nothing on an ordinary turn.
+          max_tokens: mode === 'registrar' ? 8192 : 4096,
           ...thinkingField(model),
           system: systemField(systemPrompt),
           messages: attemptMessages,
@@ -934,6 +944,20 @@ export async function complete({
             usage,
             failure: { kind: 'empty_response', status: res.status, requestId: res.headers?.get?.('x-request-id') ?? null, stage, mode, attempt, detail: `model returned no text in ${mode} mode` },
           };
+    }
+    // A turn cut at max_tokens is not a malformed one either: feeding it back
+    // behind REPAIR_NUDGE asks for the same envelope under the same ceiling, twice
+    // more, in front of a waiting person — and the report then names a prompt bug
+    // that is not there. Said under its own name, as for the registrar above.
+    if (data.stop_reason === 'max_tokens') {
+      return {
+        ok: false,
+        error: 'turn_truncated',
+        message: 'שגיאה בעיבוד התשובה. נסה שוב.',
+        evaluation: null,
+        usage,
+        failure: { kind: 'truncated', status: res.status, requestId: lastRequestId, stage, mode: mode ?? 'turn', attempt, detail: 'turn reply hit max_tokens — the evaluation and the message did not fit' },
+      };
     }
     const parsed = parseResponse(raw);
     if (parsed.ok && (mode ?? 'turn') === 'turn' && countQuestions(parsed.message) > 1) {

@@ -351,7 +351,8 @@ describe('adapter complete() — failure metadata carries no interview content',
 
 
 // The registrar's reply is a whole graph delta in Hebrew, not a three-sentence
-// turn. Before 19.9.2026 it shared the interviewer's max_tokens of 1024, which
+// turn. Before 19.9.2026 it shared the interviewer's max_tokens (1024 then; 4096
+// since Haiku 5.5's tokenizer, 24.10.2026), which
 // would have truncated it mid-JSON on any rich turn — and truncation there is
 // invisible twice over: parseRegistrarResponse returns invalid_json and
 // runRegistrar deliberately returns the state untouched, so the graph stops
@@ -369,7 +370,23 @@ describe('registrar mode — headroom and truncation', () => {
 
     expect((await body(reg)).max_tokens).toBe(8192);
     await complete({ stage: 1, systemPrompt: 'sys', messages: [{ role: 'user', content: 'x' }], fetchImpl: turn });
-    expect(JSON.parse(turn.mock.calls[0][1].body).max_tokens).toBe(1024);
+    expect(JSON.parse(turn.mock.calls[0][1].body).max_tokens).toBe(4096);
+  });
+
+  // The first live run on Haiku 5.5 (Ran, 24.10.2026): a third turn came back as
+  // "שגיאה בעיבוד התשובה" — the envelope was cut at 1024, and the two repairs were
+  // cut at the same ceiling. A cut turn is named, once, and not fed back.
+  it('names a truncated turn too, and does not ask for it again under the same ceiling', async () => {
+    const fetchImpl = vi.fn(async () => ({
+      ok: true, status: 200, headers: { get: () => null },
+      json: async () => ({ stop_reason: 'max_tokens', content: [{ text: '{"evaluation":{"slot_findings":{"trigger":["x' }], usage: {} }),
+    }));
+    const res = await complete({ stage: 1, systemPrompt: 'sys', messages: [{ role: 'user', content: 'x' }], fetchImpl });
+    expect(res.ok).toBe(false);
+    expect(res.error).toBe('turn_truncated');
+    expect(res.failure.kind).toBe('truncated');
+    expect(res.message).toBe('שגיאה בעיבוד התשובה. נסה שוב.');
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
   it('names a truncated reply instead of letting it surface as invalid JSON', async () => {
