@@ -36,7 +36,7 @@
 
 > **מרחיב את principle-zero §4.4 (Signposting):** מיקום על המפה אינו מספיק — שאלת המעבר עצמה חייבת לצאת מדברי המרואיין ולשקף את הרקע ואת הציפייה. *(לסנכרון עתידי למסמך המקור של נטלי.)*
 >
-> **מימוש:** פתיח שנוצר ע"י המודל — `src/content/prompts/opener.md` · `generateStageOpener` / `completeStageOpener` (src/core/session.js). מכסה גם מעברים קדימה (באישור הסיכום) וגם **Re-open** (חזרה לשלב קודם — שם הפתיח ממוסגר ע"י `reopenSituation` ומסביר למה חזרנו).
+> **מימוש:** פתיח שנוצר ע"י המודל — `src/content/prompts/opener.md` · `generateStageOpener` / `completeStageOpener` (src/core/session.js). מכסה גם מעברים קדימה (אחרי הסיכום הקצר, באותה הודעה — מ-24.10.2026 בלי אישור) וגם **Re-open** (חזרה לשלב קודם — שם הפתיח ממוסגר ע"י `reopenSituation` ומסביר למה חזרנו).
 
 ---
 

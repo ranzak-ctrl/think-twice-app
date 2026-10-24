@@ -17,7 +17,7 @@ Note what the export does *not* contain: the per-turn `evaluation`. You can see 
 
 ## 1 · Diagnose the stall
 
-Report, from `state.meta`: `currentStage`, `questionCount`, `saturationCount`, the last Router decisions in `decisionLog`, `awaitingConfirmation`, and whether a summary call failed. Then the coverage grid for the current stage — which slots sit at 0, 1, 2, `U`.
+Report, from `state.meta`: `currentStage`, `questionCount`, `saturationCount`, the last Router decisions in `decisionLog`, `offStage` (a question the evaluator placed in another stage; the next turn corrects course, the person is never told), and whether a summary call failed (since 24.10.2026 a failed summary keeps the stage — there is no confirmation step). Then the coverage grid for the current stage — which slots sit at 0, 1, 2, `U`.
 
 Name the pattern. The known ones:
 

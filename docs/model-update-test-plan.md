@@ -23,6 +23,7 @@
 | `src/packs/text.js` | **משותף לכל החבילות:** מסיר את הערות הגרסה מראש כל טקסט לפני שהוא מגיע למודל (24.10.2026). ההנחיות לא עוברות דרכו (`guidelines.js` מסיר בעצמו) | Claude | `prompt-fingerprint*.test.js`: שום `<!--` לא מגיע למודל |
 | `src/content/prompts/guidelines/<id>.md` | **הנחיות המראיין הייחודיות,** שגוברות על קובץ העל בלוק מול בלוק. בלוק `tail` (באישי: `@checklist`) מוצג **אחרון** בפרומפט התור, אחרי סיכום המצב (רן, 24.10.2026) | `prompt-editor` בלבד | סעיף 3.1 |
 | `src/content/prompts/agents/stage*.md` | **סוכן לכל שלב** | `prompt-editor` בלבד | סעיף 3.1 |
+| `src/content/prompts/summary-nudge.md` (ובהורים `parents/summary-nudge.md`) | **תור המשתמש שמעגן את קריאת הסיכום** ("סכם בקצרה, במילים שלי…"). עד 24.10.2026 קבוע בקוד (`SUMMARY_NUDGE`); מאז טקסט של החבילה (`summaryNudge`, חובה ב-`validatePrompts`) | `prompt-editor` בלבד | טביעות האצבע (`summaryNudge`) |
 | `src/content/prompts/evaluator.md` | חוזה הדיווח, **וגם הגדרות ה-slots של המבוגרים** (39 אזכורים) | `prompt-editor` בלבד | סעיף 3.1 |
 | `src/content/prompts/registrar.md` | הרשם, **עם דוגמאות של המבוגרים** (25 אזכורים) | `prompt-editor` בלבד | סעיף 3.1 + בדיקות הרשם |
 | `src/packs/<id>/judge.js` + `judge.md` | רובריקת השופט | `prompt-editor` בלבד | `tests/judge` |
@@ -30,6 +31,7 @@
 | `tests/fixtures/` (תסריטי זהב, פרסונות) | התרחישים של המודל | Claude, מתסריטים של נטלי | — |
 | `tests/fixtures/interview-files/<id>.v<N>…` | קובץ קפוא לכל גרסה שיצאה. **לא עורכים לעולם** | נוצר אוטומטית בכל העלאת גרסה | סעיף 3.3 |
 | מסמכים: `presenting-document.md`, `transition-protocol.md`, `questions-for-natali.md` | האמת הטכנית של המודל. האמת הקלינית בדרייב | Claude, לפי הדרייב | — |
+| `docs/architecture-v3.html` — הבלוק המחולל | הטקסטים שלצד הקוביות (הנחיות · סוכנים ותכולת slots · Router · רשם), **נבנים מהריפו**: `node scripts/build-architecture-page.mjs` ← פרסום מחדש (רן, 24.10.2026) | Claude, אחרי כל שינוי בפרומפט או ב-`pack.js` | `arch-texts` בעמוד תואם לקבצים |
 
 **הערה:** `evaluator.md` ו-`registrar.md` יושבים היום בתיקייה המשותפת, אבל מחזיקים תוכן של המבוגרים. הם יפוצלו לחלק משותף ולחלק של המודל (תכנית הפלטפורמה 3.4). עד אז, לראיון ההורים יהיו עותקים משלו.
 

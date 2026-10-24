@@ -65,7 +65,7 @@ const MODEL = {
   lede: 'כל הקבצים שמשתנים בין מודל ראיון אחד לאחר: המבנה, הטקסטים של המודל, השופט, ההסבות והמסמכים שלו.',
   models: [
     { id: 'think-twice-adult', name: 'Think Twice · אישי', ready: true },
-    { id: 'think-twice-parent', name: 'Think Twice · הורים', ready: false, why: 'המודל עוד לא נבנה. נטלי שולחת השבוע מודל מעודכן, וכשייבנה הקבצים שלו יופיעו כאן. בינתיים אפשר לרשום הערה כללית למודל.' },
+    { id: 'think-twice-parent', name: 'Think Twice · הורים', ready: false, why: 'ראיון ההורים רץ ב-Preview כטיוטה ל-QA (16.10.2026), עד שנטלי תאשר את המבנה. הקבצים שלו (`src/packs/think-twice-parents/`, `src/content/prompts/parents/`) יופיעו כאן כשהמבנה יאושר. בינתיים אפשר לרשום הערה כללית למודל.' },
   ],
   groups: [
     ['המבנה', [
@@ -80,6 +80,9 @@ const MODEL = {
       const file = ['stage1-intake', 'stage2-interpretation', 'stage3-feel', 'stage4-react', 'stage5-transform', 'stage6-alternatives', 'stage7-decision'][n - 1];
       return [`src/content/prompts/agents/${file}.md`, stageTitle(n), 'הסוכן של השלב: מה המראיין מחפש בו ואיך הוא שואל.', '`prompt-editor` בלבד', 'text'];
     })],
+    ['קריאת הסיכום', [
+      ['src/content/prompts/summary-nudge.md', 'עוגן קריאת הסיכום', 'תור המשתמש שמעגן את קריאת הסיכום בסוף שלב ("סכם בקצרה, במילים שלי…"). עד 24.10.2026 קבוע בקוד; מאז טקסט של המודל, והוא מה שמבקש "אז הבנתי ש…" בלי שאלת אישור.', '`prompt-editor` בלבד', 'text'],
+    ]],
     ['דיווח ורישום — מעורב', [
       ['src/content/prompts/evaluator.md', 'המעריך', 'חוזה הדיווח, והגדרות ה-slots של המבוגרים. יושב בתיקייה המשותפת, אבל התוכן שלו של המודל. יפוצל.', '`prompt-editor` בלבד', 'text'],
       ['src/content/prompts/registrar.md', 'הרשם', 'מפרק כל תור לגרף. עם דוגמאות של המבוגרים. יפוצל.', '`prompt-editor` בלבד', 'text'],
@@ -108,7 +111,7 @@ const SHARED = {
     ]],
     ['אומנות הראיון', [
       ['src/content/prompts/resistance.md', 'פרוטוקול ההתנגדויות', 'הנמנע, הבורח, המוצף, הציני, מחפש העצה.', '`prompt-editor` בלבד', 'shared'],
-      ['src/content/prompts/summary.md', 'הסיכום', 'איך מסכמים שלב לאישור המשתמש.', '`prompt-editor` בלבד', 'shared'],
+      ['src/content/prompts/summary.md', 'הסיכום', 'איך מסכמים שלב בקצרה ("אז הבנתי ש…"), בלי שאלת אישור — השלב הבא נפתח באותה הודעה (רן, 24.10.2026).', '`prompt-editor` בלבד', 'shared'],
       ['src/content/prompts/opener.md', 'הפתיח המעוגן', 'איך נפתח שלב חדש, או חזרה לנושא, מתוך דברי המשתמש.', '`prompt-editor` בלבד', 'shared'],
       ['src/content/prompts/board.md', 'לוח ההכרעה', 'איך מוצגות החלופות לפני ההכרעה.', '`prompt-editor` בלבד', 'shared'],
     ]],
@@ -144,7 +147,7 @@ function packTable(p) {
     return `<tr><td>${i + 1} · ${esc(s.name)}<br><small>${esc(s.label)}</small></td><td>${slots}</td><td>${comps}</td><td>${req}</td><td>${s.loadGuard ?? p.routing.loadGuard}</td><td><small>${esc(s.signpost ?? '')}</small></td></tr>`;
   });
   const r = p.routing;
-  return `<p class="pack-meta"><b>${esc(p.name)}</b> · <code>${esc(p.id)}</code> · גרסה ${p.version} · סף רך ${r.softThreshold * 100}% · מיצוי ${r.saturationLimit} תורות · חסד תיקון ${r.rejectGrace} תורות</p>
+  return `<p class="pack-meta"><b>${esc(p.name)}</b> · <code>${esc(p.id)}</code> · גרסה ${p.version} · סף רך ${r.softThreshold * 100}% · מיצוי ${r.saturationLimit} תורות · מגן עומס ${r.loadGuard} שאלות</p>
 <div class="tablewrap"><table class="pack"><thead><tr><th>שלב</th><th>slots</th><th>רכיבים</th><th>דורש</th><th>מגן עומס</th><th>signpost</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
 <p class="pack-note">חסום = לעולם לא מוצג למשתמש (המוגלה והנרמול). תודעה = slot של מחשבה או רגש. מגן העומס הוא ערך ביניים, עד גלאי עייפות (שאלות לנטלי §1).</p>`;
 }
