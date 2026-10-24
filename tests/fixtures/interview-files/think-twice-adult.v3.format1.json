@@ -1,0 +1,239 @@
+{
+  "interview": {
+    "id": "think-twice-adult",
+    "name": "Think Twice · אישי",
+    "version": 3
+  },
+  "app": {
+    "version": "0.0.0-fixture",
+    "bundle": null
+  },
+  "format": 1,
+  "exportedAt": "2026-10-24T18:00:00.000Z",
+  "history": [
+    {
+      "role": "assistant",
+      "content": "אז ספר לי — מה קרה?",
+      "at": 1761300000000
+    },
+    {
+      "role": "user",
+      "content": "קניתי בשר לא איכותי בשוק, והאורחים כבר היו בדרך.",
+      "at": 1761300060000
+    },
+    {
+      "role": "assistant",
+      "content": "ספר לי — מה קרה?",
+      "at": 1761300065000
+    },
+    {
+      "role": "user",
+      "content": "בעלי אמר שזה תמיד קורה לי.",
+      "at": 1761300125000
+    },
+    {
+      "role": "assistant",
+      "content": "מי עוד היה שם באותו רגע?",
+      "at": 1761300130000
+    },
+    {
+      "role": "user",
+      "content": "אחותי ואמא שלי, ושתיהן שתקו.",
+      "at": 1761300190000
+    },
+    {
+      "role": "assistant",
+      "content": "ומה קרה מיד אחרי?",
+      "at": 1761300195000
+    }
+  ],
+  "state": {
+    "eventRecord": {
+      "setting": {
+        "place": "המטבח",
+        "time": "תחילת המשמרת",
+        "precedent": "",
+        "conditions": []
+      },
+      "beats": {
+        "meat_arrived": {
+          "slot": "stage1.trigger",
+          "actor": "self",
+          "text": "הבשר שהזמנת הגיע למטבח",
+          "camera": true,
+          "scale": "episode",
+          "phase": "before",
+          "toward": "",
+          "label": "הבשר הגיע",
+          "id": "meat_arrived",
+          "seq": 1,
+          "told": 1
+        },
+        "remark": {
+          "slot": "stage1.timeline",
+          "actor": "manager",
+          "text": "אמר שהבשר לא איכותי",
+          "camera": true,
+          "scale": "episode",
+          "phase": "during",
+          "toward": "",
+          "label": "ההערה על הבשר",
+          "id": "remark",
+          "seq": 2,
+          "told": 2
+        }
+      },
+      "stances": {},
+      "emotions": {}
+    },
+    "basket": [],
+    "board": [],
+    "decision": {},
+    "gaps": {
+      "byTarget": {},
+      "log": []
+    },
+    "coverage": {
+      "stage1": {
+        "trigger": 2,
+        "timeline": 1,
+        "actors": 2,
+        "status": 1,
+        "auto_reaction": 0
+      },
+      "stage2": {
+        "causal": 0,
+        "meaning": 0,
+        "wound": 0,
+        "adhd_pattern": 0
+      },
+      "stage3": {
+        "emotion": 0,
+        "intensity": 0,
+        "past_echo": 0
+      },
+      "stage4": {
+        "auto_reaction": 0,
+        "planned_reaction": 0
+      },
+      "stage5": {
+        "perspective": 0,
+        "intention": 0,
+        "alt_formulation": 0,
+        "re_emotion": 0
+      },
+      "stage6": {
+        "alternatives": 0,
+        "zero_action": 0,
+        "alt_from_transform": 0
+      },
+      "stage7": {
+        "goal": 0,
+        "board_presented": 0,
+        "sharp_decision": 0,
+        "package_test": 0
+      }
+    },
+    "findings": {
+      "stage1": {
+        "trigger": [
+          "הבשר שהזמנת הגיע למטבח"
+        ],
+        "timeline": [
+          "בתחילת המשמרת, כשהמשלוח הגיע"
+        ],
+        "status": [
+          "יצאת מהמשמרת באמצע"
+        ]
+      }
+    },
+    "actorMap": {
+      "manager": {
+        "label": "הממונה",
+        "role": "אמר שהבשר לא איכותי",
+        "relation": "הבוס במטבח",
+        "clear": true,
+        "actions": [
+          "אמר שהבשר לא איכותי"
+        ]
+      },
+      "user": {
+        "label": "המשתמש",
+        "role": "הטבח שקיבל את הבשר",
+        "relation": "עצמו",
+        "clear": true,
+        "actions": [
+          "קיבל את משלוח הבשר",
+          "עזב את המשמרת באמצע"
+        ]
+      }
+    },
+    "openForks": {},
+    "mapLabels": {},
+    "edges": {
+      "actor:manager→beat:remark": {
+        "id": "actor:manager→beat:remark",
+        "from": "actor:manager",
+        "to": "beat:remark",
+        "kind": "agent",
+        "confirmed": true
+      }
+    },
+    "nodes": {},
+    "groups": {},
+    "meta": {
+      "currentStage": 1,
+      "questionCount": 3,
+      "saturationCount": 0,
+      "questionAperture": "open",
+      "resistanceFlag": null,
+      "signals": {
+        "overflow": false,
+        "avoidance": false,
+        "flight": false,
+        "cynicism": false,
+        "contradiction": false
+      },
+      "savedThreads": [],
+      "decisionLog": [
+        {
+          "decision": "stay",
+          "reason": "",
+          "stage": 1
+        },
+        {
+          "decision": "stay",
+          "reason": "",
+          "stage": 1
+        },
+        {
+          "decision": "stay",
+          "reason": "",
+          "stage": 1
+        }
+      ],
+      "mergeAttempt": null,
+      "awaitingConfirmation": false,
+      "confirmationFloor": 0,
+      "safetyFlag": false,
+      "sessionComplete": false,
+      "usage": {
+        "inputTokens": 0,
+        "outputTokens": 0,
+        "cacheWriteTokens": 0,
+        "cacheReadTokens": 0,
+        "calls": 0
+      },
+      "kpi": {
+        "emotionIntensityStage3": null,
+        "emotionIntensityStage5": null,
+        "decisionType": null,
+        "differsFromAutomatic": null,
+        "selfRefs": 3,
+        "otherRefs": 0,
+        "questionsPerStage": {}
+      }
+    }
+  },
+  "revisions": []
+}

@@ -7,6 +7,7 @@
 //   <!-- @key -->             a block an interview may override
 //   <!-- @key locked -->      a block no interview may override   (super file only)
 //   <!-- @key required -->    a block every interview must supply (super file only)
+//   <!-- @key tail -->        a block rendered LAST on the turn prompt (see below)
 //   <!-- # any note -->       an author's note — version, provenance — never sent
 //
 // Nothing else that looks like a comment is allowed: a line starting with `<!--`
@@ -36,9 +37,21 @@
 // every interview — today, one directed question per turn. Which rules are locked is
 // a content decision recorded in the super file itself, not here.
 //
+// `tail` is placement, not precedence (Ran, 24.10.2026: "rewrite the rules so Haiku
+// understands them"). The guidelines open every prompt, and on the turn prompt that
+// opening is followed by some 14,000 tokens of protocol, agent, evaluator and state
+// — a small model weighs what it read last. A `tail` block is composed by the same
+// rules and handed back separately (`composeGuidelinesTail`), and promptBuilder
+// renders it after everything else on the interviewer's TURN prompt only: the
+// summary, the opener and the board have their own closing instructions, and a
+// turn checklist would contradict them (a summary recites facts). Where a key is
+// placed is decided by the file that introduces it: a super key's flag holds under
+// an override, so an override may not carry `tail`; a specific-only key carries
+// its own.
+//
 // Imports nothing: plain data in, text out (principle 4).
 
-const MARKER = /^<!--\s*@([a-z0-9][a-z0-9-]*)((?:\s+(?:locked|required))*)\s*-->$/;
+const MARKER = /^<!--\s*@([a-z0-9][a-z0-9-]*)((?:\s+(?:locked|required|tail))*)\s*-->$/;
 // One line, by itself, ending at its first `-->`: prompt-editor versions every file
 // it touches, and in these files a version line the model could read would change
 // what it reads. Not greedy, so `<!-- # a --> text <!-- b -->` is an error rather
@@ -61,7 +74,13 @@ function parse(text, which) {
     const m = MARKER.exec(bare);
     if (m) {
       const flags = m[2] ?? '';
-      blocks.push({ key: m[1], locked: /\blocked\b/.test(flags), required: /\brequired\b/.test(flags), body: '' });
+      blocks.push({
+        key: m[1],
+        locked: /\blocked\b/.test(flags),
+        required: /\brequired\b/.test(flags),
+        tail: /\btail\b/.test(flags),
+        body: '',
+      });
       continue;
     }
     if (NOTE.test(bare)) continue;
@@ -88,11 +107,12 @@ function parse(text, which) {
   return { blocks, errors };
 }
 
-// Returns { ok, errors, text }. Never throws — composeGuidelines is the throwing form.
+// Returns { ok, errors, text, tail }. Never throws — composeGuidelines and
+// composeGuidelinesTail are the throwing forms.
 export function checkGuidelines(guidelines) {
   const errors = [];
   if (!guidelines || typeof guidelines.super !== 'string' || typeof guidelines.specific !== 'string') {
-    return { ok: false, errors: ['guidelines must be { super, specific } texts'], text: '' };
+    return { ok: false, errors: ['guidelines must be { super, specific } texts'], text: '', tail: '' };
   }
   const sup = parse(guidelines.super, 'super');
   const spec = parse(guidelines.specific, 'specific');
@@ -105,6 +125,8 @@ export function checkGuidelines(guidelines) {
   for (const b of spec.blocks) {
     if (b.locked || b.required) errors.push(`specific: "${b.key}" — only the super file marks blocks locked or required`);
     if (superByKey.get(b.key)?.locked) errors.push(`specific: "${b.key}" is locked in the super file and cannot be overridden`);
+    // Placement belongs to the file that introduced the key (header comment).
+    if (b.tail && superByKey.has(b.key)) errors.push(`specific: "${b.key}" — where a super block is placed is the super file's; drop "tail" from the override`);
     // An empty override would delete the super's rule in silence — the realistic
     // cause is a forgotten line between two markers. Removing a shared rule for
     // one interview, if that is ever wanted, gets its own explicit marker.
@@ -118,18 +140,30 @@ export function checkGuidelines(guidelines) {
     }
   }
 
-  const text = [
-    ...sup.blocks.map((b) => (specByKey.has(b.key) ? specByKey.get(b.key).body : b.body)),
-    ...spec.blocks.filter((b) => !superByKey.has(b.key)).map((b) => b.body),
-  ].join('');
+  // Super order first, the body taken from the override where there is one, then
+  // the blocks only the specific file has; each block's placement from the file
+  // that introduced its key.
+  const composed = [
+    ...sup.blocks.map((b) => ({ tail: b.tail, body: specByKey.has(b.key) ? specByKey.get(b.key).body : b.body })),
+    ...spec.blocks.filter((b) => !superByKey.has(b.key)).map((b) => ({ tail: b.tail, body: b.body })),
+  ];
+  const text = composed.filter((b) => !b.tail).map((b) => b.body).join('');
+  const tail = composed.filter((b) => b.tail).map((b) => b.body).join('');
   // The last line of defence: whatever the parse let through, no comment reaches
   // the model.
-  if (text.includes('<!--')) errors.push('the composed guidelines still contain "<!--" — a comment would reach the model');
-  return { ok: errors.length === 0, errors, text };
+  if (text.includes('<!--') || tail.includes('<!--')) errors.push('the composed guidelines still contain "<!--" — a comment would reach the model');
+  return { ok: errors.length === 0, errors, text, tail };
 }
 
 export function composeGuidelines(guidelines) {
   const { ok, errors, text } = checkGuidelines(guidelines);
   if (!ok) throw new Error(`Interviewer guidelines cannot be composed — ${errors.join('; ')}`);
   return text;
+}
+
+// The `tail` blocks, composed by the same rules; '' when the files have none.
+export function composeGuidelinesTail(guidelines) {
+  const { ok, errors, tail } = checkGuidelines(guidelines);
+  if (!ok) throw new Error(`Interviewer guidelines cannot be composed — ${errors.join('; ')}`);
+  return tail;
 }

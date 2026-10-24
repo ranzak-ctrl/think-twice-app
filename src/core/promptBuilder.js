@@ -1,6 +1,6 @@
 import { renderEvent } from './eventView.js';
-import { DEFAULT_PACK, stageKey, barredSlots } from './pack.js';
-import { composeGuidelines } from './guidelines.js';
+import { DEFAULT_PACK, stageKey, barredSlots, mapSource } from './pack.js';
+import { composeGuidelines, composeGuidelinesTail } from './guidelines.js';
 
 // ── THE CORE IMPORTS NO PROMPT ──
 // Every text the model reads belongs to the interview pack and arrives here as
@@ -42,6 +42,16 @@ function guidelines(prompts) {
     throw new Error('Interview prompts are missing "guidelines"');
   }
   return composeGuidelines(g);
+}
+
+// The guidelines' `tail` blocks — the checklist a small model reads last
+// (guidelines.js). Turn prompt only; '' for an interview that wrote none.
+function guidelinesTail(prompts) {
+  const g = prompts?.guidelines;
+  if (!g || typeof g.super !== 'string' || typeof g.specific !== 'string') {
+    throw new Error('Interview prompts are missing "guidelines"');
+  }
+  return composeGuidelinesTail(g);
 }
 
 // The blacklist rides in every prompt. An empty one would still print its heading
@@ -106,7 +116,12 @@ export function buildSystemPromptParts({ stage, state, prompts, pack = DEFAULT_P
       text(prompts, 'evaluator'),
       forbiddenBlock(prompts),
     ].filter(Boolean).join(SEP),
-    volatile: stateSummary,
+    // The guidelines' tail comes after the state, as the last thing the model
+    // reads before the conversation (Ran, 24.10.2026). It is stable text in the
+    // uncached half: a few hundred characters re-sent each turn, against a
+    // cache that would otherwise break on every stage change for a block that
+    // has to sit behind the volatile state anyway.
+    volatile: [stateSummary, guidelinesTail(prompts)].filter(Boolean).join(SEP),
   };
 }
 
@@ -283,8 +298,12 @@ function summarizeState(state, { full = false, pack, prompts } = {}) {
   const actorMap = Object.keys(state.actorMap ?? {}).length
     ? `\nactor_map: ${JSON.stringify(state.actorMap)}`
     : '';
-  // Open forks must ride along for the same reason the actor map does: the model
-  // reports DELTAS keyed by a stable id, and it can only reuse an id it can see.
+  // Open forks, edges and groups ride along so the interviewer can see what the
+  // story left open and what has been related — on a record map (both shipped
+  // interviews since 24.10.2026) it reads them and the REGISTRAR writes them, by
+  // delta, from its own prompt (buildRegistrarPrompt, same summary). The delta
+  // reasoning below is the interviewer's own on a reported map, and still holds:
+  // the model reports DELTAS keyed by a stable id, and it can only reuse an id it can see.
   // Without this the model mints a fresh id for the same unresolved question every
   // turn, mergeOpenForks stores each as a new fork, and the person is drawn the
   // same open question three times over. (Caught by prompt-editor, 29.8.2026,
@@ -304,7 +323,9 @@ function summarizeState(state, { full = false, pack, prompts } = {}) {
   // the one it meant to fix. That is the failure Ran read off a live map on
   // 5.9.2026 from the other direction ("you stopped creating cubes and only updated
   // the existing ones"), and it would come straight back as its mirror image.
-  const nodes = Object.keys(state.nodes ?? {}).length
+  // On a record map the interviewer reports no cubes and nobody draws `nodes`
+  // (eventMap.js; Ran, 24.10.2026): nothing to correct, so nothing is shown.
+  const nodes = mapSource(pack) === 'reported' && Object.keys(state.nodes ?? {}).length
     ? `\nnodes: ${JSON.stringify(Object.values(state.nodes).map(({ seq, ...n }) => n))}`
     : '';
   // Containers likewise: a group is raised to confirmed by re-reporting its id once

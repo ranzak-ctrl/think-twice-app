@@ -124,3 +124,45 @@ describe('composing the guidelines', () => {
     expect(() => composeGuidelines({ super: SUPER })).toThrow(/cannot be composed/);
   });
 });
+
+// A `tail` block is placement, not precedence (Ran, 24.10.2026: "rewrite the rules so
+// Haiku understands them"): composed by the same rules, handed back apart, rendered
+// last on the turn prompt by promptBuilder.
+describe('tail blocks — what the model reads last', () => {
+  const CHECK = ['<!-- @checklist tail -->', 'Before you send: one question, this stage only.', ''].join('\n');
+
+  it('keeps a tail block out of the head text and hands it back on its own', async () => {
+    const { composeGuidelinesTail } = await import('../../src/core/guidelines.js');
+    const g = { super: SUPER, specific: ADULT + CHECK };
+    expect(composeGuidelines(g)).not.toContain('Before you send');
+    expect(composeGuidelinesTail(g)).toBe('Before you send: one question, this stage only.\n');
+    expect(checkGuidelines(g).ok).toBe(true);
+  });
+
+  it('is empty for an interview that wrote none', async () => {
+    const { composeGuidelinesTail } = await import('../../src/core/guidelines.js');
+    expect(composeGuidelinesTail({ super: SUPER, specific: ADULT })).toBe('');
+  });
+
+  it('a super tail block keeps its place under an override', async () => {
+    const { composeGuidelinesTail } = await import('../../src/core/guidelines.js');
+    const sup = SUPER + ['<!-- @closing tail -->', 'Shared closing check.', ''].join('\n');
+    const spec = ADULT + ['<!-- @closing -->', 'Adult closing check.', ''].join('\n');
+    expect(composeGuidelinesTail({ super: sup, specific: spec })).toBe('Adult closing check.\n');
+    expect(composeGuidelines({ super: sup, specific: spec })).not.toContain('closing check');
+  });
+
+  it('refuses an override that tries to move a super block', () => {
+    const sup = SUPER + ['<!-- @closing -->', 'Shared closing.', ''].join('\n');
+    const spec = ADULT + ['<!-- @closing tail -->', 'Moved.', ''].join('\n');
+    const r = checkGuidelines({ super: sup, specific: spec });
+    expect(r.ok).toBe(false);
+    expect(r.errors.join(' | ')).toContain('"closing" — where a super block is placed is the super file\'s');
+  });
+
+  it('no comment reaches the model through the tail either', () => {
+    const spec = ADULT + ['<!-- @checklist tail -->', 'Check: <!-- oops -->', ''].join('\n');
+    const r = checkGuidelines({ super: SUPER, specific: spec });
+    expect(r.ok).toBe(false);
+  });
+});

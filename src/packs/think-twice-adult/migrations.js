@@ -21,4 +21,10 @@ export const thinkTwiceAdultMigrations = {
   // field is the same. The step is the identity, and it exists so a version-1 file
   // keeps opening (the test refuses a shipped version with no step).
   1: (session) => session,
+  // 2 → 3 (24.10.2026): the stage-1 agent, the evaluator and the guidelines changed
+  // — an emotion in stage 1 is recorded, not asked; the interviewer no longer
+  // reports the map layer; a checklist closes the turn prompt; a framing sentence
+  // opens a stage and answers a drift — and no slot, field or state shape moved.
+  // A version-2 file is a version-3 file.
+  2: (session) => session,
 };

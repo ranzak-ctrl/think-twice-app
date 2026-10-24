@@ -44,8 +44,11 @@ export const thinkTwiceAdult = {
   name: 'Think Twice · אישי',
   // 2 (24.10.2026): the interviewer's texts changed — no routine restating, one
   // question per turn, the headers no longer reach the model — and the drawing is
-  // the registrar's record. The state's shape did not change (migrations.js).
-  version: 2,
+  // the registrar's record. 3 (24.10.2026, later that day): an emotion in stage 1
+  // is recorded, not asked; the evaluator stops reporting the map layer; a
+  // checklist closes the turn prompt. The state's shape did not change either
+  // time (migrations.js).
+  version: 3,
 
   // The Router's numbers. Each is a pack decision; none is clinically validated
   // beyond what docs/questions-for-natali.md records (§1 load guard, §13 grace).

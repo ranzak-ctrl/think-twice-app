@@ -48,9 +48,15 @@ describe('prompt ↔ vocabulary agreement', () => {
   // GUARD THE GUARD. The ORDERING_KINDS check once scraped a declaration that had
   // become an import, matched nothing, and passed everything. A scraper that finds
   // nothing must fail loudly rather than quietly report agreement.
-  it('the scraper actually finds examples in both prompts', () => {
+  it('the scraper actually finds examples in the registrar prompt', () => {
     expect(kindsIn(registrarMd).size, 'registrar.md: no `"kind": "..."` examples found — the scraper is broken or the prompt changed shape').toBeGreaterThan(0);
-    expect(kindsIn(evaluatorMd).size, 'evaluator.md: no `"kind": "..."` examples found').toBeGreaterThan(0);
+  });
+
+  // Since 24.10.2026 (Ran) the adult interviewer reports no edges or groups: the
+  // registrar is the sole writer of the graph, and evaluator v9 teaches no kind at
+  // all. A kind that reappears there is a rule the model is asked to apply twice.
+  it('the evaluator teaches no edge or group kind any more', () => {
+    expect([...kindsIn(evaluatorMd)]).toEqual([]);
   });
 
   it.runIf(REGISTRAR_ENABLED)('registrar.md shows every edge kind in an example, now that the registrar runs', () => {

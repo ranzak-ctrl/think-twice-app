@@ -22,7 +22,7 @@ import { countSelfOther } from './kpi.js';
 // references are real, where the cast is gated, which stage decides, where
 // intensity is measured — it asks the pack. Until 10.10.2026 it was written for
 // Think Twice's seven stages (plan, phase 1 slice 3).
-import { stageAt, stageWith, hasComponent, slotIds, parseSlotRef, castOf, intensityKey } from './pack.js';
+import { stageAt, stageWith, hasComponent, slotIds, parseSlotRef, castOf, intensityKey, mapSource } from './pack.js';
 import {
   appendDecisionLog,
   recordGapObservation,
@@ -229,10 +229,21 @@ export async function runTurn(state, history, userText, deps) {
     }
   }
 
+  // ── The map stores are the interviewer's only on a REPORTED map ──
+  // Ran, 18.9.2026: the registrar is the sole writer of the graph; 24.10.2026: both
+  // shipped interviews draw from its record, and the interviewer's evaluation stops
+  // carrying the map layer (nodes · edges · groups · open_forks · map_labels) so that
+  // Haiku reads the rules of the conversation instead of a drawing spec. What the
+  // pack declares decides who writes these stores: 'reported' (the engine's
+  // default, the four-stage test pack) keeps the interviewer's reports as before;
+  // 'record' ignores them, so a model that still emits the fields changes nothing.
+  // Findings, slots, the cast and the flags are the interviewer's on either.
+  const mapIsReported = mapSource(pack) === 'reported';
+
   // Map labels: the short name for each slot's cube on the story map. Routed the
   // same way as findings — bare names to the current stage, "stageN.slot" to that
   // stage — and guarded to known slots. Display only; the Router never reads them.
-  if (ev.mapLabels && Object.keys(ev.mapLabels).length) {
+  if (mapIsReported && ev.mapLabels && Object.keys(ev.mapLabels).length) {
     for (const [rawKey, label] of Object.entries(ev.mapLabels)) {
       const ref = parseSlotRef(pack, rawKey);
       const stageKey = ref ? ref.key : currentKey;
@@ -278,23 +289,23 @@ export async function runTurn(state, history, userText, deps) {
   // the current stage the way findings are — each node names its own slot, because
   // material belonging to stage 3 routinely surfaces in stage 1 and the map draws
   // it where it belongs rather than where the interview happens to be standing.
-  if (ev.nodes) nextState = mergeNodes(nextState, ev.nodes, pack);
+  if (mapIsReported && ev.nodes) nextState = mergeNodes(nextState, ev.nodes, pack);
 
   // Story edges: the relations between the case's entities. Merged at any stage —
   // an edge routinely joins a beat in one stage to a beat in another, which is also
   // why gating on them is not the same problem as gating on the actor map
   // (questions-for-natali §10). Display only; the Router never reads them.
-  if (ev.edges) nextState = mergeEdges(nextState, ev.edges, pack);
+  if (mapIsReported && ev.edges) nextState = mergeEdges(nextState, ev.edges, pack);
 
   // Containers: groups of nodes drawn as a box around them. Display only, like
   // the edges — the Router never reads them.
-  if (ev.groups) nextState = mergeGroups(nextState, ev.groups, pack);
+  if (mapIsReported && ev.groups) nextState = mergeGroups(nextState, ev.groups, pack);
 
   // Open forks (פיצולים לא-מוכרעים): what the STORY left undecided. Merged in at any
   // stage — unlike the actor map this is not stage-1 only, because a story can leave
   // something open anywhere in it. Observability + display; the Router never reads
   // these, so a fork can never stall or advance a stage. Natali, 29.8.2026.
-  if (ev.openForks) nextState = mergeOpenForks(nextState, ev.openForks);
+  if (mapIsReported && ev.openForks) nextState = mergeOpenForks(nextState, ev.openForks);
 
   // Counters + per-turn signals. Saturation tracks real coverage progress, not the
   // model's "new_info" self-report (which over-reports — Ran, live testing: saturation

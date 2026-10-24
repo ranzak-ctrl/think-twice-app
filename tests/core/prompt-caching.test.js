@@ -32,8 +32,13 @@ describe('the cached half is actually stable', () => {
   });
 
   it('carries the big static prompt, which is the whole point', () => {
-    const { stable } = buildSystemPromptParts({ stage: 1, state: createState() });
-    expect(stable.length).toBeGreaterThan(20000);
+    const { stable, volatile } = buildSystemPromptParts({ stage: 1, state: createState() });
+    // Relative, not an absolute floor: evaluator v9 (24.10.2026) dropped the map
+    // layer and the stable half fell from ~30,800 to ~12,700 characters, which is
+    // the point of that change, not a regression of this one. What this guards is
+    // that the cached half is still the bulk of the prompt.
+    expect(stable.length).toBeGreaterThan(5 * volatile.length);
+    expect(stable.length).toBeGreaterThan(8000);
   });
 
   it('keeps the joined form identical to the two halves', () => {
