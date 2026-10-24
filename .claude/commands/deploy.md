@@ -10,7 +10,9 @@ Unless `$ARGUMENTS` contains `--skip-checks`, run `/ship-check` first and stop i
 
 ## Steps
 
-**0 · Raise the app version — every release to testers** (Ran's ruling, 9.10.2026). The version heads every session export and error report, so a tester's file says which release it came from; a release that keeps the old number makes two different builds indistinguishable.
+**0 · Raise the app version — every push to QA and every release to testers** (Ran's rulings, 9.10.2026 and 24.10.2026: "a number on every version, so we can roll back"). The version heads every session export and error report, and shows on the password gate and in the guide panel's title, so a tester's file and the screen say which build they came from; a build that keeps the old number makes two different builds indistinguishable, and a rollback has nothing to name.
+- **Every push to the QA branch** ends with the `release: vX.Y.Z` commit, so the deployment list in Vercel reads a version per deployment. Not only production releases.
+- **Rollback** (Ran asks "חזור ל-vX.Y.Z"): never rewrite history. On the branch: `git checkout vX.Y.Z -- .` (the tag's whole tree, over the working copy), then raise the version again, commit as `release: vA.B.C (rollback to vX.Y.Z)`, tag, push. The old version comes back under a new number, and the history still shows what happened. Vercel's own Redeploy of the deployment named `release: vX.Y.Z` is the same content without the record, and is Ran's to click.
 - Pick the bump: **patch** (1.1.0 → 1.1.1) when the release only fixes things; **minor** (1.1.0 → 1.2.0) when a tester will notice something — interview wording or behaviour, a new screen, a new interview model. Never major without Ran.
 - Identity first, positively: `git config user.email` must print `ranzak@gmail.com` (CLAUDE.md, iron rule — on Ran's Mac the global identity is the work address, and Vercel blocks a commit by an unrecognised author with no error at all).
 - `npm version <patch|minor> --no-git-tag-version` (updates package.json and package-lock.json), then commit them alone as `release: vX.Y.Z`, tag `vX.Y.Z`, and push the branch and the tag.

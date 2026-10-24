@@ -6,6 +6,7 @@ import { formatSelfOther } from '../core/kpi.js';
 import { castOf, intensityStages, intensityKey } from '../core/pack.js';
 import { Close } from './icons.jsx';
 import { DEFAULT_MODEL, chooseModel } from '../adapters/model.js';
+import { APP_VERSION } from '../adapters/appVersion.js';
 
 // The stages, their working names, the cast's slot and where intensity is measured
 // are the interview's — read from its pack, so the panel shows whichever interview
@@ -175,7 +176,10 @@ export default function GuidePanel({ state, pack, account, lastRegistrar = null,
   return (
     <aside className="guide" style={{ width }} aria-label="מצב מדריך">
       <div className="guide-head">
-        <span>מצב מדריך</span>
+        {/* The build's version beside the title (Ran, 24.10.2026) — the same
+            number that heads every export, so a tester's report and the screen
+            it came from cannot be confused for different builds. */}
+        <span>מצב מדריך{APP_VERSION !== 'unknown' ? ` · v${APP_VERSION}` : ''}</span>
         {/* Visible only in the narrow-screen drawer; CSS hides it on desktop. */}
         <button className="guide-close" onClick={onClose} aria-label="סגור מדריך">
           <Close />

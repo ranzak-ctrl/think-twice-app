@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { requiresPassword, getAppPassword, setAppPassword } from '../adapters/appAuth.js';
+import { APP_VERSION } from '../adapters/appVersion.js';
 import { Logo } from './icons.jsx';
 
 // Wraps the app and asks for the shared access password.
@@ -59,6 +60,10 @@ export default function PasswordGate({ children, locked, onUnlock }) {
         <button type="submit" className="btn btn-primary">
           כניסה
         </button>
+        {/* Ran, 24.10.2026: a number on every QA build, so whoever opens the link
+            can say which one is live, and a rollback has a name to go back to.
+            Outside a Vite build the version is unknown and the line is omitted. */}
+        {APP_VERSION !== 'unknown' && <p className="gate-version">גרסה {APP_VERSION}</p>}
       </form>
     </div>
   );

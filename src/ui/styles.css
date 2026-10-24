@@ -1734,6 +1734,15 @@ button {
   text-align: center;
 }
 
+/* The build's version under the button: a quiet line, there to be read when
+   someone asks "which one is this?", never competing with the lockup. */
+.gate-version {
+  margin: 14px 0 0;
+  font-size: 11.5px;
+  opacity: 0.55;
+  text-align: center;
+}
+
 .gate h1 {
   display: flex;
   justify-content: center;
