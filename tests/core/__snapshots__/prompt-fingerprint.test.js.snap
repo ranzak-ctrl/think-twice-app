@@ -18,59 +18,59 @@ exports[`prompt fingerprints (engine/pack split must not move a byte) > the fixe
 exports[`prompt fingerprints (engine/pack split must not move a byte) > the probe prompt, every stage, empty and rich 1`] = `
 {
   "stage1.fresh": {
-    "stable": "33469:78b6fd5053ffe90a",
+    "stable": "30428:f769c453f9d7c7ef",
     "volatile": "592:db9acf97425d98eb",
   },
   "stage1.rich": {
-    "stable": "33469:78b6fd5053ffe90a",
+    "stable": "30428:f769c453f9d7c7ef",
     "volatile": "1736:4e8a22c271cb41f2",
   },
   "stage2.fresh": {
-    "stable": "33653:e9e69758330bdb48",
+    "stable": "30612:408e349797f37db3",
     "volatile": "592:93eaa80d6de492b3",
   },
   "stage2.rich": {
-    "stable": "33653:e9e69758330bdb48",
+    "stable": "30612:408e349797f37db3",
     "volatile": "1736:19fce94fe42a29f6",
   },
   "stage3.fresh": {
-    "stable": "32878:1def6666d0d5cf35",
+    "stable": "29837:ffd090fe61084668",
     "volatile": "592:f5cabee8d254abc6",
   },
   "stage3.rich": {
-    "stable": "32878:1def6666d0d5cf35",
+    "stable": "29837:ffd090fe61084668",
     "volatile": "1736:0b32e217dfde7818",
   },
   "stage4.fresh": {
-    "stable": "32882:fa38fd86c85020a3",
+    "stable": "29841:b454128f3d73817a",
     "volatile": "592:636105112bb29b12",
   },
   "stage4.rich": {
-    "stable": "32882:fa38fd86c85020a3",
+    "stable": "29841:b454128f3d73817a",
     "volatile": "1736:bb7463d164047815",
   },
   "stage5.fresh": {
-    "stable": "33363:07f0a6520d865387",
+    "stable": "30322:5c0977b6e9b0aabc",
     "volatile": "592:0c74fcc63de50d05",
   },
   "stage5.rich": {
-    "stable": "33363:07f0a6520d865387",
+    "stable": "30322:5c0977b6e9b0aabc",
     "volatile": "1736:ec376c50e70cef9e",
   },
   "stage6.fresh": {
-    "stable": "33244:3b5bc67b0ba0144e",
+    "stable": "30203:9215a905485ae160",
     "volatile": "592:9ba8ed5946109438",
   },
   "stage6.rich": {
-    "stable": "33244:3b5bc67b0ba0144e",
+    "stable": "30203:9215a905485ae160",
     "volatile": "1736:49ed1bd9619427de",
   },
   "stage7.fresh": {
-    "stable": "33618:d9aab2648711aad6",
+    "stable": "30577:70dd9aa1995f182b",
     "volatile": "592:59432f0ff0745d14",
   },
   "stage7.rich": {
-    "stable": "33618:d9aab2648711aad6",
+    "stable": "30577:70dd9aa1995f182b",
     "volatile": "1736:c6294c8788397970",
   },
 }
@@ -78,26 +78,26 @@ exports[`prompt fingerprints (engine/pack split must not move a byte) > the prob
 
 exports[`prompt fingerprints (engine/pack split must not move a byte) > the registrar, summary, opener and board prompts 1`] = `
 {
-  "board": "3817:178b4ac32accff83",
-  "opener.stage1": "5502:b855a76eaaf1ca10",
-  "opener.stage1.reopen": "5532:36e040e10811e815",
-  "opener.stage2": "5686:371dd7b5f9468b6d",
-  "opener.stage2.reopen": "5716:e60f292646424a01",
-  "opener.stage3": "4911:687923900351d2ed",
-  "opener.stage3.reopen": "4941:fe1b81d6268cdd3f",
-  "opener.stage4": "4915:8982987a334b3b3f",
-  "opener.stage4.reopen": "4945:e2a6d4d4fc2a91e8",
-  "opener.stage5": "5396:19b6b587035d2474",
-  "opener.stage5.reopen": "5426:50540421af08d76e",
-  "opener.stage6": "5277:e379a954cabd5bbc",
-  "opener.stage6.reopen": "5307:783ba2aa75111f3c",
-  "opener.stage7": "5651:0f21db827dd7363a",
-  "opener.stage7.reopen": "5681:1e9ed55e2858a47d",
+  "board": "4798:e81dcd1849871fca",
+  "opener.stage1": "6634:7a819bba95d53738",
+  "opener.stage1.reopen": "6664:5dfba426bbd07472",
+  "opener.stage2": "6818:8ea37ca5a85ad131",
+  "opener.stage2.reopen": "6848:f1fb0c801959f17d",
+  "opener.stage3": "6043:2034df69c0d434f6",
+  "opener.stage3.reopen": "6073:3996b5b8fd59414e",
+  "opener.stage4": "6047:96124051449e0e6a",
+  "opener.stage4.reopen": "6077:bcebd70ac094a510",
+  "opener.stage5": "6528:fcff7ebf803ee564",
+  "opener.stage5.reopen": "6558:010d5ba0f13e4bb2",
+  "opener.stage6": "6409:206e80973b1522d8",
+  "opener.stage6.reopen": "6439:3aa6d8f805148a51",
+  "opener.stage7": "6783:846cb4f23b208e38",
+  "opener.stage7.reopen": "6813:785df7525f9d49c0",
   "registrar": {
-    "stable": "31702:46e6cb4e766e13e9",
+    "stable": "27671:0dbcc3fd63bae874",
     "volatile": "1736:4e8a22c271cb41f2",
   },
-  "summary": "3791:e5f9730b90768fb5",
+  "summary": "4770:aff60b71530c1d8e",
 }
 `;
 

@@ -93,7 +93,43 @@ function richState() {
 const atStage = (state, n) => ({ ...state, meta: { ...state.meta, currentStage: n } });
 const STAGES = [1, 2, 3, 4, 5, 6, 7];
 
+// Everything the model can read in this interview, by name — fresh and rich where
+// the state reaches the prompt.
+function everyPrompt() {
+  const fresh = createState();
+  const rich = richState();
+  const out = {};
+  for (const n of STAGES) {
+    for (const [kind, state] of [['fresh', fresh], ['rich', rich]]) {
+      const p = buildSystemPromptParts({ stage: n, state: atStage(state, n) });
+      out[`probe.stage${n}.${kind}`] = `${p.stable}\n${p.volatile}`;
+    }
+    out[`opener.stage${n}`] = buildOpenerPrompt({ stage: n, state: atStage(rich, n) });
+    out[`opener.stage${n}.reopen`] = buildOpenerPrompt({ stage: n, state: atStage(rich, n), situation: 'חזרה לשלב' });
+  }
+  for (const [kind, state] of [['fresh', fresh], ['rich', rich]]) {
+    const r = buildRegistrarPrompt({ state });
+    out[`registrar.${kind}`] = `${r.stable}\n${r.volatile}`;
+  }
+  out.summary = buildSummaryPrompt({ state: rich });
+  out.board = buildBoardPrompt({ state: atStage(rich, 7) });
+  return out;
+}
+
 describe('prompt fingerprints (engine/pack split must not move a byte)', () => {
+  // Every text opens with a header the model must never read — its version line
+  // and history (evaluator.md's runs to 57 lines). The pack's mapping strips it
+  // (src/packs/text.js); until 24.10.2026 the adult mapping did not, and the
+  // headers of evaluator, registrar, summary, opener and board reached the model.
+  // The parents' test has had this assertion since 16.10.2026.
+  it('no author note or any other comment reaches the model', () => {
+    const all = everyPrompt();
+    expect(Object.keys(all).length).toBe(STAGES.length * 4 + 4);
+    for (const [name, text] of Object.entries(all)) {
+      expect(text.includes('<!--'), `${name} carries a comment the model would read`).toBe(false);
+    }
+  });
+
   // A fingerprint of a state that never reaches the prompt pins nothing, so the
   // fixture proves it exercises the account and both sides of the redaction.
   it('the rich fixture reaches the account, redacted and full', () => {

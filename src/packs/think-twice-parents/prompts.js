@@ -39,8 +39,12 @@
 // Author notes. Every parents text opens with one-line notes, `<!-- # … -->` — the
 // same syntax the guidelines use, and for the same reason: a version line or a
 // "draft" note the model can read changes what it reads. guidelines.js strips them
-// from the guidelines; `text()` below strips them from everything else. The test
-// asserts that no "<!--" reaches any parents prompt.
+// from the guidelines; `text()` strips them from everything else. It was this
+// file's own until 24.10.2026, when the adult mapping turned out to hand its
+// headers over intact; now both packs share src/packs/text.js, which strips every
+// comment block at the top of a text, one line or many (prompt-editor,
+// 24.10.2026). Same output here, byte for byte: every parents note is at the top.
+// The test asserts that no "<!--" reaches any parents prompt.
 //
 // The judge's rubric is not here, and this interview has none yet: the parents'
 // additions to the rubric (interview-model.md §8) are Natali's (§3), and the
@@ -64,21 +68,8 @@ import stage6 from '../../content/prompts/parents/agents/stage6-alternatives.md?
 import stage7 from '../../content/prompts/parents/agents/stage7-decision.md?raw';
 import stage8 from '../../content/prompts/parents/agents/stage8-practice.md?raw';
 import { PARENTS_FORBIDDEN } from '../../content/prompts/parents/forbidden.js';
-
-// One line, by itself — guidelines.js's NOTE, repeated rather than imported: a pack
-// imports nothing from src/core (src/core/pack.js says why). A lookahead, not a
-// lookbehind: this runs while the app loads, and Safari before 16.4 cannot parse a
-// lookbehind (tests/core/browser-support.test.js).
-const NOTE = /^<!--\s*#(?:(?!-->).)*-->$/;
-
-// A text as the model reads it: the author notes out, and the blank lines they
-// leave at the top with them.
-const text = (md) =>
-  md
-    .split('\n')
-    .filter((line) => !NOTE.test(line.trim()))
-    .join('\n')
-    .replace(/^\n+/, '');
+// A text as the model reads it: the header out (see "Author notes" above).
+import { text } from '../text.js';
 
 const CATALOG = text(catalog);
 const withCatalog = (agent) => `${text(agent).trimEnd()}\n\n${CATALOG}`;
