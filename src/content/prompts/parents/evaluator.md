@@ -1,6 +1,7 @@
-<!-- # parents/evaluator.md — v3 · 24.10.2026 · DRAFT FOR QA, AWAITING NATALI'S APPROVAL — not for a real parent before she signs off · v1 prompt-editor, at Ran's request (bring the parents interview up on the QA link) -->
+<!-- # parents/evaluator.md — v4 · 31.10.2026 · DRAFT FOR QA, AWAITING NATALI'S APPROVAL — not for a real parent before she signs off · v1 prompt-editor, at Ran's request (bring the parents interview up on the QA link) -->
 <!-- # v2 (prompt-editor, asked by the session after router-guard's review of de9eab5): a parent's statement about what kind of parent they are goes ONLY to stage5.parent_self, from any stage — the one barred slot, so the only place the code keeps it out of the summary, opener and board; parent_thought_then, coping_style and slot_findings say so too -->
 <!-- # v3 (prompt-editor, 24.10.2026, asked by the session after Ran's ruling of 24.10.2026, test-plan §א.1ב items 13–14, both interviews: a question that strays outside the stage is shown to the parent as it is, reflected TO THE MODEL ONLY on the next call, and the interview is brought back on track, never stopped; engine already in — session.js reads the field, promptBuilder.js renders the hidden "תיקון מסלול" block): new report field `asks` — the one slot the question aims at, always the full form "stageN.slot" (parseSlotRef takes nothing else), a slot of the current stage; the interviewer never says a word about a deviation to the parent. Added: the `"asks": "stage1.demand"` line in the JSON template beside `slots`, and one short rule (five sentences, no further example) after the cross-stage capture and before the parent_self rule. No other field, the one-question rule and the stage transition unchanged. Body the model reads: 8,249 → 8,662 chars -->
+<!-- # v4 (prompt-editor, 31.10.2026, asked by the session after Ran's ruling of 31.10.2026 — a live run on Haiku 5.5 still opened with three lines; the code now enforces the ceiling, src/adapters/model.js PREAMBLE_MAX = 2, a turn with three or more sentences before the question is sent back once, and router-guard found the texts the model reads still said three): the `message` template says "עד 2 משפטים + שאלה אחת בדיוק" instead of "עד 3" — before the question nothing by default, one sentence when needed, two the exception, three or more not allowed (the full rule: the locked block of guidelines/super.md v4). No other field, the one-question rule and the stage transition unchanged. Body the model reads: same length, one digit replaced -->
 <!-- # slots: src/packs/think-twice-parents/pack.js · measurement tests: docs/parent-app/interview-model.md §4 · JSON contract: src/core/responseParser.js -->
 <!-- # no story map in this interview (no registrar), so none of nodes/edges/groups/map_labels/open_forks; no actor_map either — the engine merges a cast only on a castClarity stage, and this pack has none; need_reason is read by no code yet (the internal tag of stage 4) -->
 ## הנחיית פלט (חובה)
@@ -34,7 +35,7 @@
     "merge_attempt": null,
     "decision": null
   },
-  "message": "תשובת המראיין בעברית — עד 3 משפטים + שאלה אחת בדיוק"
+  "message": "תשובת המראיין בעברית — עד 2 משפטים + שאלה אחת בדיוק"
 }
 ```
 
