@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MOCK_RESPONSES, MOCK_SUMMARIES, SCENARIOS } from '../../src/adapters/model.js';
+import { MOCK_RESPONSES, MOCK_SUMMARIES, SCENARIOS, preambleSentences, PREAMBLE_MAX } from '../../src/adapters/model.js';
 import { FORBIDDEN_PATTERNS } from '../../src/content/forbidden.js';
 
 // --- Lint utilities ---
@@ -100,8 +100,10 @@ describe('mock responses pass lint rules', () => {
     });
 
     if (!isExemptTurn(key)) {
-      it(`${key}: max 3 sentences before question`, () => {
-        expect(sentenceCountBeforeQuestion(message)).toBeLessThanOrEqual(3);
+      // Ran, 31.10.2026: nothing before the question by default, one sentence when
+      // needed, two the exception. Three or more is what the adapter sends back.
+      it(`${key}: at most ${PREAMBLE_MAX} sentences before the question`, () => {
+        expect(preambleSentences(message)).toBeLessThanOrEqual(PREAMBLE_MAX);
       });
     }
   }

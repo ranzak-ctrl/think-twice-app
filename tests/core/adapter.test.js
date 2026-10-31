@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { complete, chooseModel, DEFAULT_MODEL } from '../../src/adapters/model.js';
+import { complete, chooseModel, DEFAULT_MODEL, preambleSentences } from '../../src/adapters/model.js';
 
 // JSON-stability retry (dev-plan §148). These tests force the real (network) path
 // with VITE_USE_MOCK=false and a stubbed fetch, then verify the adapter retries a
@@ -600,6 +600,57 @@ describe('adapter complete() — the model per interview, and one question per t
     expect(r.ok).toBe(true);
     expect(r.message).toBe('מה קרה אז? ומה עשית אחר כך?');
     expect(r.failure).toMatchObject({ kind: 'two_questions', mode: 'turn' });
+  });
+
+  // Ran, 31.10.2026: a live run on Haiku 5.5 still opened with three lines, with
+  // the rule in the text. So the shape is enforced like the second question: three
+  // or more sentences before the question are sent back once, for a shorter reply.
+  const LONG = JSON.stringify({ message: 'שמעתי אותך. זה נשמע קשה. ברור שזה נגע בך. מה קרה אז?', evaluation: { slots: { trigger: 1 } } });
+  const SHORT = JSON.stringify({ message: 'זה נשמע קשה. מה קרה אז?', evaluation: { slots: { trigger: 1 } } });
+  const TWO_SENTENCES = JSON.stringify({ message: 'שמעתי אותך. זה נשמע קשה. מה קרה אז?', evaluation: { slots: { trigger: 1 } } });
+
+  it('a turn with three sentences before the question is asked once more, for a shorter one', async () => {
+    const fetchStub = makeFetch([LONG, SHORT]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    const r = await complete(ARGS);
+
+    expect(fetchStub).toHaveBeenCalledTimes(2);
+    expect(r).toMatchObject({ ok: true, message: 'זה נשמע קשה. מה קרה אז?' });
+    expect(r.failure).toBeUndefined();
+    expect(bodyOf(fetchStub, 1).messages.at(-1)).toEqual({ role: 'user', content: expect.stringContaining('הקדמה ארוכה') });
+  });
+
+  it('a turn still long after the one repair is kept, with the fact on record', async () => {
+    const fetchStub = makeFetch([LONG, LONG, LONG]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    const r = await complete(ARGS);
+
+    expect(fetchStub).toHaveBeenCalledTimes(2); // one repair, not a loop
+    expect(r.ok).toBe(true);
+    expect(r.message).toBe('שמעתי אותך. זה נשמע קשה. ברור שזה נגע בך. מה קרה אז?');
+    expect(r.failure).toMatchObject({ kind: 'long_preamble', mode: 'turn' });
+  });
+
+  it('two sentences before the question — the exception Ran allowed — pass as they are', async () => {
+    const fetchStub = makeFetch([TWO_SENTENCES]);
+    vi.stubGlobal('fetch', fetchStub);
+
+    const r = await complete(ARGS);
+
+    expect(fetchStub).toHaveBeenCalledTimes(1);
+    expect(r.failure).toBeUndefined();
+  });
+
+  it('counts the sentences before the question, never the question’s own', () => {
+    expect(preambleSentences('מה קרה אז?')).toBe(0);
+    expect(preambleSentences('הבנו את התגובה — מה עשית באותו רגע?')).toBe(0);
+    expect(preambleSentences('זה נשמע קשה. מה קרה אז?')).toBe(1);
+    expect(preambleSentences('שמעתי.\nזה נשמע קשה…\nברור! מה קרה אז?')).toBe(3);
+    expect(preambleSentences('כשהיא אמרה "מה אתה רוצה?" — מה הרגשת?')).toBe(0);
+    expect(preambleSentences('אין כאן שאלה.')).toBe(0);
+    expect(preambleSentences('')).toBe(0);
   });
 
   it('a question mark inside the person’s quoted words is not a question of ours', async () => {

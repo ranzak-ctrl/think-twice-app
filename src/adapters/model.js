@@ -649,7 +649,32 @@ const REPAIR_NUDGE =
 const ONE_QUESTION_NUDGE =
   'בתשובה הקודמת יש יותר משאלה אחת. החזר את אותו תוכן, אבל עם שאלה אחת בלבד — ' +
   'הראשונה מביניהן. השאלה השנייה תישאר לתור הבא. אותו פורמט JSON.';
-const countQuestions = (text) => (String(text ?? '').match(/[?؟](?!["'”’»])/g) ?? []).length;
+const QUESTION_MARK = /[?؟](?!["'”’»])/g;
+const countQuestions = (text) => (String(text ?? '').match(QUESTION_MARK) ?? []).length;
+
+// A long preamble (Ran, 31.10.2026, after a live run on Haiku 5.5 still opened
+// with three lines although super.md says otherwise): the default is the question
+// alone, one sentence before it when needed, two the exception. Three or more
+// sentences before the question are sent back ONCE with this nudge, exactly like
+// the second question above; a reply still long after that is kept, with the fact
+// on record. Counted on a turn's message only. A sentence is what ends in a
+// period, an exclamation mark, an ellipsis or a line break, before the sentence
+// that carries the question itself.
+const PREAMBLE_NUDGE =
+  'בתשובה הקודמת יש הקדמה ארוכה לפני השאלה. החזר את אותה שאלה בדיוק, ולפניה משפט אחד ' +
+  'לכל היותר — או כלום. אותו evaluation, אותו פורמט JSON.';
+export const PREAMBLE_MAX = 2;
+export const preambleSentences = (text) => {
+  const s = String(text ?? '');
+  let last = -1;
+  for (const m of s.matchAll(QUESTION_MARK)) last = m.index;
+  if (last < 0) return 0;
+  const before = s.slice(0, last);
+  // The question's own sentence starts after the last boundary before the mark.
+  const boundary = Math.max(before.lastIndexOf('.'), before.lastIndexOf('!'), before.lastIndexOf('…'), before.lastIndexOf('\n'));
+  if (boundary < 0) return 0;
+  return before.slice(0, boundary + 1).split(/[.!…\n]+/).filter((part) => /[\p{L}\p{N}]/u.test(part)).length;
+};
 
 // Carries all four token buckets, not just input/output. With prompt caching on,
 // `input_tokens` is only the UNCACHED remainder — the full prompt is
@@ -812,7 +837,7 @@ export async function complete({
         headers,
         body: JSON.stringify({
           model,
-          // An interviewer turn is three sentences and a question; 1024 is ample.
+          // An interviewer turn is a question with a sentence or two before it; 1024 is ample.
           // THE REGISTRAR IS NOT THAT SHAPE. It returns a whole graph delta —
           // beats, stances, emotions, actors, edges, groups, forks, gap
           // observations — as Hebrew JSON, and Hebrew costs more tokens per
@@ -961,34 +986,40 @@ export async function complete({
       };
     }
     const parsed = parseResponse(raw);
-    if (parsed.ok && (mode ?? 'turn') === 'turn' && countQuestions(parsed.message) > 1) {
-      // Two questions in one turn: the reply is kept as the fallback, and the model
-      // is asked once more — once — for one question. A reply that is still over
-      // after that, or one that arrives with no attempt left, is returned with the
-      // fact on record: an interviewer that asks two questions is not a reason to
-      // lose the turn.
-      if (!overflow && attempt < MAX_ATTEMPTS) {
-        overflow = parsed;
-        attemptMessages = [
-          ...attemptMessages,
-          { role: 'assistant', content: raw },
-          { role: 'user', content: ONE_QUESTION_NUDGE },
-        ];
-        continue;
+    if (parsed.ok && (mode ?? 'turn') === 'turn') {
+      const twoQuestions = countQuestions(parsed.message) > 1;
+      const longPreamble = preambleSentences(parsed.message) > PREAMBLE_MAX;
+      if (twoQuestions || longPreamble) {
+        // Two questions in one turn, or three sentences before the one question:
+        // the reply is kept as the fallback, and the model is asked once more —
+        // once — to fix the shape. A reply still off after that, or one that
+        // arrives with no attempt left, is returned with the fact on record: an
+        // interviewer that talks too much is not a reason to lose the turn.
+        const kind = twoQuestions ? 'two_questions' : 'long_preamble';
+        const what = twoQuestions ? 'turn asked more than one question' : 'turn opened with a long preamble';
+        if (!overflow && attempt < MAX_ATTEMPTS) {
+          overflow = { parsed, kind, what };
+          attemptMessages = [
+            ...attemptMessages,
+            { role: 'assistant', content: raw },
+            { role: 'user', content: twoQuestions ? ONE_QUESTION_NUDGE : PREAMBLE_NUDGE },
+          ];
+          continue;
+        }
+        return {
+          ...parsed,
+          usage,
+          failure: {
+            kind,
+            status: res.status,
+            requestId: lastRequestId,
+            stage,
+            mode: mode ?? 'turn',
+            attempt,
+            detail: overflow ? `${what} after repair` : `${what}; no attempt left to repair`,
+          },
+        };
       }
-      return {
-        ...parsed,
-        usage,
-        failure: {
-          kind: 'two_questions',
-          status: res.status,
-          requestId: lastRequestId,
-          stage,
-          mode: mode ?? 'turn',
-          attempt,
-          detail: overflow ? 'turn asked more than one question after repair' : 'turn asked more than one question; no attempt left to repair',
-        },
-      };
     }
     if (parsed.ok) return { ...parsed, usage };
 
@@ -1001,13 +1032,14 @@ export async function complete({
     ];
   }
 
-  // A later attempt failed to parse after an earlier reply asked two questions:
-  // that reply is the turn, with the fact on record, rather than a lost turn.
+  // A later attempt failed to parse after an earlier reply had the wrong shape
+  // (two questions, or a long preamble): that reply is the turn, with the fact on
+  // record, rather than a lost turn.
   if (overflow) {
     return {
-      ...overflow,
+      ...overflow.parsed,
       usage,
-      failure: { kind: 'two_questions', status: 200, requestId: lastRequestId, stage, mode: mode ?? 'turn', attempt: MAX_ATTEMPTS, detail: 'turn asked more than one question; a later repair did not parse' },
+      failure: { kind: overflow.kind, status: 200, requestId: lastRequestId, stage, mode: mode ?? 'turn', attempt: MAX_ATTEMPTS, detail: `${overflow.what}; a later repair did not parse` },
     };
   }
 
