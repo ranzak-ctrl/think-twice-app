@@ -227,6 +227,45 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .vcard .test { color: var(--warm); font-size: .88rem; }
 .vcard .ex { color: var(--muted); font-size: .85rem; }
 @media (prefers-reduced-motion: reduce) { .station { transition: none; } }
+
+/* 5 · the conversation graph */
+.g-ctl { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+.g-ctl input[type="range"] { flex: 1 1 180px; min-width: 120px; accent-color: var(--accent); }
+.g-wrap { display: grid; grid-template-columns: 1fr; gap: 12px; align-items: start; }
+.g-svgbox { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); overflow-x: auto; min-width: 0; }
+.g-svgbox svg { width: 100%; min-width: 640px; height: auto; display: block; font-family: var(--font-body); }
+.g-detail { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 12px 14px; font-size: .9rem; display: grid; gap: 6px; align-content: start; min-height: 120px; }
+.g-detail dl { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr); gap: 3px 10px; }
+@media (max-width: 760px) { .g-detail dl { grid-template-columns: auto minmax(0, 1fr); } }
+.g-detail dt { color: var(--muted); } .g-detail dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.g-detail .kd { font-weight: 700; display: flex; gap: 8px; align-items: center; }
+.g-caption { border-inline-start: 4px solid var(--accent); background: var(--accent-soft); border-radius: 8px; padding: 8px 12px; font-size: .92rem; display: grid; gap: 3px; }
+.g-caption.ill { border-inline-start-color: var(--plan); background: var(--plan-soft); }
+.g-caption .cap-k { color: var(--muted); font-weight: 600; font-size: .8rem; }
+.g-legend .sw { width: 12px; height: 12px; border-radius: 50%; }
+.g-legend .sw.k-actor { background: var(--warm); } .g-legend .sw.k-beat { background: var(--accent); } .g-legend .sw.k-stance { background: var(--plan); }
+.g-legend .sw.k-emotion { background: var(--danger); } .g-legend .sw.k-fork { background: var(--muted); border-radius: 2px; transform: rotate(45deg); }
+.g-legend .sw.k-slot { background: var(--code-bg); border: 1px solid var(--muted); border-radius: 2px; } .g-legend .sw.k-group { background: var(--ok-soft); border: 1px dashed var(--ok); border-radius: 3px; }
+.g-node { cursor: pointer; }
+.g-node text { font-size: 13px; fill: var(--ink); pointer-events: none; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+.g-node .halo { fill: none; stroke: var(--accent); stroke-width: 2.5; opacity: .95; }
+.g-node .barred { fill: none; stroke: var(--danger); stroke-width: 1.6; stroke-dasharray: 2 3; }
+.g-node .chosen { fill: none; stroke: var(--ok); stroke-width: 3; }
+.g-node.sel circle, .g-node.sel rect, .g-node.sel polygon { stroke: var(--ink); stroke-width: 2.5; }
+.g-edge { fill: none; stroke: var(--muted); stroke-width: 1.5; }
+.g-edge.unc { stroke-dasharray: 5 4; }
+.g-edge.derived { stroke-dasharray: 2 3; stroke-width: 1; opacity: .75; }
+.g-elabel { font-size: 10.5px; fill: var(--muted); font-family: var(--font-mono); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+.g-group { fill: var(--ok-soft); fill-opacity: .55; stroke: var(--ok); stroke-dasharray: 4 3; }
+.g-group.unc { fill-opacity: .25; stroke-dasharray: 2 4; }
+.g-gl { font-size: 10px; fill: var(--ok); font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+.btn.small { padding: 4px 10px; font-size: .85rem; }
+.g-ctl .tog { font-size: .85rem; color: var(--muted); display: inline-flex; gap: 4px; align-items: center; }
+
+/* 6 · the systems around the product */
+.sysflow { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr)); gap: 8px; align-items: stretch; }
+.sysflow .box { position: relative; padding-bottom: 22px; }
+.sysflow .sysarrow { position: absolute; inset-inline-end: 10px; bottom: 4px; font-size: .78rem; color: var(--accent); font-weight: 600; }
 </style>
 </head>
 <body>
@@ -249,7 +288,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   <p>תוכן העניינים</p>
   <ol>
     <li><a href="#glance">במבט אחד</a></li>
-    <li><a href="#views">ארבעה מבטים</a></li>
+    <li><a href="#views">שישה מבטים</a></li>
     <li><a href="#layers">מנוע · חבילה · מעטפת</a></li>
     <li><a href="#turn">תור אחד</a></li>
     <li><a href="#state">ה-StateDocument</a></li>
@@ -319,13 +358,15 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 </section>
 
 <section id="views" aria-labelledby="h-views">
-  <h2 id="h-views">ארבעה מבטים על אותה מערכת</h2>
-  <p>התצוגה החזותית של v2, מצוירת מחדש לפי הקוד של היום: מבט-על · תור בודד · החלטת ה-Router · אוצר המילים של הגרף. המבט הראשון והשני מראים את שני הראיונות, כי ההבדל ביניהם הוא חלק מהארכיטקטורה.</p>
+  <h2 id="h-views">שישה מבטים על אותה מערכת</h2>
+  <p>התצוגה החזותית של v2, מצוירת מחדש לפי הקוד של היום: מבט-על · תור בודד · החלטת ה-Router · אוצר המילים של הגרף · הגרף של מאורע אחד, תור אחר תור · המערכות שהמוצר בנוי מהן (31.10.2026). המבט הראשון והשני מראים את שני הראיונות, כי ההבדל ביניהם הוא חלק מהארכיטקטורה.</p>
   <div class="vtabs" role="tablist" aria-label="מבטים">
     <button role="tab" id="t-arch" aria-controls="v-arch" aria-selected="true" data-v="arch"><small>מבט-על</small>ארכיטקטורה מאוחדת</button>
     <button role="tab" id="t-flow" aria-controls="v-flow" aria-selected="false" data-v="flow" tabindex="-1"><small>תור בודד</small>מחזור התור</button>
     <button role="tab" id="t-router" aria-controls="v-router" aria-selected="false" data-v="router" tabindex="-1"><small>החלטה</small>צירי ה-Router</button>
     <button role="tab" id="t-vocab" aria-controls="v-vocab" aria-selected="false" data-v="vocab" tabindex="-1"><small>מילון</small>יישויות וקשתות</button>
+    <button role="tab" id="t-graph" aria-controls="v-graph" aria-selected="false" data-v="graph" tabindex="-1"><small>מאורע אחד</small>הגרף שמתהווה</button>
+    <button role="tab" id="t-systems" aria-controls="v-systems" aria-selected="false" data-v="systems" tabindex="-1"><small>אינטגרציות</small>המערכות שסביב</button>
   </div>
 
   <!-- 1 · overview -->
@@ -464,6 +505,127 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     <h3>שלושה צירים חוצי-יישויות</h3>
     <div class="vgrid" id="vocab-axis"></div>
     <div class="note"><p><strong>שתי מוסכמות שמחזיקות את הכול:</strong> קצוות בשמות-מרחב (<code>actor:</code> · <code>beat:</code> · <code>stance:</code> · <code>emotion:</code> · <code>fork:</code> · <code>stageN.slot</code>), ו-<code>confirmed:false</code> כברירת מחדל. "הקשתות הן של המרואיין. כשהמערכת לא סגורה על הקשר — היא שואלת אותו" (רן, 5.9.2026). רק <code>then</code> ו-<code>because</code> קובעות סדר במפה.</p></div>
+  </div>
+
+  <!-- 5 · the conversation graph, turn by turn -->
+  <div class="view" id="v-graph" role="tabpanel" aria-labelledby="t-graph" hidden>
+    <p>הגרף של מאורע אחד, כפי שהרשם בונה אותו תור אחר תור: נקודות (יישויות) וקווים (קשתות), באוצר המילים של הלשונית "מילון". המיקום של כל נקודה קבוע מראש, כך שהתמונה מתעבה ולא מסתדרת מחדש. <strong>תורות 1–9</strong> הם הרצה אמיתית של הצנרת (<code>runTurn</code> ← הרשם ← <code>eventRecord</code>) במצב המודל המדומה, על הסקריפט "בשר לא איכותי", שלבים 1–2. <strong>תורות 10–16</strong> הם המחשה של ההמשך לפי אותו אוצר מילים, כי הרשם המדומה מכסה היום שני שלבים. גרור את הסרגל, או לחץ ▸.</p>
+    <div class="g-ctl">
+      <button type="button" class="btn small" id="g-prev" aria-label="תור קודם">◂ קודם</button>
+      <input type="range" id="g-turn" min="1" max="16" step="1" value="1" aria-label="תור">
+      <button type="button" class="btn small" id="g-next" aria-label="תור הבא">הבא ▸</button>
+      <button type="button" class="btn small" id="g-play">▶ הפעל</button>
+      <label class="tog"><input type="checkbox" id="g-elabels" checked> שמות הקשתות</label>
+      <span class="ctllabel" id="g-label"></span>
+    </div>
+    <div class="g-caption" id="g-caption" aria-live="polite"></div>
+    <div class="g-wrap">
+      <div class="g-svgbox"><svg id="g-svg" viewBox="0 0 900 560" role="img" aria-label="גרף המאורע: נקודות וקווים"></svg></div>
+      <aside class="g-detail" id="g-detail"><span class="ctllabel">לחץ על נקודה</span><span>הפרטים שהרשם רשם עליה יופיעו כאן.</span></aside>
+    </div>
+    <ul class="legend g-legend" aria-label="מקרא הגרף">
+      <li><span class="sw k-actor"></span>דמות (<code>actor</code>)</li>
+      <li><span class="sw k-beat"></span>פעימה (<code>beat</code>)</li>
+      <li><span class="sw k-stance"></span>עמדה (<code>stance</code>)</li>
+      <li><span class="sw k-emotion"></span>רגש (<code>emotion</code>)</li>
+      <li><span class="sw k-fork"></span>פיצול פתוח (<code>fork</code>)</li>
+      <li><span class="sw k-slot"></span>slot שעוד לא נחקר</li>
+      <li><span class="sw k-group"></span>מכל (<code>group</code>)</li>
+    </ul>
+    <p class="hint" style="color:var(--muted);font-size:.85rem">קו מלא = מאושר (<code>confirmed:true</code>) · קו מקווקו = לא מאושר: נכנס לתור הבירור ולא מצויר לאדם · קו מנוקד דק = <code>agent</code> שנגזר משדה <code>actor</code> של הפעימה · נקודה בטבעת אדומה מנוקדת = slot חסום (<code>barred</code>): נרשם, נחקר, ולעולם לא מצויר ולא מצוטט לאדם · טבעת כחולה = נוסף בתור הזה.</p>
+  </div>
+
+  <!-- 6 · the systems around the product -->
+  <div class="view" id="v-systems" role="tabpanel" aria-labelledby="t-systems" hidden>
+    <p>כל מערכת שהמוצר נשען עליה, מה עובר ביניהן, ומי מחזיק כל סוד. <strong>עיקרון הברזל:</strong> הכול תחת <code>ranzak@gmail.com</code>, וכל קומיט ממנו. אין מסד נתונים ואין אחסון: תוכן הראיון חי בטאב, ויוצא ממנו רק מוצפן, אל המחשב של המשתמש ואל תיבת המייל שלו.</p>
+
+    <h3>1 · מהקוד לאוויר</h3>
+    <div class="sysflow" role="list">
+      <div class="box" role="listitem"><b>Claude Code · סשני ענן</b>מכונת העבודה: <code>.claude/</code> סוכנים (<code>router-guard</code> · <code>prompt-editor</code> · <code>clinical-triage</code> · <code>live-run-analyst</code>), פקודות (<code>/resume</code> · <code>/ship-check</code> · <code>/deploy</code>). לפני דחיפה: 1,133 בדיקות, build, הסוכנים. דוחף רק לענף שלו, בזהות <code>ranzak@gmail.com</code>.<span class="sysarrow" aria-hidden="true">← push</span></div>
+      <div class="box" role="listitem"><b>GitHub · <code>ranzak-ctrl/think-twice-app</code></b>ענף ה-QA <code>claude/youthful-hamilton-40ef4m</code> ← Preview · <code>main</code> ← Production. הקומיט <code>release: vX.Y.Z</code> הוא עוגן הגרסה; rollback = גרסה חדשה מעץ של גרסה ישנה, בלי לשכתב היסטוריה.<span class="sysarrow" aria-hidden="true">← webhook</span></div>
+      <div class="box" role="listitem"><b>Vercel · team Think Twice (<code>think-twice1</code>) · project <code>think-twice</code></b>Git integration: כל push נבנה (Vite, כ-13 שניות) לסטטי + 5 פונקציות. הסודות במשתני סביבה של השרת בלבד. Runtime Logs: מטא-דאטה, אף פעם לא תוכן. Vercel חוסם בשקט קומיט שמחברו לא מזוהה.<span class="sysarrow" aria-hidden="true">← deploy</span></div>
+      <div class="box" role="listitem"><b>הכתובות</b><code>think-twice-nine.vercel.app</code> = Production (<code>main</code>) · כתובת Preview קבועה לענף ה-QA, עם מסך הבחירה בין שני הראיונות. שער הסיסמה המשותפת (<code>APP_PASSWORD</code>) עד שיהיו חשבונות. הגרסה מופיעה בשער ובמצב מדריך.</div>
+    </div>
+
+    <h3>2 · בזמן ראיון — מה עובר בין המערכות</h3>
+    <div class="stack" role="img" aria-label="הדפדפן, פונקציות Vercel, ספקים, והמחשב של המשתמש">
+      <div class="band where">
+        <div class="band-head"><span class="band-name">הדפדפן</span><span class="band-sub">React 18 + Vite · הראיון כולו בזיכרון הטאב · <code>sessionStorage</code> רק לסיסמת הגישה</span></div>
+        <div class="boxes">
+          <div class="box"><b>המנוע</b>Router · StateDocument · לולאת התור · הרשם. קוד מכריע, מודל מציע</div>
+          <div class="box safe"><b>בטיחות</b><code>src/safety</code> לפני כל קריאה. אזכור מצוקה חריפה ← עצירה, ושום מודל לא נקרא</div>
+          <div class="box"><b>הגרף והאיור</b>הרשם ← <code>eventRecord</code> (יישויות וקשתות) ← <code>storyMap.js</code> ← SVG בכתב יד (<code>rough.js</code>) ← PNG. לא יוצא מהדפדפן אלא בתוך הקובץ המוצפן</div>
+          <div class="box new"><b>מסך הסיום</b>קובץ מוצפן להורדה · מייל · ספירה לאחור של 5 דקות · רענון שמוחק הכול</div>
+          <div class="box"><b>פתיחת קובץ</b>צפייה, או המשך של ראיון שלא הסתיים. הסבות בין גרסאות</div>
+        </div>
+      </div>
+      <div class="arrow" aria-hidden="true">↓ ‏HTTPS · <code>x-app-password</code> · בלי שום מפתח בדפדפן ↓</div>
+      <div class="band fn">
+        <div class="band-head"><span class="band-name">פונקציות Vercel</span><span class="band-sub">חסרות state · לא כותבות · לא מתעדות תוכן</span></div>
+        <div class="boxes">
+          <div class="box"><b>ה-proxy למודל</b><code>api/anthropic/v1/messages.js</code> · בודק <code>APP_PASSWORD</code>, מזריק <code>ANTHROPIC_API_KEY</code>, מעביר הלאה</div>
+          <div class="box new"><b>ההצפנה</b><code>api/interview-file.js</code> ← <code>server/interviewFile.js</code> · AES-256-GCM על gzip · מפתחות עם גרסה ב-<code>INTERVIEW_FILE_KEYS</code>: האחרון מצפין, כולם פותחים, אף אחד לא נמחק</div>
+          <div class="box new"><b>המייל</b><code>api/send-interview.js</code> ← <code>server/mail.js</code> · הקובץ המוצפן כצרופה, טקסט קבוע, שם המודל מרשימת השרת · עד שני נמענים · <code>RESEND_API_KEY</code> · <code>MAIL_FROM</code></div>
+          <div class="box"><b>דוח תקלה</b><code>api/report.js</code> · שדות ממוספרים, רשימה לבנה, ללוג בלבד</div>
+          <div class="box"><b>בדיקת חיים</b><code>api/ping.js</code></div>
+        </div>
+      </div>
+      <div class="arrow" aria-hidden="true">↓</div>
+      <div class="band ext">
+        <div class="band-head"><span class="band-name">ספקים</span><span class="band-sub">מעבדים עבורנו</span></div>
+        <div class="boxes">
+          <div class="box"><b>Anthropic API</b><code>claude-haiku-5-5</code> לשני הראיונות · חשיבה כבויה · prompt caching על החצי היציב של הפרומפט · מדיניות שמירה: רן מבקש "אפס שמירה"</div>
+          <div class="box"><b>Resend</b>REST, בלי SDK · עד שיהיה דומיין מאומת, שולח רק לכתובת שבה נפתח החשבון · <strong>ממתין להגדרת המפתח והדומיין</strong></div>
+        </div>
+      </div>
+      <div class="arrow" aria-hidden="true">↓</div>
+      <div class="band ext">
+        <div class="band-head"><span class="band-name">אצל המשתמש</span><span class="band-sub">באחריותו, לפי תנאי השימוש</span></div>
+        <div class="boxes">
+          <div class="box"><b>הקובץ</b><code>think-twice-YYYY-MM-DD-HHMM.thinktwice</code> · מוצפן כולו, רק האפליקציה פותחת · הרצף בין סשנים על אותו מאורע</div>
+          <div class="box"><b>תיבת המייל</b>הקובץ המוצפן כצרופה, שם המודל, קישור לאפליקציה. לא השיחה</div>
+          <div class="box"><b>הטאב</b>הראיון, עד הרענון של מסך הסיום</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>3 · הזרימות, אחת-אחת</h3>
+    <ol class="steps">
+      <li><div><b>תור</b><span>הדפדפן ← ה-proxy (סיסמה בכותרת) ← Anthropic (המפתח מוזרק בשרת) ← חזרה. שתי קריאות לתור: הרשם, ואז המראיין. סיכום ופתיח במעבר שלב.</span><span class="who">model.js · api/anthropic/v1/messages.js</span></div></li>
+      <li class="safe"><div><b>בטיחות</b><span>לפני כל דבר אחר בתור, בדפדפן. עצירה בטוחה אינה קריאת מודל.</span><span class="who">src/safety</span></div></li>
+      <li><div><b>הגרף והאיור</b><span>כל תור: הרשם מדווח דלתא ← <code>applyRegistrar</code> ממזג ל-<code>eventRecord</code>, <code>edges</code>, <code>groups</code>, <code>openForks</code> ← האיור נבנה מהתיק (<code>map.source: 'record'</code>). לשונית "הגרף שמתהווה" מראה את זה תור אחר תור.</span><span class="who">registrar.js · state.js · storyMap.js · StoryMap.jsx</span></div></li>
+      <li><div><b>הקובץ</b><span>הדפדפן שולח את ה-JSON ← השרת מצפין ומחזיר ← הורדה בלחיצה. פתיחה: השרת מפענח ← <code>upgradeSession</code> מריץ הסבות ← צפייה או המשך.</span><span class="who">sessionExport.js · adapters/interviewFile.js · api/interview-file.js</span></div></li>
+      <li><div><b>המייל</b><span>הדפדפן שולח את הקובץ המוצפן והכתובות ← השרת פותח אותו רק כדי לאמת שהוא קובץ של הפריסה ולדעת את המודל ← Resend ← תיבת המייל. הכתובות לא נשמרות בשום מקום.</span><span class="who">adapters/interviewMail.js · api/send-interview.js · server/mail.js</span></div></li>
+      <li><div><b>דוח תקלה</b><span>כשל טכני ← <code>reportFailure</code> ← <code>api/report.js</code> מדפיס מטא-דאטה מסוננת ← Vercel Runtime Logs. בלי גוף, בלי תוכן, בלי מזהה.</span><span class="who">adapters/errorReport.js</span></div></li>
+    </ol>
+
+    <h3>4 · סביב העבודה</h3>
+    <div class="two">
+      <div class="card"><h3>Google Drive</h3><p>תיקיית "Think Twice" של <code>ranzak@gmail.com</code>: <strong>האמת הקלינית</strong> (מה הכלי צריך לעשות). <code>/docs</code> בריפו: האמת הטכנית. בסתירה קלינית הדרייב מכריע ועוצרים.</p></div>
+      <div class="card"><h3>עמודי Claude</h3><p>הדשבורד הזה · <a href="https://claude.ai/artifact/ShgqgJn75n9cTuQRXDJzZf">קבצי מודל הראיון</a> ו-<a href="https://claude.ai/artifact/NqaVJYawrpGaeGJ774tvow">התשתית המשותפת</a> לסקירה ועריכה (הצעה נשמרת במאגר העמוד; Claude מחיל אותה דרך <code>prompt-editor</code>) · <a href="https://claude.ai/artifact/Uh3xzBR4Moovp4LxuHN9mJ">מחולל מפתח לקובץ</a> (בדפדפן בלבד) · <a href="https://claude.ai/artifact/8QoVSLDicKwEsCDSUyBF1b">מודל רשם ההורים</a> · <a href="https://claude.ai/artifact/N8h35DkE5GLVmJ1DKiRJb3">מערך הראיון להורים</a> לאישור נטלי. נבנים מהריפו ב-<code>scripts/</code>.</p></div>
+      <div class="card"><h3>הסודות</h3><p>חמישה, כולם ב-Vercel בצד השרת ולעולם לא בקידומת <code>VITE_</code>: <code>ANTHROPIC_API_KEY</code> · <code>APP_PASSWORD</code> · <code>INTERVIEW_FILE_KEYS</code> · <code>RESEND_API_KEY</code> · <code>MAIL_FROM</code>. גיבוי המפתחות במנהל הסיסמאות של רן. <code>/ship-check</code> מוכיח שאף סוד לא ב-bundle.</p></div>
+      <div class="card"><h3>הבדיקות והשערים</h3><p>vitest: 1,133 בדיקות בלי אף קריאת רשת (מודל מדומה) · מטריצת המעברים · lint שיחתי · טביעות אצבע של הפרומפטים · קבצים קפואים לכל גרסה · שופט-LLM (opt-in, עם מפתח). <code>router-guard</code> אחרי כל שינוי ב-Router או במבנה ראיון.</p></div>
+    </div>
+
+    <h3>5 · הטבלה</h3>
+    <div class="tablewrap"><table>
+      <thead><tr><th>רכיב</th><th>מערכת</th><th>מה עובר</th><th>הסוד, ומי מחזיק</th><th>מצב</th></tr></thead>
+      <tbody>
+        <tr><td>קוד</td><td>GitHub · <code>ranzak-ctrl/think-twice-app</code></td><td>קומיטים, ענפים, tags</td><td>חשבון <code>ranzak-ctrl</code> · קומיטים מ-<code>ranzak@gmail.com</code></td><td><span class="tag">בנוי</span></td></tr>
+        <tr><td>פיתוח</td><td>Claude Code, סשני ענן</td><td>קוד, בדיקות, דחיפה לענף</td><td>חשבון Anthropic של <code>ranzak@gmail.com</code></td><td><span class="tag">בנוי</span></td></tr>
+        <tr><td>בנייה ואירוח</td><td>Vercel · <code>think-twice1</code> / <code>think-twice</code></td><td>build בכל push · סטטי + פונקציות · לוגים טכניים</td><td>משתני הסביבה · Deployment Protection כבוי לבודקים</td><td><span class="tag">בנוי</span></td></tr>
+        <tr><td>המודל</td><td>Anthropic API</td><td>כל תור: הפרומפט והשיחה. לא נשמר אצלנו</td><td><code>ANTHROPIC_API_KEY</code>, מוזרק ב-proxy</td><td><span class="tag">בנוי</span> · מדיניות שמירה לאימות</td></tr>
+        <tr><td>ההצפנה</td><td>פונקציה בשרת · <code>server/interviewFile.js</code></td><td>הקובץ, לשנייה, בזיכרון</td><td><code>INTERVIEW_FILE_KEYS</code> · גיבוי אצל רן</td><td><span class="tag">בנוי</span></td></tr>
+        <tr><td>המייל</td><td>Resend</td><td>הקובץ המוצפן, טקסט קבוע, הכתובות (לא נשמרות)</td><td><code>RESEND_API_KEY</code> · <code>MAIL_FROM</code> · דומיין</td><td><span class="tag open">בקוד · ממתין להגדרה</span></td></tr>
+        <tr><td>הגרף והאיור</td><td>הדפדפן · <code>rough.js</code></td><td>לא יוצא מהדפדפן</td><td>—</td><td><span class="tag">בנוי</span></td></tr>
+        <tr><td>בטיחות</td><td>הדפדפן · <code>src/safety</code></td><td>לא יוצא מהדפדפן</td><td>— · שינוי רק באישור נטלי</td><td><span class="tag">בנוי</span></td></tr>
+        <tr><td>הקובץ של המשתמש</td><td>המחשב והמייל של המשתמש</td><td>הראיון כולו, מוצפן</td><td>באחריות המשתמש</td><td><span class="tag">בנוי</span></td></tr>
+        <tr><td>הסקירה והעריכה</td><td>עמודי Claude</td><td>הטקסטים מהריפו; הצעות במאגר העמוד</td><td>חשבון Claude של רן, פרטי</td><td><span class="tag">בנוי</span></td></tr>
+        <tr><td>האמת הקלינית</td><td>Google Drive</td><td>המסמכים של נטלי ורן</td><td><code>ranzak@gmail.com</code></td><td><span class="tag">קיים</span></td></tr>
+        <tr><td>חשבונות</td><td>Neon Postgres דרך Vercel (המלצה)</td><td>אימייל מוצפן, גיבוב סיסמה, הרשאות, מכסה</td><td>מפתחות חדשים בשרת</td><td><span class="tag plan">מתוכנן · שלב 4</span></td></tr>
+        <tr><td>מסך ניהול, מייל לחשבון, מטפל</td><td>Vercel + Resend עם דומיין</td><td>הזמנה, קוד אימות, שחזור; קריאה בלבד למטפל</td><td>—</td><td><span class="tag plan">מתוכנן · שלב 4</span></td></tr>
+      </tbody>
+    </table></div>
   </div>
 </section>
 
@@ -1096,6 +1258,257 @@ advanceStage → meta.sessionComplete = ${g('true')} ${c('// currentStage נשא
   $('vocab-ent').innerHTML = ENT.map(([id, he, what, test, sub]) => `<div class="vcard"><h3>${he} <code>${id}</code></h3><span>${what}</span><span class="test">${test}</span>${sub ? `<span class="ex"><code>${sub}</code></span>` : ''}</div>`).join('');
   $('vocab-edge').innerHTML = EDGE.map(([id, what, ex, orders]) => `<div class="vcard"><h3><code>${id}</code>${orders ? '<span class="tag">קובעת סדר</span>' : ''}</h3><span>${what}</span><span class="ex">${ex}</span></div>`).join('');
   $('vocab-axis').innerHTML = AX.map(([id, he, vals, what]) => `<div class="vcard"><h3>${he} <code>${id}</code></h3><span class="ex"><code>${vals}</code></span><span>${what}</span></div>`).join('');
+
+  /* ── 5 · the conversation graph, turn by turn ──
+     Turns 1–9: the record a headless run of the pipeline produced in mock mode
+     (tests-style runTurn loop, 31.10.2026), stage by stage. Turns 10–16: an
+     illustration of the rest of the interview in the same vocabulary. Positions are
+     computed once for the whole graph, so a node never moves once it has appeared. */
+  const GRAPH = {
+    turns: [
+      { t: 1, stage: 1, real: true, said: 'הבשר שהזמנתי הגיע למטבח.', rec: 'הפעימה הראשונה, ב-slot הטריגר (stage1.trigger). עדיין בלי דמויות.' },
+      { t: 2, stage: 1, real: true, said: 'הממונה היה שם.', rec: 'שום דבר חדש בתיק. המראיין שואל מי עוד היה שם.' },
+      { t: 3, stage: 1, real: true, said: 'הוא אמר שהבשר לא איכותי.', rec: 'שתי דמויות (המשתמש, הממונה), הפעימה "ההערה על הבשר", וקשת agent: הממונה עשה אותה.' },
+      { t: 4, stage: 1, real: true, said: 'יצאתי בלי לומר מילה, בגלל ההערה.', rec: 'התגובה האוטומטית "יצאת בשתיקה", קשת because מההערה (נאמר, ולכן מאושר), ושני מכלים: המטבח (קהילה, מאושר) והמשמרת (תהליך, לא מאושר).' },
+      { t: 5, stage: 1, real: true, said: 'מאז לא דיברנו על זה.', rec: '"לא דיברתם" (stage1.status) ופיצול פתוח: לא סוכם אם הוא חוזר למשמרת. ה-Router: שלב 1 מכוסה ← סיכום קצר ומעבר לשלב 2.' },
+      { t: 6, stage: 2, real: true, said: 'הוא רצה להראות שהוא מבין באוכל. המטבח תמיד בלחץ.', rec: 'שתי קריאות באותו slot (stage2.causal), בשני שעונים: "רצה להראות" הוא אירוע, "המטבח תמיד בלחץ" הוא מצב עומד.' },
+      { t: 7, stage: 2, real: true, said: 'זה אומר שאני לא מקצועי מספיק.', rec: 'הקריאה "לא מקצועי מספיק" ושלוש קשתות because. אחת מהן לא מאושרת, אל slot שעוד לא נחקר (הרגש של שלב 3): השערה של הרשם, ולכן מקווקוות ולא מצוירת לאדם.' },
+      { t: 8, stage: 2, real: true, said: 'אני לא שווה כלום.', rec: 'המוגלה (stage2.wound). slot חסום: נרשם, מקבל ציון, נחקר, ולעולם לא מצויר לאדם.' },
+      { t: 9, stage: 2, real: true, said: 'המראיין מציע השערה מנורמלת על הקשב.', rec: 'הדפוס (stage2.adhd_pattern), source: inferred, חסום גם הוא. ה-Router: שלב 2 מכוסה ← שלב 3.' },
+      { t: 10, stage: 3, real: false, said: 'עלבון. חזק מאוד.', rec: 'רגש בעוצמה 8 (stage3.emotion). הקשת שהצביעה אל ה-slot הריק הופכת לקשת מאושרת אל הרגש עצמו.' },
+      { t: 11, stage: 3, real: false, said: 'ככה הרגשתי כילד, במטבח של אבא.', rec: 'הד-עבר (stage3.past_echo): רגש מוקדם, וקשת echo, הדמיון למשהו שמחוץ למאורע.' },
+      { t: 12, stage: 4, real: false, said: 'תכננתי פשוט לא לחזור למשמרת.', rec: 'רצון (want) ב-slot התגובה המתוכננת (stage4.planned_reaction), because מהרגש.' },
+      { t: 13, stage: 5, real: false, said: 'אולי הוא בלחץ מהבעלים, ורצה שהמנה תצא טוב.', rec: 'יציאה מעצמי: שתי עמדות של הממונה, בגוף שלישי, עם קשתות about אל ההערה.' },
+      { t: 14, stage: 5, real: false, said: 'ההערה הייתה על הבשר, לא עליי.', rec: 'ניסוח חלופי, alternative_to הקריאה הישנה: המתמודד מול המכהן. הרגש נמדד שוב: 8 ← 4 (stage5.re_emotion).' },
+      { t: 15, stage: 6, real: false, said: 'אפשר לדבר איתו מחר, לשאול מה הסטנדרט, או לא לעשות כלום.', rec: 'שלוש חלופות, כולן alternative_to התגובה האוטומטית. אחת derives_from הפרשנות החלופית: מבחן החלחול.' },
+      { t: 16, stage: 7, real: false, said: 'אני רוצה שיכבד את העבודה שלי. אדבר איתו מחר.', rec: 'יעד (goal) about החלופה שנבחרה. ההכרעה חדה, מבחן החבילה עבר, והראיון מסתיים.' },
+    ],
+    nodes: [
+      { id: 'beat:meat_arrived', kind: 'beat', label: 'הבשר הגיע', slot: 'stage1.trigger', actor: 'self', scale: 'episode', phase: 'before', turn: 1, text: 'הבשר שהזמנת הגיע למטבח' },
+      { id: 'actor:user', kind: 'actor', label: 'המשתמש', role: 'הטבח שקיבל את הבשר', turn: 3, clear: true },
+      { id: 'actor:manager', kind: 'actor', label: 'הממונה', role: 'הבוס במטבח', turn: 3, clear: true },
+      { id: 'beat:remark', kind: 'beat', label: 'ההערה על הבשר', slot: 'stage1.timeline', actor: 'manager', scale: 'episode', phase: 'during', turn: 3, text: 'אמר שהבשר לא איכותי' },
+      { id: 'beat:left', kind: 'beat', label: 'יצאת בשתיקה', slot: 'stage1.auto_reaction', actor: 'self', scale: 'episode', phase: 'during', turn: 4, text: 'יצאת בלי לומר מילה' },
+      { id: 'beat:not_spoken', kind: 'beat', label: 'לא דיברתם', slot: 'stage1.status', actor: 'self', scale: 'episode', phase: 'after', turn: 5, text: 'מאז לא חזרתם לדבר על זה' },
+      { id: 'fork:job_status', kind: 'fork', label: 'חוזר למשמרת?', turn: 5, text: 'לא סוכם אם אתה חוזר למשמרת: חוזר כרגיל, או שהוא כבר חיפש מחליף', settled: false },
+      { id: 'stance:show_off', kind: 'stance', type: 'reading', label: 'רצה להראות', slot: 'stage2.causal', actor: 'self', source: 'stated', scale: 'episode', turn: 6, text: 'הוא רצה להראות שהוא מבין באוכל' },
+      { id: 'stance:kitchen_pressure', kind: 'stance', type: 'reading', label: 'המטבח תמיד בלחץ', slot: 'stage2.causal', actor: 'self', source: 'stated', scale: 'ongoing', turn: 6, text: 'המטבח תמיד בלחץ' },
+      { id: 'stance:not_pro', kind: 'stance', type: 'reading', label: 'לא מקצועי מספיק', slot: 'stage2.meaning', actor: 'self', source: 'stated', scale: 'ongoing', turn: 7, text: 'שאתה לא מקצועי מספיק' },
+      { id: 'slot:stage3.emotion', kind: 'slot', label: 'stage3.emotion', turn: 7, until: 10, text: 'קצה של קשת שמצביעה אל slot שעוד לא נחקר. יתמלא בשלב 3' },
+      { id: 'stance:worthless', kind: 'stance', type: 'reading', label: 'לא שווה כלום', slot: 'stage2.wound', actor: 'self', source: 'stated', scale: 'ongoing', turn: 8, barred: true, text: 'אני לא שווה כלום' },
+      { id: 'stance:dysregulation', kind: 'stance', type: 'reading', label: 'קושי בוויסות', slot: 'stage2.adhd_pattern', actor: 'self', source: 'inferred', scale: 'ongoing', turn: 9, barred: true, text: 'קושי בוויסות בסערת רגע (השערה של המראיין)' },
+      { id: 'emotion:insult', kind: 'emotion', label: 'עלבון · 8', labelAt: { 14: 'עלבון · 8 ← 4' }, slot: 'stage3.emotion', actor: 'self', pace: 'situational', source: 'stated', scale: 'episode', turn: 10, text: 'עלבון, בעוצמה 8. נמדד שוב בשלב 5: 4' },
+      { id: 'emotion:father', kind: 'emotion', label: 'כמו אצל אבא', slot: 'stage3.past_echo', actor: 'self', pace: 'prior', source: 'stated', scale: 'ongoing', turn: 11, text: 'ככה הרגשתי כילד, במטבח של אבא' },
+      { id: 'stance:no_return', kind: 'stance', type: 'want', label: 'לא לחזור למשמרת', slot: 'stage4.planned_reaction', actor: 'self', source: 'stated', scale: 'episode', turn: 12, text: 'תכננת לא לחזור למשמרת' },
+      { id: 'stance:manager_pressure', kind: 'stance', type: 'reading', label: 'הוא בלחץ מהבעלים', slot: 'stage5.perspective', actor: 'manager', source: 'stated', scale: 'ongoing', turn: 13, text: 'קריאה מזווית הממונה, בגוף שלישי' },
+      { id: 'stance:intention', kind: 'stance', type: 'want', label: 'רצה שהמנה תצא טוב', slot: 'stage5.intention', actor: 'manager', source: 'stated', scale: 'episode', turn: 13, text: 'הכוונה שהמשתמש מייחס לממונה' },
+      { id: 'stance:alt', kind: 'stance', type: 'reading', label: 'על הבשר, לא עליי', slot: 'stage5.alt_formulation', actor: 'self', source: 'stated', scale: 'episode', turn: 14, text: 'ההערה הייתה על הבשר, לא עליי' },
+      { id: 'beat:talk', kind: 'beat', label: 'לדבר איתו מחר', slot: 'stage6.alternatives', actor: 'self', scale: 'episode', phase: 'after', turn: 15, chosenAt: 16, text: 'חלופה: לדבר איתו מחר בבוקר. נבחרה בשלב 7' },
+      { id: 'beat:ask', kind: 'beat', label: 'לשאול מה הסטנדרט', slot: 'stage6.alt_from_transform', actor: 'self', scale: 'episode', phase: 'after', turn: 15, text: 'חלופה שנגזרה מהפרשנות החלופית' },
+      { id: 'beat:nothing', kind: 'beat', label: 'לא לעשות כלום', slot: 'stage6.zero_action', actor: 'self', scale: 'episode', phase: 'after', turn: 15, text: '"לא לעשות כלום" נבדקת במפורש' },
+      { id: 'stance:goal', kind: 'stance', type: 'goal', label: 'שיכבד את העבודה שלי', slot: 'stage7.goal', actor: 'self', source: 'stated', scale: 'ongoing', turn: 16, text: 'היעד שההכרעה נמדדת מולו' },
+    ],
+    edges: [
+      { from: 'actor:manager', to: 'beat:remark', kind: 'agent', confirmed: true, turn: 3 },
+      { from: 'actor:user', to: 'beat:meat_arrived', kind: 'agent', confirmed: true, turn: 3, derived: true },
+      { from: 'beat:remark', to: 'beat:left', kind: 'because', confirmed: true, turn: 4 },
+      { from: 'actor:user', to: 'beat:left', kind: 'agent', confirmed: true, turn: 4, derived: true },
+      { from: 'actor:user', to: 'beat:not_spoken', kind: 'agent', confirmed: true, turn: 5, derived: true },
+      { from: 'stance:not_pro', to: 'slot:stage3.emotion', kind: 'because', confirmed: false, turn: 7, until: 10 },
+      { from: 'stance:show_off', to: 'actor:manager', kind: 'because', confirmed: true, turn: 7 },
+      { from: 'stance:kitchen_pressure', to: 'beat:remark', kind: 'because', confirmed: true, turn: 7 },
+      { from: 'stance:not_pro', to: 'emotion:insult', kind: 'because', confirmed: true, turn: 10 },
+      { from: 'emotion:insult', to: 'emotion:father', kind: 'echo', confirmed: true, turn: 11 },
+      { from: 'emotion:insult', to: 'stance:no_return', kind: 'because', confirmed: true, turn: 12 },
+      { from: 'stance:manager_pressure', to: 'beat:remark', kind: 'about', confirmed: true, turn: 13 },
+      { from: 'stance:intention', to: 'beat:remark', kind: 'about', confirmed: true, turn: 13 },
+      { from: 'stance:alt', to: 'stance:not_pro', kind: 'alternative_to', confirmed: true, turn: 14 },
+      { from: 'beat:talk', to: 'beat:left', kind: 'alternative_to', confirmed: true, turn: 15 },
+      { from: 'beat:ask', to: 'beat:left', kind: 'alternative_to', confirmed: true, turn: 15 },
+      { from: 'beat:nothing', to: 'beat:left', kind: 'alternative_to', confirmed: true, turn: 15 },
+      { from: 'beat:ask', to: 'stance:alt', kind: 'derives_from', confirmed: true, turn: 15 },
+      { from: 'actor:user', to: 'beat:talk', kind: 'agent', confirmed: true, turn: 15, derived: true },
+      { from: 'actor:user', to: 'beat:ask', kind: 'agent', confirmed: true, turn: 15, derived: true },
+      { from: 'actor:user', to: 'beat:nothing', kind: 'agent', confirmed: true, turn: 15, derived: true },
+      { from: 'stance:goal', to: 'beat:talk', kind: 'about', confirmed: true, turn: 16 },
+    ],
+    groups: [
+      { id: 'kitchen', label: 'המטבח · קהילה', kind: 'community', members: ['actor:user', 'actor:manager'], confirmed: true, turn: 4 },
+      { id: 'shift', label: 'המשמרת · תהליך', kind: 'process', members: ['beat:meat_arrived', 'beat:remark'], confirmed: false, turn: 4 },
+    ],
+  };
+  const KIND = {
+    actor: { he: 'דמות', r: 15, c: 'var(--warm)' },
+    beat: { he: 'פעימה', r: 11, c: 'var(--accent)' },
+    stance: { he: 'עמדה', r: 10, c: 'var(--plan)' },
+    emotion: { he: 'רגש', r: 10, c: 'var(--danger)' },
+    fork: { he: 'פיצול פתוח', r: 9, c: 'var(--muted)' },
+    slot: { he: 'slot שעוד לא נחקר', r: 7, c: 'var(--code-bg)' },
+  };
+  const STAGE_NAMES = { 1: 'עובדות', 2: 'פרשנות', 3: 'רגש', 4: 'תגובה', 5: 'פרשנות חלופית', 6: 'חלופות', 7: 'הכרעה' };
+  const GW = 900, GH = 560;
+
+  // A small force layout, seeded, run once over the WHOLE graph: repulsion between
+  // every pair, springs along edges, a weak pull of a person's own minds toward him,
+  // and group members toward each other. Deterministic, so the picture is the same
+  // on every load.
+  (function layoutGraph() {
+    let seed = 20261031;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+    const nodes = GRAPH.nodes;
+    const idx = new Map(nodes.map((n, i) => [n.id, i]));
+    nodes.forEach((n) => { const a = rnd() * Math.PI * 2, r = 90 + rnd() * 150; n.x = GW / 2 + Math.cos(a) * r; n.y = GH / 2 + Math.sin(a) * r; n.vx = 0; n.vy = 0; });
+    const springs = [];
+    for (const e of GRAPH.edges) if (idx.has(e.from) && idx.has(e.to)) springs.push([idx.get(e.from), idx.get(e.to), e.derived ? 0.02 : 0.045, e.derived ? 160 : 125]);
+    for (const n of nodes) if (n.kind !== 'actor' && n.actor === 'self') springs.push([idx.get(n.id), idx.get('actor:user'), 0.002, 220]);
+    for (const n of nodes) if (n.kind !== 'actor' && n.actor === 'manager') springs.push([idx.get(n.id), idx.get('actor:manager'), 0.004, 150]);
+    for (const g of GRAPH.groups) for (let i = 0; i < g.members.length; i++) for (let j = i + 1; j < g.members.length; j++) springs.push([idx.get(g.members[i]), idx.get(g.members[j]), 0.03, 90]);
+    springs.push([idx.get('fork:job_status'), idx.get('beat:not_spoken'), 0.03, 80]);
+    const N = 600;
+    for (let it = 0; it < N; it++) {
+      const heat = 0.25 + 0.75 * (1 - it / N);
+      for (let i = 0; i < nodes.length; i++) for (let j = i + 1; j < nodes.length; j++) {
+        const a = nodes[i], b = nodes[j];
+        let dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy;
+        if (d2 < 1) { dx = rnd() - 0.5; dy = rnd() - 0.5; d2 = 1; }
+        const d = Math.sqrt(d2), f = 9000 / d2, fx = f * dx / d, fy = f * dy / d;
+        a.vx += fx; a.vy += fy; b.vx -= fx; b.vy -= fy;
+      }
+      for (const [i, j, k, len] of springs) {
+        const a = nodes[i], b = nodes[j];
+        const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, f = k * (d - len);
+        a.vx += f * dx / d; a.vy += f * dy / d; b.vx -= f * dx / d; b.vy -= f * dy / d;
+      }
+      for (const n of nodes) {
+        n.vx += (GW / 2 - n.x) * 0.0012; n.vy += (GH / 2 - n.y) * 0.002;
+        n.x += n.vx * 0.5 * heat; n.y += n.vy * 0.5 * heat; n.vx *= 0.45; n.vy *= 0.45;
+        n.x = Math.max(70, Math.min(GW - 70, n.x)); n.y = Math.max(42, Math.min(GH - 48, n.y));
+      }
+    }
+    // Fit the whole graph to the canvas, uniformly, so no turn draws into a corner.
+    const xs = nodes.map((n) => n.x), ys = nodes.map((n) => n.y);
+    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+    const sc = Math.min((GW - 170) / Math.max(1, x1 - x0), (GH - 110) / Math.max(1, y1 - y0));
+    const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+    for (const n of nodes) { n.x = GW / 2 + (n.x - cx) * sc; n.y = GH / 2 + (n.y - cy) * sc + 6; }
+    // Labels: below the node, unless that collides with a label already placed —
+    // then above it. Greedy, in turn order, so an early node keeps its place.
+    const placed = [];
+    const boxAt = (n, side) => { const w = n.label.length * 7.2 + 8, r = KIND[n.kind].r; const y = side === 'below' ? n.y + r + 3 : n.y - r - 17; return { x: n.x - w / 2, y, w, h: 15 }; };
+    const hits = (b) => placed.some((o) => b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y);
+    for (const n of [...nodes].sort((a, b) => a.turn - b.turn)) {
+      let side = 'below', b = boxAt(n, 'below');
+      if (hits(b)) { const up = boxAt(n, 'above'); if (!hits(up)) { side = 'above'; b = up; } }
+      n.labelSide = side; placed.push(b);
+    }
+  })();
+
+  const gById = new Map(GRAPH.nodes.map((n) => [n.id, n]));
+  const gLabel = (n, t) => { let l = n.label; for (const [at, v] of Object.entries(n.labelAt ?? {})) if (t >= Number(at)) l = v; return l; };
+  const gVis = (o, t) => o.turn <= t && (o.until == null || t < o.until);
+  let gTurn = 1, gSel = null, gTimer = null;
+
+  function drawNode(n, t) {
+    const k = KIND[n.kind], r = k.r, isNew = n.turn === t || (n.labelAt && n.labelAt[t]);
+    let shape;
+    if (n.kind === 'fork') shape = `<polygon points="${n.x},${n.y - r} ${n.x + r},${n.y} ${n.x},${n.y + r} ${n.x - r},${n.y}" fill="var(--surface)" stroke="${k.c}" stroke-width="2" stroke-dasharray="3 2"/>`;
+    else if (n.kind === 'slot') shape = `<rect x="${n.x - r}" y="${n.y - r}" width="${2 * r}" height="${2 * r}" rx="2" fill="${k.c}" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="2 2"/>`;
+    else shape = `<circle cx="${n.x}" cy="${n.y}" r="${r}" fill="${k.c}" stroke="var(--surface)" stroke-width="2"/>`;
+    const rings = [
+      n.barred ? `<circle class="barred" cx="${n.x}" cy="${n.y}" r="${r + 4}"/>` : '',
+      n.chosenAt && t >= n.chosenAt ? `<circle class="chosen" cx="${n.x}" cy="${n.y}" r="${r + 7}"/>` : '',
+      isNew ? `<circle class="halo" cx="${n.x}" cy="${n.y}" r="${r + (n.barred ? 8 : 5)}"/>` : '',
+    ].join('');
+    return `<g class="g-node${gSel === n.id ? ' sel' : ''}" data-id="${esc(n.id)}" tabindex="0" role="button" aria-label="${esc(k.he)}: ${esc(gLabel(n, t))}">${rings}${shape}<text x="${n.x}" y="${n.labelSide === 'above' ? n.y - r - 6 : n.y + r + 13}" text-anchor="middle">${esc(gLabel(n, t))}</text></g>`;
+  }
+  function drawEdge(e, t, labels) {
+    const a = gById.get(e.from), b = gById.get(e.to);
+    if (!a || !b) return '';
+    const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, ux = dx / d, uy = dy / d;
+    const ra = KIND[a.kind].r + 2, rb = KIND[b.kind].r + 7;
+    const x1 = a.x + ux * ra, y1 = a.y + uy * ra, x2 = b.x - ux * rb, y2 = b.y - uy * rb;
+    const cls = `g-edge${e.confirmed ? '' : ' unc'}${e.derived ? ' derived' : ''}`;
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    const label = labels && !e.derived ? `<text class="g-elabel" x="${mx}" y="${my - 4}" text-anchor="middle">${esc(e.kind)}</text>` : '';
+    return `<line class="${cls}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" marker-end="url(#g-arrow)"/>${label}`;
+  }
+  function drawGroup(g, t) {
+    const pts = g.members.map((m) => gById.get(m)).filter((n) => n && gVis(n, t));
+    if (!pts.length) return '';
+    const pad = 26, cls = `g-group${g.confirmed ? '' : ' unc'}`;
+    if (pts.length === 2) {
+      // A capsule along the segment between the two members, so no bystander is
+      // swallowed by an axis-aligned box.
+      const [a, b] = pts, dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), ang = Math.atan2(dy, dx) * 180 / Math.PI;
+      const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2, w = d + 2 * pad, h = 2 * pad + 6;
+      const lx = (a.x < b.x ? a : b), far = Math.max(a.x, b.x);
+      return `<rect class="${cls}" x="${mx - w / 2}" y="${my - h / 2}" width="${w}" height="${h}" rx="${h / 2}" transform="rotate(${ang} ${mx} ${my})"/><text class="g-gl" x="${far + pad - 4}" y="${Math.min(a.y, b.y) - pad + 2}" text-anchor="end">${esc(g.label)}</text>`;
+    }
+    const x0 = Math.min(...pts.map((n) => n.x)) - pad, x1 = Math.max(...pts.map((n) => n.x)) + pad;
+    const y0 = Math.min(...pts.map((n) => n.y)) - pad, y1 = Math.max(...pts.map((n) => n.y)) + pad + 10;
+    return `<rect class="g-group${g.confirmed ? '' : ' unc'}" x="${x0}" y="${y0}" width="${x1 - x0}" height="${y1 - y0}" rx="16"/><text class="g-gl" x="${x1 - 8}" y="${y0 + 13}" text-anchor="end">${esc(g.label)}</text>`;
+  }
+  function renderGraph() {
+    const t = gTurn, labels = $('g-elabels').checked;
+    const nodes = GRAPH.nodes.filter((n) => gVis(n, t));
+    const ids = new Set(nodes.map((n) => n.id));
+    const edges = GRAPH.edges.filter((e) => gVis(e, t) && ids.has(e.from) && ids.has(e.to));
+    const groups = GRAPH.groups.filter((g) => gVis(g, t));
+    $('g-svg').innerHTML = `<defs><marker id="g-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"/></marker></defs>`
+      + groups.map((g) => drawGroup(g, t)).join('')
+      + edges.map((e) => drawEdge(e, t, labels)).join('')
+      + nodes.map((n) => drawNode(n, t)).join('');
+    const info = GRAPH.turns[t - 1];
+    $('g-turn').value = String(t);
+    $('g-label').textContent = `תור ${t} מתוך ${GRAPH.turns.length} · שלב ${info.stage} · ${STAGE_NAMES[info.stage]} · ${nodes.length} נקודות · ${edges.length} קשתות`;
+    const cap = $('g-caption');
+    cap.className = `g-caption${info.real ? '' : ' ill'}`;
+    cap.innerHTML = `<span class="cap-k">${info.real ? 'הרצה של הצנרת (מודל מדומה)' : 'המחשה לפי אוצר המילים'} · נאמר</span><span>"${esc(info.said)}"</span><span class="cap-k">הרשם רשם</span><span>${esc(info.rec)}</span>`;
+    if (gSel && !ids.has(gSel)) { gSel = null; showDetail(null); }
+  }
+  function showDetail(id) {
+    const d = $('g-detail');
+    const n = id ? gById.get(id) : null;
+    if (!n) { d.innerHTML = '<span class="ctllabel">לחץ על נקודה</span><span>הפרטים שהרשם רשם עליה יופיעו כאן.</span>'; return; }
+    const k = KIND[n.kind];
+    const rows = [
+      ['מזהה', `<code>${esc(n.id)}</code>`],
+      n.slot ? ['slot', `<code>${esc(n.slot)}</code>${n.barred ? ' · <strong style="color:var(--danger)">חסום</strong>' : ''}`] : null,
+      n.type ? ['סוג', `<code>${esc(n.type)}</code>`] : null,
+      n.pace ? ['קצב', `<code>${esc(n.pace)}</code>`] : null,
+      n.actor ? ['של מי', esc(n.actor === 'self' ? 'המשתמש' : 'הממונה')] : null,
+      n.role ? ['תפקיד', esc(n.role)] : null,
+      n.source ? ['מקור', `<code>${esc(n.source)}</code>${n.source === 'inferred' ? ' · המראיין הציע, האדם עוד לא אימץ' : ''}`] : null,
+      n.scale ? ['שעון', `<code>${esc(n.scale)}</code> · ${n.scale === 'ongoing' ? 'מצב עומד, ברצועת הרקע' : 'פעימה של האירוע'}`] : null,
+      n.phase ? ['שלב במאורע', `<code>${esc(n.phase)}</code>`] : null,
+      ['נוסף בתור', String(n.turn)],
+      n.text ? ['מה נרשם', esc(n.text)] : null,
+    ].filter(Boolean);
+    d.innerHTML = `<span class="kd"><span class="sw k-${esc(n.kind)}" style="width:12px;height:12px;border-radius:${n.kind === 'fork' || n.kind === 'slot' ? '2px' : '50%'};background:${k.c};display:inline-block"></span>${esc(k.he)} · ${esc(gLabel(n, gTurn))}</span><dl>${rows.map(([a, b]) => `<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl>`;
+  }
+  const gSet = (t) => { gTurn = Math.max(1, Math.min(GRAPH.turns.length, t)); renderGraph(); };
+  const gStop = () => { if (gTimer) { clearInterval(gTimer); gTimer = null; $('g-play').textContent = '▶ הפעל'; } };
+  $('g-turn').addEventListener('input', (e) => { gStop(); gSet(Number(e.target.value)); });
+  $('g-prev').addEventListener('click', () => { gStop(); gSet(gTurn - 1); });
+  $('g-next').addEventListener('click', () => { gStop(); gSet(gTurn + 1); });
+  $('g-play').addEventListener('click', () => {
+    if (gTimer) { gStop(); return; }
+    if (gTurn >= GRAPH.turns.length) gSet(1);
+    $('g-play').textContent = '❚❚ עצור';
+    gTimer = setInterval(() => { if (gTurn >= GRAPH.turns.length) gStop(); else gSet(gTurn + 1); }, 1600);
+  });
+  $('g-elabels').addEventListener('change', renderGraph);
+  $('g-svg').addEventListener('click', (e) => {
+    const g = e.target.closest('.g-node');
+    gSel = g ? g.dataset.id : null;
+    showDetail(gSel); renderGraph();
+  });
+  $('g-svg').addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const g = e.target.closest('.g-node'); if (!g) return;
+    e.preventDefault(); gSel = g.dataset.id; showDetail(gSel); renderGraph();
+  });
+  renderGraph();
 })();
 </script>
 </body>
