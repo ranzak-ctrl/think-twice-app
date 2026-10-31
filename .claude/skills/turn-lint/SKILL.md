@@ -11,7 +11,7 @@ Applies to every interviewer turn, whether produced live, by a mock, or proposed
 
 **1 · Exactly one directed question.** Not zero — a turn that ends without a question abandons the lead. Not two — a double-barrelled question ("what did you gain and what did you give up") lets the user answer the easier half and drop the other. Rhetorical questions count. A question inside a summary counts.
 
-**2 · At most ~3 sentences before the question.** The interviewer speaks briefly and then asks.
+**2 · At most 2 sentences before the question.** Nothing by default, one sentence when needed, two the exception (Ran, 24.10 and 31.10.2026). Three or more is what the adapter sends back once (`preambleSentences`, `PREAMBLE_MAX` in `src/adapters/model.js`); the sweep uses that same count.
 
 **3 · No clinical jargon aimed at the user.** The scorecard is hidden and so is its vocabulary. Never "פרשנות חלופית", "תגובה אדפטיבית", "שלב 3", "slot", "coverage". The user is in a conversation, not in an instrument.
 
