@@ -66,7 +66,9 @@ export const thinkTwiceAdult = {
   //
   // `label` is what the stage rail shows the person; `signpost` is the static
   // fallback when a generated opener fails. Both are Natali's register and must
-  // never carry a stage number or a clinical term. `name` is the stage's working
+  // never carry a stage number or a clinical term. Since 31.10.2026 a signpost is a
+  // frame and the stage's first question: the summary it follows asks nothing
+  // (Ran, 24.10.2026), so without the question the turn would end without one. `name` is the stage's working
   // name for the guide panel — clinical shorthand a tester reads, never the person.
   //
   // A slot's flags are clinical rules, not display settings:
@@ -93,7 +95,7 @@ export const thinkTwiceAdult = {
       key: 'stage2',
       name: 'פרשנות',
       label: 'איך הבנת את זה',
-      signpost: 'מיפינו את מה שקרה. עכשיו אני רוצה להבין איך אתה רואה את זה.',
+      signpost: 'מיפינו את מה שקרה. עכשיו אני רוצה להבין איך אתה רואה את זה — מה לדעתך הוביל לזה?',
       slots: [
         { id: 'causal', mental: true },
         { id: 'meaning', mental: true },
@@ -105,7 +107,7 @@ export const thinkTwiceAdult = {
       key: 'stage3',
       name: 'רגש',
       label: 'מה הרגשת',
-      signpost: 'הבנו איך אתה רואה את זה. עכשיו בוא נראה מה הרגשת.',
+      signpost: 'הבנו איך אתה רואה את זה. עכשיו בוא נראה מה הרגשת — מה עלה בך באותו רגע?',
       slots: [{ id: 'emotion', mental: true }, { id: 'intensity' }, { id: 'past_echo', mental: true }],
       // The baseline of the emotion delta (רף הקבלה: "דלתא רגש נרשמת בכל ראיון מלא").
       components: [{ type: 'intensity' }],
@@ -114,14 +116,14 @@ export const thinkTwiceAdult = {
       key: 'stage4',
       name: 'תגובה',
       label: 'איך הגבת',
-      signpost: 'זיהינו את הרגש. עכשיו בוא נדבר על מה עשית ומה אתה שוקל לעשות.',
+      signpost: 'זיהינו את הרגש. עכשיו בוא נדבר על התגובה — מה עשית באותו רגע?',
       slots: [{ id: 'auto_reaction' }, { id: 'planned_reaction', mental: true }],
     },
     {
       key: 'stage5',
       name: 'פרשנות חלופית',
       label: 'זווית אחרת',
-      signpost: 'הבנו את התגובה. עכשיו בוא ננסה לראות את זה מנקודת מבט אחרת.',
+      signpost: 'הבנו את התגובה. עכשיו בוא ננסה לראות את זה מנקודת מבט אחרת — איך זה נראה מהצד של מי שהיה מולך?',
       slots: [
         { id: 'perspective', mental: true },
         { id: 'intention', mental: true },
@@ -137,7 +139,7 @@ export const thinkTwiceAdult = {
       key: 'stage6',
       name: 'חלופות',
       label: 'מה אפשר לעשות',
-      signpost: 'יש לנו תמונה רחבה יותר. בוא נחשוב מה עוד אפשר לעשות.',
+      signpost: 'יש לנו תמונה רחבה יותר. בוא נחשוב מה עוד אפשר לעשות — מה האפשרות הראשונה שעולה לך?',
       slots: [{ id: 'alternatives' }, { id: 'zero_action' }, { id: 'alt_from_transform' }],
       components: [{ type: 'collector' }],
     },
@@ -145,7 +147,7 @@ export const thinkTwiceAdult = {
       key: 'stage7',
       name: 'הכרעה',
       label: 'מה תבחר',
-      signpost: 'יש לנו אפשרויות על השולחן. הגיע הזמן לבחור.',
+      signpost: 'יש לנו אפשרויות על השולחן. הגיע הזמן לבחור — מה אתה רוצה שיקרה בסוף?',
       slots: [
         { id: 'goal', mental: true },
         { id: 'board_presented' },

@@ -55,7 +55,8 @@
 //
 // ── WHO OWNS WHAT HERE ──
 // As in the adult pack: the labels and signposts are Natali's register (drafts
-// until she approves them); the routing numbers and the components are the
+// until she approves them; since 31.10.2026 each signpost ends with the stage's
+// first question, as the adult pack's — the summary before it asks nothing); the routing numbers and the components are the
 // Router's rules, and any change to this file gets router-guard's review.
 // tests/core/parents-pack.test.js pins them.
 
@@ -104,7 +105,7 @@ export const thinkTwiceParents = {
       key: 'stage2',
       name: 'התנהגות',
       label: 'מה ראינו',
-      signpost: 'עכשיו נסתכל רגע על מה שהוא עשה שם.',
+      signpost: 'עכשיו נסתכל רגע על מה שהוא עשה שם — מה בדיוק הוא עשה?',
       slots: [{ id: 'behavior_label' }, { id: 'coping_frame', mental: true }],
       // A short stage: three to four questions.
       loadGuard: 4,
@@ -113,7 +114,7 @@ export const thinkTwiceParents = {
       key: 'stage3',
       name: 'מאפיין',
       label: 'מאיפה זה בא',
-      signpost: 'נראה עכשיו מאיפה זה מגיע אצלו.',
+      signpost: 'נראה עכשיו מאיפה זה מגיע אצלו — איזה מאפיין שלו עומד מאחורי ההתנהגות הזאת?',
       slots: [{ id: 'trait_link', mental: true }, { id: 'parent_ownership', mental: true }],
       loadGuard: 5,
     },
@@ -121,7 +122,7 @@ export const thinkTwiceParents = {
       key: 'stage4',
       name: 'צורך',
       label: 'מה הוא היה צריך',
-      signpost: 'ננסה עכשיו להסתכל על הרגע הזה מהצד שלו.',
+      signpost: 'ננסה עכשיו להסתכל על הרגע הזה מהצד שלו — מה הוא היה צריך באותו רגע?',
       slots: [{ id: 'child_need', mental: true }, { id: 'child_feeling', mental: true }],
       // The hardest step, so the tightest ceiling.
       loadGuard: 5,
@@ -130,7 +131,7 @@ export const thinkTwiceParents = {
       key: 'stage5',
       name: 'ההורה',
       label: 'איפה זה פגש אותי',
-      signpost: 'עכשיו נסתכל על מה שקרה בך באותו רגע.',
+      signpost: 'עכשיו נסתכל על מה שקרה בך באותו רגע — מה הרגשת כשזה קרה?',
       slots: [
         { id: 'parent_emotion', mental: true },
         { id: 'parent_thought_then', mental: true },
@@ -149,7 +150,7 @@ export const thinkTwiceParents = {
       key: 'stage6',
       name: 'חלופות',
       label: 'מה אפשר לעשות',
-      signpost: 'יש לנו תמונה רחבה יותר. נחשוב מה אפשר לעשות ברגע כזה.',
+      signpost: 'יש לנו תמונה רחבה יותר. נחשוב מה אפשר לעשות ברגע כזה — מה האפשרות הראשונה שעולה לך?',
       // The parent proposes first; then the interviewer adds tools from the
       // trait → need → tool table, and the parent chooses (Natali, question 4).
       slots: [{ id: 'alternatives' }, { id: 'need_match' }],
@@ -160,7 +161,7 @@ export const thinkTwiceParents = {
       key: 'stage7',
       name: 'הכרעה',
       label: 'מה אעשה ברגע הבא',
-      signpost: 'יש אפשרויות על השולחן. הגיע הזמן לבחור.',
+      signpost: 'יש אפשרויות על השולחן. הגיע הזמן לבחור — מה היית רוצה שיקרה בפעם הבאה?',
       slots: [
         { id: 'goal', mental: true },
         { id: 'board_presented' },
@@ -174,7 +175,7 @@ export const thinkTwiceParents = {
       key: 'stage8',
       name: 'תרגול',
       label: 'מה אתרגל',
-      signpost: 'נחשוב עכשיו על הפעם הבאה, ועל מה אפשר להכין מראש.',
+      signpost: 'נחשוב עכשיו על הפעם הבאה, ועל מה אפשר להכין מראש — באיזה מצב זה חוזר בדרך כלל?',
       slots: [
         { id: 'recurring_situation' },
         { id: 'prevention_step' },

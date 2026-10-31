@@ -4,12 +4,12 @@ exports[`prompt fingerprints (engine/pack split must not move a byte) > the fixe
 {
   "openerNudge": "5:993a6c4ae56d16d8",
   "signpost.1": "6:eb5084cb9287cb35",
-  "signpost.2": "59:1687cfcba732989c",
-  "signpost.3": "49:c53ca661ce03f60b",
-  "signpost.4": "61:f31f51bb0737b3f6",
-  "signpost.5": "59:8dac90856c053658",
-  "signpost.6": "52:ce59ec5a78613e27",
-  "signpost.7": "43:e977f6a290a7e1ec",
+  "signpost.2": "80:1d5fd35fa880a8f6",
+  "signpost.3": "71:b9730218ce559fd3",
+  "signpost.4": "61:cd50840b94612104",
+  "signpost.5": "94:f5d1a6f1950c833d",
+  "signpost.6": "82:a4bc1dfda3f0afb9",
+  "signpost.7": "68:8cf29d0625dfdaa6",
   "signpost.8": "6:eb5084cb9287cb35",
   "summaryNudge": "185:8527ed36dfc3e257",
 }
