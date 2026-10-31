@@ -24,7 +24,7 @@ You own `src/content/prompts/**`, and each pack's `src/packs/<id>/prompts.js` �
 
 **Never introduce anything on the blacklist.** Read `src/content/forbidden.js` before every edit and check your output against all fifteen entries. The ones that slip in most quietly: offering a menu, asking permission to continue, recommending what to choose, and clinical jargon aimed at the user ("פרשנות חלופית", "תגובה אדפטיבית", "שלב 3").
 
-**Every system turn is exactly one directed question.** At most ~3 sentences before it. Not zero questions, not two.
+**Every system turn is exactly one directed question.** Before it: nothing by default, one sentence when needed, two the exception — three or more the adapter sends back once (Ran, 31.10.2026). Not zero questions, not two.
 
 **Hebrew, spoken register, RTL.** The judge scores "natural Hebrew" and it is the dimension that swings (3–5). Structured technique that reads like a questionnaire is the known offender — Likert intensity scales, sentence-stem prompts ("נסה לנסח במשפט שמתחיל ב..."), double-barrelled questions. Do not smooth these away on your own: they are part of the method, and whether to soften them is §3, open, Natali's.
 

@@ -816,6 +816,15 @@ export async function complete({
   let attemptMessages = messages;
   let lastFailure = null;
   let overflow = null;
+  // The reply kept while a shape repair was tried (two questions, or a long
+  // preamble). If the repair call itself fails — network, HTTP, a refusal, a cut
+  // reply — the turn is that kept reply, with the fact on record: a usable reply
+  // in hand is never traded for an error message (router-guard, 31.10.2026).
+  const kept = (why, status, at) => ({
+    ...overflow.parsed,
+    usage,
+    failure: { kind: overflow.kind, status, requestId: lastRequestId, stage, mode: mode ?? 'turn', attempt: at, detail: `${overflow.what}; ${why}` },
+  });
   // Kept across retries so a parse failure can still name the request the proxy
   // logged, even though the last attempt returned HTTP 200.
   let lastRequestId = null;
@@ -870,6 +879,7 @@ export async function complete({
       });
     } catch (err) {
       console.error('Network error:', err);
+      if (overflow) return kept(`the repair call failed (network: ${String(err?.message ?? err)})`, null, attempt);
       return {
         ok: false,
         error: err.message,
@@ -899,6 +909,7 @@ export async function complete({
     if (!res.ok) {
       const err = await res.text();
       console.error('Anthropic API error:', err);
+      if (overflow) return kept(`the repair call failed (http ${res.status}: ${describeUpstream(err)})`, res.status, attempt);
       return {
         ok: false,
         error: err,
@@ -919,6 +930,7 @@ export async function complete({
     // more — so it ends here, under its own name. The category holds no interview
     // content, so the report may carry it.
     if (data.stop_reason === 'refusal') {
+      if (overflow) return kept(`the repair call was declined (${data.stop_details?.category ?? 'no category'})`, res.status, attempt);
       return {
         ok: false,
         error: 'refusal',
@@ -976,6 +988,7 @@ export async function complete({
     // more, in front of a waiting person — and the report then names a prompt bug
     // that is not there. Said under its own name, as for the registrar above.
     if (data.stop_reason === 'max_tokens') {
+      if (overflow) return kept('the repair call hit max_tokens', res.status, attempt);
       return {
         ok: false,
         error: 'turn_truncated',

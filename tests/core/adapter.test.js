@@ -633,6 +633,40 @@ describe('adapter complete() — the model per interview, and one question per t
     expect(r.failure).toMatchObject({ kind: 'long_preamble', mode: 'turn' });
   });
 
+  it('a repair call that fails (HTTP 529) costs nothing: the long reply is the turn, on record', async () => {
+    let i = 0;
+    const fetchStub = vi.fn(async () => {
+      i++;
+      if (i === 1) return { ok: true, headers: { get: () => null }, json: async () => ({ content: [{ type: 'text', text: LONG }], usage: { input_tokens: 10, output_tokens: 5 } }), text: async () => '' };
+      return { ok: false, status: 529, headers: { get: () => null }, json: async () => ({}), text: async () => '{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}' };
+    });
+    vi.stubGlobal('fetch', fetchStub);
+
+    const r = await complete(ARGS);
+
+    expect(fetchStub).toHaveBeenCalledTimes(2);
+    expect(r.ok).toBe(true);
+    expect(r.message).toBe('שמעתי אותך. זה נשמע קשה. ברור שזה נגע בך. מה קרה אז?');
+    expect(r.failure).toMatchObject({ kind: 'long_preamble', status: 529, mode: 'turn' });
+    expect(r.failure.detail).toContain('the repair call failed');
+  });
+
+  it('a repair call that is cut at max_tokens keeps the reply in hand too', async () => {
+    let i = 0;
+    const fetchStub = vi.fn(async () => {
+      i++;
+      const text = i === 1 ? LONG : '{"message": "זה';
+      return { ok: true, headers: { get: () => null }, json: async () => ({ content: [{ type: 'text', text }], stop_reason: i === 1 ? 'end_turn' : 'max_tokens', usage: { input_tokens: 10, output_tokens: 5 } }), text: async () => '' };
+    });
+    vi.stubGlobal('fetch', fetchStub);
+
+    const r = await complete(ARGS);
+
+    expect(fetchStub).toHaveBeenCalledTimes(2);
+    expect(r).toMatchObject({ ok: true, message: 'שמעתי אותך. זה נשמע קשה. ברור שזה נגע בך. מה קרה אז?' });
+    expect(r.failure).toMatchObject({ kind: 'long_preamble' });
+  });
+
   it('two sentences before the question — the exception Ran allowed — pass as they are', async () => {
     const fetchStub = makeFetch([TWO_SENTENCES]);
     vi.stubGlobal('fetch', fetchStub);

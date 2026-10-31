@@ -11,6 +11,17 @@
 import { describe, it, expect } from 'vitest';
 import { thinkTwiceParents as p } from '../../src/packs/think-twice-parents/pack.js';
 import { validatePack, barredSlots, mentalSlots, intensityStages, stageWith } from '../../src/core/pack.js';
+import { preambleSentences, PREAMBLE_MAX } from '../../src/adapters/model.js';
+
+describe('every parents signpost is a frame and exactly one question', () => {
+  // The opener's fallback must carry the stage's question itself (Ran, 31.10.2026).
+  it('stages 2–8', () => {
+    for (const st of p.stages.filter((s) => s.signpost)) {
+      expect((st.signpost.match(/[?؟](?!["'”’»])/g) ?? []).length, st.key).toBe(1);
+      expect(preambleSentences(st.signpost), st.key).toBeLessThanOrEqual(PREAMBLE_MAX);
+    }
+  });
+});
 
 describe('the parents’ pack', () => {
   it('is valid, plain data, and says who it is', () => {

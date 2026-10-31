@@ -116,7 +116,7 @@ export const thinkTwiceAdult = {
       key: 'stage4',
       name: 'תגובה',
       label: 'איך הגבת',
-      signpost: 'זיהינו את הרגש. עכשיו בוא נדבר על התגובה — מה עשית באותו רגע?',
+      signpost: 'זיהינו את הרגש. עכשיו בוא נדבר על התגובה — מה רצית לעשות באותו רגע?',
       slots: [{ id: 'auto_reaction' }, { id: 'planned_reaction', mental: true }],
     },
     {

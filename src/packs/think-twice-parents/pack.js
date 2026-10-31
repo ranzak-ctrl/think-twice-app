@@ -114,7 +114,7 @@ export const thinkTwiceParents = {
       key: 'stage3',
       name: 'מאפיין',
       label: 'מאיפה זה בא',
-      signpost: 'נראה עכשיו מאיפה זה מגיע אצלו — איזה מאפיין שלו עומד מאחורי ההתנהגות הזאת?',
+      signpost: 'נראה עכשיו מאיפה זה מגיע אצלו — מה היה קשה לו באותו רגע?',
       slots: [{ id: 'trait_link', mental: true }, { id: 'parent_ownership', mental: true }],
       loadGuard: 5,
     },

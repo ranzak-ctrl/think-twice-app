@@ -13,6 +13,7 @@ import {
 } from '../../src/core/pack.js';
 import { route, evaluateStage, Decision } from '../../src/core/router.js';
 import { createState, mergeActorMap } from '../../src/core/state.js';
+import { preambleSentences, PREAMBLE_MAX } from '../../src/adapters/model.js';
 import { signpostForStage } from '../../src/content/signposting.js';
 
 const clone = (v) => JSON.parse(JSON.stringify(v));
@@ -171,6 +172,19 @@ describe('what slice 3 lifted, and what it validates instead', () => {
 // measure and the map moved from code into pack.js on 10.10.2026; a one-line edit
 // there must fail here until it is made on purpose (router-guard F1 of 8.10.2026,
 // the same contract tests/transitions/router.test.js keeps for the routing numbers).
+// The static signpost is the opener's fallback. Since the summary before it asks
+// nothing (24.10.2026), it must carry the stage's question itself: exactly one,
+// after at most the preamble the adapter allows (Ran, 31.10.2026).
+describe('every signpost is a frame and exactly one question', () => {
+  it('Think Twice · אישי', () => {
+    for (const st of thinkTwiceAdult.stages.filter((s) => s.signpost)) {
+      expect((st.signpost.match(/[?؟](?!["'”’»])/g) ?? []).length, st.key).toBe(1);
+      expect(preambleSentences(st.signpost), st.key).toBeLessThanOrEqual(PREAMBLE_MAX);
+      expect(st.signpost, st.key).not.toMatch(/\d/);
+    }
+  });
+});
+
 describe("Think Twice's clinical rules, pinned", () => {
   it('bars exactly the wound and the ADHD pattern from display', () => {
     expect([...barredSlots(thinkTwiceAdult)].sort()).toEqual(['adhd_pattern', 'wound']);

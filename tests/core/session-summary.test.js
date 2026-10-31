@@ -35,12 +35,14 @@ describe('session — the stage closes on its summary and moves on', () => {
     expect(nextState.meta.questionCount).toBe(0);
     expect(nextState.meta).not.toHaveProperty('awaitingConfirmation');
     // The summary, then the opener of stage 2 — one message. The summary part ends
-    // as a statement; the question is the opener's (the mock's opener is the static
-    // signpost, so the count of question marks is the live run's to check).
+    // as a statement; the one question is the opener's. On the mock path the opener
+    // is the static signpost, which since 31.10.2026 carries the stage's question
+    // itself — so the whole message has exactly one.
     expect(reply.startsWith(MOCK_SUMMARIES[1])).toBe(true);
     expect(reply.length).toBeGreaterThan(MOCK_SUMMARIES[1].length + 2);
     expect(reply).not.toContain('זה מדויק?');
     expect((MOCK_SUMMARIES[1].match(/\?/g) ?? []).length).toBe(0);
+    expect((reply.match(/\?/g) ?? []).length).toBe(1);
     // The trail reads cause, then effect: the Router's decision, then the advance.
     expect(nextState.meta.decisionLog.at(-2)).toMatchObject({ decision: 'requestConfirmation', reason: 'full_coverage', stage: 1 });
     expect(nextState.meta.decisionLog.at(-1)).toMatchObject({ decision: 'advance', reason: 'summarized', stage: 1 });
